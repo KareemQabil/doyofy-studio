@@ -2,6 +2,10 @@
 
 Arabic-first RTL invitation studio and event guest management prototype.
 
+## Product and design plan
+
+[Start with the October 25 feedback plan](docs/plan/README.md): product journeys, design and assets, data contracts, 22 proposed decisions, 12 delivery batches, 43 acceptance scenarios, and traceability for all 73 feedback items. These are implementation specifications, not features already shipped. Private review recordings and raw transcripts are not published in this repository.
+
 ## Current snapshot
 
 Exported 25 October 2026 from Sites v9, source commit `a83069f2fb2c21a1957a78110c7d479b9eac39e7`. Includes 13 occasions, 28 native card faces, 86 template presets, nine organizer appearances, invitation editor, public/personal RSVP, guest lists, optional seating, reception and summary.
