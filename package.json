@@ -1,0 +1,48 @@
+{
+  "name": "doyofy-prototype",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Doyofy — Arabic-first event & guest management UX prototype (create event → invitation → guests → RSVP → seating → check-in), built around the Invitation Studio.",
+  "scripts": {
+    "start": "node tools/build.mjs --serve",
+    "dev": "node tools/build.mjs --watch --serve",
+    "build": "node tools/build.mjs",
+    "serve": "node tools/serve.mjs",
+    "test": "node tests/unit.mjs && node tests/e2e.mjs && node tests/qa.mjs --quick",
+    "test:quick": "node tests/qa.mjs --quick",
+    "validate": "tsc -p . && tsc -p tests/unit && node tests/unit.mjs && node tools/check_assets.mjs && node tests/qa.mjs --quick",
+    "assets:check": "node tools/check_assets.mjs",
+    "assets:p0:check": "node tools/check_assets.mjs",
+    "assets:p0:install": "node tools/py.mjs tools/install_p0_packs.py",
+    "port:canon": "node tools/port-canon.mjs",
+    "baseline": "node tests/baseline.mjs",
+    "assets:index": "node tools/index_usage.mjs",
+    "assets:derived": "node tools/py.mjs tools/make_derived.py",
+    "test:unit": "node tests/unit.mjs",
+    "test:e2e": "node tests/e2e.mjs",
+    "test:studio": "node tests/qa.mjs",
+    "typecheck": "tsc -p . && tsc -p tests/unit",
+    "test:dom": "node tests/dom.mjs",
+    "assets:shipped:check": "node tools/check-shipped-assets.mjs"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "esbuild": "^0.27.0",
+    "playwright": "^1.56.0",
+    "typescript": ">=5.8.0",
+    "@types/node": "^25.0.0",
+    "@fontsource/amiri": "^5.2.0",
+    "@fontsource/aref-ruqaa": "^5.2.0",
+    "@fontsource/cormorant-garamond": "^5.2.0",
+    "@fontsource/great-vibes": "^5.2.0",
+    "@fontsource/reem-kufi": "^5.2.0",
+    "jsdom": "^26.1.0"
+  }
+}

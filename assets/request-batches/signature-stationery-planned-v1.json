@@ -1,0 +1,42 @@
+{
+  "style_id": "signature",
+  "batch_id": "signature-stationery-planned-v1",
+  "title": "Two planned «توقيع» faces as editable Canva masters",
+  "owner_rule": "No AI image generation of any kind (no Canva Magic Media / Dream Lab / Magic Design / text-to-image, no AI upscaling). Native vector shapes, the official Doyofy logo and pattern files, Phosphor icons (MIT) and licensed fonts only. No hand-drawn icons.",
+  "assets": [
+    {
+      "asset_id": "signature.card.sig-crescent.face.v1",
+      "prompt": "Build an editable Canva design (custom size 1500 × 2100 px = 5 × the 300 × 420 runtime face). No AI image generation of any kind (no Canva Magic Media / Dream Lab / Magic Design / text-to-image, no AI upscaling). Native vector shapes, the official Doyofy logo and pattern files, Phosphor icons (MIT) and licensed fonts only. No hand-drawn icons. Layers back to front: (1) paper rectangle #FFFDF8 full canvas, corner radius 0 (the app rounds corners); (2) charcoal #262626 rectangle x 0, y 0, w 1500, h 660; (3) a 5 px turquoise #2EB7B7 rectangle outline inset 60 px (x 60, y 60, w 1380, h 1980) — turquoise, not gold, so it is not a recolour of sig-diploma; (4) Phosphor \"MoonStars\" Thin icon (download SVG from phosphoricons.com, MIT) in gold, 420 px, centred at x 750, y 330 — for newborn swap to Phosphor \"Baby\" Thin; (5) ivory #F2EAD9 circle 220 px diameter centred x 750, y 660 with a 5 px gold ring at 190 px; (6) SAMPLE COPY text boxes, all centred, Reem Kufi: day number \"20\" Cormorant Garamond 600 110 px charcoal inside the disc; greeting «أهلًا بالقمر» 85 px #7A5E26 at y 860; Latin label \"NEWBORN\" Cormorant 45 px letter-spacing 12 px #5F594F at y 960; name «سارة» 155 px charcoal at y 1180 (two-line long-name variant at 110 px); thin gold rule 600 px at y 1460; date «الأحد ٢٠ يونيو ٢٠٢٧» 60 px, time 55 px, venue 55 px, city 50 px #5F594F stacked from y 1520; footer \"NEWBORN · CELEBRATION · RSVP\" Cormorant 40 px tracking 6 px at y 1990. Group \"data-zones\" (sample, not exported) separately from \"ornament\". Export: ornament-only SVG (hide data-zones), PNG 1500 × 2100 preview, PNG 600 × 840 thumbnail.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "size_px": [
+        1500,
+        2100
+      ],
+      "aspect_ratio": "5:7",
+      "transparent_background": false,
+      "reference_asset_ids": [],
+      "references_required": false,
+      "reference_paths": [],
+      "runtime_path": "src/cards/signature-cards.js#sig-crescent",
+      "placement_notes": "src/cards/signature-cards.js (new entry) + src/domain/templates.ts (presets) + src/domain/invitation.ts CARD_NAMES — CardRegistry 'sig-crescent'. Safe area: Band 0–132 px; names 170–300 px; meta 300–392 px.",
+      "acceptance": "Distinct silhouette from sig-diploma (not a recolour): disc low on the band, no year disc."
+    },
+    {
+      "asset_id": "signature.card.sig-agenda.face.v1",
+      "prompt": "Build an editable Canva design 1500 × 2100 px (5 × the 300 × 420 runtime face). No AI image generation of any kind (no Canva Magic Media / Dream Lab / Magic Design / text-to-image, no AI upscaling). Native vector shapes, the official Doyofy logo and pattern files, Phosphor icons (MIT) and licensed fonts only. No hand-drawn icons. Layers: (1) white #FFFFFF canvas; (2) turquoise #2EB7B7 column x 1110–1500 (390 px wide), full height — this is the inline-start side in RTL; (3) inside the column a charcoal #262626 rounded rectangle 270 × 300 px, radius 40, at x 1170, y 140 holding SAMPLE day \"20\" Cormorant 600 140 px gold #C7A661, month «يونيو» Reem Kufi 55 px gold, year \"2027\" Cormorant 45 px gold; (4) a 3 × 2 grid of 2 px gold lines (cells 300 × 220) at x 120–1020, y 1500–1940 as the only ornament; (5) SAMPLE COPY right-aligned at x 1020, Reem Kufi: label «مؤتمر» 70 px charcoal, Latin \"CONFERENCE\" Cormorant 42 px tracking 10 px #5F594F, title «ملتقى الأفكار للابتكار» 130 px charcoal up to three lines, venue/city 55 px #5F594F, date/time 55 px charcoal. No sponsor logos, no fake agenda lines, no charts. Export ornament-only SVG + previews as above.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "size_px": [
+        1500,
+        2100
+      ],
+      "aspect_ratio": "5:7",
+      "transparent_background": false,
+      "reference_asset_ids": [],
+      "references_required": false,
+      "reference_paths": [],
+      "runtime_path": "src/cards/signature-cards.js#sig-agenda",
+      "placement_notes": "src/cards/signature-cards.js (new entry) — CardRegistry 'sig-agenda'. Safe area: Column 0–78 px; text 96–276 px.",
+      "acceptance": "Reads as professional, not festive; no couple separator."
+    }
+  ]
+}

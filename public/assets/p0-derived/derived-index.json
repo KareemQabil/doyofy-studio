@@ -1,0 +1,117 @@
+{
+  "derived": [
+    {
+      "output": "public/assets/p0-derived/hdri/courtyard-1k.exr",
+      "bytes": 1836766,
+      "sha256": "51be9d23fe98dd421443671eb4007fbe809e7474bcd908660b11d9887b599071",
+      "source": "public/assets/p0/hdri/courtyard-2k.exr",
+      "sourceSha256": "f09271217e713504403d246abecb5cb852d1183516a846f799bb867ee94dce44",
+      "operation": "resize 2048x1024 -> 1024x512 (INTER_AREA), RGB float, EXR",
+      "license": "inherits source (see asset-index.json)"
+    },
+    {
+      "output": "public/assets/p0-derived/hdri/courtyard-2k-rgbm16.png",
+      "bytes": 4889527,
+      "sha256": "541e3c5f8cd8c9ddcd7035d15b525ddf4541a187294b590213ee5a9f99be6575",
+      "source": "public/assets/p0/hdri/courtyard-2k.exr",
+      "sourceSha256": "f09271217e713504403d246abecb5cb852d1183516a846f799bb867ee94dce44",
+      "operation": "RGBM16 encode (linear, maxRange 16, clip >16), 2048x1024 PNG",
+      "license": "inherits source (see asset-index.json)"
+    },
+    {
+      "output": "public/assets/p0-derived/hdri/courtyard-1k-rgbm16.png",
+      "bytes": 1265738,
+      "sha256": "b2e16fbf201a532f961114bb7b2dd27a01e0d8fbecc6d8c363adeae23083f2e0",
+      "source": "public/assets/p0/hdri/courtyard-2k.exr",
+      "sourceSha256": "f09271217e713504403d246abecb5cb852d1183516a846f799bb867ee94dce44",
+      "operation": "resize to 1024x512 (INTER_AREA) + RGBM16 encode (linear, maxRange 16), PNG",
+      "license": "inherits source (see asset-index.json)"
+    },
+    {
+      "output": "public/assets/p0-derived/models/lantern-chandelier-01/lantern-chandelier-01.gltf.json",
+      "files": [
+        "lantern-chandelier-01.gltf.json",
+        "img0.jpg",
+        "img1.jpg",
+        "img2.jpg",
+        "img3.jpg",
+        "img4.jpg",
+        "img5.jpg",
+        "img6.jpg"
+      ],
+      "bytes": 1564869,
+      "sha256": "5546ab9dfe1d7c8b2a234fb173a6089189077ccc6ed169f9de2a63e46685dd49",
+      "source": "public/assets/p0/models/lantern-chandelier-01.glb",
+      "sourceSha256": "a378132ee19e9178d5a48d5eb8d98ea7379dadc82c4268ff7f3291f79d0980e7",
+      "operation": "lossless GLB \u2192 glTF JSON (geometry base64-embedded, textures extracted byte-identical)",
+      "license": "inherits source (see asset-index.json)"
+    },
+    {
+      "output": "public/assets/p0-derived/models/brass-goblets/brass-goblets.gltf.json",
+      "files": [
+        "brass-goblets.gltf.json",
+        "img0.jpg",
+        "img1.jpg",
+        "img2.jpg",
+        "img3.jpg",
+        "img4.jpg",
+        "img5.jpg",
+        "img6.jpg",
+        "img7.jpg",
+        "img8.jpg"
+      ],
+      "bytes": 4860206,
+      "sha256": "fbbaa53d6b12e26a052a23a09f82a95731dcf57df8cecbfcaa7e8d787f350f61",
+      "source": "public/assets/p0/models/brass-goblets.glb",
+      "sourceSha256": "6cfe616b5ea8472f4d5d09db3f307f9554b9c42c43b5c741ee8302d1c5bb3dc7",
+      "operation": "lossless GLB \u2192 glTF JSON (geometry base64-embedded, textures extracted byte-identical)",
+      "license": "inherits source (see asset-index.json)"
+    },
+    {
+      "output": "public/assets/p0-derived/models/brass-vase-02/brass-vase-02.gltf.json",
+      "files": [
+        "brass-vase-02.gltf.json",
+        "img0.jpg",
+        "img1.jpg",
+        "img2.jpg"
+      ],
+      "bytes": 1884602,
+      "sha256": "43578cff428b447e0e56aecdc22d8176169bb9172ea33bb27facddabe859f8a7",
+      "source": "public/assets/p0/models/brass-vase-02.glb",
+      "sourceSha256": "06d6a533a24436d15ad6cb0d143251d39c4ec45d8f647dc2fdd4492ffbfddc5f",
+      "operation": "lossless GLB \u2192 glTF JSON (geometry base64-embedded, textures extracted byte-identical)",
+      "license": "inherits source (see asset-index.json)"
+    },
+    {
+      "output": "public/assets/p0-derived/models/flower-empodium/flower-empodium.gltf.json",
+      "files": [
+        "flower-empodium.gltf.json",
+        "img0.jpg",
+        "img1.jpg",
+        "img2.jpg"
+      ],
+      "bytes": 928170,
+      "sha256": "73b85bd1270bf7bf8eec4951c9c0f4758951dcdb0f2a6f7f4cd53d3ebbf139df",
+      "source": "public/assets/p0/models/flower-empodium.glb",
+      "sourceSha256": "9dd5880fb2506748b9871d68086bff6c1b96a2620aa4e5b1a69e68b5b53bd6cf",
+      "operation": "lossless GLB \u2192 glTF JSON (geometry base64-embedded, textures extracted byte-identical)",
+      "license": "inherits source (see asset-index.json)"
+    },
+    {
+      "output": "public/assets/p0-derived/models/lantern-01/lantern-01.gltf.json",
+      "files": [
+        "lantern-01.gltf.json",
+        "img0.jpg",
+        "img1.jpg",
+        "img2.jpg",
+        "img3.jpg"
+      ],
+      "bytes": 1847684,
+      "sha256": "a98fc38b5a8027a453148b5f61720d67de7e18eeb361e6bfe0f3209eb39dd48c",
+      "source": "public/assets/p0/models/lantern-01.glb",
+      "sourceSha256": "42304e3af4948fa26d6a9d47c7fc9e4ca0c09e414385adcdcb9340e1ab7e29ce",
+      "operation": "lossless GLB \u2192 glTF JSON (geometry base64-embedded, textures extracted byte-identical)",
+      "license": "inherits source (see asset-index.json)"
+    }
+  ]
+}

@@ -1,0 +1,384 @@
+/*
+ * «توقيع» — Doyofy organizer appearance (data-theme="signature"). Mixed direction chosen by the owner:
+ *   A «احتفال»  entry: full-bleed brand red with a soft red/gold mesh, a fan of real invitations
+ *   C «تحرير»  work: white canvas, charcoal type, strong hierarchy, colour tiles holding real invitations
+ *   B «مساء»   arrival & guests & closure: charcoal with gold, a quiet charcoal/gold mesh
+ * Identity: gold #C7A661 · ivory #F2EAD9 · beige #E4D5B4 · red #BC4749 · turquoise #2EB7B7 · charcoal #262626.
+ * Contrast rules: white on red ≥ 4.8 · charcoal on gold ≥ 6.6 · charcoal on turquoise ≥ 6.9 · gold on charcoal ≥ 6.6.
+ *   Never gold or turquoise text on white/ivory; never white text on gold/turquoise.
+ * Hosted type: Readex Pro (display), IBM Plex Sans Arabic (text). Identity font masters stay in design-source.
+ * Icons: Phosphor (MIT). Decorative editorial photo additions are declared in craft.css.
+ * Shapes: tile (4–6px), pill, circle; cards may rotate only inside the A fan. Motion: one orchestrated entrance,
+ *   decks that follow the finger, short success stamps. All of it collapses to static under reduced motion.
+ */
+:root[data-theme='signature'] {
+  --brand-gold: #C7A661; --brand-ivory: #F2EAD9; --brand-beige: #E4D5B4; --brand-red: #BC4749; --brand-turquoise: #2EB7B7; --brand-charcoal: #262626;
+  --c-canvas: #FFFFFF;
+  --c-surface: #FFFFFF;
+  --c-surface-elevated: #FFFFFF;
+  --c-surface-subtle: #F6F1E7;
+  --c-surface-hover: #F8F4EC;
+  --c-hairline: #E8E1D3;
+  --c-hairline-strong: #CABFAA;
+  --c-text: #262626;
+  --c-text-2: #4A4640;
+  --c-text-3: #5F594F;
+  --c-text-inverse: #FFFFFF;
+  --c-primary: #262626;
+  --c-primary-hover: #3B3936;
+  --c-primary-pressed: #111111;
+  --c-primary-soft: #F6F1E7;
+  --c-primary-text: #262626;
+  --c-on-primary: #FFFFFF;
+  --c-accent: #BC4749;
+  --c-accent-strong: #A23B3D;
+  --c-accent-soft: #F8E5E3;
+  --c-selected: #262626;
+  --c-selected-soft: #F2EAD9;
+  --c-on-selected: #FFFFFF;
+  --c-focus: #262626;
+  --c-logo: #C7A661;
+  --art-1: #F2EAD9; --art-2: #E4D5B4; --art-3: #D5F0EF; --art-4: #F8E5E3; --art-5: #EFE4CB; --art-6: #E9E5DE;
+  --art-ink: #262626;
+  --c-success: #1B6966; --c-success-soft: #DDF1EF;
+  --c-warning: #855A12; --c-warning-soft: #F6EBD3;
+  --c-danger: #A23B3D; --c-danger-soft: #F8E5E3;
+  --c-info: #2F5D70; --c-info-soft: #E1ECF0;
+  --c-neutral: #4A4640; --c-neutral-soft: #EFE9DE;
+  --c-backdrop: rgba(38, 38, 38, 0.5);
+  --shadow-1: 0 1px 0 rgba(38, 38, 38, 0.05);
+  --shadow-2: 0 18px 36px -26px rgba(38, 38, 38, 0.35);
+  --shadow-pop: 0 30px 60px -30px rgba(38, 38, 38, 0.45);
+  --shadow-art: 0 34px 50px -30px rgba(38, 38, 38, 0.55);
+  --r-sm: 6px; --r-md: 12px; --r-lg: 12px; --r-xl: 6px;
+  --font-display: 'Readex Pro', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-ui: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
+  --fw-display: 700;
+  --tracking-display: -0.01em;
+  /* the three meshes (static, brand hues only) */
+  --mesh-red: radial-gradient(55% 65% at 88% 8%, #D46A66 0%, transparent 62%), radial-gradient(45% 55% at 18% 22%, rgba(199, 166, 97, 0.38), transparent 68%), radial-gradient(60% 60% at 26% 100%, #8F3034 0%, transparent 72%), radial-gradient(35% 40% at 58% 62%, rgba(46, 183, 183, 0.10), transparent 70%), #BC4749;
+  --mesh-night: radial-gradient(55% 60% at 85% 0%, rgba(199, 166, 97, 0.30), transparent 65%), radial-gradient(45% 55% at 10% 90%, rgba(46, 183, 183, 0.14), transparent 70%), radial-gradient(50% 60% at 40% 50%, #2E2B27 0%, transparent 75%), #1E1E1E;
+  --mesh-ivory: radial-gradient(60% 60% at 90% 10%, rgba(199, 166, 97, 0.30), transparent 70%), radial-gradient(50% 55% at 8% 90%, rgba(46, 183, 183, 0.12), transparent 70%), radial-gradient(45% 45% at 30% 20%, rgba(188, 71, 73, 0.07), transparent 70%), #F6F1E7;
+}
+
+:root[data-theme='signature'] body.dy { background: var(--c-canvas); }
+:root[data-theme='signature'] :where(.dy) :is(h1, h2, h3) { font-family: var(--font-display); }
+:root[data-theme='signature'] ::selection { background: var(--brand-gold); color: var(--brand-charcoal); }
+:root[data-theme='signature'] :where(.dy) :focus-visible { outline: 2.5px solid var(--brand-charcoal); outline-offset: 3px; }
+
+/* controls: charcoal pill primary (white surfaces), charcoal outline secondary; tone overrides on colour fields */
+:root[data-theme='signature'] .btn { border-radius: 999px; font-family: var(--font-display); font-weight: 600; box-shadow: none; transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast), transform var(--dur-instant) var(--ease-out); }
+:root[data-theme='signature'] .btn:active:not(:disabled) { transform: scale(0.97); }
+:root[data-theme='signature'] .btn-secondary { background: transparent; border: 1.5px solid var(--brand-charcoal); color: var(--brand-charcoal); }
+:root[data-theme='signature'] .btn-secondary:hover:not(:disabled) { background: var(--brand-charcoal); color: #fff; }
+:root[data-theme='signature'] .btn-ghost:hover:not(:disabled) { background: var(--c-surface-hover); }
+
+/* ------------------------------------------------------------------ shared pieces */
+.sig-seal { --bg: var(--brand-gold); --fg: var(--brand-charcoal); display: inline-grid; place-items: center; flex: none; width: var(--seal, 64px); height: var(--seal, 64px); border-radius: 50%; background: var(--bg); color: var(--fg); box-shadow: inset 0 0 0 calc(var(--seal, 64px) * 0.07) var(--bg), inset 0 0 0 calc(var(--seal, 64px) * 0.07 + 1.5px) var(--fg); }
+.sig-seal.tone-charcoal { --bg: var(--brand-charcoal); --fg: var(--brand-gold); }
+.sig-seal.tone-red { --bg: var(--brand-red); --fg: #fff; }
+.sig-seal.tone-turquoise { --bg: var(--brand-turquoise); --fg: var(--brand-charcoal); }
+.sig-seal.tone-ivory { --bg: var(--brand-ivory); --fg: var(--brand-charcoal); }
+.sig-seal-mark { font: 700 calc(var(--seal, 64px) * 0.36) / 1 var(--font-display); }
+.sig-index { display: inline-flex; align-items: center; gap: 12px; font: 500 15px/1.4 var(--font-display); color: var(--c-text-2); }
+.sig-index .num { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--brand-charcoal); color: var(--brand-gold); font-size: 13px; font-weight: 700; }
+.sig-text-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--c-text) !important; font: 500 15px/1 var(--font-display); text-decoration: underline; text-decoration-thickness: 1.5px; text-decoration-color: var(--brand-gold); text-underline-offset: 7px; }
+.sig-text-link:hover { text-decoration-color: currentColor; }
+.sig-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 8px; vertical-align: middle; }
+.sig-dot.tone-red { background: var(--brand-red); } .sig-dot.tone-gold { background: var(--brand-gold); } .sig-dot.tone-turquoise { background: var(--brand-turquoise); } .sig-dot.tone-charcoal { background: var(--brand-charcoal); } .sig-dot.tone-ivory { background: var(--brand-beige); }
+
+/* colour fields (A / B / C moments) */
+.sig-stage { position: relative; isolation: isolate; overflow: hidden; border-radius: var(--r-xl); }
+.sig-stage.tone-charcoal { background: var(--mesh-night); color: var(--brand-ivory); --pat: url('assets/brand/pattern-grid-gold.svg'); --pat-o: 0.07; --motif: var(--brand-gold); --motif-o: 0.22; }
+.sig-stage.tone-red { background: var(--mesh-red); color: #fff; --pat: url('assets/brand/pattern-grid-ivory.svg'); --pat-o: 0.08; --motif: var(--brand-ivory); --motif-o: 0.18; }
+.sig-stage.tone-gold { background: var(--brand-gold); color: var(--brand-charcoal); --pat: url('assets/brand/pattern-grid-ivory.svg'); --pat-o: 0.3; --motif: var(--brand-ivory); --motif-o: 0.4; }
+.sig-stage.tone-turquoise { background: var(--brand-turquoise); color: var(--brand-charcoal); --pat: url('assets/brand/pattern-grid-ivory.svg'); --pat-o: 0.25; --motif: var(--brand-ivory); --motif-o: 0.4; }
+.sig-stage.tone-mesh, .sig-stage.tone-ivory { background: var(--mesh-ivory); color: var(--brand-charcoal); --pat: url('assets/brand/pattern-grid-gold.svg'); --pat-o: 0.16; --motif: var(--brand-gold); --motif-o: 0.3; }
+.sig-stage-pattern { position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: var(--pat-o); background: var(--pat) 0 0 / 180px auto repeat; }
+.sig-stage .sig-stage-pattern.is-motif { background: none; opacity: var(--motif-o); display: grid; place-items: center end; }
+.sig-stage .sig-stage-pattern.is-motif .brand-motif { height: 118%; width: auto; color: var(--motif); margin-inline-end: -3%; }
+.sig-stage :where(h1, h2, h3, strong) { color: inherit; }
+.sig-stage.tone-charcoal .btn-primary, .sig-stage.tone-red .btn-primary { background: var(--brand-ivory); color: var(--brand-charcoal); }
+.sig-stage.tone-charcoal .btn-primary { background: var(--brand-gold); }
+.sig-stage.tone-charcoal .btn-secondary, .sig-stage.tone-red .btn-secondary { color: #fff; border-color: rgba(255, 255, 255, 0.85); }
+.sig-stage.tone-charcoal .btn-secondary:hover:not(:disabled), .sig-stage.tone-red .btn-secondary:hover:not(:disabled) { background: #fff; color: var(--brand-charcoal); }
+.sig-stage.tone-charcoal .sig-text-link, .sig-stage.tone-red .sig-text-link { color: #fff !important; }
+.sig-stage.tone-charcoal :focus-visible, .sig-stage.tone-red :focus-visible { outline-color: #fff; }
+.sig-stage .badge { background: color-mix(in srgb, currentColor 14%, transparent); color: inherit; }
+.brand-motif, .brand-field { display: block; }
+
+/* ------------------------------------------------------------------ shell */
+.sig-shell { min-height: 100dvh; }
+.sig-header { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 22px; min-height: 72px; padding: 12px clamp(20px, 4.4vw, 64px); background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(10px); border-bottom: 1px solid var(--c-hairline); }
+.sig-brand { display: flex; color: var(--c-logo); }
+.sig-edition { padding-inline-start: 18px; border-inline-start: 1px solid var(--c-hairline-strong); font: 500 13px/1 var(--font-display); color: var(--c-text-3); }
+.sig-header-nav { display: flex; align-items: center; gap: 4px; margin-inline-start: auto; }
+.sig-header-nav a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 999px; font: 500 15px/1 var(--font-display); color: var(--c-text); text-decoration: none; }
+.sig-header-nav a:hover { background: var(--c-surface-hover); }
+.sig-header-nav .sig-header-new { background: var(--brand-charcoal); color: #fff; }
+.sig-header-nav .sig-header-new:hover { background: var(--c-primary-hover); }
+.sig-header-tools { display: flex; align-items: center; gap: 10px; }
+.sig-header-tools .topbar-user-name { display: none; }
+
+/* ------------------------------------------------------------------ home · A hero */
+.sig-home { overflow-x: clip; }
+.sig-hero { position: relative; isolation: isolate; background: var(--mesh-red); color: #fff; overflow: hidden; }
+.sig-hero-pattern { position: absolute; inset: 0; z-index: -1; opacity: 0.075; background: url('assets/brand/pattern-grid-ivory.svg') 0 0 / 260px auto repeat; }
+.sig-hero-inner { position: relative; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: center; gap: clamp(24px, 4vw, 72px); max-width: 1440px; margin: 0 auto; min-height: clamp(600px, calc(100dvh - 72px - 72px), 820px); padding: clamp(40px, 5vw, 72px) clamp(20px, 4.4vw, 64px); }
+.sig-hero-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; max-width: 640px; }
+.sig-hero-kicker { display: flex; align-items: center; gap: 14px; font: 500 16px/1.4 var(--font-display); color: rgba(255, 255, 255, 0.88); }
+.sig-hero-kicker i { display: block; width: 36px; height: 2px; background: #fff; }
+.sig-hero h1 { font: 700 clamp(56px, 7.4vw, 124px)/1.08 var(--font-display); letter-spacing: -0.03em; margin: 0; color: #fff; }
+.sig-line { display: block; padding-block: 0.04em; }
+.sig-hero-sub { max-width: 31em; font-size: clamp(16.5px, 1.3vw, 19.5px); line-height: 1.85; color: rgba(255, 255, 255, 0.9); }
+.sig-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; }
+.sig-hero .btn-primary { background: var(--brand-ivory); color: var(--brand-charcoal); }
+.sig-hero .btn-primary:hover:not(:disabled) { background: #fff; }
+.sig-hero-link { color: #fff !important; font: 500 15px/1 var(--font-display); text-decoration: underline; text-decoration-color: rgba(255, 255, 255, 0.6); text-underline-offset: 7px; min-height: 44px; display: inline-flex; align-items: center; }
+.sig-hero-next { display: grid; gap: 12px; width: 100%; max-width: 560px; padding: 20px 22px; border-radius: var(--r-md); background: #fff; color: var(--brand-charcoal); box-shadow: 0 30px 50px -30px rgba(60, 10, 14, 0.6); }
+.sig-hero-next-label { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--c-text-2); }
+.sig-hero-next-title { font: 700 clamp(22px, 1.9vw, 28px)/1.45 var(--font-display); overflow-wrap: anywhere; }
+.sig-hero-next .btn-primary { background: var(--brand-charcoal); color: #fff; }
+.sig-hero-next .btn-primary:hover:not(:disabled) { background: var(--c-primary-hover); }
+.sig-hero-next .sig-text-link { color: var(--brand-charcoal) !important; }
+.sig-hero-sticker { position: absolute; z-index: 4; left: calc(clamp(20px, 4.4vw, 64px) + 3%); top: 11%; display: grid; place-items: center; align-content: center; width: 128px; height: 128px; border-radius: 50%; background: var(--brand-turquoise); color: var(--brand-charcoal); font: 700 16px/1.2 var(--font-display); transform: rotate(-9deg); animation: sig-sticker 700ms 900ms var(--ease-out) both; }
+.sig-hero-sticker b { font-size: 44px; line-height: 1; }
+/* the fan */
+.sig-fan-wrap { display: grid; justify-items: center; gap: 18px; }
+.sig-fan { position: relative; width: 100%; height: calc(var(--fan-w) * 1.4 + 60px); touch-action: pan-y; cursor: grab; --fan-w: 250px; }
+.sig-fan-card { position: absolute; top: 30px; left: 50%; margin-left: calc(var(--fan-w) / -2); padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; transform-origin: 50% 110%; transition: transform 620ms var(--ease-out); animation: sig-fan-in 900ms var(--ease-out) both; }
+.sig-fan-card .card-thumb { border-radius: 6px; box-shadow: 0 46px 60px -34px rgba(40, 6, 10, 0.8), 0 2px 8px rgba(40, 6, 10, 0.18); }
+.sig-fan-card.is-front { z-index: 3; transform: translateX(var(--fan-drag, 0px)) rotate(-2deg); }
+.sig-fan-card.is-next { z-index: 2; transform: translateX(calc(-44% + var(--fan-drag, 0px))) translateY(26px) rotate(-12deg) scale(0.9); animation-delay: 120ms; }
+.sig-fan-card.is-prev { z-index: 1; transform: translateX(calc(40% + var(--fan-drag, 0px))) translateY(34px) rotate(10deg) scale(0.86); animation-delay: 220ms; }
+@media (hover: hover) and (pointer: fine) {
+  .sig-fan:hover .sig-fan-card.is-next { transform: translateX(calc(-52% + var(--fan-drag, 0px))) translateY(22px) rotate(-14deg) scale(0.9); }
+  .sig-fan:hover .sig-fan-card.is-prev { transform: translateX(calc(48% + var(--fan-drag, 0px))) translateY(30px) rotate(12deg) scale(0.86); }
+}
+.sig-fan-card:focus-visible { outline: 2.5px solid #fff; outline-offset: 6px; }
+.sig-fan-controls { display: flex; align-items: center; gap: 14px; }
+.sig-fan-arrow { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, 0.8); background: transparent; color: #fff; cursor: pointer; }
+.sig-fan-arrow:hover { background: #fff; color: var(--brand-red); }
+.sig-fan-label { min-width: 200px; text-align: center; font: 500 14px/1.4 var(--font-display); color: rgba(255, 255, 255, 0.92); }
+/* occasion band */
+.sig-hero-band { background: var(--brand-ivory); color: var(--brand-charcoal); }
+.sig-hero-band ul { list-style: none; margin: 0 auto; padding: 0 clamp(20px, 4.4vw, 64px); max-width: 1440px; min-height: 72px; display: flex; align-items: center; overflow-x: auto; scrollbar-width: none; }
+.sig-hero-band ul::-webkit-scrollbar { display: none; }
+.sig-hero-band li { flex: none; display: flex; align-items: center; }
+.sig-hero-band li + li::before { content: ''; width: 7px; height: 7px; margin-inline: 22px; background: var(--brand-red); transform: rotate(45deg); }
+.sig-hero-band a { font: 500 18px/1 var(--font-display); color: var(--brand-charcoal); text-decoration: none; padding: 12px 0; min-height: 44px; display: inline-flex; align-items: center; }
+.sig-hero-band a:hover { text-decoration: underline; text-decoration-color: var(--brand-red); text-underline-offset: 8px; }
+.sig-hero h1 .sig-line { animation: sig-rise 760ms var(--ease-out) both; }
+.sig-hero h1 .sig-line:nth-child(2) { animation-delay: 90ms; }
+.sig-hero-sub, .sig-hero-kicker { animation: sig-rise 760ms 160ms var(--ease-out) both; }
+@keyframes sig-rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@keyframes sig-fan-in { from { opacity: 0; transform: translateY(40px) rotate(0deg) scale(0.9); } }
+@keyframes sig-sticker { from { opacity: 0; transform: rotate(-40deg) scale(0.6); } }
+
+/* ------------------------------------------------------------------ home · C sections */
+.sig-page { max-width: 1440px; margin: 0 auto; padding: 0 clamp(20px, 4.4vw, 64px) clamp(72px, 9vw, 140px); }
+.sig-section { padding-top: clamp(72px, 9vw, 136px); }
+.sig-section-head { display: grid; gap: 16px; margin-bottom: clamp(28px, 3.6vw, 52px); }
+.sig-section-head h2 { font: 700 clamp(36px, 4.6vw, 72px)/1.18 var(--font-display); letter-spacing: -0.025em; }
+.sig-section-head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+.sig-chip-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1.5px solid var(--brand-charcoal); background: transparent; font: 500 14px/1 var(--font-display); cursor: pointer; color: var(--c-text); }
+.sig-chip-toggle[aria-pressed='true'] { background: var(--brand-charcoal); color: #fff; }
+.sig-tickets { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 18px; }
+.sig-ticket { position: relative; display: grid; grid-template-columns: 112px minmax(0, 1fr); grid-template-rows: 1fr auto; column-gap: 20px; padding: 20px 20px 0; border-radius: var(--r-md); background: #fff; border: 1px solid var(--c-hairline); transition: border-color var(--dur) var(--ease-out); }
+.sig-ticket:hover { border-color: var(--brand-charcoal); }
+.sig-ticket-art { display: grid; place-items: center; height: 140px; border-radius: var(--r-sm); overflow: hidden; }
+.sig-ticket-art .card-thumb { transform: rotate(-4deg); box-shadow: 0 14px 20px -12px rgba(0, 0, 0, 0.5); border-radius: 3px; }
+.sig-ticket-art .occasion-glyph { width: 48%; height: auto; }
+.sig-ticket-body { min-width: 0; display: grid; align-content: start; gap: 5px; }
+.sig-ticket-kind { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 500 13px/1.4 var(--font-display); color: var(--c-text-2); }
+.sig-ticket h3 { font: 700 22px/1.5 var(--font-display); overflow-wrap: anywhere; }
+.sig-ticket h3 a { color: var(--c-text); text-decoration: none; }
+.sig-ticket h3 a:hover { text-decoration: underline; text-decoration-color: var(--brand-red); text-underline-offset: 6px; }
+.sig-ticket-meta { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--c-text-2); }
+.sig-ticket .sig-ticket-edge { grid-column: 1 / -1; margin: 18px -20px 0; }
+.sig-ticket-stub { grid-column: 1 / -1; display: flex; justify-content: flex-end; padding: 12px 0 16px; }
+.sig-ticket.is-past .sig-ticket-art { filter: grayscale(0.5); }
+.sig-ticket-edge { position: relative; display: block; height: 0; border-top: 1.5px dashed var(--c-hairline-strong); }
+.sig-ticket-edge i { position: absolute; top: -10px; width: 18px; height: 18px; border-radius: 50%; background: var(--c-canvas); box-shadow: inset 0 0 0 1px var(--c-hairline); }
+.sig-ticket-edge i:first-child { inset-inline-start: -10px; }
+.sig-ticket-edge i:last-child { inset-inline-end: -10px; }
+.sig-new-ticket { display: flex; align-items: center; gap: 18px; padding: 24px; min-height: 140px; border-radius: var(--r-md); border: 1.5px dashed var(--c-hairline-strong); color: var(--c-text); text-decoration: none; }
+.sig-new-ticket:hover { border-color: var(--brand-charcoal); background: var(--c-surface-hover); }
+.sig-new-plus { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--brand-charcoal); color: #fff; flex: none; }
+.sig-new-ticket > span:nth-child(2) { flex: 1; display: grid; gap: 4px; }
+.sig-new-ticket strong { font: 700 20px/1.5 var(--font-display); }
+.sig-new-ticket small { font-size: 13.5px; color: var(--c-text-2); }
+.sig-empty-line { padding: 24px; color: var(--c-text-2); }
+/* tone fills (tiles) */
+.tone-red:where(.sig-ticket-art, .sig-mini, .sig-poster) { background: var(--brand-red); color: #fff; }
+.tone-gold:where(.sig-ticket-art, .sig-mini, .sig-poster) { background: var(--brand-gold); color: var(--brand-charcoal); }
+.tone-turquoise:where(.sig-ticket-art, .sig-mini, .sig-poster) { background: var(--brand-turquoise); color: var(--brand-charcoal); }
+.tone-charcoal:where(.sig-ticket-art, .sig-mini, .sig-poster) { background: var(--brand-charcoal); color: var(--brand-ivory); }
+.tone-ivory:where(.sig-ticket-art, .sig-mini, .sig-poster), .tone-beige:where(.sig-ticket-art, .sig-mini, .sig-poster) { background: var(--brand-ivory); color: var(--brand-charcoal); }
+
+/* ------------------------------------------------------------------ tactile deck */
+.deck { position: relative; display: grid; gap: 16px; min-width: 0; }
+.deck-stage { position: relative; height: var(--deck-h, 420px); touch-action: pan-y; user-select: none; -webkit-user-select: none; outline: none; cursor: grab; overflow: visible; }
+.deck-stage.is-dragging { cursor: grabbing; }
+.deck-card { position: absolute; top: 8px; left: 50%; width: var(--deck-w, 250px); margin-left: calc(var(--deck-w, 250px) / -2); padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; text-align: inherit; transform-origin: 50% 85%; will-change: transform; border-radius: 6px; }
+.deck-card:focus-visible { outline: 2.5px solid var(--brand-charcoal); outline-offset: 6px; }
+.deck-card-placeholder { display: block; width: 100%; aspect-ratio: 5 / 7; border-radius: 6px; background: var(--c-surface-subtle); }
+.deck.is-busy .deck-stage { opacity: 0.7; cursor: progress; }
+.deck-controls { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.deck-arrow { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; border: 1.5px solid var(--brand-charcoal); background: transparent; color: var(--brand-charcoal); cursor: pointer; transition: background var(--dur-fast), color var(--dur-fast); }
+.deck-arrow:hover:not(:disabled) { background: var(--brand-charcoal); color: #fff; }
+.deck-arrow:disabled { opacity: 0.25; cursor: default; }
+.deck-progress { display: grid; gap: 7px; justify-items: center; min-width: 150px; }
+.deck-count { font: 500 13px/1 var(--font-display); color: var(--c-text-2); }
+.deck-count b { color: var(--c-text); font-size: 17px; }
+.deck-rail { display: block; width: 150px; height: 3px; background: var(--c-hairline); overflow: hidden; }
+.deck-rail > span { display: block; height: 100%; background: var(--brand-red); transition: width var(--dur-layout) var(--ease-out); }
+.deck-hint { justify-self: center; display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 999px; background: var(--brand-charcoal); color: #fff; font: 500 13px/1 var(--font-display); pointer-events: none; white-space: nowrap; }
+.deck-hint-hand { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--brand-gold); animation: deck-nudge 1.6s var(--ease-in-out) infinite; }
+@keyframes deck-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-12px); } }
+/* occasion posters: colour tile + a real invitation + a Phosphor glyph */
+.sig-poster { position: relative; display: grid; grid-template-rows: auto 1fr; width: 100%; aspect-ratio: 5 / 7; border-radius: 6px; overflow: hidden; padding: 20px 20px 0; }
+.sig-poster-head { display: grid; gap: 2px; text-align: start; position: relative; z-index: 2; }
+.sig-poster-head strong { font: 700 26px/1.3 var(--font-display); color: inherit; }
+.sig-poster-head small { font-size: 13.5px; opacity: 0.88; }
+.sig-poster-card { display: grid; place-items: end center; }
+.sig-poster-card .card-thumb { margin-bottom: -26px; transform: rotate(-3deg); transition: transform 600ms var(--ease-out); box-shadow: 0 24px 34px -20px rgba(0, 0, 0, 0.55); border-radius: 4px; }
+.deck-card.is-active .sig-poster-card .card-thumb { transform: rotate(0deg) translateY(-12px); }
+.sig-poster-glyph { position: absolute; top: 20px; inset-inline-end: 18px; width: 30px; height: 30px; opacity: 0.85; }
+.sig-poster-glyph .occasion-glyph { width: 100%; height: 100%; }
+.sig-deck-section .deck { --deck-w: clamp(220px, 21vw, 270px); --deck-h: calc(var(--deck-w) * 1.4 + 24px); }
+.sig-deck-layout { display: grid; grid-template-columns: minmax(280px, 0.8fr) minmax(0, 1.5fr); align-items: center; gap: clamp(24px, 4vw, 72px); }
+.sig-deck-copy { display: grid; gap: 14px; align-content: center; justify-items: start; padding: clamp(24px, 3vw, 40px); border-radius: var(--r-md); background: var(--mesh-ivory); }
+.sig-deck-kind { font: 500 14px/1.4 var(--font-display); color: var(--c-text-2); }
+.sig-deck-copy h3 { font: 700 clamp(34px, 3.4vw, 52px)/1.2 var(--font-display); }
+.sig-deck-copy p { color: var(--c-text-2); line-height: 1.85; font-size: 16px; }
+.sig-mini { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 50%; }
+.sig-mini .occasion-glyph { width: 24px; height: 24px; }
+/* steps */
+.sig-steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(24px, 3vw, 48px); }
+.sig-steps li { display: grid; gap: 10px; align-content: start; padding-top: 22px; border-top: 2px solid var(--brand-charcoal); }
+.sig-steps li:nth-child(1) { border-top-color: var(--brand-red); } .sig-steps li:nth-child(2) { border-top-color: var(--brand-gold); } .sig-steps li:nth-child(3) { border-top-color: var(--brand-turquoise); }
+.sig-steps-num { font: 700 clamp(48px, 5vw, 80px)/1 var(--font-display); color: var(--brand-charcoal); }
+.sig-steps strong { font: 700 22px/1.45 var(--font-display); }
+.sig-steps p { font-size: 15.5px; line-height: 1.85; color: var(--c-text-2); }
+/* closing · B */
+.sig-closing { border-radius: 0; display: grid; justify-items: start; gap: 18px; padding: clamp(64px, 8vw, 120px) max(clamp(20px, 4.4vw, 64px), calc((100vw - 1440px) / 2 + 64px)); }
+.sig-closing-kicker { font: 500 15px/1 var(--font-display); color: var(--brand-gold); }
+.sig-closing-line { font: 700 clamp(40px, 5.4vw, 88px)/1.15 var(--font-display); letter-spacing: -0.02em; color: var(--brand-ivory); }
+.sig-closing-line em { font-style: normal; color: var(--brand-gold); }
+.sig-closing-actions { display: flex; flex-wrap: wrap; gap: 14px 26px; align-items: center; margin-top: 8px; }
+
+/* ------------------------------------------------------------------ workspace · C */
+.sig-ws { display: grid; grid-template-columns: 272px minmax(0, 1fr); max-width: 1520px; margin: 0 auto; min-height: calc(100dvh - 72px); }
+.sig-rail { position: sticky; top: 72px; align-self: start; display: flex; flex-direction: column; gap: 16px; height: calc(100dvh - 72px); overflow-y: auto; padding: 24px 20px; border-inline-end: 1px solid var(--c-hairline); }
+.sig-rail-context .ws-event { position: relative; display: grid; gap: 6px; padding: 18px; border-radius: var(--r-xl); color: var(--brand-ivory); background: var(--mesh-night); overflow: hidden; isolation: isolate; }
+.sig-rail-context .ws-allevents { color: rgba(242, 234, 217, 0.78); font-size: 12.5px; text-decoration: none; display: inline-flex; gap: 4px; align-items: center; min-height: 32px; }
+.sig-rail-context .ws-event-title { font: 700 20px/1.45 var(--font-display); color: #fff; overflow-wrap: anywhere; padding-inline-end: 44px; }
+.sig-rail-context .ws-event-meta { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: rgba(242, 234, 217, 0.8); }
+.sig-rail-context .badge { justify-self: start; background: rgba(242, 234, 217, 0.14); color: var(--brand-ivory); }
+.ws-event-art { display: none; }
+:root[data-theme='signature'] .ws-event-art { display: block; position: absolute; top: 44px; inset-inline-end: 16px; width: 38px; height: 38px; color: var(--brand-gold); }
+:root[data-theme='signature'] .ws-event-art .occasion-glyph { width: 100%; height: 100%; }
+.sig-journey ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.sig-journey-link { position: relative; display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 8px 12px; border-radius: 999px; color: var(--c-text); text-decoration: none; font: 500 15px/1.3 var(--font-display); }
+.sig-journey-link:hover { background: var(--c-surface-hover); }
+.sig-step-num { display: grid; place-items: center; width: 34px; height: 34px; flex: none; border-radius: 50%; border: 1.5px solid var(--c-hairline-strong); font: 700 12px/1 var(--font-display); color: var(--c-text-2); }
+.sig-journey-link.is-active { background: var(--brand-charcoal); color: #fff; }
+.sig-journey-link.is-active .sig-step-num { background: var(--brand-gold); border-color: var(--brand-gold); color: var(--brand-charcoal); }
+.sig-step-label { flex: 1; }
+.sig-step-badge { font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--c-surface-subtle); color: var(--c-text-2); }
+.sig-journey-link.is-active .sig-step-badge { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.sig-step-badge.tone-accent { background: var(--brand-red); color: #fff; }
+.sig-more-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 0; background: none; font: 500 14px/1 var(--font-display); color: var(--c-text-2); cursor: pointer; border-radius: 999px; }
+.sig-more-toggle:hover { background: var(--c-surface-hover); }
+.sig-optional { display: grid; gap: 2px; padding: 6px; border-radius: var(--r-md); background: var(--c-surface-subtle); }
+.sig-optional a { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 999px; color: var(--c-text); text-decoration: none; font-size: 14px; }
+.sig-optional a:hover { background: #fff; }
+.sig-optional a[aria-current='page'] { background: #fff; font-weight: 600; box-shadow: inset 0 0 0 1.5px var(--brand-charcoal); }
+.sig-optional small { margin-inline-start: auto; font-size: 11px; color: var(--c-text-3); }
+.sig-rail-foot { margin-top: auto; display: grid; gap: 10px; font-size: 12px; color: var(--c-text-3); }
+.sig-rail-foot .ws-footer-note { font: 500 13px/1.7 var(--font-display); color: var(--c-text-2); }
+.sig-content { min-width: 0; padding: clamp(24px, 3vw, 44px) clamp(18px, 3.6vw, 56px) 80px; }
+.sig-tabbar { display: none; }
+
+/* ------------------------------------------------------------------ create · C */
+:root[data-theme='signature'] .focus-bar { background: rgba(255, 255, 255, 0.95); border-bottom: 1px solid var(--c-hairline); }
+:root[data-theme='signature'] .focus-title { font: 700 16px/1.4 var(--font-display); }
+:root[data-theme='signature'] .focus-foot { background: #fff; border-top: 1px solid var(--c-hairline); }
+.sig-create { overflow-x: clip; display: grid; gap: 22px; max-width: 1240px; margin: 0 auto; padding: clamp(18px, 3vw, 44px) clamp(8px, 2vw, 24px) 24px; }
+.sig-create-head { display: grid; justify-items: center; gap: 12px; text-align: center; }
+.sig-create-head h2 { font: 700 clamp(36px, 4.6vw, 64px)/1.2 var(--font-display); letter-spacing: -0.02em; }
+.sig-create-sub { max-width: 36em; color: var(--c-text-2); line-height: 1.85; }
+.sig-view-switch { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--c-surface-subtle); }
+.sig-view-switch button { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 18px; border: 0; border-radius: 999px; background: none; font: 500 14px/1 var(--font-display); color: var(--c-text-2); cursor: pointer; }
+.sig-view-switch button[aria-pressed='true'] { background: var(--brand-charcoal); color: #fff; }
+.sig-create-deck { --deck-w: clamp(200px, min(23vw, calc((100dvh - 480px) / 1.4)), 270px); --deck-h: calc(var(--deck-w) * 1.4 + 24px); }
+.sig-create-aside { position: sticky; top: 92px; align-self: start; background: none !important; border: 0 !important; padding: 0 !important; }
+.sig-create-preview { display: grid; justify-items: center; gap: 18px; padding: 28px 22px 24px; text-align: center; border-radius: var(--r-md) !important; }
+.sig-create-card { transform: perspective(900px) rotateY(var(--ry, 0deg)) rotateX(var(--rx, 0deg)) rotate(-2deg); transition: transform 600ms var(--ease-out); }
+.sig-create-card.is-tilting { transition: transform 80ms linear; }
+.sig-create-card .card-thumb { border-radius: 4px; box-shadow: 0 34px 46px -28px rgba(38, 38, 38, 0.7); }
+.sig-create-note { font-size: 13.5px; line-height: 1.8; color: var(--c-text-2); max-width: 30em; }
+:root[data-theme='signature'] .create-h { font: 700 clamp(30px, 3.2vw, 44px)/1.3 var(--font-display); }
+:root[data-theme='signature'] .form-group { background: #fff; border: 1px solid var(--c-hairline); border-radius: var(--r-md); padding: 22px; }
+:root[data-theme='signature'] .form-legend { font: 700 16px/1.4 var(--font-display); color: var(--c-text); }
+
+/* ------------------------------------------------------------------ responsive */
+@media (max-width: 1100px) {
+  .sig-hero-inner { grid-template-columns: 1fr; min-height: 0; }
+  .sig-hero-sticker { top: auto; bottom: 34%; }
+  .sig-deck-layout { grid-template-columns: 1fr; }
+  .sig-ws { grid-template-columns: 236px minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .sig-header { min-height: 60px; gap: 10px; padding: 8px 14px; }
+  .sig-edition { display: none; }
+  .sig-header-nav a:not(.sig-header-new) { display: none; }
+  .sig-header-nav .sig-header-new { min-height: 40px; padding: 0 14px; font-size: 13.5px; }
+  .sig-header-tools .topbar-user { display: none; }
+  .sig-hero-inner { padding: 32px 20px 24px; gap: 18px; }
+  .sig-hero h1 { font-size: clamp(46px, 13vw, 64px); }
+  .sig-hero-sub { font-size: 16px; }
+  .sig-hero-actions { width: 100%; }
+  .sig-hero-actions .btn { width: 100%; justify-content: center; }
+  .sig-fan { --fan-w: 168px; }
+  .sig-hero-sticker { width: 92px; height: 92px; font-size: 13px; top: auto; bottom: 120px; left: 16px; }
+  .sig-hero-sticker b { font-size: 30px; }
+  .sig-hero-band a { font-size: 16px; }
+  .sig-page { padding: 0 20px 72px; }
+  .sig-section { padding-top: 64px; }
+  .sig-section-head h2 { font-size: clamp(32px, 9.4vw, 44px); }
+  .sig-ticket { grid-template-columns: 84px minmax(0, 1fr); column-gap: 14px; padding: 16px 16px 0; }
+  .sig-ticket-art { height: 112px; }
+  .sig-ticket-art .card-thumb { transform: rotate(-4deg) scale(0.8); }
+  .sig-ticket .sig-ticket-edge { margin-inline: -16px; }
+  .sig-ticket h3 { font-size: 19px; }
+  .sig-deck-section .deck { --deck-w: min(62vw, 240px); }
+  .sig-deck-copy { padding: 22px; }
+  .sig-steps ol { grid-template-columns: 1fr; gap: 26px; }
+  .sig-closing { padding: 56px 22px; }
+  .sig-closing .sig-stage-pattern { opacity: 0.12; }
+  .sig-ws { display: block; padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+  .sig-rail { position: static; height: auto; overflow: visible; padding: 12px 14px 0; border: 0; gap: 0; }
+  .sig-rail .sig-journey, .sig-rail .sig-more-toggle, .sig-rail .sig-optional, .sig-rail .sig-rail-foot { display: none; }
+  .sig-rail-context .ws-event { padding: 14px 16px; gap: 2px; }
+  .sig-rail-context .ws-allevents { display: none; }
+  .sig-rail-context .ws-event-title { font-size: 18px; }
+  :root[data-theme='signature'] .ws-event-art { top: 16px; width: 32px; height: 32px; }
+  .sig-content { padding: 18px 16px 44px; }
+  .sig-tabbar { position: fixed; inset-inline: 0; bottom: 0; z-index: 40; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px 6px max(6px, env(safe-area-inset-bottom)); background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(10px); border-top: 1px solid var(--c-hairline); }
+  .sig-tab { position: relative; display: grid; justify-items: center; gap: 3px; min-height: 56px; padding: 6px 2px; border-radius: 12px; color: var(--c-text-2); text-decoration: none; font: 500 11px/1.2 var(--font-display); }
+  .sig-tab-icon { position: relative; display: grid; place-items: center; width: 48px; height: 30px; border-radius: 999px; }
+  .sig-tab.is-active { color: var(--c-text); font-weight: 700; }
+  .sig-tab.is-active .sig-tab-icon { background: var(--brand-charcoal); color: #fff; }
+  .sig-tab-dot { position: absolute; top: 2px; inset-inline-end: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--brand-red); box-shadow: 0 0 0 2px #fff; }
+  .sig-create-deck { --deck-w: min(62vw, 240px); }
+  .sig-create-aside { position: static; order: -1; }
+  .sig-create-preview { padding: 22px 14px 18px; }
+  .sig-create-card .card-thumb { width: 170px !important; height: 238px !important; }
+  .sig-create-card .card-thumb-inner { transform: scale(0.5667) !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .deck-hint-hand, .sig-hero-sticker, .sig-fan-card, .sig-hero h1 .sig-line, .sig-hero-sub, .sig-hero-kicker { animation: none !important; }
+  .sig-fan-card, .sig-poster-card .card-thumb, .sig-create-card { transition: none; }
+}

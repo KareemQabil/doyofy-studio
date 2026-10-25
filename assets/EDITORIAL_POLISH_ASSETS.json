@@ -1,0 +1,53 @@
+{
+  "created": "2026-10-10",
+  "assets": [
+    {
+      "key": "graduation",
+      "name": "graduation-still-life",
+      "use": "Homepage graduation banner with live CardThumb",
+      "tool": "built-in image_gen",
+      "ai_generated": true,
+      "prompt": "Use case: product-mockup. Asset type: photograph for an Arabic RTL graduation invitation banner; no UI in the image. Primary request: premium, believable still-life photography of a charcoal black graduation mortarboard with a simple ivory tassel and a rolled ivory diploma tied with a muted brick-red cotton ribbon. Scene: warm ivory paper backdrop #F2EAD9 with one uncoated deep red envelope #BC4749, tiny brushed brass clip as a gold #C7A661 detail. Composition: landscape 3:2, overhead to slightly angled view, objects clustered left and lower left; reserve the rightmost third as calm ivory negative space for a live editable invitation card to be layered in HTML. Lighting: genuine warm afternoon window light, soft long directional shadows, gentle analog photographic grain. Materials must be physically credible, visible paper fibers, creased cotton ribbon, matte fabric cap, imperfect edges. High-end stationery editorial, restrained and tactile. No people, no hands, no lettering, no diploma printing, no logos, no watermarks, no sparkles, no floating objects, no 3D render aesthetic, no fake bokeh, no extra clutter. Deliver a finished website photo in landscape composition.",
+      "source": "design-source/editorial/graduation-still-life.png",
+      "outputs": [
+        "public/assets/editorial/graduation-still-life.avif",
+        "public/assets/editorial/graduation-still-life.webp"
+      ],
+      "generated_original": "exec-a7febba2-4cd6-4af2-ade1-bbe94499f284.png",
+      "role": "decorative",
+      "text_baked_in": false
+    },
+    {
+      "key": "stationery",
+      "name": "stationery-still-life",
+      "use": "Create-event live preview background",
+      "tool": "built-in image_gen",
+      "ai_generated": true,
+      "prompt": "Use case: product-mockup. Asset type: wide editorial stationery background for an Arabic invitation studio website; all text and official branding added in code later. Primary request: realistic premium macro still-life photograph of blank warm ivory cotton paper stationery, a partially open muted brick red #BC4749 envelope, a simple plain brass seal tool and a short red fabric ribbon. Composition landscape 3:2, envelope and seal cropped along left quarter and bottom left edges, generous smooth ivory #F2EAD9 blank paper surface through center and right for HTML invitation previews. Natural oblique window sunlight from top left, convincing contact shadows, paper fibers and gently curled envelope edge, a few soft imperfections in the ribbon. Gold/brass #C7A661 is a small accent. Medium: authentic luxury print atelier editorial photography, subtle grain, physically accurate scale, matte paper and fabric. No lettering, logos, emblems, watermarks, people, hands, ornate illustration, generic AI 3D objects, gradients, floating objects, glitter, fake bokeh, plants, repeated props. High detail, quiet elegant tactile craftsmanship.",
+      "source": "design-source/editorial/stationery-still-life.png",
+      "outputs": [
+        "public/assets/editorial/stationery-still-life.avif",
+        "public/assets/editorial/stationery-still-life.webp"
+      ],
+      "generated_original": "exec-da912bf4-8e53-43f8-91de-918d11f7987e.png",
+      "role": "decorative",
+      "text_baked_in": false
+    },
+    {
+      "key": "celebration",
+      "name": "celebration-table",
+      "use": "Summary closure, decorative editorial illustration",
+      "tool": "built-in image_gen",
+      "ai_generated": true,
+      "prompt": "Use case: photorealistic-natural. Asset type: landscape framed celebration image for the closing / thank-you section of an Arabic event invitation website. Primary request: intimate believable close view of a lovingly set dinner table before a family celebration. Scene: warm ivory linen with gentle creases, two simple ivory ceramic plates and subtly worn brass cutlery, one folded muted brick-red #BC4749 cotton napkin, two clear plain glasses, a small ivory place card completely blank, no text. Composition landscape 3:2, tight crop across table edge; one whole place setting foreground, second partially cropped back left; asymmetry and realistic small material imperfections. Natural late-afternoon side window light, true optical shallow depth of field but main place setting sharp; no glowing effects. Brand palette ivory #F2EAD9, brass #C7A661, muted red, charcoal shadow. Authentic editorial hospitality photograph, cozy refined local home celebration, no people/hands, no flowers, no candles, no lavish banquet clichés, no matching repeated tableware arrays, no watermarks, no logos, no typography, no 3D-render appearance.",
+      "source": "design-source/editorial/celebration-table.png",
+      "outputs": [
+        "public/assets/editorial/celebration-table.avif",
+        "public/assets/editorial/celebration-table.webp"
+      ],
+      "generated_original": "exec-17d42a23-bde8-4185-a758-bcb224c70de6.png",
+      "role": "decorative",
+      "text_baked_in": false
+    }
+  ]
+}

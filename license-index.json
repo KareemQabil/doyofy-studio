@@ -1,0 +1,120 @@
+{
+  "generated": "2026-10-02T19:59:27Z",
+  "licenses": [
+    {
+      "license": "Mixkit Sound Effects Free License",
+      "url": "https://mixkit.co/license/#sfxFree",
+      "attributionRequired": false,
+      "assets": [
+        "sfx_cinematic_whoosh",
+        "sfx_confirmation_tone",
+        "sfx_crystal_chime",
+        "sfx_fast_whoosh",
+        "sfx_forest_birds",
+        "sfx_interface_click",
+        "sfx_morning_birds",
+        "sfx_page_turn_single",
+        "sfx_paper_slide",
+        "sfx_relaxing_chime",
+        "sfx_select_click",
+        "sfx_single_book_paging"
+      ]
+    },
+    {
+      "license": "Canva Content License (export of a user design)",
+      "url": "https://www.canva.com/policies/content-license-agreement/",
+      "attributionRequired": false,
+      "assets": [
+        "canva_mediterranean_invitation_01"
+      ]
+    },
+    {
+      "license": "CC0 1.0",
+      "url": "https://polyhaven.com/license",
+      "attributionRequired": false,
+      "assets": [
+        "Lantern_01",
+        "antique_ceramic_vase_01",
+        "brass_diya_lantern",
+        "brass_goblets",
+        "brass_vase_02",
+        "brass_vase_03",
+        "ceramic_vase_01",
+        "ceramic_vase_04",
+        "coffee_table_round_01",
+        "flower_empodium",
+        "flower_heliophila",
+        "lantern_chandelier_01",
+        "large_castle_door",
+        "large_iron_gate",
+        "modular_fort_01",
+        "periwinkle_plant",
+        "potted_plant_04",
+        "courtyard",
+        "quadrangle_sunny",
+        "studio_garden",
+        "beige_wall_001",
+        "interior_tiles",
+        "marble_01",
+        "patio_tiles",
+        "plastered_wall_03",
+        "rough_linen",
+        "sandstone_blocks_08",
+        "white_plaster_02",
+        "white_sandstone_bricks_03"
+      ]
+    },
+    {
+      "license": "Pexels License",
+      "url": "https://www.pexels.com/license/",
+      "attributionRequired": false,
+      "assets": [
+        "bougainvillea_close_18365171",
+        "bougainvillea_sky_30643289",
+        "bougainvillea_sunlit_36840411",
+        "olive_close_16841981",
+        "olive_close_37442090",
+        "olive_close_37714385",
+        "olive_close_7562475",
+        "olive_minimal_white",
+        "white_blossoms_12115127",
+        "white_flowers_15591789",
+        "white_flowers_20500913",
+        "white_flowers_24245177",
+        "video_cloister_36902355",
+        "video_curtain_cozy_31035935",
+        "video_light_pattern_5482661",
+        "video_mediterranean_courtyard_34987005",
+        "video_sheer_flow_36622181",
+        "video_sheer_sunlight_35434114",
+        "video_sunlit_curtains_30286553"
+      ]
+    },
+    {
+      "license": "Mixkit Stock Video Free License",
+      "url": "https://mixkit.co/license/#videoFree",
+      "attributionRequired": false,
+      "assets": [
+        "video_mixkit_window_curtain"
+      ]
+    },
+    {
+      "license": "Pixabay Content License",
+      "url": "https://pixabay.com/service/license-summary/",
+      "attributionRequired": false,
+      "assets": [
+        "video_pixabay_curtain_breeze"
+      ]
+    }
+  ],
+  "rejected": [
+    {
+      "what": "Mixkit curtain clip with Mixkit Restricted License (personal use only)",
+      "reason": "Restricted licence — not distributable in a commercial production pack. Not present in the supplied packs; must not be re-introduced."
+    },
+    {
+      "what": "canva-card-crop.png",
+      "reason": "Wrong, unrelated editorial card — never the exact original design. Not present in the supplied packs."
+    }
+  ]
+}

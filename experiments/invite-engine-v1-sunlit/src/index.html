@@ -1,0 +1,18 @@
+<!-- Page shell. tools/build.mjs splits it into dist/index.html (full document) and
+     dist/artifact.html (fragment for hosts that provide their own <head>/<body>). -->
+<!--HEAD-->
+<title>Invitation Experience Engine</title>
+<meta name="description" content="A modular engine for premium interactive wedding invitations — flagship: Sunlit Architectural Botanical.">
+<meta name="theme-color" content="#E9DCCB">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%23E9DCCB%22/%3E%3Cpath d=%22M16 7c-4 0-7 3-7 7v11h14V14c0-4-3-7-7-7z%22 fill=%22none%22 stroke=%22%236B5A44%22 stroke-width=%221.6%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="styles.css">
+<!--/HEAD-->
+<!--BODY-->
+<main id="app" class="app">
+  <div class="app-stage"></div>
+  <noscript><p class="app-noscript">This invitation needs JavaScript to play.</p></noscript>
+</main>
+<script type="module" src="app.js"></script>
+<!--/BODY-->

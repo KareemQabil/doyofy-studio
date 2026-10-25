@@ -1,0 +1,93 @@
+/* Occasion cards and the two choosers (A · Coverflow, B · Editorial Rail). Tokens only. */
+
+/* ------------------------------------------------------------------ card */
+.occ-card { position: relative; display: flex; flex-direction: column; gap: var(--s-3); text-align: start; color: var(--c-text); }
+.occ-art-frame {
+  position: relative; display: block; overflow: hidden; border-radius: var(--r-art); aspect-ratio: 4 / 5;
+  background: var(--c-surface-subtle);
+  transition: box-shadow var(--dur-fast) var(--ease-in-out), transform var(--dur-instant) var(--ease-out);
+}
+.occ-art { display: block; width: 100%; height: 100%; transition: transform var(--dur) var(--ease-out); }
+.occ-text { display: flex; flex-direction: column; gap: 2px; padding-inline: var(--s-1); }
+.occ-name { font-family: var(--font-display); font-weight: var(--fw-display); font-size: var(--fs-lg); line-height: var(--lh-tight); }
+.occ-line { font-size: var(--fs-sm); color: var(--c-text-3); }
+.occ-lg .occ-name { font-size: var(--fs-2xl); }
+.occ-lg .occ-line { font-size: var(--fs-md); }
+.occ-sm .occ-art-frame { aspect-ratio: 1; border-radius: var(--r-lg); }
+.occ-sm .occ-name { font-size: var(--fs-md); text-align: center; }
+.occ-sm .occ-text { align-items: center; }
+.occ-check {
+  position: absolute; top: var(--s-3); inset-inline-end: var(--s-3); z-index: 1;
+  display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%;
+  background: var(--c-selected); color: var(--c-on-selected); box-shadow: 0 0 0 3px var(--c-surface);
+  opacity: 0; transform: scale(.6); transition: opacity var(--dur-fast) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+.occ-sm .occ-check { width: 24px; height: 24px; top: var(--s-2); inset-inline-end: var(--s-2); }
+/* selected: stronger than hover — a ring in the selected colour AND a check (never colour alone) */
+.occ-card.is-selected .occ-art-frame { box-shadow: 0 0 0 2px var(--c-canvas), 0 0 0 4px var(--c-selected); }
+.occ-card.is-selected .occ-check { opacity: 1; transform: none; }
+@media (hover: hover) and (pointer: fine) {
+  :is(.cf-item, .rl-item, .rl-cell):hover .occ-art { transform: scale(var(--hover-zoom)); }
+  :is(.rl-item, .rl-cell):hover .occ-card:not(.is-selected) .occ-art-frame { box-shadow: 0 0 0 1px var(--c-hairline-strong); }
+}
+:is(.rl-item, .rl-cell):active .occ-art-frame { transform: scale(var(--press-scale)); }
+
+/* shared button reset for card buttons */
+.rl-item, .rl-cell, .rl-more { appearance: none; background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; border-radius: var(--r-art); }
+.rl-item:focus-visible, .rl-cell:focus-visible { outline-offset: 6px; }
+
+/* ------------------------------------------------------------------ A · Coverflow */
+.cf { --cf-w: clamp(232px, 62vw, 296px); display: flex; flex-direction: column; align-items: center; gap: var(--s-4); }
+.cf-stage { position: relative; width: 100%; }
+.cf-track {
+  display: flex; gap: var(--s-5); overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scrollbar-width: none;
+  padding-block: var(--s-6) var(--s-4); padding-inline: calc(50% - var(--cf-w) / 2);
+  -webkit-mask-image: linear-gradient(to left, transparent, #000 14%, #000 86%, transparent);
+  mask-image: linear-gradient(to left, transparent, #000 14%, #000 86%, transparent);
+  border-radius: var(--r-xl);
+}
+.cf-track::-webkit-scrollbar { display: none; }
+.cf-track:focus-visible { outline: none; box-shadow: none; }
+.cf-track:focus-visible .cf-item.is-focused .occ-art-frame { box-shadow: 0 0 0 2px var(--c-canvas), 0 0 0 4px var(--c-selected), 0 0 0 7px var(--c-canvas), 0 0 0 9px var(--c-focus); }
+.cf-item {
+  flex: none; width: var(--cf-w); scroll-snap-align: center; cursor: pointer;
+  transform: scale(.86); opacity: .5; transform-origin: 50% 40%;
+  transition: transform var(--dur-layout) var(--ease-out), opacity var(--dur-layout) var(--ease-out);
+}
+.cf-item.is-near { opacity: .78; }
+.cf-item.is-focused { transform: none; opacity: 1; cursor: default; }
+.cf-item:not(.is-focused) .occ-line { visibility: hidden; }
+.cf-nav { display: flex; align-items: center; gap: var(--s-4); }
+.cf-arrow { background: var(--c-surface-elevated); }
+.cf-arrow:disabled { opacity: .35; }
+.cf-meta { display: flex; align-items: center; gap: var(--s-3); font-size: var(--fs-sm); color: var(--c-text-3); }
+.cf-sep { width: 16px; height: 1px; background: var(--c-hairline-strong); }
+.cf-dots { display: flex; gap: 6px; }
+.cf-dots span { width: 6px; height: 6px; border-radius: var(--r-pill); background: var(--c-hairline-strong); transition: width var(--dur) var(--ease-out), background var(--dur) var(--ease-out); }
+.cf-dots span.on { width: 20px; background: var(--c-selected); }
+@media (max-width: 640px) { .cf-track { gap: var(--s-3); } }
+@media (prefers-reduced-motion: reduce) { .cf-item { transform: none; } }
+
+/* ------------------------------------------------------------------ B · Editorial Rail */
+.rl { display: flex; flex-direction: column; gap: var(--s-3); }
+.rl-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.rl-title { font-size: var(--fs-lg); }
+.rl-track {
+  display: flex; gap: var(--s-4); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none;
+  padding: var(--s-2) var(--s-1) var(--s-4); margin-inline: calc(var(--s-1) * -1);
+}
+.rl-track::-webkit-scrollbar { display: none; }
+.rl-item { flex: none; width: clamp(164px, 40vw, 204px); scroll-snap-align: start; }
+.rl-more {
+  flex: none; width: clamp(120px, 28vw, 150px); aspect-ratio: 150 / 250; align-self: flex-start;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-1);
+  border: 1px dashed var(--c-hairline-strong); color: var(--c-text-2); font-size: var(--fs-sm);
+  transition: background var(--dur-fast) var(--ease-in-out), border-color var(--dur-fast) var(--ease-in-out);
+}
+.rl-more:hover { background: var(--c-surface-hover); border-color: var(--c-text-3); color: var(--c-text); }
+.rl-more-n { font-family: var(--font-display); font-size: var(--fs-2xl); color: var(--c-text); }
+.rl-groups { display: flex; flex-direction: column; gap: var(--s-6); padding-bottom: var(--s-2); }
+.rl-group { display: flex; flex-direction: column; gap: var(--s-3); }
+.rl-group-h { font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-text-2); }
+.rl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: var(--s-4) var(--s-3); }

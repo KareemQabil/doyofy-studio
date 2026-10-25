@@ -1,0 +1,19 @@
+node_modules/
+dist/
+canonical/runtime/
+qa/screenshots/look/
+tests/.dom-build.mjs
+
+# local secrets (see .env.example)
+.env
+.env.*
+!.env.example
+
+# Hosting identity and local tools
+.openai/
+.vercel/
+*.log
+.DS_Store
+# Private client review media is not repository source
+WhatsApp*
+feedback-media/

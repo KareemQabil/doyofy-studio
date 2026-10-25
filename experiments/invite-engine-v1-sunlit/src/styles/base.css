@@ -1,0 +1,95 @@
+/* ============================================================================
+   Invitation Experience Engine — base (stage, depth layers, card rig, UI chrome)
+   ========================================================================== */
+@font-face { font-family: 'Invite Arabic'; src: url('assets/fonts/NotoSansArabic-Regular.ttf') format('truetype'); font-weight: 100 900; font-display: swap; }
+
+:root {
+  --ui-ink: #FBF7F0;
+  --ui-glass: rgba(24, 18, 14, .34);
+  --ui-glass-strong: rgba(24, 18, 14, .6);
+  --ui-line: rgba(255, 250, 240, .38);
+  --f-ui: 'IBM Plex Sans', 'IBM Plex Sans Arabic', 'Invite Arabic', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: light;
+}
+
+html, body { height: 100%; margin: 0; }
+body { background: #0E0B09; color: #F4EFE6; font-family: var(--f-ui); overflow: hidden; }
+.app { position: fixed; inset: 0; background: #0E0B09; }
+.app-stage { position: absolute; inset: 0; overflow: hidden; }
+.app[data-device='mobile'] .app-stage { width: min(390px, 100%); height: min(844px, 100%); left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 30px; box-shadow: 0 0 0 10px #1d1814, 0 40px 90px rgba(0, 0, 0, .55); }
+.app[data-device='desktop'] .app-stage { min-width: 1024px; }
+.app-noscript { padding: 24px; }
+
+/* ---------------------------------------------------------------- stage */
+.xp { position: absolute; inset: 0; overflow: hidden; background: var(--scene-bg, #111); container: xp / size; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+.xp.is-loading .xp-viewport { opacity: 0; }
+.xp-viewport { position: absolute; inset: 0; overflow: hidden; perspective: 1500px; transition: opacity .6s ease; }
+.xp-camera { position: absolute; inset: 0; transform-style: flat; will-change: transform; }
+.xp-layer {
+  position: absolute; inset: 0; pointer-events: none;
+  transform: translate3d(calc(var(--px, 0) * var(--d) * -34px), calc(var(--py, 0) * var(--d) * -22px), 0);
+}
+.xp-layer--card { transform-style: flat; } /* siblings (shadow, decor) never intersect the tilting card */
+.xp-layer--overlay { z-index: 4; }
+.xp-layer--fx { z-index: 3; }
+.xp-fx-canvas { position: absolute; inset: 0; }
+.xp-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.xp-layer--far > .xp-gl { inset: -25%; width: 150%; height: 150%; }
+
+/* ---------------------------------------------------------------- card rig */
+.xp-card-anchor { position: absolute; transform-style: preserve-3d; perspective: 1300px; }
+.xp-card-tilt, .xp-card-idle, .xp-card-reveal, .xp-card-flip { position: absolute; inset: 0; transform-style: preserve-3d; }
+.xp-card-scale { position: absolute; left: 0; top: 0; transform-origin: 0 0; transform-style: preserve-3d; }
+.xp-face { position: absolute; inset: 0; overflow: hidden; border-radius: var(--card-radius, 6px); backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: inset 0 0 0 .5px rgba(0, 0, 0, .06); }
+.xp-face--front { transform: translateZ(1px); }
+.xp-face--back { transform: rotateY(180deg) translateZ(1px); }
+.xp-card-hit { position: absolute; inset: 0; margin: 0; padding: 0; border: 0; background: transparent; border-radius: var(--card-radius, 6px); cursor: pointer; pointer-events: auto; transform: translateZ(2px); -webkit-tap-highlight-color: transparent; }
+.xp-card-hit:disabled { pointer-events: none; cursor: default; }
+.xp-card-hit:focus-visible { outline: 2px solid var(--accent, #fff); outline-offset: 8px; }
+.xp-decor { position: absolute; pointer-events: none; transform-style: preserve-3d; }
+.xp-decor__item { position: absolute; display: block; max-width: none; }
+
+/* cast shadow + contact shadow, driven by the scene's light model */
+.xp-card-shadow { position: absolute; pointer-events: none; }
+.xp-card-shadow::before {
+  content: ''; position: absolute; inset: 1.5% 1.5% 0 1.5%; border-radius: var(--card-radius, 6px);
+  background: rgba(var(--sh-color, 0, 0, 0), var(--sh-op, .3));
+  transform: translate(calc(var(--sh-x, .04) * var(--card-w, 300px) + var(--px, 0) * -7px), calc(var(--sh-y, .03) * var(--card-h, 420px) + var(--lift, 0) * 4px + var(--py, 0) * -5px));
+  filter: blur(calc(var(--sh-blur, 22px) + var(--lift, 0) * 5px));
+}
+.xp-card-shadow::after {
+  content: ''; position: absolute; left: 4%; right: 4%; bottom: -12px; height: 24px;
+  background: radial-gradient(closest-side, rgba(var(--sh-color, 0, 0, 0), var(--ct-op, .35)), transparent);
+  filter: blur(3px);
+}
+.has-reflection .xp-card-anchor { -webkit-box-reflect: below 10px linear-gradient(transparent 64%, rgba(255, 255, 255, .2)); }
+
+/* ---------------------------------------------------------------- UI chrome */
+.xp-ui { position: absolute; inset: 0; pointer-events: none; z-index: 8; }
+.xp-controls { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); inset-inline-end: 12px; display: flex; gap: 8px; pointer-events: auto; }
+.xp-ctrl { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--ui-line); background: var(--ui-glass); color: var(--ui-ink); cursor: pointer; backdrop-filter: blur(10px) saturate(1.1); -webkit-backdrop-filter: blur(10px) saturate(1.1); transition: background .3s, transform .2s; }
+.xp-ctrl:hover { background: var(--ui-glass-strong); }
+.xp-ctrl:active { transform: scale(.95); }
+.xp-ctrl svg { width: 19px; height: 19px; }
+.xp-ctrl:focus-visible { outline: 2px solid var(--ui-ink); outline-offset: 3px; }
+.xp-hint { position: absolute; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 8px); display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 9px 18px; border-radius: 22px; background: var(--ui-glass); color: var(--ui-ink); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; transition: opacity .8s ease, transform .8s ease; white-space: nowrap; font-size: 14px; }
+.xp-hint small { font-size: 11px; letter-spacing: .08em; opacity: .85; }
+.xp-hint.is-on { opacity: 1; transform: translate(-50%, 0); animation: xpHint 3.2s ease-in-out 1s infinite; }
+@keyframes xpHint { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
+.xp[data-state='pages'] .xp-hint, .xp[data-state='finale'] .xp-hint, .xp[data-state='thankYou'] .xp-hint { opacity: 0; }
+
+/* ---------------------------------------------------------------- finale / thank you */
+.xp-finale { position: absolute; inset: 0; pointer-events: none; z-index: 7; display: flex; align-items: flex-end; justify-content: center; padding: 0 16px calc(28px + env(safe-area-inset-bottom, 0px)); }
+.xp-thanks { pointer-events: auto; max-width: 440px; width: 100%; text-align: center; padding: 22px 26px 20px; border-radius: 16px; color: var(--ink); background: color-mix(in srgb, var(--paper) 86%, transparent); backdrop-filter: blur(14px) saturate(1.05); -webkit-backdrop-filter: blur(14px) saturate(1.05); box-shadow: 0 24px 60px -24px rgba(0, 0, 0, .45); display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.xp-thanks__title { margin: 0; font: 400 clamp(34px, 7cqw, 46px)/1.25 var(--f-ar-display); }
+.xp-thanks__title-s { margin: 0; font: italic 400 18px/1.3 var(--f-en-display); color: var(--muted); }
+.xp-thanks__body { margin: 8px 0 0; font: 400 15px/1.7 var(--f-ar); }
+.xp-thanks__body-s { margin: 0; font: 400 13px/1.5 var(--f-en); color: var(--muted); }
+.xp-thanks__who { margin: 10px 0 0; font: 500 11px/1 var(--f-en); letter-spacing: .24em; text-transform: uppercase; color: var(--accent-text); }
+.xp-thanks__replay { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 22px; border: 1px solid color-mix(in srgb, var(--accent) 70%, transparent); background: transparent; color: var(--ink); font: 400 14px var(--f-ar); cursor: pointer; }
+.xp-thanks__replay svg { width: 16px; height: 16px; }
+.xp-thanks__replay small { font: 400 12px var(--f-en); color: var(--muted); }
+.xp-thanks__replay:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+
+.is-reduced *, .is-reduced *::before, .is-reduced *::after { animation-duration: .001s !important; animation-iteration-count: 1 !important; }
+@media (prefers-reduced-motion: reduce) { .xp-hint.is-on { animation: none; } }

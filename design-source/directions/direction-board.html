@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<style>
+@font-face { font-family: 'Readex Pro'; src: url('/assets/fonts/readex-pro-var.woff') format('woff'); font-weight: 160 700; }
+@font-face { font-family: 'Plex'; src: url('/assets/fonts/ibm-plex-sans-arabic-Regular.woff') format('woff'); font-weight: 400; }
+@font-face { font-family: 'Plex'; src: url('/assets/fonts/ibm-plex-sans-arabic-SemiBold.woff') format('woff'); font-weight: 600; }
+:root { --gold:#C7A661; --ivory:#F2EAD9; --beige:#E4D5B4; --red:#BC4749; --tq:#2EB7B7; --ch:#262626; }
+* { box-sizing: border-box; margin: 0; }
+body { font-family: 'Plex', sans-serif; background: #ddd; }
+.frame { width: 1440px; height: 900px; position: relative; overflow: hidden; isolation: isolate; }
+.hdr { position: absolute; top: 0; inset-inline: 0; display: flex; align-items: center; gap: 28px; padding: 26px 64px; z-index: 5; }
+.hdr img { height: 30px; }
+.hdr nav { display: flex; gap: 26px; margin-inline-start: auto; font: 500 15px 'Readex Pro'; }
+.hdr .pill { padding: 11px 20px; border-radius: 999px; font: 600 14px 'Readex Pro'; }
+h1 { font-family: 'Readex Pro'; font-weight: 700; letter-spacing: -0.025em; }
+.card { position: absolute; width: 270px; height: 378px; border-radius: 6px; box-shadow: 0 40px 60px -30px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.15); }
+.pat { position: absolute; z-index: -1; background-repeat: repeat; }
+
+/* ---------- 1 · احتفال: red celebration */
+.d1 { background: var(--red); color: #fff; }
+.d1 .hdr nav { color: #fff; }
+.d1 .hdr .pill { background: #fff; color: var(--red); }
+.d1 .pat { inset: 0; background-image: url('/assets/brand/pattern-grid-ivory.svg'); background-size: 260px auto; opacity: .09; }
+.d1 .copy { position: absolute; top: 170px; right: 64px; width: 590px; }
+.d1 .kick { font: 600 15px 'Readex Pro'; letter-spacing: .02em; color: rgba(255,255,255,.85); display: flex; align-items: center; gap: 12px; }
+.d1 .kick i { width: 34px; height: 2px; background: #fff; display: block; }
+.d1 h1 { font-size: 112px; line-height: 1.12; margin-top: 22px; }
+.d1 p.sub { font-size: 20px; line-height: 1.85; color: rgba(255,255,255,.9); margin-top: 26px; max-width: 30em; }
+.d1 .ctas { display: flex; gap: 16px; align-items: center; margin-top: 36px; }
+.d1 .cta { padding: 18px 34px; border-radius: 999px; background: var(--ivory); color: var(--ch); font: 700 18px 'Readex Pro'; }
+.d1 .cta2 { padding: 16px 28px; border-radius: 999px; border: 2px solid #fff; font: 600 16px 'Readex Pro'; }
+.d1 .c1 { left: 60px; top: 250px; transform: rotate(-13deg); }
+.d1 .c2 { left: 250px; top: 170px; transform: rotate(4deg); z-index: 2; }
+.d1 .c3 { left: 440px; top: 300px; transform: rotate(14deg); }
+.d1 .sticker { position: absolute; left: 150px; top: 120px; z-index: 3; width: 150px; height: 150px; border-radius: 50%; background: var(--tq); color: var(--ch); display: grid; place-items: center; text-align: center; font: 700 18px/1.3 'Readex Pro'; transform: rotate(-8deg); }
+.d1 .sticker b { display: block; font-size: 46px; line-height: 1; }
+.d1 .band { position: absolute; bottom: 0; inset-inline: 0; height: 74px; background: var(--ivory); color: var(--ch); display: flex; align-items: center; gap: 34px; padding: 0 64px; font: 600 19px 'Readex Pro'; white-space: nowrap; }
+.d1 .band span::after { content: '◆'; color: var(--red); font-size: 10px; margin-inline-start: 34px; vertical-align: middle; }
+
+/* ---------- 2 · مساء: charcoal night */
+.d2 { background: #1B1B1B; color: var(--ivory); }
+.d2 .hdr nav { color: var(--ivory); }
+.d2 .hdr .pill { border: 1.5px solid var(--gold); color: var(--gold); }
+.d2 .pat { inset: 0; background-image: url('/assets/brand/pattern-grid-gold.svg'); background-size: 200px auto; opacity: .06; }
+.d2 .copy { position: absolute; top: 200px; right: 64px; width: 560px; }
+.d2 .kick { font: 600 15px 'Readex Pro'; color: var(--gold); }
+.d2 h1 { font-size: 98px; line-height: 1.15; margin-top: 18px; }
+.d2 h1 em { font-style: normal; color: var(--gold); }
+.d2 p.sub { font-size: 19px; line-height: 1.9; color: rgba(242,234,217,.82); margin-top: 24px; }
+.d2 .ctas { display: flex; gap: 22px; align-items: center; margin-top: 34px; }
+.d2 .cta { padding: 18px 34px; border-radius: 999px; background: var(--gold); color: var(--ch); font: 700 18px 'Readex Pro'; }
+.d2 .cta2 { color: var(--ivory); border-bottom: 1.5px solid var(--tq); padding-bottom: 6px; font: 500 16px 'Readex Pro'; }
+.d2 .arc .card { transform-origin: 50% 160%; box-shadow: 0 40px 70px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(199,166,97,.35); }
+.d2 .arc .card:nth-child(1) { left: 60px; top: 320px; transform: rotate(-24deg); }
+.d2 .arc .card:nth-child(2) { left: 130px; top: 270px; transform: rotate(-12deg); }
+.d2 .arc .card:nth-child(3) { left: 210px; top: 255px; transform: rotate(0deg); z-index: 3; }
+.d2 .arc .card:nth-child(4) { left: 290px; top: 270px; transform: rotate(12deg); }
+.d2 .arc .card:nth-child(5) { left: 360px; top: 320px; transform: rotate(24deg); }
+.d2 .halo { position: absolute; left: 120px; top: 140px; width: 480px; height: 480px; border-radius: 50%; border: 1.5px solid rgba(199,166,97,.4); }
+.d2 .halo::after { content: ''; position: absolute; inset: 14px; border-radius: 50%; border: 1px solid rgba(199,166,97,.25); }
+.d2 .foot { position: absolute; bottom: 44px; right: 64px; left: 64px; display: flex; gap: 60px; border-top: 1px solid rgba(199,166,97,.3); padding-top: 22px; font: 500 15px 'Readex Pro'; color: rgba(242,234,217,.75); }
+.d2 .foot b { color: var(--gold); font-size: 22px; margin-inline-end: 10px; }
+
+/* ---------- 3 · تحرير: editorial white with colour tiles */
+.d3 { background: #FFFFFF; color: var(--ch); }
+.d3 .hdr { border-bottom: 1px solid #e8e2d6; }
+.d3 .hdr nav { color: var(--ch); }
+.d3 .hdr .pill { background: var(--ch); color: #fff; }
+.d3 .top { position: absolute; top: 120px; right: 64px; left: 64px; display: flex; justify-content: space-between; align-items: flex-end; }
+.d3 h1 { font-size: 128px; line-height: 1.05; }
+.d3 h1 span { display: inline-block; border-bottom: 10px solid var(--gold); line-height: .9; }
+.d3 .aside { width: 360px; font-size: 17px; line-height: 1.85; color: #4d4840; }
+.d3 .aside .cta { display: inline-block; margin-top: 18px; padding: 16px 30px; border-radius: 999px; background: var(--gold); color: var(--ch); font: 700 17px 'Readex Pro'; }
+.d3 .tiles { position: absolute; top: 470px; right: 64px; left: -60px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; height: 520px; }
+.d3 .tile { position: relative; border-radius: 4px; overflow: hidden; padding: 22px; }
+.d3 .tile .card { position: absolute; width: 190px; height: 266px; left: 50%; margin-left: -95px; top: 104px; transform: rotate(-3deg); }
+.d3 .tile:nth-child(even) .card { transform: rotate(3deg); }
+.d3 .tile b { font: 700 24px 'Readex Pro'; }
+.d3 .tile small { display: block; font-size: 14px; opacity: .85; margin-top: 2px; }
+.d3 .n { position: absolute; bottom: 22px; inset-inline-start: 22px; font: 600 13px 'Readex Pro'; opacity: .8; }
+.t-red { background: var(--red); color: #fff; } .t-tq { background: var(--tq); color: var(--ch); } .t-gold { background: var(--gold); color: var(--ch); } .t-ch { background: var(--ch); color: var(--ivory); } .t-iv { background: var(--ivory); color: var(--ch); }
+.label { position: absolute; bottom: 14px; left: 18px; z-index: 9; font: 600 13px 'Readex Pro'; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,.55); color: #fff; }
+</style>
+</head>
+<body>
+<section class="frame d1" id="d1">
+  <span class="pat"></span>
+  <header class="hdr"><img src="logo-white.png" alt=""><nav><span>كيف تعمل</span><span>المناسبات</span><span>الأسعار</span></nav><span class="pill">ابدأ مجانًا</span></header>
+  <div class="copy">
+    <p class="kick"><i></i>دعوات رقمية لكل فرحة</p>
+    <h1>كل فرحة<br>تستاهل دعوة.</h1>
+    <p class="sub">اختار المناسبة، اكتب الأسماء والموعد، ودعوتك تكون جاهزة في دقايق. رابط خاص لكل ضيف، وردود توصلك أول بأول.</p>
+    <div class="ctas"><span class="cta">ابدأ دعوتك</span><span class="cta2">شوف أمثلة</span></div>
+  </div>
+  <img class="card c1" src="lace.png" alt=""><img class="card c2" src="wine.png" alt=""><img class="card c3" src="sig-diploma.png" alt="">
+  <div class="sticker"><span><b>١٣</b>مناسبة</span></div>
+  <div class="band"><span>زفاف</span><span>خطوبة</span><span>عقد قران</span><span>حنة</span><span>تخرّج</span><span>عيد ميلاد</span><span>مولود</span><span>إفطار</span><span>افتتاح</span><span>مؤتمر</span></div>
+  <span class="label">A · احتفال</span>
+</section>
+
+<section class="frame d2" id="d2">
+  <span class="pat"></span>
+  <header class="hdr"><img src="logo.png" alt=""><nav><span>كيف تعمل</span><span>المناسبات</span><span>الأسعار</span></nav><span class="pill">ابدأ مجانًا</span></header>
+  <div class="halo"></div>
+  <div class="arc"><img class="card" src="emerald.png" alt=""><img class="card" src="lace.png" alt=""><img class="card" src="wine.png" alt=""><img class="card" src="sig-diploma.png" alt=""></div>
+  <div class="copy">
+    <p class="kick">ضيوفي · دعوات تليق بمناسبتك</p>
+    <h1>الليلة تبدأ<br><em>من الدعوة.</em></h1>
+    <p class="sub">دعوة أنيقة باسمك وموعدك، يفتحها كل ضيف برابطه الخاص، ويرد عليها في ثواني. وأنت تتابع كل شي من مكان واحد حتى يوم الاستقبال.</p>
+    <div class="ctas"><span class="cta">جهّز دعوتك</span><span class="cta2">كيف تعمل؟</span></div>
+  </div>
+  <div class="foot"><span><b>٠١</b>اختر المناسبة</span><span><b>٠٢</b>راجع الدعوة وانشرها</span><span><b>٠٣</b>استقبل ضيوفك</span></div>
+  <span class="label">B · مساء</span>
+</section>
+
+<section class="frame d3" id="d3">
+  <header class="hdr"><img src="logo.png" alt=""><nav><span>كيف تعمل</span><span>المناسبات</span><span>الأسعار</span></nav><span class="pill">ابدأ مجانًا</span></header>
+  <div class="top">
+    <h1>دعوتك،<br><span>بتوقيعك.</span></h1>
+    <div class="aside">ثلاث عشرة مناسبة، ولكل واحدة دعوة جاهزة بالأسماء والموعد. غيّر الشكل متى شئت، وكلامك يبقى كما هو.<br><span class="cta">اختر مناسبتك</span></div>
+  </div>
+  <div class="tiles">
+    <div class="tile t-red"><b>زفاف</b><small>ليلة العمر</small><img class="card" src="wine.png" alt=""><span class="n">01</span></div>
+    <div class="tile t-gold"><b>تخرّج</b><small>فرحة الإنجاز</small><img class="card" src="sig-diploma.png" alt=""><span class="n">02</span></div>
+    <div class="tile t-tq"><b>عيد ميلاد</b><small>سنة جديدة</small><img class="card" src="birthday-confetti.png" alt=""><span class="n">03</span></div>
+    <div class="tile t-ch"><b>عقد قران</b><small>الملكة</small><img class="card" src="emerald.png" alt=""><span class="n">04</span></div>
+    <div class="tile t-iv"><b>مؤتمر</b><small>لقاء وحوار</small><img class="card" src="forum-grid.png" alt=""><span class="n">05</span></div>
+  </div>
+  <span class="label">C · تحرير</span>
+</section>
+</body>
+</html>

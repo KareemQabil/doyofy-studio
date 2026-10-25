@@ -1,0 +1,58 @@
+You are continuing an existing Doyofy repository.
+
+Your job is NOT to make more isolated invitation demos and NOT to polish a final visual identity.
+
+Your job is to turn the current working Invitation Studio into the core invitation module of a complete Arabic-first Doyofy MVP UX prototype.
+
+FIRST:
+1. Read `DOYOFY_UX_PROTOTYPE_MASTER_SPEC.md` completely.
+2. Inspect the whole repository, including all existing docs, tests, assets and the Invitation Studio implementation.
+3. Run the current application and full test suite.
+4. Create `docs/PROTOTYPE_AUDIT.md` explaining what exists, what can be preserved, what is coupled, and the safest implementation path.
+5. Create/update `docs/PROTOTYPE_STATUS.md` with Done / In progress / Next / Blocked / Assumptions.
+
+THEN IMPLEMENT.
+
+Highest priority: UX clarity and complete user journeys.
+
+The core journey must become:
+Create event → invitation → guest list/import → share/invitation state → RSVP → seating → check-in → event summary.
+
+Critical rules:
+- Arabic-first, real RTL from the architecture level.
+- Mobile-first.
+- Guest never needs an account for invite/RSVP.
+- Keep the current Invitation Studio working and integrate it into the event workspace.
+- Do not rebuild working invitation assets unnecessarily.
+- Do not build a generic analytics dashboard.
+- Event Overview should focus on next actions and exceptions.
+- Build realistic states, not only happy-path screenshots.
+- Build a real guest import UX with duplicate/invalid-row handling.
+- Keep invitation-delivery state separate from RSVP state.
+- MVP seating = tables, capacity, assign/move/unassign, warnings. No advanced floor-plan editor.
+- MVP check-in = QR simulation + search + partial/full party check-in + exception handling.
+- Do not build marketplace, gifts, payments, AI, native apps, advanced B2B, public API or production WhatsApp integration now.
+- Use typed mock repositories/service interfaces so a NestJS backend can replace the mock layer later.
+- Target frontend direction is Next.js + TypeScript. Target backend later is NestJS. GCP is a possible later infrastructure choice, not a prototype task.
+- Separate domain/services/features/UI layers.
+- Make the UI replaceable: design tokens, headless/reusable primitives, no business logic coupled to visual components, no scattered hard-coded brand styles.
+- The prototype must be easy to reskin after user testing.
+- Use realistic Arabic seed data.
+- Keep documentation current as implementation proceeds.
+- Record ambiguous product choices as reversible assumptions in `docs/UX_DECISIONS.md`.
+
+Do not spend the first phase on aesthetic perfection. Build one coherent end-to-end flow first.
+
+After every stage:
+- run tests,
+- verify mobile and desktop,
+- verify RTL,
+- update `docs/PROTOTYPE_STATUS.md`,
+- list exactly what is now usable.
+
+Do not stop at a plan. Start implementation after the audit.
+
+The final acceptance test is that I can locally:
+create an event, design/publish its invitation, import guests, RSVP from the guest link, see the response as organizer, seat confirmed guests, check them in, and see the event state update — all as one coherent prototype.
+
+Use `DOYOFY_UX_PROTOTYPE_MASTER_SPEC.md` as the product source of truth for this task.

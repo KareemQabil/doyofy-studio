@@ -1,0 +1,110 @@
+/* Interaction geometry. Gesture surfaces stay distinct from scrollable/interactive contents. */
+.sheet-grip { display:none; }
+.dialog-panel { transform:translateY(var(--sheet-drag,0px)); transition:transform var(--dur-slow) var(--ease-out); }
+.dialog-panel[data-dragging],.ed-panel[data-dragging] { transition:none; animation:none; }
+.tp-poster { height:100%; width:auto; max-width:100%; aspect-ratio:360 / 664; border-radius:0; transform:translateX(var(--browse-drag,0px)); transition:transform var(--dur-slow) var(--ease-out); }
+.tp-stage:not(.is-playing) { display:grid; place-items:center; touch-action:pan-y; cursor:grab; }
+.tp-stage:not(.is-playing):active { cursor:grabbing; }
+.tp-swipe-hint { position:absolute; z-index:2; bottom:14px; inset-inline:0; display:flex; align-items:center; justify-content:center; gap:16px; margin:auto; width:max-content; max-width:90%; background:var(--c-surface-elevated); color:var(--c-text-2); border:1px solid var(--c-line); border-radius:var(--r-pill); padding:8px 14px; font-size:11px; pointer-events:none; box-shadow:var(--shadow-2); }
+.tp-description { font-size:var(--fs-sm); color:var(--c-text-2); line-height:1.9; }
+.tp-rail { display:flex; width:100%; overflow:auto; gap:10px; padding:5px 3px 12px; scroll-snap-type:x proximity; overscroll-behavior-x:contain; scrollbar-width:thin; }
+.tp-rail-item { width:64px; flex:none; padding:0; border:0; border-radius:8px; background:none; cursor:pointer; scroll-snap-align:center; }
+.tp-rail-item>.tpl-thumb { border-radius:8px; aspect-ratio:3/4; }
+.tp-rail-item[aria-pressed='true'] { box-shadow:0 0 0 2px var(--c-surface),0 0 0 4px var(--c-selected); }
+.tp-rail-item[aria-pressed='true']>.tpl-thumb { opacity:1; }
+.tp-rail-item[aria-pressed='false']>.tpl-thumb { opacity:.7; }
+.tp-line { font-size:28px; }
+.tp-nav { margin-top:0; }
+/* Softer but more legible navigation: one active area, consistent touch targets. */
+.ws { padding:24px; gap:28px; max-width:1480px; }
+.ws-side { border:1px solid var(--c-line); background:var(--c-surface); border-radius:var(--r-xl); height:calc(100dvh - var(--topbar-h) - 48px); top:calc(var(--topbar-h) + 24px); padding:20px 14px; }
+.ws-main { padding:8px 12px 48px; }
+.ws-link { min-height:48px; transition:background var(--dur-fast),color var(--dur-fast),transform var(--dur-instant); }
+.ws-link.is-active { border-color:color-mix(in srgb,var(--c-primary) 12%,transparent); }
+.ws-link:active { transform:scale(var(--press-scale)); }
+.ws-link .icon { width:18px; height:18px; }
+.ws-nav-group { font-size:11px; letter-spacing:.02em; }
+.ws-footer-note { font-size:12px; }
+.page-head { margin-bottom:28px; }
+.page-title { font-size:30px; line-height:1.5; }
+.page-sub { line-height:1.85; }
+.seg,.seg-ind,.seg-btn { border-radius:var(--r-md); }
+.seg-btn { min-height:44px; }
+.btn,.choice,.chip,.catalogue-option { touch-action:manipulation; }
+.input,.textarea,.select { min-height:48px; border-color:var(--c-line-strong); }
+.btn-primary { box-shadow:0 2px 0 color-mix(in srgb,var(--c-primary) 18%,transparent); }
+.btn-primary:active { box-shadow:none; }
+.catalogue-option .occ-card { border:1px solid var(--c-line); transition:border-color var(--dur),background var(--dur),transform var(--dur); }
+.catalogue-option[aria-checked='true'] .occ-card { border-color:var(--c-selected); box-shadow:0 0 0 1px var(--c-selected); background:var(--c-selected-soft); }
+.catalogue-option .occ-text { padding:18px; }
+.catalogue-option .occ-name { font-weight:500; }
+.catalogue-option .occ-line { margin-top:4px; }
+.occasion-categories { gap:8px; }
+.occasion-categories button { border:1px solid transparent; }
+.occasion-categories button:not(.is-current):hover { background:var(--c-surface-hover); }
+.occasion-discovery .search { min-width:0; }
+.create-hero { padding-top:8px; }
+.occasion-reassurance { padding-top:12px; }
+.tg-grid { gap:30px 22px; }
+.tg-open { overflow:hidden; box-shadow:var(--shadow-1); }
+.tg-meta { padding-inline:4px; }
+.tg-name { font-size:18px; font-weight:500; }
+.tg-line { max-width:32ch; }
+.ed-close { width:44px; height:44px; }
+.ed-tabs .seg { border-radius:var(--r-md); }
+.ed-panel-body { scrollbar-width:thin; }
+.ed-stage { background-image:radial-gradient(var(--c-line-strong) .7px,transparent .7px); background-size:18px 18px; }
+.ed-stage-caption { padding:6px 12px; border:1px solid var(--c-line); border-radius:var(--r-pill); background:var(--c-surface); }
+.event-moment { border-radius:var(--r-xl); }
+.event-facts { padding-block:12px 16px; }
+.preparation-list { background:var(--c-surface); }
+.attention-list li { line-height:1.9; }
+@media(hover:hover) and (pointer:fine) { .catalogue-option:hover .occ-card { transform:translateY(-3px); border-color:var(--c-line-strong); } .catalogue-option[aria-checked='true']:hover .occ-card { border-color:var(--c-selected); } }
+@media(max-width:1100px) { .ws { gap:16px; padding:20px; } .ws-main { padding-inline:0; } .ws-side { top:calc(var(--topbar-h) + 20px); } }
+@media(max-width:900px) {
+  .ws { padding:0; gap:0; }
+  .ws-main { padding:24px 18px calc(var(--tabbar-h) + 40px + env(safe-area-inset-bottom)); }
+  .tabbar { inset-inline:12px; bottom:calc(10px + env(safe-area-inset-bottom)); height:64px; padding:4px 4px 6px; border:1px solid var(--c-line); border-radius:22px; box-shadow:var(--shadow-pop); background:var(--c-surface-elevated); }
+  .tab { font-size:11px; border-radius:16px; gap:3px; transition:color var(--dur-fast),background var(--dur-fast),transform var(--dur-instant); }
+  .tab:active { transform:scale(.94); }
+  .tab.is-active { background:var(--c-primary-soft); }
+  .tab.is-active .tab-icon { background:none; }
+  .tab-icon { width:36px; height:23px; }
+  .topbar-inner { padding-inline:16px; }
+  .page-title { font-size:26px; }
+  .page-head { margin-bottom:24px; }
+  .sheet-grip { display:grid; flex:none; place-items:center; min-height:38px; width:100%; background:none; border:0; cursor:grab; touch-action:none; padding:0; border-radius:var(--r-xl) var(--r-xl) 0 0; }
+  .sheet-grip>span { width:38px; height:4px; border-radius:999px; background:var(--c-line-strong); }
+  .dialog:has(.sheet-grip) .dialog-head { padding-top:0; }
+  .ed-handle { height:40px; }
+  .ed-handle span { width:38px; height:4px; }
+  .ed-panel-body { overscroll-behavior-y:contain; }
+  .ed-tabs .seg-btn { min-height:48px; }
+}
+@media(max-width:640px) {
+  .tp .dialog-body { padding:12px 16px 20px; }
+  .tp-body { gap:16px; }
+  .tp-stage { height:45dvh; min-height:220px; border-radius:16px; }
+  .tp-info { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px; }
+  .tp-info>.eyebrow,.tp-info>.tp-note,.tp-info>.tp-line { display:none; }
+  .tp-description { font-size:12px; grid-column:1/-1; }
+  .tp-info>.btn { justify-self:start; }
+  .tp-nav { position:static; margin:0; }
+  .tp-rail { grid-column:1/-1; margin-top:4px; padding-block:6px 10px; }
+  .tp-rail-item { width:48px; }
+  .tp .dialog-foot { display:grid; grid-template-columns:auto 1fr; }
+  .tp .dialog-foot .btn-primary { min-height:48px; }
+  .focus-right { gap:6px; }
+  .focus-right>.faint { display:none; }
+  .curated-chooser { padding-inline:18px; }
+  .catalogue-option .occ-text { padding:14px; }
+  .catalogue-option .occ-art-frame { height:126px; }
+  .tg-grid { gap:24px 16px; }
+  .tg-name { font-size:16px; }
+  .theme-trigger:not(.is-compact)>span:not(.theme-trigger-dot) { display:none; }
+  .theme-trigger:not(.is-compact) { width:44px; padding:0; }
+  .ed-status { gap:8px; }
+}
+@media(prefers-reduced-motion:no-preference) { .ws-main>*,.events-intro,.occasion-event.is-featured { animation:page-arrive 300ms var(--ease-out) both; } }
+@keyframes page-arrive { from { opacity:0; transform:translateY(7px); } }
+@media(prefers-reduced-motion:reduce) { .tpl-skel { animation:none; } .event-poster,.tp-poster { transition:none; } }

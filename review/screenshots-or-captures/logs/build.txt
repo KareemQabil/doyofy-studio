@@ -1,0 +1,16 @@
+[build] P0 assets shipped: 25 files, 27.5 MB
+
+  dist/app.js                                       869.7kb
+  dist/chunks/candlelit-hall-FDYNZJEI.js            611.6kb
+  dist/ui.css                                       272.3kb
+  dist/chunks/chunk-WRVTSFVV.js                     195.6kb
+  dist/styles.css                                    58.9kb
+  dist/chunks/chunk-PC6DUV4Z.js                      38.1kb
+  dist/app.js.LEGAL.txt                               1.5kb
+  dist/chunks/engine-impl-2XAJILKX.js                1010b 
+  dist/chunks/chunk-QHDNOTBI.js                       720b 
+  dist/chunks/main-Q3Y3N6RK.js                        518b 
+  dist/chunks/candlelit-hall-FDYNZJEI.js.LEGAL.txt    161b 
+
+⚡ Done in 316ms
+[build] dist/ ready

@@ -1,0 +1,21 @@
+{
+  "assets": [
+    {
+      "id": "signature.polish.envelope-lining.v1",
+      "path": "public/assets/brand/envelope-lining.svg",
+      "source": "public/assets/brand/pattern-grid-gold.svg",
+      "method": "Official brand pattern reused verbatim",
+      "license": "Owner identity",
+      "text": "none"
+    },
+    {
+      "id": "signature.polish.stationery-mat.v1",
+      "path": "public/assets/brand/signature-stationery-mat.svg",
+      "source": "public/assets/brand/motif-column.svg",
+      "method": "Native vector stationery composition with official motif paths, identity colors and paper folds",
+      "license": "Project composition + owner identity",
+      "text": "none"
+    }
+  ],
+  "ai_generated": false
+}

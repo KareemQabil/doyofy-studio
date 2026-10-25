@@ -1,0 +1,133 @@
+/* ============================================================================
+   Scene styles. Objects placed by layout() get inline px boxes; everything else is
+   relative to the stage container (cqw/cqh), so it scales from phones to ultra-wide.
+   ========================================================================== */
+.sc-fill { position: absolute; inset: -45%; }
+.sc-svg { position: absolute; display: block; }
+
+/* ---------------------------------------------------------------- sunlit (flagship) */
+.sun-wall { position: absolute; inset: -45%; background-size: cover; background-position: center; background-color: #E9DCCB; }
+.sun-lightwrap { position: absolute; inset: -30%; mix-blend-mode: multiply; }
+.sun-light { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 62% 30%; filter: sepia(.25) saturate(1.2) contrast(1.05); }
+.sun-light--poster { z-index: -1; }
+video.sun-light[data-fallback='true'] { display: none; }
+.sun-niche { position: absolute; border-radius: 9999px 9999px 0 0; }
+.sun-niche__inner { position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(90deg, rgba(120, 88, 58, .16), rgba(120, 88, 58, .04) 24%, rgba(255, 246, 232, .1) 70%, rgba(120, 88, 58, .12));
+  box-shadow: inset 14px 10px 24px -8px rgba(110, 78, 48, .32), inset -8px 0 18px -10px rgba(255, 248, 236, .6); }
+.sun-ledge { position: absolute; }
+.sun-ledge__top { position: absolute; left: 0; right: 0; top: 0; height: 16px; background: linear-gradient(180deg, #F2E6D4, #E2D1B8); box-shadow: 0 1px 0 rgba(255, 250, 240, .8) inset; }
+.sun-ledge__face { position: absolute; left: 0; right: 0; top: 16px; bottom: 0; background: var(--stone) center / 600px auto, #D9C5A7; box-shadow: inset 0 14px 22px -12px rgba(90, 62, 36, .45); }
+.sun-ledge__face::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(60, 40, 22, .22)); }
+.sun-vase { position: absolute; object-fit: contain; filter: drop-shadow(18px 10px 18px rgba(90, 60, 30, .25)); }
+.sun-olive { position: absolute; object-fit: contain; max-width: none; filter: saturate(.85) brightness(.95); opacity: .85; }
+.sun-glow { position: absolute; inset: -45%; mix-blend-mode: soft-light; background: radial-gradient(22% 20% at calc(var(--sun-x, 70%) + 45cqw) calc(var(--sun-y, 30%) + 45cqh), rgba(255, 238, 205, .75), transparent 70%); transform: translateX(calc(var(--light-drift, 0) * 12px)); }
+.sun-grade { position: absolute; inset: 0; background: radial-gradient(90% 80% at 55% 40%, transparent 55%, rgba(96, 66, 40, .28) 100%); mix-blend-mode: multiply; }
+.xp[data-scene='sunlit_architectural_studio'] .xp-card-shadow::before { border-radius: 2px; }
+
+/* ---------------------------------------------------------------- candle hall */
+.sc-table { position: absolute; background: linear-gradient(180deg, #3A1A1F, #130809 60%); border-top: 1px solid rgba(255, 205, 150, .28); }
+.sc-candles { position: absolute; bottom: 7cqh; display: flex; align-items: flex-end; gap: 16px; }
+.sc-candles--l { left: 3cqw; } .sc-candles--r { right: 3cqw; flex-direction: row-reverse; }
+.sc-candle { position: relative; width: 22px; height: var(--hh); }
+.sc-candle__body { position: absolute; left: 0; right: 0; bottom: 0; top: 18px; border-radius: 3px; background: linear-gradient(90deg, #D9C9B0, #FBF3E4 45%, #C9B797); }
+.sc-candle__flame { position: absolute; left: 50%; top: -4px; width: 10px; height: 22px; margin-left: -5px; border-radius: 50% 50% 45% 45% / 70% 70% 30% 30%; background: radial-gradient(circle at 50% 70%, #FFF8E1, #FFD27A 45%, rgba(255, 138, 61, 0) 75%); transform-origin: 50% 100%; animation: scFlicker 1.6s ease-in-out infinite; }
+.sc-candle__halo { position: absolute; left: 50%; top: -34px; width: 90px; height: 90px; margin-left: -45px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 200, 120, .45), transparent); animation: fxGlow 3s ease-in-out infinite; }
+@keyframes scFlicker { 0%, 100% { transform: scale(1, 1) rotate(0); } 25% { transform: scale(.94, 1.06) rotate(-2deg); } 50% { transform: scale(1.04, .96) rotate(1.5deg); } 75% { transform: scale(.97, 1.04) rotate(-1deg); } }
+
+/* ---------------------------------------------------------------- garden */
+.sc-hedge { left: -5%; width: 110%; top: 34%; height: 50%; }
+.sc-lights { position: absolute; inset: 0; }
+.sc-lights .sc-svg { inset: 0; width: 100%; height: 100%; }
+.sc-bulb { position: absolute; width: 7px; height: 7px; margin: -3px 0 0 -3px; border-radius: 50%; background: #FFE8AE; box-shadow: 0 0 10px 3px rgba(255, 210, 120, .55), 0 0 28px 8px rgba(255, 190, 100, .2); animation: fxTwinkle 3.2s ease-in-out infinite; }
+.sc-leaves .sc-svg { bottom: 0; width: 42cqw; height: 42cqh; }
+.sc-leaves__l { left: 0; } .sc-leaves__r { right: 0; }
+.sc-pool { position: absolute; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 200, 130, .35), transparent); }
+
+/* ---------------------------------------------------------------- desert */
+.sc-sun { position: absolute; left: 50%; top: 52%; width: 34cqmin; aspect-ratio: 1; transform: translate(-50%, -50%); }
+.sc-sun::before { content: ''; position: absolute; inset: -60%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 226, 168, .45), transparent); }
+.sc-sun span { position: absolute; inset: 0; border-radius: 50%; background: #FFE8B8; animation: fxGlow 4s ease-in-out infinite; }
+.sc-birds { position: absolute; top: 24%; left: 0; width: 70px; animation: scGlide 22s linear infinite; }
+.sc-birds .sc-svg { position: relative; width: 70px; height: 24px; }
+@keyframes scGlide { from { transform: translateX(-80px); } to { transform: translateX(110cqw); } }
+.sc-dune { left: -4%; width: 108%; height: 50%; }
+.sc-dune--1 { top: 56%; } .sc-dune--2 { top: 64%; } .sc-dune--3 { top: 72%; height: 40%; }
+
+/* ---------------------------------------------------------------- night skies + sea */
+.sc-milky { position: absolute; left: -10%; top: 12%; width: 120%; height: 26%; border-radius: 50%; background: rgba(200, 190, 255, .1); filter: blur(28px); transform: rotate(-24deg); }
+.sc-moon { position: absolute; width: 11cqmin; aspect-ratio: 1; min-width: 56px; }
+.sc-moon::before { content: ''; position: absolute; inset: -70%; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 245, 215, .35), transparent); }
+.sc-moon span { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 40% 38%, #FFFBEE, #E7DCBC); box-shadow: inset -6px -4px 0 rgba(200, 188, 150, .35); }
+.sc-moon--tr { right: 12%; top: 11%; }
+.sc-moon--sea { left: 22%; top: 16%; }
+.sc-shoot { position: absolute; right: 8%; top: 9%; width: 130px; height: 1.6px; background: linear-gradient(90deg, transparent, #fff); border-radius: 2px; transform-origin: 100% 50%; opacity: 0; animation: scShoot 7s ease-in 2s infinite; }
+@keyframes scShoot { 0% { opacity: 0; transform: translate(0, 0) rotate(-28deg) scaleX(.2); } 4% { opacity: 1; } 14% { opacity: 0; transform: translate(-260px, 140px) rotate(-28deg) scaleX(1); } 100% { opacity: 0; transform: translate(-260px, 140px) rotate(-28deg); } }
+.sc-hills { left: -4%; width: 108%; bottom: 0; height: 30%; }
+.sc-reflect { position: absolute; inset: 0; }
+.sc-reflect { filter: blur(.6px); }
+.sc-reflect span { position: absolute; left: 27%; height: 1.5px; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(246, 237, 210, .85) 30%, rgba(246, 237, 210, .85) 70%, transparent); animation: scShimmer 2.4s ease-in-out infinite; }
+@keyframes scShimmer { 0%, 100% { opacity: .08; transform: scaleX(.55); } 50% { opacity: .7; transform: scaleX(1); } }
+.sc-waves { position: absolute; left: 0; right: -160px; top: 60%; height: 40%; animation: scWave 7s linear infinite; }
+.sc-waves .sc-svg { inset: 0; width: 100%; height: 100%; }
+@keyframes scWave { from { transform: translateX(0); } to { transform: translateX(-80px); } }
+.sc-shore { left: -4%; width: 108%; bottom: 0; height: 12%; }
+
+/* ---------------------------------------------------------------- palace */
+.xp[data-scene='palace_night'] .xp-layer--background > .sc-svg { inset: 0; width: 100%; height: 100%; }
+.sc-lanterns { position: absolute; inset: 0; }
+.sc-lantern { position: absolute; left: var(--x); top: 0; width: 34px; height: calc(var(--len) + 64px); margin-left: -17px; transform-origin: 50% 0; animation: fxSway 5s ease-in-out infinite; }
+.sc-lantern::before { content: ''; position: absolute; left: 50%; top: 0; width: 1.2px; height: var(--len); background: #6E4A22; }
+.sc-lantern::after { content: ''; position: absolute; left: 0; bottom: 0; width: 34px; height: 54px; clip-path: polygon(50% 0, 100% 22%, 88% 86%, 50% 100%, 12% 86%, 0 22%); background: radial-gradient(circle at 50% 55%, #FFE2A0 0 18%, #C9A15F 40%, #6E4A22 100%); filter: drop-shadow(0 0 24px rgba(255, 210, 140, .7)); }
+.sc-lantern--far { transform: scale(.6); opacity: .7; }
+
+/* ---------------------------------------------------------------- clay */
+.sc-platform { position: absolute; }
+.sc-platform::before { content: ''; position: absolute; left: -6%; right: -6%; top: 24%; height: 90%; border-radius: 50%; background: rgba(139, 93, 111, .16); filter: blur(14px); }
+.sc-platform span { position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(180deg, #FFF4E5, #F0DDBF); box-shadow: inset 0 10px 18px rgba(255, 255, 255, .7), inset 0 -14px 20px rgba(181, 142, 106, .26); }
+.sc-clayprops { position: absolute; inset: 0; }
+.clay { position: absolute; left: var(--x); top: var(--y); }
+.clay-cloud { width: 17cqmin; height: 8cqmin; border-radius: 50px; background: linear-gradient(180deg, #fff, #F4E4EE); box-shadow: inset 0 8px 10px rgba(255, 255, 255, .8), inset 0 -10px 14px rgba(176, 138, 159, .15); animation: fxFloat 6s ease-in-out infinite; }
+.clay-cloud::before { content: ''; position: absolute; width: 55%; height: 130%; left: 18%; top: -50%; border-radius: 50%; background: inherit; box-shadow: inherit; }
+.clay-cloud--b { animation-delay: -3s; }
+.clay-heart { width: 7cqmin; min-width: 38px; aspect-ratio: 1; background: radial-gradient(circle at 35% 30%, #FFD6E3, #FF9EBE 55%, #E27A9E); border-radius: 50% 50% 14% 50%; rotate: 45deg; box-shadow: inset 0 6px 8px rgba(255, 255, 255, .45); animation: fxFloat 7s ease-in-out infinite; }
+.clay-heart--b { background: radial-gradient(circle at 35% 30%, #FFE6D2, #FFB89A 55%, #E8906E); animation-delay: -2s; }
+.clay-flower { width: 9cqmin; aspect-ratio: 1; border-radius: 50%; min-width: 44px; background:
+  radial-gradient(circle at 50% 50%, #FFCF5A 0 18%, transparent 19%),
+  radial-gradient(circle at 50% 18%, #FFB9CE 0 20%, transparent 21%), radial-gradient(circle at 82% 42%, #FFB9CE 0 20%, transparent 21%),
+  radial-gradient(circle at 70% 80%, #FFB9CE 0 20%, transparent 21%), radial-gradient(circle at 30% 80%, #FFB9CE 0 20%, transparent 21%), radial-gradient(circle at 18% 42%, #FFB9CE 0 20%, transparent 21%);
+  animation: fxSpin 24s linear infinite; filter: drop-shadow(0 6px 8px rgba(145, 89, 112, .15)); }
+.clay-flower--b { filter: hue-rotate(160deg) drop-shadow(0 6px 8px rgba(145, 89, 112, .15)); animation-direction: reverse; }
+
+/* ---------------------------------------------------------------- marble / silk / petals */
+.sc-beams { position: absolute; inset: -20% 0; }
+.sc-beams span { position: absolute; top: -10%; width: 9%; height: 130%; background: linear-gradient(180deg, rgba(255, 255, 255, .75), rgba(255, 255, 255, 0) 85%); filter: blur(10px); transform: rotate(24deg); animation: fxRay 9s ease-in-out infinite; --ray-angle: 24deg; }
+.sc-beams span:nth-child(1) { left: 14%; } .sc-beams span:nth-child(2) { left: 48%; width: 6%; animation-delay: -3s; } .sc-beams span:nth-child(3) { left: 78%; animation-delay: -6s; }
+.sc-marble { position: absolute; background: linear-gradient(180deg, #F6F3EF, #E7E0D7); border-top: 2px solid rgba(120, 100, 80, .12); overflow: hidden; }
+.sc-marble .sc-svg { inset: 0 0 auto 0; width: 100%; height: 60%; }
+.sc-petals i { position: absolute; left: var(--x); top: var(--y); width: 20px; height: 12px; border-radius: 80% 0 80% 0; background: #F3C6CB; transform: rotate(var(--r)); }
+.sc-petals i:nth-child(even) { background: #FBE0E4; }
+.sc-spot { position: absolute; inset: 0; clip-path: polygon(38% 0, 62% 0, 92% 100%, 8% 100%); background: linear-gradient(180deg, rgba(255, 255, 255, .75), rgba(255, 255, 255, 0) 90%); filter: blur(10px); }
+.sc-drapes .sc-svg { top: 0; height: 100%; width: auto; aspect-ratio: 140 / 760; animation: scDrape 8s ease-in-out infinite; transform-origin: 50% 0; }
+.sc-drape--l { left: 0; } .sc-drape--r { right: 0; transform: scaleX(-1); animation-name: scDrapeR; }
+@keyframes scDrape { 0%, 100% { transform: skewX(0); } 50% { transform: skewX(1.4deg); } }
+@keyframes scDrapeR { 0%, 100% { transform: scaleX(-1) skewX(0); } 50% { transform: scaleX(-1) skewX(1.4deg); } }
+.sc-pedestal { position: absolute; }
+.sc-pedestal__body { position: absolute; left: 0; right: 0; top: 16px; bottom: 0; background: linear-gradient(90deg, #D8B7A9, #F6E7E0 40%, #CFA99A); }
+.sc-pedestal__top { position: absolute; left: 0; right: 0; top: 0; height: 32px; border-radius: 50%; background: #F9EEE9; border: 1px solid #E2C4B7; z-index: 1; }
+.sc-clouds span { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, .8); filter: blur(16px); animation: scCloud 30s linear infinite alternate; }
+.sc-clouds span:nth-child(1) { left: 2%; top: 12%; width: 50%; height: 9%; }
+.sc-clouds span:nth-child(2) { left: 55%; top: 30%; width: 44%; height: 7%; animation-delay: -12s; }
+.sc-clouds span:nth-child(3) { left: 14%; top: 62%; width: 70%; height: 10%; animation-delay: -20s; }
+@keyframes scCloud { from { transform: translateX(-30px); } to { transform: translateX(30px); } }
+
+/* ---------------------------------------------------------------- gallery / black studio / chrome */
+.sc-skylight { position: absolute; inset: 0; background: radial-gradient(70% 40% at 50% -5%, rgba(255, 255, 255, .8), transparent 70%); mix-blend-mode: screen; }
+.sc-plinth { position: absolute; }
+.sc-plinth__top { position: absolute; left: 0; right: 0; top: 0; height: 12px; background: #FBFBF9; box-shadow: 0 1px 0 rgba(0, 0, 0, .06); }
+.sc-plinth__face { position: absolute; left: 0; right: 0; top: 12px; bottom: 0; background: linear-gradient(90deg, #E8E7E3, #F4F4F1 40%, #E2E1DC); }
+.sc-softbox { position: absolute; left: 50%; top: -6%; width: 60cqw; height: 22cqh; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 250, 240, .55), rgba(255, 250, 240, 0)); filter: blur(22px); }
+.sc-gloss { position: absolute; background: linear-gradient(180deg, #121212 0%, #070707 50%); border-top: 1px solid rgba(255, 255, 255, .08); }
+.sc-chrome-fallback { background: linear-gradient(135deg, var(--a), var(--b) 40%, var(--a) 70%, var(--b)); background-size: 300% 300%; animation: scChrome 18s ease-in-out infinite alternate; }
+@keyframes scChrome { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+.sc-chrome-grade { position: absolute; inset: 0; background: radial-gradient(75% 60% at 50% 45%, transparent 50%, rgba(0, 0, 0, .45) 100%); }

@@ -1,0 +1,101 @@
+/* Production layer on top of the canonical motion language (canon-motion.css, unchanged).
+   - scales the 390×844 virtual stage into any viewport (host)
+   - full-bleed scene layer + overlays that extend the stage's dim/black/letterbox beyond it
+   - theme variables instead of per-element inline colours (card switch = variable update)
+   - accessibility + reduced motion */
+
+html, body { margin: 0; height: 100%; background: #050303; }
+body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
+.host { position: fixed; inset: 0; overflow: hidden; background: #050303; touch-action: manipulation; }
+.host.embedded { position: absolute; }
+.st-frame { position: absolute; left: 0; top: 0; width: 390px; height: 844px; transform-origin: 0 0; z-index: 2; }
+.host-scene { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.host-scene canvas { display: block; width: 100%; height: 100%; }
+
+/* overlays outside the stage (clip-path hole = the stage rect; inside it the canonical overlays act) */
+.host-ov { position: absolute; left: 0; right: 0; z-index: 1; pointer-events: none;
+  clip-path: polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+    var(--st-left) var(--st-top), var(--st-right) var(--st-top), var(--st-right) var(--st-bottom), var(--st-left) var(--st-bottom), var(--st-left) var(--st-top)); }
+.host-dim { top: 0; bottom: 0; background: rgba(8,4,5,.62); opacity: 0; transition: opacity .8s ease; }
+.host.s-opening .host-dim, .host.s-pages .host-dim, .host.s-done .host-dim { opacity: 1; }
+.host.s-pack .host-dim, .host.s-seal .host-dim, .host.s-fly .host-dim { opacity: .35; }
+.host-black { top: 0; bottom: 0; background: #050303; opacity: 0; }
+.host.s-intro:not(.no-intro) .host-black { animation: stFromBlack 3.2s ease forwards; }
+.host-bar { height: 0; background: #050303; transition: height 1.1s cubic-bezier(.6,0,.2,1); }
+.host-bar.top { top: 0; } .host-bar.bot { bottom: 0; }
+.host.s-intro:not(.no-intro) .host-bar { animation: hostBars 4.8s ease forwards; }
+.host.s-fly .host-bar, .host.s-done .host-bar { height: calc(var(--st-top) + 74px * var(--s)); }
+@keyframes hostBars { 0%, 80% { height: calc(var(--st-top) + 74px * var(--s)); } 100% { height: 0; } }
+
+/* DOM scenes: soft cover-scaled echo outside the 390×844 composition */
+.scene-ambient { position: absolute; left: 50%; top: 50%; width: 390px; height: 844px; margin: -422px 0 0 -195px;
+  transform: scale(calc(var(--cover) * 1.08)); filter: blur(22px) brightness(.62) saturate(1.05); }
+.scene-ambient * { animation-play-state: paused !important; }
+.scene-dom { position: absolute; inset: 0; }
+
+/* full-bleed (WebGL) scenes render behind a transparent stage */
+.host.full-bleed .st { background: transparent; }
+.host.full-bleed .st-shadow { opacity: .55; }
+
+/* theme variables (set from the active card) */
+.st-sheet { background: var(--paper); color: var(--ink); }
+.st-sheet-frame { border-color: var(--accent) !important; }
+.st-close .st-round, .st-nav .st-round { border-color: var(--accent); }
+.st-dots { color: var(--atext); }
+.st-sheet-mono { font-family: var(--far); color: var(--atext); }
+.st-eback { background: var(--envdark); }
+.st-pk-l, .st-pk-r { background: var(--envmid); }
+.st-pk-b { background: var(--env); }
+.st-ff-front { background: linear-gradient(180deg, var(--envlight) 0%, var(--env) 100%); }
+.st-ff-back { background: var(--paper); }
+.st-mcard { background: var(--paper); color: var(--ink); border: 1px solid var(--accent); }
+.st-face-slot { position: absolute; inset: 0; }
+
+/* pages */
+.st-page.instant .fx-rise { animation: none; opacity: 1; }
+.rsvp-need { visibility: hidden; }          /* reserve the line: no layout jump when the hint appears */
+.rsvp-need.is-on { visibility: visible; }
+.st-field[aria-invalid="true"] { border-bottom-width: 2px; }
+.st-sheet:focus { outline: none; }
+.st-sheet[inert] { pointer-events: none; }
+
+/* switcher */
+.st-rec { margin-inline-start: 6px; font-size: 11px; color: #E3C58C; opacity: .9; }
+.st-chip.on .st-rec { color: #7A5A2F; }
+.st-author { padding: 8px 16px 0; font: 11px/1.4 ui-monospace, monospace; color: rgba(244,234,224,.7); }
+
+/* replay: the canonical 40 ms unmount */
+.host.replaying * { transition: none !important; }
+
+/* ---------------- reduced motion: same states and timings, no travelling motion ---------------- */
+.host.rm .st-bob, .host.rm .st-glint, .host.rm .st-hint-inner,
+.host.rm .fx-float, .host.rm .fx-float2, .host.rm .fx-twinkle, .host.rm .fx-flicker, .host.rm .fx-bokeh, .host.rm .fx-firefly,
+.host.rm .fx-fall, .host.rm .fx-sway, .host.rm .fx-drape, .host.rm .fx-beam, .host.rm .fx-shoot, .host.rm .fx-wave,
+.host.rm .fx-shimmer, .host.rm .fx-glide, .host.rm .fx-spin, .host.rm .fx-sun, .host.rm .fx-cloud, .host.rm .fx-pulse, .host.rm .fx-foil { animation: none !important; }
+.host.rm .fx-rise, .host.rm .st-dl { animation: rmFade .5s ease forwards !important; }
+.host.rm .fx-draw { animation: none; stroke-dashoffset: 0; }
+@keyframes rmFade { from { opacity: 0; } to { opacity: 1; } }
+.host.rm .st-tilt { transition: none; }
+.host.rm .st-flip { transition-duration: .01s; }
+.host.rm.s-opening .st-rig { transform: none; }
+.host.rm .st-env, .host.rm.s-fly .st-env, .host.rm.s-done .st-env { transition: opacity .6s ease; }
+.host.rm.s-fly .st-env, .host.rm.s-done .st-env { transform: none; }
+.host.rm.s-pack .st-mcard { animation: rmFade .6s ease both; }
+.host.rm .st-seal { transform: none !important; }
+.host.rm.s-seal .st-seal { animation: rmFade .4s ease .8s both; }
+.host.rm.s-seal .st-shake, .host.rm.s-seal .st-flash, .host.rm.s-fly .st-streak { animation: none; }
+.host.rm .st-sheet { transition: opacity .4s ease, visibility 0s linear .4s; transform: none; }
+.host.rm.s-pages .st-sheet { transition: opacity .4s ease; }
+.host.rm .st-page { transition: opacity .2s ease; }
+.host.rm .st-page.leaving { transform: none; filter: none; }
+.host.rm .st-switch { animation: none; }
+
+/* scene crossfade (DOM placeholder → WebGL) */
+.scene-in { animation: sceneIn .9s ease both; }
+.scene-out { opacity: 0 !important; transition: opacity .9s ease; }
+@keyframes sceneIn { from { opacity: 0; } to { opacity: 1; } }
+.host-scene .candlelit-gl { position: absolute; inset: 0; width: 100%; height: 100%; }
+.candlelit-vignette { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 75% at 50% 46%, rgba(0,0,0,0) 55%, rgba(6,2,3,.55) 100%); }
+/* the stage's own scene layer is empty in full-bleed mode; keep the canonical CSS contact shadow subtle
+   because the WebGL table receives a real shadow from the card proxy */

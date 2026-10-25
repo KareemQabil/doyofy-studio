@@ -1,0 +1,2 @@
+/app/events/evt_wedding/invitation/templates?theme=signature → assets/wizard/3d-candlelit.webp
+/app/events/evt_wedding/invitation/design?theme=signature → assets/wizard/3d-candlelit.webp

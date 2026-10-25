@@ -1,0 +1,394 @@
+TAP version 13
+# Subtest: failed audio preloads are handled and the next cue uses its synth fallback
+ok 1 - failed audio preloads are handled and the next cue uses its synth fallback
+  ---
+  duration_ms: 12.934716
+  type: 'test'
+  ...
+# Subtest: phone: Saudi/Egypt local formats, Arabic digits, Excel numbers, malformed
+ok 2 - phone: Saudi/Egypt local formats, Arabic digits, Excel numbers, malformed
+  ---
+  duration_ms: 5.816744
+  type: 'test'
+  ...
+# Subtest: headcount is derived from confirmed party sizes, not invitations
+ok 3 - headcount is derived from confirmed party sizes, not invitations
+  ---
+  duration_ms: 0.668132
+  type: 'test'
+  ...
+# Subtest: RSVP bounded by allowance; declining keeps the table (flagged, not cleared)
+ok 4 - RSVP bounded by allowance; declining keeps the table (flagged, not cleared)
+  ---
+  duration_ms: 0.563345
+  type: 'test'
+  ...
+# Subtest: delivery state is separate from RSVP; draft/ready derive from publish state
+ok 5 - delivery state is separate from RSVP; draft/ready derive from publish state
+  ---
+  duration_ms: 0.261263
+  type: 'test'
+  ...
+# Subtest: duplicates and Arabic-aware search
+ok 6 - duplicates and Arabic-aware search
+  ---
+  duration_ms: 1.652591
+  type: 'test'
+  ...
+# Subtest: seating: occupancy, over capacity, does-not-fit
+ok 7 - seating: occupancy, over capacity, does-not-fit
+  ---
+  duration_ms: 0.487449
+  type: 'test'
+  ...
+# Subtest: check-in: partial 2/4 then 2 later = complete; exceptions need decisions
+ok 8 - check-in: partial 2/4 then 2 later = complete; exceptions need decisions
+  ---
+  duration_ms: 0.612142
+  type: 'test'
+  ...
+# Subtest: QR payloads → party code
+ok 9 - QR payloads → party code
+  ---
+  duration_ms: 0.680906
+  type: 'test'
+  ...
+# Subtest: import: sample file states — duplicate in file, duplicate in list, missing name, malformed phone, missing phone
+ok 10 - import: sample file states — duplicate in file, duplicate in list, missing name, malformed phone, missing phone
+  ---
+  duration_ms: 4.30126
+  type: 'test'
+  ...
+# Subtest: import: headerless paste is detected by content
+ok 11 - import: headerless paste is detected by content
+  ---
+  duration_ms: 2.564317
+  type: 'test'
+  ...
+# Subtest: Arabic plurals and time zones
+ok 12 - Arabic plurals and time zones
+  ---
+  duration_ms: 21.473885
+  type: 'test'
+  ...
+# Subtest: occasions: more than four, every one grouped, popular first, one catalogue for both choosers
+ok 13 - occasions: more than four, every one grouped, popular first, one catalogue for both choosers
+  ---
+  duration_ms: 0.911796
+  type: 'test'
+  ...
+# Subtest: template presets use real engine assets and only valid experiences
+ok 14 - template presets use real engine assets and only valid experiences
+  ---
+  duration_ms: 0.518334
+  type: 'test'
+  ...
+# Subtest: a template changes only the look — names, message and program are kept
+ok 15 - a template changes only the look — names, message and program are kept
+  ---
+  duration_ms: 0.704923
+  type: 'test'
+  ...
+# Subtest: gallery order: presets that suit the occasion come first, nothing is lost or repeated
+ok 16 - gallery order: presets that suit the occasion come first, nothing is lost or repeated
+  ---
+  duration_ms: 0.835648
+  type: 'test'
+  ...
+# Subtest: autosave serializes slow writes and coalesces rapid edits to the newest snapshot
+ok 17 - autosave serializes slow writes and coalesces rapid edits to the newest snapshot
+  ---
+  duration_ms: 2.186126
+  type: 'test'
+  ...
+# Subtest: failed save stays dirty and retries the latest edit, never reporting saved
+ok 18 - failed save stays dirty and retries the latest edit, never reporting saved
+  ---
+  duration_ms: 0.764159
+  type: 'test'
+  ...
+# Subtest: save uses immutable snapshots while edits are made during an in-flight write
+ok 19 - save uses immutable snapshots while edits are made during an in-flight write
+  ---
+  duration_ms: 0.495939
+  type: 'test'
+  ...
+# Subtest: event-day and completed facts count remaining people inside partially arrived families
+ok 20 - event-day and completed facts count remaining people inside partially arrived families
+  ---
+  duration_ms: 14.004863
+  type: 'test'
+  ...
+# Subtest: journey follows date, publication and reply state instead of a persisted UI flag
+ok 21 - journey follows date, publication and reply state instead of a persisted UI flag
+  ---
+  duration_ms: 1.571776
+  type: 'test'
+  ...
+# Subtest: late attention prioritizes table capacity; completed events suppress obsolete preparation tasks
+ok 22 - late attention prioritizes table capacity; completed events suppress obsolete preparation tasks
+  ---
+  duration_ms: 3.607963
+  type: 'test'
+  ...
+# Subtest: the next action goes directly to review; tables never block an event that has not opted into seating
+ok 23 - the next action goes directly to review; tables never block an event that has not opted into seating
+  ---
+  duration_ms: 1.970829
+  type: 'test'
+  ...
+# Subtest: all eight appearances are recognized, unknown URLs cannot introduce a theme
+ok 24 - all eight appearances are recognized, unknown URLs cannot introduce a theme
+  ---
+  duration_ms: 1.111612
+  type: 'test'
+  ...
+# Subtest: horizontal browsing gives vertical scrolling priority and ignores tap jitter
+ok 25 - horizontal browsing gives vertical scrolling priority and ignores tap jitter
+  ---
+  duration_ms: 0.333379
+  type: 'test'
+  ...
+# Subtest: RTL preview advances left, reverses right and accepts an intentional short flick
+ok 26 - RTL preview advances left, reverses right and accepts an intentional short flick
+  ---
+  duration_ms: 0.117522
+  type: 'test'
+  ...
+# Subtest: editor panel snaps with deliberate motion and small adjustments retain its state
+ok 27 - editor panel snaps with deliberate motion and small adjustments retain its state
+  ---
+  duration_ms: 1.408964
+  type: 'test'
+  ...
+# Subtest: drawer dismisses only with deliberate downward drag or flick
+ok 28 - drawer dismisses only with deliberate downward drag or flick
+  ---
+  duration_ms: 0.330291
+  type: 'test'
+  ...
+# Subtest: deck: leftward drag advances in RTL, with resistance past the ends
+ok 29 - deck: leftward drag advances in RTL, with resistance past the ends
+  ---
+  duration_ms: 0.124751
+  type: 'test'
+  ...
+# Subtest: deck: release snaps, small deliberate drag steps, flings are bounded and cancelled drags return
+ok 30 - deck: release snaps, small deliberate drag steps, flings are bounded and cancelled drags return
+  ---
+  duration_ms: 0.241612
+  type: 'test'
+  ...
+# Subtest: deck: poses put next cards on the left and fade far ones
+ok 31 - deck: poses put next cards on the left and fade far ones
+  ---
+  duration_ms: 0.175617
+  type: 'test'
+  ...
+# Subtest: sheet: snaps to the nearest stop, flings move one stop
+ok 32 - sheet: snaps to the nearest stop, flings move one stop
+  ---
+  duration_ms: 0.41907
+  type: 'test'
+  ...
+# Subtest: seal: opens on a long lift or a quick flick, not on a nudge or a downward pull
+ok 33 - seal: opens on a long lift or a quick flick, not on a nudge or a downward pull
+  ---
+  duration_ms: 0.405961
+  type: 'test'
+  ...
+# Subtest: every occasion has two distinct dedicated looks and a relevant recommended starter
+ok 34 - every occasion has two distinct dedicated looks and a relevant recommended starter
+  ---
+  duration_ms: 3.44915
+  type: 'test'
+  ...
+# Subtest: new-event starter content is not shared between drafts; midnight and wraparound times work
+ok 35 - new-event starter content is not shared between drafts; midnight and wraparound times work
+  ---
+  duration_ms: 1.423258
+  type: 'test'
+  ...
+# Subtest: catalogue uses unique engine recommendations, without fake card/scene combinations
+ok 36 - catalogue uses unique engine recommendations, without fake card/scene combinations
+  ---
+  duration_ms: 0.365924
+  type: 'test'
+  ...
+# Subtest: all card designs omit partner separators and wedding copy for a single-name occasion
+ok 37 - all card designs omit partner separators and wedding copy for a single-name occasion
+  ---
+  duration_ms: 60.308497
+  type: 'test'
+  ...
+# Subtest: couple cards retain both names; calendar fallback uses the actual occasion label
+ok 38 - couple cards retain both names; calendar fallback uses the actual occasion label
+  ---
+  duration_ms: 1.481266
+  type: 'test'
+  ...
+# Subtest: six original occasion faces keep dynamic year, long names, RTL text and safe markup
+ok 39 - six original occasion faces keep dynamic year, long names, RTL text and safe markup
+  ---
+  duration_ms: 4.785905
+  type: 'test'
+  ...
+# Subtest: spatial view is bounded without losing its focal point on zoom
+ok 40 - spatial view is bounded without losing its focal point on zoom
+  ---
+  duration_ms: 2.868349
+  type: 'test'
+  ...
+# Subtest: mission positions snap and remain in the actual world
+ok 41 - mission positions snap and remain in the actual world
+  ---
+  duration_ms: 0.421332
+  type: 'test'
+  ...
+# Subtest: stored mission layouts reject malformed shapes and values and clamp old coordinates
+ok 42 - stored mission layouts reject malformed shapes and values and clamp old coordinates
+  ---
+  duration_ms: 0.772937
+  type: 'test'
+  ...
+# Subtest: [mocked] config: https only, never a service-role or secret key; env helper needs both values
+ok 43 - [mocked] config: https only, never a service-role or secret key; env helper needs both values
+  ---
+  duration_ms: 3.786573
+  type: 'test'
+  ...
+# Subtest: [mocked] default runtime stays on the mock: services/index.ts does not import the remote adapter
+ok 44 - [mocked] default runtime stays on the mock: services/index.ts does not import the remote adapter
+  ---
+  duration_ms: 0.533075
+  type: 'test'
+  ...
+# Subtest: [mocked] events.list: PostgREST GET with apikey + user bearer; rows mapped to domain Event
+ok 45 - [mocked] events.list: PostgREST GET with apikey + user bearer; rows mapped to domain Event
+  ---
+  duration_ms: 62.619111
+  type: 'test'
+  ...
+# Subtest: [mocked] events.get: non-uuid id → not_found without a request; PGRST116 (406) → not_found
+ok 46 - [mocked] events.get: non-uuid id → not_found without a request; PGRST116 (406) → not_found
+  ---
+  duration_ms: 2.074037
+  type: 'test'
+  ...
+# Subtest: [mocked] events.create retries with a new slug on a unique violation (slugs are global)
+ok 47 - [mocked] events.create retries with a new slug on a unique violation (slugs are global)
+  ---
+  duration_ms: 17.892038
+  type: 'test'
+  ...
+# Subtest: [mocked] guest.open: RPC with anon key only (never the organizer token) and envelope unwrapped
+ok 48 - [mocked] guest.open: RPC with anon key only (never the organizer token) and envelope unwrapped
+  ---
+  duration_ms: 1.414349
+  type: 'test'
+  ...
+# Subtest: [mocked] guest envelopes map to AppError: unpublished, unknown code, general link disabled, throttled
+ok 49 - [mocked] guest envelopes map to AppError: unpublished, unknown code, general link disabled, throttled
+  ---
+  duration_ms: 3.881033
+  type: 'test'
+  ...
+# Subtest: [mocked] submitRsvp: personal → submit_rsvp, general → submit_general_rsvp, declines send no count, server validation mapped
+ok 50 - [mocked] submitRsvp: personal → submit_rsvp, general → submit_general_rsvp, declines send no count, server validation mapped
+  ---
+  duration_ms: 2.878842
+  type: 'test'
+  ...
+# Subtest: [mocked] checkIn passes the caller idempotency key, exceptions, note and staff label to check_in_party
+ok 51 - [mocked] checkIn passes the caller idempotency key, exceptions, note and staff label to check_in_party
+  ---
+  duration_ms: 1.257765
+  type: 'test'
+  ...
+# Subtest: [mocked] checkIn retries once after a network failure with the SAME generated key
+ok 52 - [mocked] checkIn retries once after a network failure with the SAME generated key
+  ---
+  duration_ms: 1.149415
+  type: 'test'
+  ...
+# Subtest: [mocked] checkIn conflicts map to Arabic, recoverable AppErrors; validation errors are not retried
+ok 53 - [mocked] checkIn conflicts map to Arabic, recoverable AppErrors; validation errors are not retried
+  ---
+  duration_ms: 1.554026
+  type: 'test'
+  ...
+# Subtest: [mocked] undo → undo_check_in RPC; second undo maps to conflict "already undone"
+ok 54 - [mocked] undo → undo_check_in RPC; second undo maps to conflict "already undone"
+  ---
+  duration_ms: 1.080972
+  type: 'test'
+  ...
+# Subtest: [mocked] invitations: saveDraft sends the last seen revision; stale revision → conflict
+ok 55 - [mocked] invitations: saveDraft sends the last seen revision; stale revision → conflict
+  ---
+  duration_ms: 3.001892
+  type: 'test'
+  ...
+# Subtest: [mocked] invitations.publish with no design yet saves the occasion default, then publishes (mock parity)
+ok 56 - [mocked] invitations.publish with no design yet saves the occasion default, then publishes (mock parity)
+  ---
+  duration_ms: 1.7231
+  type: 'test'
+  ...
+# Subtest: [mocked] parties: list mapping, constraint errors → field-level validation, messaging refused without a request
+ok 57 - [mocked] parties: list mapping, constraint errors → field-level validation, messaging refused without a request
+  ---
+  duration_ms: 1.457536
+  type: 'test'
+  ...
+# Subtest: [mocked] transport failures: offline/timeout → network, 401 → forbidden (session), 5xx → network, 403 RLS → forbidden
+ok 58 - [mocked] transport failures: offline/timeout → network, 401 → forbidden (session), 5xx → network, 403 RLS → forbidden
+  ---
+  duration_ms: 22.582452
+  type: 'test'
+  ...
+# Subtest: [mocked] onChange fires after successful writes only
+ok 59 - [mocked] onChange fires after successful writes only
+  ---
+  duration_ms: 1.460252
+  type: 'test'
+  ...
+# Subtest: [mocked] auth helper: OTP request/verify shapes and session mapping
+ok 60 - [mocked] auth helper: OTP request/verify shapes and session mapping
+  ---
+  duration_ms: 1.493367
+  type: 'test'
+  ...
+# Subtest: [mocked] long lists page past the 1000-row PostgREST cap
+ok 61 - [mocked] long lists page past the 1000-row PostgREST cap
+  ---
+  duration_ms: 28.01436
+  type: 'test'
+  ...
+# Subtest: journey: create → publish → guest → RSVP from link → seat → partial + full check-in → counts & activity
+ok 62 - journey: create → publish → guest → RSVP from link → seat → partial + full check-in → counts & activity
+  ---
+  duration_ms: 40.040999
+  type: 'test'
+  ...
+# Subtest: general link replies wait for matching; offline mode fails with a human message
+ok 63 - general link replies wait for matching; offline mode fails with a human message
+  ---
+  duration_ms: 6.761277
+  type: 'test'
+  ...
+# Subtest: all 13 occasions complete the simplified journey with their own starter, public replies, reception and archive
+ok 64 - all 13 occasions complete the simplified journey with their own starter, public replies, reception and archive
+  ---
+  duration_ms: 438.429751
+  type: 'test'
+  ...
+1..64
+# tests 64
+# suites 0
+# pass 64
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1754.551249

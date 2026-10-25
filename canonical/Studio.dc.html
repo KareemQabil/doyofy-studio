@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<title>Invitation Studio — full interactive flow</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="motion.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&amp;family=Aref+Ruqaa:wght@400;700&amp;family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&amp;family=Great+Vibes&amp;family=Reem+Kufi:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0B0607}
+a{color:inherit}
+</style>
+</helmet>
+
+<sc-if value="{{alive}}" hint-placeholder-val="{{true}}">
+<div class="st {{stCls}}" dir="rtl" onPointerMove="{{onMove}}" onPointerLeave="{{onLeave}}">
+
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <radialGradient id="st-wax" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#F6E2AE"></stop><stop offset=".45" stop-color="#D2A763"></stop><stop offset="1" stop-color="#8E6431"></stop></radialGradient>
+      <filter id="st-grain"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"></feTurbulence><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 .9  0 0 0 0 .8  0 0 0 .06 0"></feColorMatrix></filter>
+    </defs>
+  </svg>
+
+  <!-- scene -->
+  <div class="st-layer">
+    <dc-import name="Scene" scene="{{sceneId}}" tilt-x="{{nx}}" tilt-y="{{ny}}" hint-size="390px,844px"></dc-import>
+  </div>
+  <div class="st-dim"></div>
+  <div class="st-shadow"></div>
+
+  <!-- 3D card -->
+  <div class="st-rig">
+    <div class="st-tilt" style="transform: rotateX({{rx}}deg) rotateY({{ry}}deg)">
+      <div class="st-bob">
+        <div class="st-intro">
+          <div class="st-flip">
+            <div class="st-edge st-el" style="background: {{edgeV}}"></div>
+            <div class="st-edge st-er" style="background: {{edgeV}}"></div>
+            <div class="st-edge st-et" style="background: {{edgeH}}"></div>
+            <div class="st-edge st-eb" style="background: {{edgeH}}"></div>
+            <div class="st-face st-front">
+              <dc-import name="CardFace" design="{{cardId}}" content="{{c}}" hint-size="300px,420px"></dc-import>
+              <div class="st-glint"></div>
+            </div>
+            <div class="st-face st-back" style="background: {{t.env}}">
+              <div style="position: absolute; inset: 12px; border: 1px solid {{t.accent}}; border-radius: 6px; opacity: 0.8"></div>
+              <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px">
+                <div style="width: 120px; height: 120px; border-radius: 50%; border: 1px solid {{t.accent}}; display: flex; align-items: center; justify-content: center">
+                  <span class="fx-foil" style="font-family: {{t.fAr}}; font-size: 48px; line-height: 1">{{c.monoA}} {{c.monoB}}</span>
+                </div>
+                <span dir="ltr" style="font-size: 12px; letter-spacing: 0.34em; color: #F3D9A0">{{c.dateNum}}</span>
+              </div>
+            </div>
+            <button type="button" class="st-cardbtn" onClick="{{openCard}}" aria-label="Open the invitation"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="st-hint"><div class="st-hint-inner" style="display: flex; gap: 8px; align-items: baseline; padding: 8px 16px; border-radius: 20px; background: rgba(15,8,9,.58); color: #F4EAE0; backdrop-filter: blur(6px)">
+    <span class="ar" style="font-size: 14px">المس البطاقة لفتحها</span><span dir="ltr" style="font-size: 12px; font-style: italic">Tap the card to open</span>
+  </div></div>
+
+  <!-- ============ INVITATION SHEET ============ -->
+  <div class="st-sheet" style="background: {{t.paper}}; color: {{t.ink}}" onPointerDown="{{onDown}}" onPointerUp="{{onUp}}" onWheel="{{onWheel}}">
+    <div style="position: absolute; inset: 10px; border: 1px solid {{t.accent}}; border-radius: 12px; opacity: 0.55; pointer-events: none"></div>
+    <div class="st-close"><button type="button" class="st-round" onClick="{{closeSheet}}" aria-label="Back to the card" style="border-color: {{t.accent}}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+    </button></div>
+    <div style="position: absolute; top: 24px; left: 0; right: 0; text-align: center; pointer-events: none">
+      <span style="font-family: {{t.fAr}}; font-size: 18px; color: {{t.aText}}">{{c.monoA}} · {{c.monoB}}</span>
+    </div>
+
+    <div class="st-page {{leavingCls}}">
+      <!-- 1 · Invitation -->
+      <sc-if value="{{p0}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 100%">
+          <span class="ar fx-rise fx-d1" style="font-size: 16px; color: {{t.aText}}">بكل الحب</span>
+          <span class="fx-rise fx-d1" dir="ltr" style="font-size: 10.5px; letter-spacing: 0.38em; color: {{t.aText}}; margin-top: 2px">WITH LOVE</span>
+          <span class="fx-rise fx-d2" style="font-family: {{t.fAr}}; font-size: 70px; line-height: 1.3; margin-top: 12px">{{c.arA}}</span>
+          <span class="fx-rise fx-d3" style="font-family: {{t.fAr}}; font-size: 30px; line-height: 0.9; color: {{t.accent}}">و</span>
+          <span class="fx-rise fx-d3" style="font-family: {{t.fAr}}; font-size: 70px; line-height: 1.35">{{c.arB}}</span>
+          <span class="fx-rise fx-d4" dir="ltr" style="font-size: 25px; font-style: italic; color: {{t.muted}}">{{c.enA}} &amp; {{c.enB}}</span>
+          <span class="fx-rise fx-d5" style="display: block; width: 130px; height: 1px; background: {{t.accent}}; margin: 20px 0 16px"></span>
+          <p class="ar fx-rise fx-d5" style="margin: 0; font-size: 16px; line-height: 1.85; max-width: 270px">يسعدنا أن تشاركونا بداية حكايتنا، في مساءٍ نحتفظ بتفاصيله مع من نحب.</p>
+          <p class="fx-rise fx-d6" dir="ltr" style="margin: 8px 0 0; font-size: 15.5px; font-style: italic; line-height: 1.45; color: {{t.muted}}; max-width: 260px">Join us as our story begins, on an evening we will treasure with the people we love.</p>
+        </div>
+      </sc-if>
+
+      <!-- 2 · Date + countdown -->
+      <sc-if value="{{p1}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 100%">
+          <span class="ar fx-rise fx-d1" style="font-size: 16px; color: {{t.aText}}">احفظوا الموعد</span>
+          <span class="fx-rise fx-d1" dir="ltr" style="font-size: 10.5px; letter-spacing: 0.38em; color: {{t.aText}}; margin-top: 2px">SAVE THE DATE</span>
+          <div class="fx-rise fx-d2" style="display: flex; align-items: center; gap: 16px; margin-top: 18px">
+            <div style="display: flex; flex-direction: column; align-items: center">
+              <span class="ar" style="font-size: 16px; color: {{t.muted}}">{{c.dayAr}}</span>
+              <span dir="ltr" style="font-size: 12px; letter-spacing: 0.2em; color: {{t.muted}}">{{c.dayEnU}}</span>
+            </div>
+            <span style="display: block; width: 1px; height: 60px; background: {{t.accent}}"></span>
+            <span dir="ltr" style="font-size: 96px; font-weight: 300; line-height: 1">{{c.dayNum}}</span>
+            <span style="display: block; width: 1px; height: 60px; background: {{t.accent}}"></span>
+            <div style="display: flex; flex-direction: column; align-items: center">
+              <span class="ar" style="font-size: 16px; color: {{t.muted}}">{{c.monthAr}}</span>
+              <span dir="ltr" style="font-size: 12px; letter-spacing: 0.2em; color: {{t.muted}}">{{c.monthEnU}} {{c.year}}</span>
+            </div>
+          </div>
+          <div class="fx-rise fx-d3" style="display: flex; gap: 8px; align-items: baseline; margin-top: 10px">
+            <span class="ar" style="font-size: 16px">{{c.timeAr}}</span><span dir="ltr" style="font-size: 14px; font-style: italic; color: {{t.muted}}">{{c.timeEn}}</span>
+          </div>
+          <span class="fx-rise fx-d3" style="display: block; width: 130px; height: 1px; background: {{t.accent}}; margin: 22px 0 18px"></span>
+          <div class="fx-rise fx-d4" style="display: flex; gap: 8px; align-items: baseline">
+            <span class="ar" style="font-size: 14px; color: {{t.aText}}">باقٍ على الفرح</span><span dir="ltr" style="font-size: 10px; letter-spacing: 0.3em; color: {{t.aText}}">COUNTING DOWN</span>
+          </div>
+          <div class="fx-rise fx-d4" dir="ltr" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; width: 280px; margin-top: 10px">
+            <div style="display: flex; flex-direction: column; align-items: center; padding: 8px 0; border: 1px solid {{t.accent}}; border-radius: 12px"><span style="font-size: 30px; line-height: 1">{{cd.days}}</span><span class="ar" style="font-size: 12px; color: {{t.muted}}; margin-top: 4px">يوم</span><span style="font-size: 9px; letter-spacing: 0.2em; color: {{t.muted}}">DAYS</span></div>
+            <div style="display: flex; flex-direction: column; align-items: center; padding: 8px 0; border: 1px solid {{t.accent}}; border-radius: 12px"><span style="font-size: 30px; line-height: 1">{{cd.h}}</span><span class="ar" style="font-size: 12px; color: {{t.muted}}; margin-top: 4px">ساعة</span><span style="font-size: 9px; letter-spacing: 0.2em; color: {{t.muted}}">HOURS</span></div>
+            <div style="display: flex; flex-direction: column; align-items: center; padding: 8px 0; border: 1px solid {{t.accent}}; border-radius: 12px"><span style="font-size: 30px; line-height: 1">{{cd.m}}</span><span class="ar" style="font-size: 12px; color: {{t.muted}}; margin-top: 4px">دقيقة</span><span style="font-size: 9px; letter-spacing: 0.2em; color: {{t.muted}}">MINS</span></div>
+            <div style="display: flex; flex-direction: column; align-items: center; padding: 8px 0; border: 1px solid {{t.accent}}; border-radius: 12px"><span style="font-size: 30px; line-height: 1; color: {{t.aText}}">{{cd.s}}</span><span class="ar" style="font-size: 12px; color: {{t.muted}}; margin-top: 4px">ثانية</span><span style="font-size: 9px; letter-spacing: 0.2em; color: {{t.muted}}">SECS</span></div>
+          </div>
+          <a class="st-cta fx-rise fx-d5" href="{{calHref}}" target="_blank" rel="noopener" style="margin-top: 22px; border-color: {{t.accent}}; color: {{t.ink}}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+            <span class="ar" style="font-size: 15px">أضف إلى التقويم</span><span dir="ltr" style="font-size: 14px; font-style: italic">Add to calendar</span>
+          </a>
+        </div>
+      </sc-if>
+
+      <!-- 3 · Program -->
+      <sc-if value="{{p2}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 100%">
+          <span class="ar fx-rise fx-d1" style="font-size: 16px; color: {{t.aText}}">برنامج الأمسية</span>
+          <span class="fx-rise fx-d1" dir="ltr" style="font-size: 10.5px; letter-spacing: 0.38em; color: {{t.aText}}; margin-top: 2px">THE EVENING</span>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 14px; margin-top: 26px">
+            <sc-for list="{{program}}" as="it" hint-placeholder-count="4">
+              <div class="fx-rise" style="display: flex; flex-direction: column; align-items: center; animation-delay: {{it.delay}}s">
+                <span dir="ltr" style="font-size: 11.5px; letter-spacing: 0.3em; color: {{t.aText}}">{{it.time}}</span>
+                <span style="font-family: {{t.fAr}}; font-size: 25px; line-height: 1.45">{{it.ar}}</span>
+                <span dir="ltr" style="font-size: 15px; font-style: italic; color: {{t.muted}}">{{it.en}}</span>
+                <svg width="10" height="26" viewBox="0 0 10 26" style="margin-top: 10px; opacity: {{it.tailOpacity}}" aria-hidden="true"><line x1="5" y1="0" x2="5" y2="16" stroke="{{t.accent}}" stroke-width="1"></line><path d="M5 16 L9 21 L5 26 L1 21Z" fill="{{t.accent}}"></path></svg>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- 4 · Venue -->
+      <sc-if value="{{p3}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; align-items: center; width: 100%">
+          <span class="ar fx-rise fx-d1" style="font-size: 16px; color: {{t.aText}}">مكان الحفل</span>
+          <span class="fx-rise fx-d1" dir="ltr" style="font-size: 10.5px; letter-spacing: 0.38em; color: {{t.aText}}; margin-top: 2px">THE VENUE</span>
+          <svg class="fx-rise fx-d2" width="250" height="240" viewBox="0 0 250 240" style="margin-top: 20px" role="img" aria-label="Illustrated map showing the venue location">
+            <defs><clipPath id="st-mapclip"><path d="M2 238 V92 C2 56 28 40 62 38 C96 36 110 22 125 4 C140 22 154 36 188 38 C222 40 248 56 248 92 V238 Z"></path></clipPath></defs>
+            <g clip-path="url(#st-mapclip)">
+              <rect width="250" height="240" fill="{{t.ink}}" opacity=".05"></rect>
+              <path d="M-10 60 C40 90 60 150 40 260" fill="none" stroke="{{t.accent}}" stroke-width="30" opacity=".22"></path>
+              <g fill="none" stroke="{{t.ink}}" stroke-linecap="round" opacity=".16"><path d="M60 0 L150 250" stroke-width="8"></path><path d="M0 150 L250 120" stroke-width="8"></path><path d="M100 40 L250 70" stroke-width="4"></path><path d="M70 250 L250 170" stroke-width="4"></path><path d="M150 0 L200 250" stroke-width="3"></path></g>
+              <g fill="{{t.ink}}" opacity=".08"><rect x="160" y="84" width="30" height="22" rx="3"></rect><rect x="196" y="92" width="26" height="18" rx="3"></rect><rect x="84" y="170" width="26" height="16" rx="3"></rect><ellipse cx="190" cy="200" rx="36" ry="22"></ellipse></g>
+            </g>
+            <path d="M2 238 V92 C2 56 28 40 62 38 C96 36 110 22 125 4 C140 22 154 36 188 38 C222 40 248 56 248 92 V238 Z" fill="none" stroke="{{t.accent}}" stroke-width="1.2"></path>
+            <circle class="fx-pulse" cx="126" cy="132" r="12" fill="{{t.env}}" opacity=".35"></circle>
+            <g transform="translate(126 132)"><path d="M0 0 C-4 -8 -14 -14 -14 -26 A14 14 0 0 1 14 -26 C14 -14 4 -8 0 0Z" fill="{{t.env}}" stroke="{{t.accent}}" stroke-width="1"></path><circle cx="0" cy="-26" r="5" fill="{{t.paper}}"></circle></g>
+          </svg>
+          <span class="fx-rise fx-d3" style="font-family: {{t.fAr}}; font-size: 26px; line-height: 1.5; margin-top: 14px">{{c.venueAr}}</span>
+          <span class="fx-rise fx-d3" dir="ltr" style="font-size: 17px; font-style: italic; color: {{t.muted}}">{{c.venueEn}} · {{c.cityEn}}</span>
+          <a class="st-cta fx-rise fx-d4" href="{{mapHref}}" target="_blank" rel="noopener" style="margin-top: 18px; background: {{t.ink}}; color: {{t.paper}}; border-color: {{t.ink}}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z"></path></svg>
+            <span class="ar" style="font-size: 15px">الاتجاهات</span><span dir="ltr" style="font-size: 14px; font-style: italic">Directions</span>
+          </a>
+        </div>
+      </sc-if>
+
+      <!-- 5 · RSVP -->
+      <sc-if value="{{p4}}" hint-placeholder-val="{{false}}">
+        <form onSubmit="{{submit}}" style="display: flex; flex-direction: column; align-items: stretch; gap: 18px; width: 290px">
+          <div class="fx-rise fx-d1" style="display: flex; flex-direction: column; align-items: center">
+            <span style="font-family: {{t.fAr}}; font-size: 38px; line-height: 1.35">تأكيد الحضور</span>
+            <span dir="ltr" style="font-size: 10.5px; letter-spacing: 0.38em; color: {{t.aText}}">KINDLY REPLY</span>
+          </div>
+          <div class="fx-rise fx-d2" style="display: flex; flex-direction: column">
+            <label for="st-name" style="display: flex; justify-content: center; gap: 8px; align-items: baseline"><span class="ar" style="font-size: 15px">الاسم</span><span dir="ltr" style="font-size: 13px; font-style: italic; color: {{t.muted}}">Your name</span></label>
+            <input id="st-name" class="st-field" type="text" autocomplete="name" value="{{rsvpName}}" onChange="{{onName}}" placeholder="اكتب اسمك · Type your name" style="border-bottom-color: {{t.accent}}">
+          </div>
+          <div class="fx-rise fx-d3" role="group" aria-label="Attendance" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+            <button type="button" class="st-pill" aria-pressed="{{yesPressed}}" onClick="{{pickYes}}" style="border-color: {{t.accent}}; background: {{yesBg}}; color: {{yesFg}}">
+              <span class="ar" style="font-size: 15px; line-height: 1.4">سأحضر بكل سرور</span><span dir="ltr" style="font-size: 13px; font-style: italic">Joyfully accepts</span>
+            </button>
+            <button type="button" class="st-pill" aria-pressed="{{noPressed}}" onClick="{{pickNo}}" style="border-color: {{t.accent}}; background: {{noBg}}; color: {{noFg}}">
+              <span class="ar" style="font-size: 15px; line-height: 1.4">أعتذر عن الحضور</span><span dir="ltr" style="font-size: 13px; font-style: italic">Regretfully declines</span>
+            </button>
+          </div>
+          <div class="fx-rise fx-d4" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-top: 1px solid {{t.accent}}; border-bottom: 1px solid {{t.accent}}">
+            <div style="display: flex; flex-direction: column; align-items: flex-start"><span class="ar" style="font-size: 15px">عدد الضيوف</span><span dir="ltr" style="font-size: 13px; font-style: italic; color: {{t.muted}}">Guests</span></div>
+            <div dir="ltr" style="display: flex; align-items: center; gap: 4px">
+              <button type="button" class="st-round" onClick="{{guestsDown}}" disabled="{{guestsMin}}" aria-label="Fewer guests"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button>
+              <span aria-live="polite" style="font-size: 28px; width: 32px; text-align: center">{{guests}}</span>
+              <button type="button" class="st-round" onClick="{{guestsUp}}" disabled="{{guestsMax}}" aria-label="More guests"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+            </div>
+          </div>
+          <button type="submit" class="st-cta fx-rise fx-d5" style="align-self: center; min-width: 220px; background: {{t.ink}}; color: {{t.paper}}; border-color: {{t.ink}}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M9 12.5l2 2 4-4.5"></path></svg>
+            <span class="ar" style="font-size: 16px">اختم وأرسل</span><span dir="ltr" style="font-size: 14px; font-style: italic">Seal &amp; send</span>
+          </button>
+          <sc-if value="{{showNeed}}" hint-placeholder-val="{{false}}">
+            <p role="alert" style="margin: -6px 0 0; font-size: 13.5px; text-align: center; color: {{t.aText}}"><span class="ar">نرجو كتابة الاسم واختيار الرد</span> · <span dir="ltr">Add your name and a reply</span></p>
+          </sc-if>
+        </form>
+      </sc-if>
+    </div>
+
+    <nav class="st-nav" dir="ltr" aria-label="Invitation pages">
+      <button type="button" class="st-round" onClick="{{prev}}" disabled="{{atFirst}}" aria-label="Previous page" style="border-color: {{t.accent}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"></path></svg></button>
+      <div style="display: flex; align-items: center; color: {{t.aText}}">
+        <sc-for list="{{dots}}" as="d" hint-placeholder-count="5"><button type="button" class="st-dotbtn {{d.cls}}" onClick="{{d.go}}" aria-label="{{d.label}}" aria-current="{{d.current}}"><span class="st-dot"></span></button></sc-for>
+      </div>
+      <button type="button" class="st-round" onClick="{{next}}" disabled="{{atLast}}" aria-label="Next page" style="border-color: {{t.accent}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+    </nav>
+  </div>
+
+  <!-- ============ ENVELOPE SEQUENCE ============ -->
+  <div class="st-streak"></div>
+  <div class="st-env">
+    <div class="st-shake">
+      <div class="st-envbox">
+        <div class="st-eshadow"></div>
+        <div class="st-eback" style="background: {{envDarker}}"></div>
+        <div class="st-mcard" style="background: {{t.paper}}; color: {{t.ink}}; border: 1px solid {{t.accent}}">
+          <span style="font-family: {{t.fAr}}; font-size: 28px; line-height: 1.35">{{c.arA}} و {{c.arB}}</span>
+          <span dir="ltr" style="font-size: 14px; font-style: italic; color: {{t.muted}}">{{c.enA}} &amp; {{c.enB}}</span>
+          <span dir="ltr" style="font-size: 10px; letter-spacing: 0.3em; color: {{t.aText}}; margin-top: 6px">{{c.dateNum}}</span>
+        </div>
+        <div class="st-pk" style="background: {{envMid}}; clip-path: polygon(0 0, 52% 58%, 0 100%)"></div>
+        <div class="st-pk" style="background: {{envMid}}; clip-path: polygon(100% 0, 48% 58%, 100% 100%)"></div>
+        <div class="st-pk" style="background: {{t.env}}; clip-path: polygon(0 100%, 50% 46%, 100% 100%)"></div>
+        <div class="st-flap">
+          <div class="st-ff st-ff-front" style="background: linear-gradient(180deg, {{envLight}} 0%, {{t.env}} 100%)"></div>
+          <div class="st-ff st-ff-back" style="background: {{t.paper}}"></div>
+        </div>
+        <div class="st-flash"></div>
+        <svg class="st-seal" viewBox="-3 -3 70 70" aria-hidden="true">
+          <path d="M32.0 -1.6 Q39.0 1.4 46.4 2.0 Q50.1 9.3 58.7 10.7 Q60.1 18.5 63.9 24.7 Q61.5 32.0 65.8 39.7 Q59.6 45.3 57.4 52.2 Q50.7 55.5 47.1 63.4 Q38.7 61.3 32.0 64.4 Q25.2 61.9 17.0 63.2 Q13.6 55.1 6.4 52.4 Q4.0 45.5 -1.4 39.6 Q2.9 32.0 -0.4 24.6 Q3.7 18.4 5.7 11.0 Q13.9 9.3 17.3 1.5 Q25.0 1.5 32.0 -1.6 Z" fill="url(#st-wax)"></path>
+          <circle cx="32" cy="32" r="22" fill="none" stroke="#8E6431" stroke-width="1.2" opacity=".7"></circle>
+          <text x="32.6" y="38.6" text-anchor="middle" font-family="Aref Ruqaa, Amiri, serif" font-size="18" fill="#F6E2AE" opacity=".8">{{c.monoA}} {{c.monoB}}</text>
+          <text x="32" y="38" text-anchor="middle" font-family="Aref Ruqaa, Amiri, serif" font-size="18" fill="#76501F">{{c.monoA}} {{c.monoB}}</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- intro credit -->
+  <div class="st-credit" style="position: absolute; top: 343px">
+    <span class="fx-foil" style="font-family: {{t.fAr}}; font-size: 58px; line-height: 1.45">{{c.arA}} و {{c.arB}}</span>
+    <span dir="ltr" style="font-size: 12px; letter-spacing: 0.42em; color: #E3C58C; margin-top: 4px">{{c.enAU}} &amp; {{c.enBU}}</span>
+    <span dir="ltr" style="font-size: 11px; letter-spacing: 0.34em; color: rgba(243,217,160,.7); margin-top: 18px">REQUEST THE HONOUR OF YOUR PRESENCE</span>
+  </div>
+
+  <!-- finale -->
+  <div class="st-done">
+    <svg class="st-dl st-e1" width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="none" stroke="#C9A15F" stroke-width="1"></circle><path d="M21 33 L29 41 L44 24" fill="none" stroke="#F6E2AE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    <span class="fx-foil st-dl st-e2" style="font-family: {{t.fAr}}; font-size: 60px; line-height: 1.5; margin-top: 10px">{{thanksAr}}</span>
+    <span class="st-dl st-e3" dir="ltr" style="font-size: 20px; font-style: italic; max-width: 290px; line-height: 1.35">{{thanksEn}}</span>
+    <span class="st-dl st-e4" dir="ltr" style="font-size: 12.5px; letter-spacing: 0.3em; color: #E3C58C; margin-top: 18px">{{thanksWho}}</span>
+    <button type="button" class="st-cta st-dl st-e5" onClick="{{replay}}" style="margin-top: 32px; border-color: rgba(227,197,140,.6); color: #F4EAE0; background: transparent">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>
+      <span class="ar" style="font-size: 15px">شاهد مرة أخرى</span><span dir="ltr" style="font-size: 14px; font-style: italic">Watch again</span>
+    </button>
+  </div>
+
+  <div class="st-black"></div>
+  <svg width="390" height="844" style="position: absolute; left: 0; top: 0; pointer-events: none; z-index: 17; mix-blend-mode: screen" aria-hidden="true" focusable="false"><rect width="390" height="844" filter="url(#st-grain)"></rect></svg>
+
+  <div class="st-bar top"><span dir="ltr" style="font-size: 11px; letter-spacing: 0.5em; color: #C9A15F">{{c.dateNum}}</span></div>
+  <div class="st-bar bot"><span dir="ltr" style="font-size: 11px; letter-spacing: 0.5em; color: #C9A15F">{{c.cityEnU}}</span></div>
+
+  <!-- controls -->
+  <div class="st-ctrls" dir="ltr">
+    <div style="display: flex; gap: 8px">
+      <sc-if value="{{showSwitcherBtn}}" hint-placeholder-val="{{true}}">
+        <button type="button" class="st-icon" onClick="{{toggleSw}}" aria-label="Choose card design and scene" aria-expanded="{{swExpanded}}">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4.1-4-7.4-9-7.4z"></path><circle cx="7.5" cy="11" r="1"></circle><circle cx="10" cy="7" r="1"></circle><circle cx="14.5" cy="7" r="1"></circle><circle cx="17" cy="11" r="1"></circle></svg>
+        </button>
+      </sc-if>
+    </div>
+    <div style="display: flex; gap: 8px">
+      <button type="button" class="st-icon" onClick="{{replay}}" aria-label="Replay from the beginning"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg></button>
+      <button type="button" class="st-icon" onClick="{{toggleSound}}" aria-label="{{soundLabel}}" aria-pressed="{{soundPressed}}">
+        <sc-if value="{{soundOn}}" hint-placeholder-val="{{true}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></svg></sc-if>
+        <sc-if value="{{soundOff}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle><path d="M3 3l18 18"></path></svg></sc-if>
+      </button>
+    </div>
+  </div>
+
+  <!-- design switcher -->
+  <sc-if value="{{swOpen}}" hint-placeholder-val="{{false}}">
+    <div class="st-switch" dir="ltr" role="dialog" aria-label="Choose card and scene">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 16px 6px">
+        <span style="font-size: 12px; letter-spacing: 0.3em; color: #E3C58C">CARD DESIGN</span>
+        <button type="button" class="st-icon" onClick="{{toggleSw}}" aria-label="Close chooser" style="width: 44px; height: 44px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+      </div>
+      <div class="st-chiprow">
+        <sc-for list="{{cardChips}}" as="k" hint-placeholder-count="10"><button type="button" class="st-chip {{k.cls}}" onClick="{{k.pick}}" aria-pressed="{{k.pressed}}"><span class="st-sw" style="background: {{k.sw}}"></span>{{k.label}}</button></sc-for>
+      </div>
+      <div style="padding: 10px 16px 6px"><span style="font-size: 12px; letter-spacing: 0.3em; color: #E3C58C">3D SCENE</span></div>
+      <div class="st-chiprow">
+        <sc-for list="{{sceneChips}}" as="k" hint-placeholder-count="10"><button type="button" class="st-chip {{k.cls}}" onClick="{{k.pick}}" aria-pressed="{{k.pressed}}"><span class="st-sw" style="background: {{k.sw}}"></span>{{k.label}}</button></sc-for>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"card":{"editor":"enum","options":["lace","wine","emerald","sage","blush","midnight","arabesque","minimal","terracotta","clay"],"default":"wine","section":"Design"},"scene":{"editor":"enum","options":["candlelit","marble","garden","desert","starry","silk","petals","clay","sea","palace"],"default":"candlelit","section":"Design"},"startAt":{"editor":"enum","options":["intro","card","pages","rsvp","thank-you"],"default":"intro","section":"Preview"},"showSwitcher":{"editor":"boolean","default":true,"section":"Preview"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  componentDidMount() {
+    this.timers = [];
+    if (this.curStage() === 'intro') this.later(() => { if (this.curStage() === 'intro') this.setState({ stage: 'card' }); }, 4700);
+    this.clock = setInterval(() => { if (this.curStage() === 'pages' && this.curPage() === 1) this.forceUpdate(); }, 1000);
+  }
+  componentWillUnmount() {
+    (this.timers || []).forEach(clearTimeout);
+    clearInterval(this.clock);
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.stopMusic();
+    try { if (this.ac) this.ac.close(); } catch (e) {}
+  }
+  later(fn, ms) { const t = setTimeout(fn, ms); (this.timers = this.timers || []).push(t); return t; }
+  startKey() { return this.props.startAt ?? 'intro'; }
+  curStage() {
+    const s = this.state || {};
+    if (s.stage) return s.stage;
+    const k = this.startKey();
+    return ({ intro: 'intro', card: 'card', pages: 'pages', rsvp: 'pages', 'thank-you': 'done' })[k] || 'intro';
+  }
+  curPage() {
+    const s = this.state || {};
+    if (typeof s.page === 'number') return s.page;
+    return this.startKey() === 'rsvp' ? 4 : 0;
+  }
+  soundOn() { return (this.state || {}).sound !== false; }
+
+  /* ---------- sound ---------- */
+  ctx() {
+    try {
+      if (!this.ac) {
+        const C = window.AudioContext || window.webkitAudioContext;
+        if (!C) return null;
+        this.ac = new C();
+        this.master = this.ac.createGain();
+        this.master.gain.value = 0.22;
+        this.master.connect(this.ac.destination);
+      }
+      if (this.ac.state === 'suspended') this.ac.resume();
+      return this.ac;
+    } catch (e) { return null; }
+  }
+  bell(t, midi, vol) {
+    const ac = this.ac; if (!ac) return;
+    const f = 440 * Math.pow(2, (midi - 69) / 12);
+    [[1, vol, 1.7], [2, vol * 0.18, 0.7], [4.01, vol * 0.1, 0.5]].forEach(([m, v, d]) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sine'; o.frequency.value = f * m;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(this.master); o.start(t); o.stop(t + d + 0.05);
+    });
+  }
+  noise(t, dur, f0, f1, vol) {
+    const ac = this.ac; if (!ac) return;
+    const len = Math.floor(ac.sampleRate * dur);
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = ac.createBufferSource(); src.buffer = buf;
+    const bp = ac.createBiquadFilter(); bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(f0, t); bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(bp); bp.connect(g); g.connect(this.master); src.start(t); src.stop(t + dur + 0.02);
+  }
+  thump(t) {
+    const ac = this.ac; if (!ac) return;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.35);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.6, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + 0.5);
+    this.noise(t, 0.12, 1800, 900, 0.12);
+  }
+  startMusic() {
+    if (this.mTimer || !this.soundOn()) return;
+    const ac = this.ctx(); if (!ac) return;
+    const chords = [[50, 54, 57], [47, 50, 54], [43, 47, 50], [45, 49, 52]];
+    this.step = 0;
+    this.mTimer = setInterval(() => {
+      if (!this.ac) return;
+      const i = this.step++;
+      const ch = chords[Math.floor(i / 8) % 4];
+      const pat = [ch[0] + 12, ch[2] + 12, ch[1] + 24, ch[2] + 12, ch[0] + 24, ch[2] + 12, ch[1] + 24, ch[2] + 24];
+      const t = this.ac.currentTime + 0.03;
+      this.bell(t, pat[i % 8], 0.04);
+      if (i % 8 === 0) this.bell(t, ch[0], 0.028);
+    }, 340);
+  }
+  stopMusic() { if (this.mTimer) { clearInterval(this.mTimer); this.mTimer = null; } }
+
+  go(n) {
+    const cur = this.curPage();
+    if (n < 0 || n > 4 || n === cur || (this.state || {}).leaving) return;
+    if (this.ac && this.soundOn()) this.noise(this.ac.currentTime + 0.01, 0.3, 600, 1500, 0.03);
+    this.setState({ leaving: true });
+    this.later(() => this.setState({ page: n, leaving: false }), 340);
+  }
+
+  renderVals() {
+    const s = this.state || {};
+    const stage = this.curStage();
+    const page = this.curPage();
+    const cardId = s.card ?? this.props.card ?? 'wine';
+    const sceneId = s.scene ?? this.props.scene ?? 'candlelit';
+    const noIntro = s.noIntro ?? (this.startKey() !== 'intro');
+
+    const RQ = "'Aref Ruqaa', 'Amiri', serif", KF = "'Reem Kufi', 'Amiri', sans-serif";
+    const THEMES = {
+      lace:       { paper: '#F4EAE0', ink: '#4A2E29', muted: '#6E5048', accent: '#B8925A', aText: '#7A5A2F', env: '#6B1E2C', fAr: RQ },
+      wine:       { paper: '#5B1523', ink: '#F6E7D0', muted: '#E3C9B0', accent: '#D9B77A', aText: '#E8C98A', env: '#3E0F18', fAr: RQ },
+      emerald:    { paper: '#12352D', ink: '#F2E8D5', muted: '#CFC3A8', accent: '#D4B06A', aText: '#E2C27E', env: '#0B241E', fAr: KF },
+      sage:       { paper: '#E6EADC', ink: '#2F3B2C', muted: '#56624F', accent: '#8A9A6E', aText: '#4F5E3F', env: '#5C6B4A', fAr: RQ },
+      blush:      { paper: '#FBF1ED', ink: '#5A3A3F', muted: '#7A5A5F', accent: '#D9A0A6', aText: '#9A5560', env: '#B87880', fAr: RQ },
+      midnight:   { paper: '#141C35', ink: '#F1E9D8', muted: '#C9C3B5', accent: '#E8C98A', aText: '#E8C98A', env: '#0C1226', fAr: RQ },
+      arabesque:  { paper: '#F7F0E3', ink: '#3A2A1E', muted: '#5E4A3A', accent: '#B08A4A', aText: '#7E5E2A', env: '#1F4A55', fAr: RQ },
+      minimal:    { paper: '#FAFAF7', ink: '#1C1C1C', muted: '#5A5A5A', accent: '#B89A5E', aText: '#7A6230', env: '#1C1C1C', fAr: KF },
+      terracotta: { paper: '#EFE2D2', ink: '#4A2A1E', muted: '#6E4A3A', accent: '#B4583A', aText: '#9A4428', env: '#B4583A', fAr: KF },
+      clay:       { paper: '#FFF4F0', ink: '#7A4F5E', muted: '#8D6879', accent: '#F2A7BF', aText: '#A0506C', env: '#E98AAA', fAr: RQ },
+    };
+    const t = THEMES[cardId] || THEMES.wine;
+    const mix = (hex, amt) => {
+      const n = parseInt(hex.replace('#', ''), 16);
+      let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+      const tg = amt < 0 ? 0 : 255, k = Math.abs(amt);
+      r = Math.round(r + (tg - r) * k); g = Math.round(g + (tg - g) * k); b = Math.round(b + (tg - b) * k);
+      return '#' + [r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('');
+    };
+
+    const c = {
+      arA: 'سارة', arB: 'أحمد', enA: 'Sara', enB: 'Ahmed', monoA: 'س', monoB: 'أ', initA: 'S', initB: 'A',
+      dayAr: 'الخميس', dayEn: 'Thursday', dateAr: '١٢ أغسطس ٢٠٢٧', dateEn: '12 August 2027',
+      dayNum: '12', monthAr: 'أغسطس', monthEn: 'August', year: '2027',
+      dateNum: '12 · 08 · 2027', dateShort: '12.08.27',
+      timeAr: 'السابعة مساءً', timeEn: '7:00 PM',
+      venueAr: 'قاعة المارغولد الكبرى', venueEn: 'The Grand Marigold Hall', cityAr: 'القاهرة', cityEn: 'Cairo',
+      iso: '2027-08-12T19:00:00+03:00',
+    };
+    c.enAU = c.enA.toUpperCase(); c.enBU = c.enB.toUpperCase(); c.dayEnU = c.dayEn.toUpperCase();
+    c.monthEnU = c.monthEn.toUpperCase(); c.cityEnU = c.cityEn.toUpperCase();
+
+    const target = Date.parse(c.iso);
+    const diff = Math.max(0, (isNaN(target) ? 0 : target) - Date.now());
+    const pad = (v) => String(v).padStart(2, '0');
+    const cd = { days: Math.floor(diff / 864e5), h: pad(Math.floor(diff / 36e5) % 24), m: pad(Math.floor(diff / 6e4) % 60), s: pad(Math.floor(diff / 1e3) % 60) };
+    const fmt = (ms) => new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const calHref = isNaN(target) ? '#' : 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(c.enA + ' & ' + c.enB + ' — Wedding') + '&dates=' + fmt(target) + '/' + fmt(target + 5 * 36e5) + '&location=' + encodeURIComponent(c.venueEn + ', ' + c.cityEn);
+    const mapHref = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(c.venueEn + ' ' + c.cityEn);
+
+    const program = [
+      { time: '7:00 PM', ar: 'استقبال الضيوف', en: 'Welcome of guests' },
+      { time: '8:00 PM', ar: 'الزفّة', en: 'The Zaffa' },
+      { time: '9:00 PM', ar: 'العشاء', en: 'Dinner' },
+      { time: '10:30 PM', ar: 'الاحتفال', en: 'Celebration & cake' },
+    ].map((p, i, a) => ({ ...p, delay: (0.25 + i * 0.22).toFixed(2), tailOpacity: i === a.length - 1 ? 0 : 1 }));
+
+    const labels = ['Invitation', 'Date', 'Program', 'Venue', 'RSVP'];
+    const dots = labels.map((l, i) => ({ cls: i === page ? 'on' : '', current: i === page ? 'page' : 'false', label: 'Go to ' + l, go: () => this.go(i) }));
+
+    const cards = [['lace', 'Ivory Lace', '#F4EAE0'], ['wine', 'Wine & Gold', '#5B1523'], ['emerald', 'Emerald Deco', '#12352D'], ['sage', 'Sage Botanical', '#C9D2B8'], ['blush', 'Blush Watercolor', '#F3C6CB'], ['midnight', 'Midnight Stars', '#1E2A4C'], ['arabesque', 'Arabesque', '#E9D3A6'], ['minimal', 'Modern Minimal', '#FAFAF7'], ['terracotta', 'Terracotta Sun', '#B4583A'], ['clay', 'Pastel Clay', '#FFD6E4']];
+    const scenes = [['candlelit', 'Candlelit Hall', '#3A1A1F'], ['marble', 'Marble Morning', '#EDE7E0'], ['garden', 'Garden Night', '#14271C'], ['desert', 'Desert Sunset', '#E07A6E'], ['starry', 'Starry Night', '#121B45'], ['silk', 'Silk Drapes', '#EAD4CA'], ['petals', 'Floating Petals', '#F4EAFB'], ['clay', 'Clay Stage', '#F7D7E6'], ['sea', 'Moonlit Sea', '#1B2B58'], ['palace', 'Palace Arches', '#D6B27A']];
+    const cardChips = cards.map(([id, label, sw]) => ({ label, sw, cls: id === cardId ? 'on' : '', pressed: id === cardId ? 'true' : 'false', pick: () => this.setState({ card: id }) }));
+    const sceneChips = scenes.map(([id, label, sw]) => ({ label, sw, cls: id === sceneId ? 'on' : '', pressed: id === sceneId ? 'true' : 'false', pick: () => this.setState({ scene: id }) }));
+
+    const tiltOk = stage === 'card' || stage === 'intro';
+    const nx = tiltOk ? (s.nx || 0) : 0, ny = tiltOk ? (s.ny || 0) : 0;
+    const r1 = (v) => Math.round(v * 10) / 10;
+    const guests = s.guests ?? 2, attending = s.attending ?? null, name = s.rsvpName ?? '';
+    const declined = attending === 'no';
+    const soundOn = s.sound !== false;
+    const accDark = mix(t.accent, -0.35), accLight = mix(t.accent, 0.35);
+
+    return {
+      alive: s.alive !== false,
+      stCls: 's-' + stage + (noIntro ? ' no-intro' : ''),
+      cardId, sceneId, t, c, cd, calHref, mapHref, program, dots,
+      nx: r1(nx), ny: r1(ny), rx: r1(-ny * 16), ry: r1(nx * 20),
+      edgeV: 'linear-gradient(180deg, ' + accDark + ', ' + accLight + ' 50%, ' + accDark + ')',
+      edgeH: 'linear-gradient(90deg, ' + accDark + ', ' + accLight + ' 50%, ' + accDark + ')',
+      envMid: mix(t.env, -0.12), envDarker: mix(t.env, -0.4), envLight: mix(t.env, 0.14),
+      leavingCls: s.leaving ? 'leaving' : '',
+      p0: page === 0, p1: page === 1, p2: page === 2, p3: page === 3, p4: page === 4,
+      atFirst: page === 0, atLast: page === 4,
+      rsvpName: name, guests, guestsMin: guests <= 1, guestsMax: guests >= 8,
+      yesBg: attending === 'yes' ? t.ink : 'transparent', yesFg: attending === 'yes' ? t.paper : t.ink,
+      noBg: declined ? t.ink : 'transparent', noFg: declined ? t.paper : t.ink,
+      yesPressed: attending === 'yes' ? 'true' : 'false', noPressed: declined ? 'true' : 'false',
+      showNeed: !!s.tried && (!name.trim() || !attending),
+      thanksAr: declined ? 'سنفتقدكم' : 'بانتظاركم',
+      thanksEn: declined ? 'You will be missed — thank you for letting us know.' : 'Your reply is sealed and on its way. We can’t wait to celebrate with you.',
+      thanksWho: name.trim() ? (declined ? name.toUpperCase() : name.toUpperCase() + ' · ' + guests + (guests === 1 ? ' GUEST' : ' GUESTS')) : c.enAU + ' & ' + c.enBU + ' · ' + c.dateShort,
+      soundOn, soundOff: !soundOn, soundLabel: soundOn ? 'Mute music' : 'Play music', soundPressed: soundOn ? 'true' : 'false',
+      showSwitcherBtn: this.props.showSwitcher ?? true,
+      swOpen: !!s.swOpen && (this.props.showSwitcher ?? true), swExpanded: s.swOpen ? 'true' : 'false',
+      cardChips, sceneChips,
+
+      onMove: (e) => {
+        const st = this.curStage();
+        if (st !== 'card' && st !== 'intro') return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        this.pending = { nx: Math.max(-0.5, Math.min(0.5, (e.clientX - rect.left) / rect.width - 0.5)), ny: Math.max(-0.5, Math.min(0.5, (e.clientY - rect.top) / rect.height - 0.5)) };
+        if (this.raf) return;
+        this.raf = requestAnimationFrame(() => { this.raf = null; this.setState(this.pending); });
+      },
+      onLeave: () => this.setState({ nx: 0, ny: 0 }),
+      openCard: () => {
+        if (this.curStage() !== 'card') return;
+        if (this.soundOn() && this.ctx()) { const t0 = this.ac.currentTime + 0.02; this.noise(t0, 0.8, 500, 1500, 0.05); [74, 78, 81].forEach((m, i) => this.bell(t0 + 0.5 + i * 0.1, m, 0.05)); }
+        this.setState({ stage: 'opening', swOpen: false });
+        this.later(() => { this.setState({ stage: 'pages', page: 0, leaving: false }); this.startMusic(); }, 950);
+      },
+      closeSheet: () => { if (this.curStage() === 'pages') this.setState({ stage: 'card' }); },
+      next: () => this.go(page + 1),
+      prev: () => this.go(page - 1),
+      onDown: (e) => { this.downY = e.clientY; this.downX = e.clientX; },
+      onUp: (e) => {
+        if (this.downY == null || this.curStage() !== 'pages') return;
+        const tg = e.target && e.target.tagName;
+        const dy = e.clientY - this.downY, dx = e.clientX - this.downX;
+        this.downY = null;
+        if (tg === 'INPUT') return;
+        if (Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx)) this.go(this.curPage() + (dy < 0 ? 1 : -1));
+      },
+      onWheel: (e) => {
+        if (this.curStage() !== 'pages' || Math.abs(e.deltaY) < 24) return;
+        const now = Date.now();
+        if (this.lastWheel && now - this.lastWheel < 900) return;
+        this.lastWheel = now;
+        this.go(this.curPage() + (e.deltaY > 0 ? 1 : -1));
+      },
+      onName: (e) => this.setState({ rsvpName: e.target.value }),
+      pickYes: () => this.setState({ attending: 'yes' }),
+      pickNo: () => this.setState({ attending: 'no' }),
+      guestsUp: () => this.setState({ guests: Math.min(8, guests + 1) }),
+      guestsDown: () => this.setState({ guests: Math.max(1, guests - 1) }),
+      submit: (e) => {
+        if (e && e.preventDefault) e.preventDefault();
+        if (this.curStage() !== 'pages') return;
+        if (!name.trim() || !attending) { this.setState({ tried: true }); return; }
+        const snd = this.soundOn() && this.ctx();
+        const t0 = snd ? this.ac.currentTime + 0.02 : 0;
+        if (snd) this.noise(t0, 0.9, 380, 900, 0.05);
+        this.stopMusic();
+        this.setState({ stage: 'pack', tried: false });
+        this.later(() => this.setState({ stage: 'seal' }), 1750);
+        if (snd) this.thump(t0 + 1.75 + 1.25);
+        this.later(() => { this.setState({ stage: 'fly' }); if (snd && this.ac) this.noise(this.ac.currentTime, 1.3, 300, 2600, 0.07); }, 3500);
+        this.later(() => {
+          this.setState({ stage: 'done' });
+          if (snd && this.ac) [74, 78, 81, 86, 90].forEach((m, i) => this.bell(this.ac.currentTime + 0.2 + i * 0.12, m, 0.06));
+        }, 4950);
+      },
+      replay: () => {
+        (this.timers || []).forEach(clearTimeout); this.timers = [];
+        this.stopMusic();
+        this.setState({ alive: false, swOpen: false });
+        this.later(() => {
+          this.setState({ alive: true, stage: 'intro', noIntro: false, page: 0, leaving: false, nx: 0, ny: 0 });
+          this.later(() => { if (this.curStage() === 'intro') this.setState({ stage: 'card' }); }, 4700);
+        }, 40);
+      },
+      toggleSound: () => {
+        const on = !soundOn;
+        this.setState({ sound: on });
+        if (!on) this.stopMusic();
+        else if (this.curStage() === 'pages') { this.mTimer = null; setTimeout(() => this.startMusic(), 0); }
+      },
+      toggleSw: () => this.setState({ swOpen: !s.swOpen }),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+{
+  "at": "2026-10-04T00:01:06.998Z",
+  "quick": true,
+  "pass": 68,
+  "fail": 0,
+  "results": [
+    {
+      "name": "flow: starts in intro",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "flow: intro → card after ~4.7 s",
+      "ok": true,
+      "detail": "4700 ms"
+    },
+    {
+      "name": "layout: card fully inside the viewport",
+      "ok": true,
+      "detail": "{\"x\":43.0946159362793,\"y\":160.02197265625,\"r\":346.9093132019043,\"b\":583.35302734375,\"w\":390,\"h\":844}"
+    },
+    {
+      "name": "flow: card → opening",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "flow: opening → pages after ~950 ms",
+      "ok": true,
+      "detail": "952 ms"
+    },
+    {
+      "name": "pages: next button",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pages: countdown ticks",
+      "ok": true,
+      "detail": "07 → 06"
+    },
+    {
+      "name": "pages: add-to-calendar link",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pages: previous button",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pages: dot navigation",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pages: directions link",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pages: keyboard (ArrowUp)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pages: wheel → next, second notch debounced",
+      "ok": true,
+      "detail": "program → venue"
+    },
+    {
+      "name": "pages: swipe up → next",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "pages: Escape closes to card",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "rsvp: empty submit is rejected",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "rsvp: \"declines\" pressed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "rsvp: \"accepts\" pressed, \"declines\" released",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "rsvp: guests +/− clamp to 1…8",
+      "ok": true,
+      "detail": "max 8, min 1"
+    },
+    {
+      "name": "finale: pack → seal → fly → done, once",
+      "ok": true,
+      "detail": "pack→seal→fly→done"
+    },
+    {
+      "name": "finale: canonical timings +1.75 / +3.5 / +4.95 s",
+      "ok": true,
+      "detail": "1751 / 3501 / 4952 ms"
+    },
+    {
+      "name": "finale: thank-you names the guest",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "rsvp: stored by the adapter",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sound: mute toggle",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "sound: unmute toggle",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "audio: unlocked by gesture, cues decoded, none failed",
+      "ok": true,
+      "detail": "decoded 8, played open,page,page,page,page,page,page,open,page,choose,choose,click,click,click,click,click,click,click,click,click,click,click,click,click,click,click,pack,seal,fly,done"
+    },
+    {
+      "name": "replay: back to intro, RSVP + pages reset, one scene instance",
+      "ok": true,
+      "detail": "{\"page\":0,\"name\":\"\",\"sent\":false,\"sheet\":0,\"scenes\":1}"
+    },
+    {
+      "name": "replay: intro completes again",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "switcher: changing card keeps the scene instance",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "switcher: changing scene keeps the card",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "console: no runtime errors (flow)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "network: every local request resolves",
+      "ok": true,
+      "detail": " (Google Fonts blocked by sandbox ×1)"
+    },
+    {
+      "name": "combinations: 10 cards × 10 scenes render",
+      "ok": true,
+      "detail": "100/100"
+    },
+    {
+      "name": "console: no errors across 100 combinations",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "reduced motion: starts settled on the card, idle motion off",
+      "ok": true,
+      "detail": "{\"rm\":true,\"st\":\"card\",\"bob\":\"none\"}"
+    },
+    {
+      "name": "reduced motion: flow still works",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "WebGL unavailable → canonical DOM renderer, no blank stage",
+      "ok": true,
+      "detail": "{\"r\":\"candlelit:dom\",\"errs\":[],\"canvases\":0}"
+    },
+    {
+      "name": "console: no errors without WebGL",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "reload: valid default state (wine · candlelit · intro)",
+      "ok": true,
+      "detail": "{\"card\":\"wine\",\"scene\":\"candlelit\",\"st\":\"intro\"}"
+    },
+    {
+      "name": "three: Wine & Gold + Candlelit Hall renders with Three.js",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "three: real GLB models load (web glTF packaging)",
+      "ok": true,
+      "detail": "lantern-chandelier-01.gltf.json, brass-goblets.gltf.json, brass-vase-02.gltf.json, flower-empodium.gltf.json, lantern-01.gltf.json"
+    },
+    {
+      "name": "three: PBR textures load",
+      "ok": true,
+      "detail": "9 maps"
+    },
+    {
+      "name": "three: HDRI loads",
+      "ok": true,
+      "detail": "assets/p0-derived/hdri/courtyard-1k-rgbm16.png"
+    },
+    {
+      "name": "three: tone mapping exposure in target range (settled)",
+      "ok": true,
+      "detail": "ACES exposure 0.72, 72 draws, 88342 tris"
+    },
+    {
+      "name": "three: full RSVP → envelope → done over the WebGL scene",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "three: changing card keeps the WebGL scene",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "three: replay keeps one renderer",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "console: no errors with WebGL",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "network: WebGL assets resolve",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: opens on the experience step with a live preview",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: default experience is 3D · animated",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: choosing 2D rebuilds the preview with the illustrated renderer",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: static starts settled on the card with motion off",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: card step lists 10 live card faces",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: picking a card updates the preview in place",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: 2D lists all 10 settings",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: picking a setting swaps the preview scene",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: 3D lists only 3D settings and falls back to Candlelit Hall",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: details validation blocks sharing without names",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: details update the live preview",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: share step produces a guest link",
+      "ok": true,
+      "detail": "http://localhost:5350/?view=invite&i=eyJ2IjoxLCJleHBlcmllbmN…"
+    },
+    {
+      "name": "wizard: full-screen invitation opens (one Studio at a time)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard: back to editing restores the preview",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "guest link: opens the same design (card, setting, experience, names, time)",
+      "ok": true,
+      "detail": "{\"card\":\"emerald\",\"scene\":\"candlelit\",\"x\":{\"dimension\":\"3d\",\"motion\":\"animated\"},\"a\":\"ليلى\",\"tz\":\"8:30 PM\",\"sw\":false,\"wizard\":false}"
+    },
+    {
+      "name": "console: no errors in the wizard",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard (phone): preview sheet hidden until Preview is tapped",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "wizard (phone): live preview renders only while its sheet is open",
+      "ok": true,
+      "detail": "{\"renderingBefore\":false,\"renderingOpen\":true,\"renderingAfter\":false}"
+    },
+    {
+      "name": "viewport desk 1440×900: stage fits, card fully visible",
+      "ok": true,
+      "detail": "stage 512,0,416,900 card 560,178,880,627 · candlelit:three"
+    }
+  ]
+}

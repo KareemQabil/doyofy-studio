@@ -1,0 +1,325 @@
+/*
+ * «توقيع» across the journey — the same identity on every screen, scoped to :root[data-theme='signature'].
+ * Data screens stay calm and crisp (ivory surfaces, charcoal text, hairlines, gold for the one action).
+ * The expressive block (charcoal / gold / brand mesh with the official pattern) appears only at moments:
+ * the next step, the invitation itself, the guest's envelope, closure.
+ */
+:root[data-theme='signature'] {
+  --sig-pattern-gold: url('assets/brand/pattern-grid-gold.svg');
+  --sig-pattern-ivory: url('assets/brand/pattern-grid-ivory.svg');
+}
+
+/* ------------------------------------------------------------------ page headers, panels, controls */
+:root[data-theme='signature'] .page-title,
+:root[data-theme='signature'] .event-overview-head h1 { font: 700 clamp(34px, 3.8vw, 56px)/1.2 var(--font-display); letter-spacing: -0.02em; }
+:root[data-theme='signature'] .page-kicker,
+:root[data-theme='signature'] .eyebrow { color: var(--c-text-2); font-weight: 600; }
+:root[data-theme='signature'] .page-sub { font-size: 15.5px; color: var(--c-text-2); }
+:root[data-theme='signature'] .page-head::after { content: ''; display: block; width: 64px; height: 4px; margin-top: 16px; background: linear-gradient(90deg, var(--brand-red) 0 50%, var(--brand-gold) 50% 75%, var(--brand-turquoise) 75%); }
+:root[data-theme='signature'] .panel { border-radius: var(--r-md); border: 1px solid var(--c-hairline); background: #fff; box-shadow: none; }
+:root[data-theme='signature'] .panel-title,
+:root[data-theme='signature'] .section-title,
+:root[data-theme='signature'] .section-head h2 { font: 600 20px/1.5 var(--font-display); }
+:root[data-theme='signature'] .input,
+:root[data-theme='signature'] .select,
+:root[data-theme='signature'] .textarea,
+:root[data-theme='signature'] .search-input { border-radius: var(--r-sm); border-color: var(--c-hairline-strong); background: var(--c-surface-elevated); }
+:root[data-theme='signature'] .input:focus,
+:root[data-theme='signature'] .textarea:focus,
+:root[data-theme='signature'] .select:focus { border-color: var(--brand-charcoal); box-shadow: 0 0 0 3px var(--c-primary-soft); }
+:root[data-theme='signature'] .badge { border-radius: 999px; font-weight: 600; }
+:root[data-theme='signature'] .avatar { background: var(--brand-ivory); color: var(--brand-charcoal); font-family: var(--font-display); font-weight: 700; box-shadow: none; }
+:root[data-theme='signature'] .seg { border-radius: 999px; background: var(--c-surface-subtle); }
+:root[data-theme='signature'] .seg-ind { border-radius: 999px; background: var(--brand-charcoal); }
+:root[data-theme='signature'] .seg-btn[aria-selected='true'], :root[data-theme='signature'] .seg-btn[aria-checked='true'], :root[data-theme='signature'] .seg-btn[data-on='true'], :root[data-theme='signature'] .seg-btn.is-active { color: var(--brand-ivory); }
+:root[data-theme='signature'] .chip { border-radius: 999px; }
+:root[data-theme='signature'] .chip.is-on, :root[data-theme='signature'] .chip[aria-pressed='true'] { background: var(--brand-charcoal); color: var(--brand-ivory); border-color: var(--brand-charcoal); }
+:root[data-theme='signature'] .progress { border-radius: 0; height: 4px; background: var(--c-hairline); }
+:root[data-theme='signature'] .progress-fill { border-radius: 0; background: var(--brand-charcoal); }
+
+/* empty / error states: icon inside a capsule (the arch), copy plain and useful */
+:root[data-theme='signature'] .empty-icon { width: 72px; height: 72px; border-radius: 50%; background: var(--brand-ivory); color: var(--brand-charcoal); display: grid; place-items: center; box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 7.5px var(--brand-gold); }
+:root[data-theme='signature'] .empty-error .empty-icon { background: var(--brand-red); color: var(--brand-ivory); }
+:root[data-theme='signature'] .empty-title { font: 600 22px/1.5 var(--font-display); }
+
+/* toasts: charcoal slips with a gold edge */
+:root[data-theme='signature'] .toast { background: var(--brand-charcoal); color: var(--brand-ivory); border-radius: var(--r-md); border-inline-start: 4px solid var(--brand-gold); }
+:root[data-theme='signature'] .toast .btn { color: var(--brand-gold); }
+
+/* dialogs & drawers: ivory sheet, the double line under the title */
+:root[data-theme='signature'] .dialog-panel { border-radius: var(--r-md); background: var(--c-surface); box-shadow: var(--shadow-pop); }
+:root[data-theme='signature'] .dialog-head { border-bottom: 0; position: relative; }
+:root[data-theme='signature'] .dialog-head::after { content: ''; position: absolute; inset-inline: 24px; bottom: 0; height: 6px; background: linear-gradient(var(--c-hairline-strong), var(--c-hairline-strong)) 0 0 / 100% 1px no-repeat, linear-gradient(var(--c-hairline-strong), var(--c-hairline-strong)) 0 4px / 100% 1px no-repeat; }
+:root[data-theme='signature'] .dialog-title { font: 600 22px/1.45 var(--font-display); }
+:root[data-theme='signature'] .drawer-summary { border-radius: var(--r-md); background: var(--c-surface-subtle); }
+
+/* ------------------------------------------------------------------ overview */
+.sig-moment { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: clamp(18px, 3vw, 44px); padding: clamp(24px, 3vw, 40px) clamp(22px, 3vw, 44px); margin-block: 22px 8px; }
+.sig-moment .moment-copy { display: grid; justify-items: start; gap: 10px; }
+.sig-moment h2 { font: 700 clamp(28px, 2.8vw, 42px)/1.3 var(--font-display); color: #fff; }
+.sig-stage.sig-moment .moment-copy > p { color: color-mix(in srgb, var(--brand-ivory) 80%, transparent); line-height: 1.8; margin: 0; }
+.sig-moment-eyebrow { font: 600 13px/1.4 var(--font-display); color: var(--brand-gold) !important; }
+.sig-moment-card { display: block; border-radius: 6px; transition: transform 400ms var(--ease-out); }
+.sig-moment-card:hover { transform: translateY(-4px); }
+.sig-moment-card .card-thumb { box-shadow: 0 0 0 4px var(--brand-charcoal), 0 0 0 5.5px var(--brand-gold); border-radius: 4px; }
+.sig-date { display: grid; justify-items: center; align-content: center; width: 124px; aspect-ratio: 124 / 140; border-radius: 6px; background: var(--brand-gold); color: var(--brand-charcoal); line-height: 1.15; }
+.sig-date b { font: 700 46px/1 var(--font-display); }
+.sig-date span { font-size: 14px; font-weight: 600; }
+.sig-date small { font-size: 11.5px; margin-top: 4px; }
+:root[data-theme='signature'] .journey-number { border-radius: 50% !important; width: 38px; height: 38px; border: 1.5px solid var(--c-hairline-strong) !important; background: transparent; color: var(--c-text-2); }
+:root[data-theme='signature'] .journey .is-current .journey-number { background: var(--brand-gold); border-color: var(--brand-gold) !important; color: var(--brand-charcoal); }
+:root[data-theme='signature'] .journey .is-done .journey-number { background: var(--brand-charcoal); border-color: var(--brand-charcoal) !important; color: var(--brand-gold); }
+/* facts as tickets */
+:root[data-theme='signature'] .event-facts,
+:root[data-theme='signature'] .guest-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; border: 0; padding: 0; }
+:root[data-theme='signature'] .event-facts > div,
+:root[data-theme='signature'] .guest-facts > div { position: relative; padding: 16px 18px; border-radius: var(--r-md); background: var(--c-surface); border: 1px solid var(--c-hairline) !important; }
+:root[data-theme='signature'] .event-facts > div::before,
+:root[data-theme='signature'] .guest-facts > div::before { content: ''; position: absolute; top: -1px; inset-inline: -1px; height: 4px; border-radius: 12px 12px 0 0; background: var(--brand-charcoal); }
+:root[data-theme='signature'] .event-facts > div:nth-child(1)::before, :root[data-theme='signature'] .guest-facts > div:nth-child(1)::before { background: var(--brand-turquoise); }
+:root[data-theme='signature'] .event-facts > div:nth-child(2)::before, :root[data-theme='signature'] .guest-facts > div:nth-child(2)::before { background: var(--brand-gold); }
+:root[data-theme='signature'] .event-facts > div:nth-child(3)::before, :root[data-theme='signature'] .guest-facts > div:nth-child(3)::before { background: var(--brand-red); }
+:root[data-theme='signature'] .event-facts dd strong,
+:root[data-theme='signature'] .guest-facts strong { font: 600 36px/1.1 var(--font-display); }
+:root[data-theme='signature'] .attention-list li { border-radius: var(--r-md); background: var(--c-surface); border: 1px solid var(--c-hairline); }
+:root[data-theme='signature'] .timeline-dot { width: 10px; height: 10px; }
+:root[data-theme='signature'] .preparation-list { border-radius: var(--r-md); background: var(--c-surface); border: 1px solid var(--c-hairline); }
+:root[data-theme='signature'] .check-item.is-done .check-num { background: var(--brand-charcoal); color: var(--brand-gold); }
+
+/* ------------------------------------------------------------------ invitation summary: the invitation on charcoal with the pattern */
+:root[data-theme='signature'] .invite-card-panel { position: relative; overflow: hidden; isolation: isolate; border: 0; color: var(--brand-ivory); background: var(--mesh-night); border-radius: var(--r-md); }
+:root[data-theme='signature'] .invite-card-panel::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--sig-pattern-gold) 0 0 / 140px auto; opacity: 0.14; }
+:root[data-theme='signature'] .invite-card-panel .card-thumb { box-shadow: 0 0 0 4px var(--brand-charcoal), 0 0 0 5.5px var(--brand-gold); }
+:root[data-theme='signature'] .invite-card-panel .btn-secondary { color: var(--brand-ivory); border-color: var(--brand-ivory); }
+:root[data-theme='signature'] .invite-card-panel .btn-secondary:hover:not(:disabled) { background: var(--brand-ivory); color: var(--brand-charcoal); }
+:root[data-theme='signature'] .invite-card-panel .btn-ghost, :root[data-theme='signature'] .invite-card-panel a:not(.btn) { color: var(--brand-ivory); }
+
+/* ------------------------------------------------------------------ editor: the preview sits on the brand mesh */
+:root[data-theme='signature'] .ed-stage { background: var(--mesh-night); }
+:root[data-theme='signature'] .ed-stage .ed-stage-caption, :root[data-theme='signature'] .ed-stage .chip, :root[data-theme='signature'] .ed-stage .btn-ghost, :root[data-theme='signature'] .ed-stage .btn-quiet { color: var(--brand-ivory); }
+:root[data-theme='signature'] .ed-stage::after { content: none; }
+:root[data-theme='signature'] .ed-phone, :root[data-theme='signature'] .ed-device { box-shadow: 0 0 0 8px #111, 0 0 0 9.5px rgba(199, 166, 97, 0.5), 0 40px 70px -30px rgba(0, 0, 0, 0.8); }
+:root[data-theme='signature'] .ed-panel { background: var(--c-surface); }
+:root[data-theme='signature'] .ed-simple-intro { border-radius: var(--r-md); background: var(--c-primary-soft); border: 0; border-inline-start: 4px solid var(--brand-gold); }
+:root[data-theme='signature'] .ed-handle span { width: 48px; height: 5px; background: var(--c-hairline-strong); }
+
+/* template gallery & design deck */
+:root[data-theme='signature'] .tg-direction-art { display: none; }
+:root[data-theme='signature'] .tg-chips { background: none; }
+.sig-tpl { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr); align-items: center; gap: clamp(20px, 4vw, 60px); margin-top: 8px; overflow-x: clip; padding-block: 8px 24px; }
+.sig-tpl-deck { --deck-w: clamp(210px, min(21vw, calc((100dvh - 330px) / 1.62)), 290px); --deck-h: calc(var(--deck-w) * 1.62 + 30px); }
+.sig-tpl-deck .deck-card { border-radius: 8px; }
+.sig-tpl-card { position: relative; display: block; border-radius: 8px; overflow: hidden; background: var(--c-surface-subtle); box-shadow: 0 26px 40px -28px rgba(38, 38, 38, 0.6); }
+.sig-tpl-card.is-active { box-shadow: 0 0 0 4px var(--c-canvas), 0 0 0 5.5px var(--brand-charcoal), 0 26px 40px -28px rgba(38, 38, 38, 0.6); }
+.sig-tpl-card .tpl-thumb { display: block; width: 100%; aspect-ratio: 390 / 630; }
+.sig-tpl-current { position: absolute; top: 12px; inset-inline-start: 12px; display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; background: var(--brand-charcoal); color: var(--brand-gold); font-size: 12px; font-weight: 600; }
+.sig-tpl-copy { display: grid; gap: 12px; justify-items: start; padding: 26px; border-radius: var(--r-md); background: var(--c-surface); border: 1px solid var(--c-hairline); }
+.sig-tpl-copy h3 { font: 700 clamp(24px, 2.4vw, 34px)/1.4 var(--font-display); }
+.sig-tpl-copy p { color: var(--c-text-2); line-height: 1.8; }
+.sig-tpl-safe { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--c-success) !important; }
+.sig-tpl-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ------------------------------------------------------------------ guests, import, replies, seating */
+:root[data-theme='signature'] .guest-table { border-radius: var(--r-md); border: 1px solid var(--c-hairline); background: var(--c-surface); box-shadow: none; overflow: hidden; }
+:root[data-theme='signature'] .gt-head { background: var(--c-surface-subtle); font-weight: 600; }
+:root[data-theme='signature'] .gt-row:not(.gt-head):hover { background: color-mix(in srgb, var(--brand-gold) 10%, var(--c-surface)); }
+:root[data-theme='signature'] .gt-name { font-weight: 600; }
+:root[data-theme='signature'] .bulk-bar { border-radius: 999px; background: var(--brand-charcoal); color: var(--brand-ivory); }
+:root[data-theme='signature'] .bulk-bar .btn { color: var(--brand-ivory); }
+:root[data-theme='signature'] .table-card, :root[data-theme='signature'] .seat-table { border-radius: var(--r-md); }
+
+/* ------------------------------------------------------------------ reception: preparation on charcoal; the gate stays high-contrast */
+:root[data-theme='signature'] .reception-prep { position: relative; overflow: hidden; isolation: isolate; color: var(--brand-ivory); background: var(--mesh-night); border: 0; border-radius: var(--r-md); }
+:root[data-theme='signature'] .reception-prep::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--sig-pattern-gold) 0 0 / 140px auto; opacity: 0.12; }
+:root[data-theme='signature'] .reception-prep .panel-head { border-color: color-mix(in srgb, var(--brand-gold) 35%, transparent); }
+:root[data-theme='signature'] .reception-prep :is(.panel-title, h2, h3, strong) { color: var(--brand-ivory); }
+:root[data-theme='signature'] .reception-prep :is(p, li, .muted, .faint, .field-hint, .field-label) { color: color-mix(in srgb, var(--brand-ivory) 80%, transparent); }
+:root[data-theme='signature'] .reception-prep .input { background: color-mix(in srgb, var(--brand-ivory) 8%, transparent); color: var(--brand-ivory); border-color: color-mix(in srgb, var(--brand-gold) 45%, transparent); }
+:root[data-theme='signature'] .reception-prep .btn-secondary { color: var(--brand-ivory); border-color: var(--brand-ivory); }
+:root[data-theme='signature'] .theme-gate {
+  --c-bg: #1C1C1C; --c-surface: #262626; --c-surface-sunken: #2F2D2A; --c-surface-hover: #33302C;
+  --c-line: #3D3A35; --c-line-strong: #5C574F; --c-text: #F2EAD9; --c-text-2: #D2C8B4; --c-text-3: #ADA390;
+  --c-primary: #C7A661; --c-primary-hover: #D4B676; --c-primary-pressed: #B8955A; --c-on-primary: #1C1C1C; --c-primary-soft: #3A342A; --c-primary-text: #E0C68E;
+  --c-success: #5FD0C9; --c-success-soft: #173B39; --c-danger: #E57C7E; --c-danger-soft: #3D2223; --c-warning: #E8C170; --c-warning-soft: #3A3020;
+  --c-focus: #E0C68E; --c-gate-deep: #141414;
+}
+:root[data-theme='signature'] .theme-gate .gate-card { border-radius: var(--r-md); }
+:root[data-theme='signature'] .gate-done-mark { border-radius: 999px 999px 4px 4px !important; background: var(--brand-turquoise) !important; color: var(--brand-charcoal) !important; }
+
+/* ------------------------------------------------------------------ summary / closure: gold block with the bloom motif */
+:root[data-theme='signature'] .summary-closure { position: relative; overflow: hidden; isolation: isolate; border-radius: var(--r-md); color: #fff; background: var(--mesh-red); }
+:root[data-theme='signature'] .summary-closure::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--sig-pattern-ivory) 0 0 / 220px auto; opacity: 0.08; }
+:root[data-theme='signature'] .summary-closure :is(h1, h2, h3, strong, p, .eyebrow) { color: #fff; }
+:root[data-theme='signature'] .summary-track { border-radius: 0; }
+
+/* ------------------------------------------------------------------ guest hub */
+:root[data-theme='signature'] .theme-guest {
+  --c-bg: #F2EAD9; --c-surface: #FBF7EE; --c-surface-sunken: #E4D5B4; --c-line: #D9CBAE; --c-line-strong: #B9A57E;
+  --c-text: #262626; --c-text-2: #4D4840; --c-text-3: #5C564C;
+  --c-primary: #C7A661; --c-primary-hover: #B8955A; --c-primary-pressed: #A8874C; --c-primary-soft: #EADCBF; --c-primary-text: #6E5320; --c-on-primary: #262626;
+  --c-accent: #BC4749; --c-accent-strong: #9E3537; --c-accent-soft: #F3DCD8; --c-focus: #262626;
+}
+:root[data-theme='signature'] .hub-head { position: relative; overflow: hidden; isolation: isolate; border-radius: 0 0 12px 12px; color: var(--brand-ivory); background: var(--mesh-night); padding-block: 40px 44px; }
+:root[data-theme='signature'] .hub-head::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--sig-pattern-gold) 0 0 / 140px auto; opacity: 0.14; }
+:root[data-theme='signature'] .hub-head :is(h1, h2, .hub-names, .hub-h) { color: var(--brand-ivory); }
+:root[data-theme='signature'] .hub-head :is(p, .hub-kicker, .hub-date, .hub-count) { color: color-mix(in srgb, var(--brand-ivory) 80%, transparent); }
+:root[data-theme='signature'] .hub-amp { color: var(--brand-gold); }
+:root[data-theme='signature'] .hub-card { border-radius: var(--r-md); border: 1px solid var(--c-line); box-shadow: none; }
+:root[data-theme='signature'] .hub-qr { border-top: 4px solid var(--brand-gold); }
+:root[data-theme='signature'] .hub-code { font-family: var(--font-display); letter-spacing: 0.18em; }
+
+/* ------------------------------------------------------------------ guest reveal: the envelope on the brand mesh */
+.sig-cover { min-height: 100dvh; display: grid; padding: 0; background: #1E1E1E; }
+.sig-cover-stage { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; gap: 12px; padding: clamp(28px, 5vh, 56px) 20px clamp(22px, 4vh, 40px); text-align: center; border-radius: 0 !important; }
+.sig-cover-head { display: grid; gap: 8px; justify-items: center; }
+.sig-cover-kicker { font-size: 14px; color: var(--brand-gold); }
+.sig-cover-head h1 { font: 700 clamp(32px, 6vw, 60px)/1.25 var(--font-display); color: var(--brand-ivory); text-wrap: balance; max-width: 16em; }
+.sig-cover-date { font-size: 14px; color: rgba(242, 234, 217, 0.8); }
+.sig-cover-env { position: relative; align-self: center; width: min(86vw, 480px, 62vh); aspect-ratio: 400 / 300; margin-top: 44px; filter: drop-shadow(0 26px 30px rgba(38, 38, 38, 0.25)); }
+.sig-cover-back, .sig-cover-front { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sig-cover-back { clip-path: inset(33% 0 0 0); transition: clip-path 500ms var(--ease-out); }
+.sig-cover.is-opening .sig-cover-back { clip-path: inset(0 0 0 0); }
+.sig-cover-front { z-index: 3; pointer-events: none; }
+.sig-cover-card { position: absolute; z-index: 2; left: 50%; bottom: 12%; transform: translate(-50%, 0%); transition: transform 760ms 140ms var(--ease-out); }
+.sig-cover-card .card-thumb { border-radius: 4px; }
+.sig-cover-flap { position: absolute; z-index: 4; left: 0; right: 0; top: 33.3%; height: 52%; background: #B8955A; clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: 50% 0; transition: transform 600ms var(--ease-out), opacity 300ms 360ms; }
+.sig-cover-seal { position: absolute; z-index: 6; left: 50%; top: 80%; margin: 0; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; transform: translate(-50%, calc(-50% + var(--lift, 0px))); transition: transform 380ms var(--ease-out); display: grid; justify-items: center; gap: 8px; }
+.sig-cover-seal[data-dragging] { transition: none; cursor: grabbing; }
+.sig-cover-seal:focus-visible { outline: 2.5px solid #fff; outline-offset: 6px; border-radius: 50%; }
+.sig-cover-seal .sig-seal { --bg: var(--brand-red); --fg: #fff; }
+.sig-cover-seal-hint { font-size: 12px; color: var(--brand-charcoal); background: var(--brand-ivory); padding: 4px 12px; border-radius: 999px; }
+.sig-cover-actions { display: grid; justify-items: center; gap: 6px; width: min(100%, 360px); }
+.sig-cover-actions .btn { width: 100%; justify-content: center; }
+.sig-cover-skip { background: none; border: 0; font: inherit; cursor: pointer; }
+.sig-cover.is-opening .sig-cover-seal { transform: translate(-50%, -260%) scale(0.6); opacity: 0; transition: transform 480ms var(--ease-out), opacity 360ms; }
+.sig-cover.is-opening .sig-cover-flap { transform: rotateX(180deg); opacity: 0; }
+.sig-cover.is-opening .sig-cover-card { transform: translate(-50%, -70%) scale(1.5); z-index: 5; }
+@media (max-width: 760px) { .sig-cover-env { margin-top: 36px; } .sig-cover-card .card-thumb { width: 112px !important; height: 157px !important; } .sig-cover-card .card-thumb-inner { transform: scale(0.3733) !important; } }
+@media (prefers-reduced-motion: reduce) { .sig-cover-card, .sig-cover-flap, .sig-cover-seal, .sig-cover-back { transition: none; } }
+
+/* ------------------------------------------------------------------ the brand seal stamp (success) */
+.sig-stamp { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; align-content: center; gap: 14px; pointer-events: none; animation: sig-stamp-out 1500ms ease-in forwards; }
+.sig-stamp-seal { animation: sig-stamp-in 520ms var(--ease-out) both; }
+.sig-stamp-ring { position: absolute; width: 120px; height: 120px; border-radius: 50%; border: 1.5px solid var(--brand-gold); animation: sig-ring 900ms 200ms var(--ease-out) both; }
+.sig-stamp-label { font: 600 20px/1.4 var(--font-display); color: var(--brand-charcoal); background: var(--brand-ivory); padding: 6px 18px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--c-hairline-strong); }
+@keyframes sig-stamp-in { from { opacity: 0; transform: scale(1.35); } to { opacity: 1; transform: none; } }
+@keyframes sig-ring { from { transform: scale(0.8); opacity: 1; } to { transform: scale(2.1); opacity: 0; } }
+@keyframes sig-stamp-out { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sig-stamp-seal, .sig-stamp-ring { animation: none; } .sig-stamp-ring { display: none; } }
+
+@media (max-width: 900px) {
+  .sig-tpl { grid-template-columns: 1fr; }
+  .sig-tpl-deck { --deck-w: min(58vw, 250px); }
+  .sig-tpl-copy { padding: 18px; }
+}
+@media (max-width: 760px) {
+  .sig-moment { grid-template-columns: auto minmax(0, 1fr); gap: 16px; padding: 22px 18px; }
+  .sig-moment .moment-copy { grid-column: 1 / -1; grid-row: 2; }
+  .sig-moment-card { justify-self: end; }
+  .sig-moment-card .card-thumb { width: 96px !important; height: 134px !important; }
+  .sig-moment-card .card-thumb-inner { transform: scale(0.32) !important; }
+  .sig-date { width: 96px; }
+  .sig-date b { font-size: 34px; }
+  :root[data-theme='signature'] .event-facts, :root[data-theme='signature'] .guest-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  :root[data-theme='signature'] .event-facts > div, :root[data-theme='signature'] .guest-facts > div { padding: 12px 10px; }
+  :root[data-theme='signature'] .event-facts dd strong, :root[data-theme='signature'] .guest-facts strong { font-size: 26px; }
+}
+
+/* ── Spots: licensed Phosphor glyphs in a brand disc (no drawn illustrations in «توقيع») ── */
+:root[data-theme='signature'] .journey-artwork{position:relative;display:grid;place-items:center;width:104px;aspect-ratio:1;border-radius:50%;background:var(--sig-ivory,#F2EAD9);color:#262626;box-shadow:inset 0 0 0 1px #C7A661,inset 0 0 0 6px var(--sig-ivory,#F2EAD9),inset 0 0 0 7px rgba(199,166,97,.55)}
+:root[data-theme='signature'] .journey-artwork .journey-ill{display:none}
+:root[data-theme='signature'] .journey-artwork .journey-spot{display:block;width:46%;height:auto}
+:root[data-theme='signature'] .journey-artwork::after{content:'';position:absolute;inset-block-start:4%;inset-inline-end:2%;width:18%;aspect-ratio:1;border-radius:50%;background:#BC4749}
+:root[data-theme='signature'] .empty-compact>.journey-artwork{width:76px}
+:root[data-theme='signature'] .dropzone>.journey-artwork,:root[data-theme='signature'] .import-done>.journey-artwork{width:96px;margin-inline:auto}
+:root[data-theme='signature'] .summary-closure>.journey-artwork{width:96px;margin-inline:auto}
+:root[data-theme='signature'] .summary-closure>.journey-artwork::after{background:#C7A661}
+:root[data-theme='signature'] .reception-art{width:120px}
+:root[data-theme='signature'] .ed-stage .ed-stage-caption{background:rgba(242,234,217,.08);border-color:rgba(199,166,97,.45);color:#F2EAD9}
+@media (max-width: 760px){:root[data-theme='signature'] .reception-art{float:none;width:84px;margin:0 0 16px}}
+
+/* ── Reviewer: /prototype/signature-directions ── */
+.sig-dir { max-width: 1280px; margin: 0 auto; padding: clamp(40px, 6vw, 96px) clamp(20px, 4.4vw, 64px) clamp(64px, 8vw, 120px); overflow-x: clip; }
+.sig-dir-intro { display: grid; gap: 18px; max-width: 760px; margin-bottom: clamp(40px, 6vw, 88px); }
+.sig-dir .sig-kicker { font: 600 14px/1 var(--font-display); color: #A23B3D; letter-spacing: .02em; }
+.sig-dir-intro h1 { font: 700 clamp(44px, 7vw, 104px)/1.08 var(--font-display); letter-spacing: -0.03em; }
+.sig-dir-intro p:last-child { font-size: 18px; line-height: 1.85; color: var(--c-text-2); max-width: 36em; }
+.sig-dir-list { list-style: none; padding: 0; display: grid; gap: clamp(48px, 6vw, 96px); counter-reset: d; }
+.sig-dir-item { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 64px); align-items: center; }
+.sig-dir-item figure { margin: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 40px 60px -40px rgba(38, 38, 38, .55), 0 0 0 1px rgba(38, 38, 38, .08); }
+.sig-dir-item img { display: block; width: 100%; height: auto; }
+.sig-dir-copy { display: grid; gap: 14px; justify-items: start; }
+.sig-dir-letter { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; font: 700 28px/1 var(--font-display); }
+.tone-red .sig-dir-letter { background: #BC4749; color: #fff; }
+.tone-night .sig-dir-letter { background: #262626; color: #C7A661; }
+.tone-ivory .sig-dir-letter { background: #F2EAD9; color: #262626; box-shadow: inset 0 0 0 1px #C7A661; }
+.sig-dir-copy h2 { font: 700 clamp(32px, 3.6vw, 52px)/1.2 var(--font-display); letter-spacing: -0.02em; }
+.sig-dir-copy p { font-size: 16px; line-height: 1.85; color: var(--c-text-2); }
+.sig-dir-copy .sig-dir-where { display: flex; gap: 8px; align-items: flex-start; color: var(--c-text); font-weight: 600; font-size: 15px; }
+.sig-dir-copy .sig-dir-where .icon { margin-top: 5px; flex: none; }
+.sig-dir-section { padding-top: clamp(72px, 8vw, 128px); }
+.sig-dir-section > header { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 18px; align-items: baseline; margin-bottom: clamp(24px, 3vw, 44px); max-width: 920px; }
+.sig-dir-section > header .sig-section-num { grid-row: span 2; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: #262626; color: #C7A661; font: 600 15px/1 var(--font-display); }
+.sig-dir-section > header h2 { font: 700 clamp(28px, 3.4vw, 46px)/1.2 var(--font-display); letter-spacing: -0.02em; }
+.sig-dir-section > header p { font-size: 16px; line-height: 1.85; color: var(--c-text-2); }
+.sig-dir-palette { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 1px rgba(38, 38, 38, .08); }
+.sig-dir-palette > div { display: grid; align-content: end; gap: 4px; min-height: 180px; padding: 18px; }
+.sig-dir-palette b { font: 700 20px/1.2 var(--font-display); }
+.sig-dir-palette span { font: 500 13px/1 ui-monospace, monospace; opacity: .85; }
+.sig-dir-pairs { list-style: none; padding: 0; margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 10px; }
+.sig-dir-pairs li { display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center; padding: 10px 14px 10px 10px; border-radius: 10px; border: 1px solid var(--c-hairline); background: #fff; font-size: 14px; }
+.sig-dir-chip { display: grid; place-items: center; width: 52px; height: 36px; border-radius: 6px; font: 700 15px/1 var(--font-display); box-shadow: inset 0 0 0 1px rgba(38, 38, 38, .08); }
+.sig-dir-pairs .is-ok .icon { color: #1F7A5A; }
+.sig-dir-pairs .is-no { border-style: dashed; color: var(--c-text-2); }
+.sig-dir-pairs .is-no .icon { color: #A23B3D; }
+.sig-dir-type { display: grid; gap: 14px; padding: clamp(24px, 4vw, 52px); border-radius: 10px; background: #fff; border: 1px solid var(--c-hairline); }
+.sig-dir-type .t-display { font: 700 clamp(40px, 6vw, 88px)/1.12 var(--font-display); letter-spacing: -0.03em; }
+.sig-dir-type .t-head { font: 600 clamp(24px, 3vw, 40px)/1.3 var(--font-display); letter-spacing: -0.015em; }
+.sig-dir-type .t-body { font: 400 17px/1.85 var(--font-ui); color: var(--c-text-2); max-width: 38em; }
+.sig-dir-type dl { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 12px; padding-top: 18px; border-top: 1px solid var(--c-hairline); font-size: 13px; }
+.sig-dir-type dt { color: var(--c-text-2); } .sig-dir-type dd { margin: 2px 0 0; font-weight: 600; direction: ltr; text-align: end; }
+.sig-dir-meshes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.sig-dir-meshes > div { display: grid; align-content: end; gap: 4px; min-height: 240px; padding: 22px; border-radius: 10px; color: #fff; }
+.sig-dir-meshes > div.is-light { color: #262626; box-shadow: inset 0 0 0 1px rgba(38, 38, 38, .08); }
+.sig-dir-meshes b { font: 700 24px/1.2 var(--font-display); } .sig-dir-meshes span { font-size: 13px; opacity: .9; }
+.sig-dir-shapes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.sig-dir-shapes figure { margin: 0; display: grid; grid-template-rows: 150px auto; place-items: center; gap: 12px; padding: 18px; border-radius: 10px; background: #fff; border: 1px solid var(--c-hairline); }
+.sig-dir-shapes figcaption { font: 600 14px/1.3 var(--font-display); }
+.sig-dir-ticket { display: block; width: 120px; height: 80px; border-radius: 8px; background: #F2EAD9; position: relative; overflow: hidden; }
+.sig-dir-ticket > * { position: absolute; inset-inline: 0; top: 50%; }
+.sig-dir-motif { display: grid; place-items: center; width: 110px; height: 110px; color: #C7A661; }
+.sig-dir-motif svg { width: 100%; height: auto; }
+.sig-dir-glyphs { display: grid; grid-template-columns: repeat(3, 40px); gap: 8px; }
+.sig-dir-glyphs .occasion-glyph { width: 40px; height: 40px; padding: 5px; border-radius: 50%; background: #F2EAD9; color: #262626; }
+.sig-dir-faces { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.sig-dir-faces figure { margin: 0; display: grid; justify-items: center; gap: 18px; padding: 28px 18px 22px; border-radius: 10px; }
+.sig-dir-faces figure:nth-child(1) { background: #262626; color: #F2EAD9; }
+.sig-dir-faces figure:nth-child(2) { background: #BC4749; color: #fff; }
+.sig-dir-faces figure:nth-child(3) { background: #2EB7B7; color: #262626; }
+.sig-dir-faces .card-thumb { box-shadow: 0 26px 36px -22px rgba(0, 0, 0, .6); border-radius: 4px; }
+.sig-dir-faces figcaption { display: grid; gap: 4px; text-align: center; font-size: 14px; line-height: 1.6; }
+.sig-dir-faces figcaption b { font: 700 20px/1.3 var(--font-display); }
+.sig-dir-table { overflow-x: auto; border-radius: 10px; border: 1px solid var(--c-hairline); background: #fff; }
+.sig-dir-table table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.6; min-width: 720px; }
+.sig-dir-table th, .sig-dir-table td { padding: 14px 16px; text-align: start; vertical-align: top; border-bottom: 1px solid var(--c-hairline); }
+.sig-dir-table thead th { font: 600 13px/1.3 var(--font-display); background: #F2EAD9; }
+.sig-dir-table tbody th { font-weight: 600; }
+.sig-dir-table tr:last-child > * { border-bottom: 0; }
+.sig-dir-rejected ul { display: grid; gap: 12px; padding: 0; list-style: none; max-width: 860px; }
+.sig-dir-rejected li { padding: 16px 20px; border-inline-start: 3px solid #BC4749; background: #fff; border-radius: 0 8px 8px 0; line-height: 1.8; }
+.sig-dir-end { margin-top: clamp(72px, 8vw, 128px); display: grid; gap: 14px; justify-items: center; text-align: center; padding: clamp(48px, 7vw, 96px) 24px; color: #F2EAD9; }
+.sig-dir-end h2 { font: 700 clamp(32px, 4.4vw, 60px)/1.2 var(--font-display); color: #fff; }
+.sig-dir-end > div { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: center; margin-top: 10px; }
+.sig-dir-end .sig-text-link { color: #F2EAD9 !important; }
+@media (max-width: 1100px) { .sig-dir-shapes { grid-template-columns: repeat(3, minmax(0, 1fr)); } .sig-dir-palette { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 860px) { .sig-dir-item { grid-template-columns: 1fr; } .sig-dir-meshes, .sig-dir-faces { grid-template-columns: 1fr; } .sig-dir-meshes > div { min-height: 150px; } }
+@media (max-width: 560px) { .sig-dir-shapes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sig-dir-palette > div { min-height: 120px; } .sig-dir-section > header { grid-template-columns: 1fr; } .sig-dir-section > header .sig-section-num { grid-row: auto; } }
+/* occasion tiles in the list & search chooser (no generated objects in «توقيع») */
+:root[data-theme='signature'] .occ-sig-tile{display:grid;place-items:center;width:100%;height:100%;min-height:84px;border-radius:8px}
+:root[data-theme='signature'] .occ-sig-tile .occasion-glyph{width:46%;max-width:64px;height:auto}
+:root[data-theme='signature'] .occ-sig-tile.tone-red{background:#BC4749;color:#fff}
+:root[data-theme='signature'] .occ-sig-tile.tone-gold{background:#C7A661;color:#262626}
+:root[data-theme='signature'] .occ-sig-tile.tone-charcoal{background:#262626;color:#C7A661}
+:root[data-theme='signature'] .occ-sig-tile.tone-turquoise{background:#2EB7B7;color:#262626}
+:root[data-theme='signature'] .occ-sig-tile.tone-ivory{background:#F2EAD9;color:#262626}
+:root[data-theme='signature'] .occ-sig-tile.tone-beige{background:#E4D5B4;color:#262626}

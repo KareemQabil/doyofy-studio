@@ -1,0 +1,84 @@
+{
+  "_comment": "Provenance traced during the audit (docs/ASSET_PROVENANCE.md). Read by tools/install_p0_packs.py. 'verification' values: verified-source-page | verified-category | verified-file-metadata | pending.",
+  "expected": {
+    "total": 63,
+    "byKind": { "model": 17, "hdri": 3, "pbr": 9, "video": 9, "image": 12, "audio": 12, "canva": 1 }
+  },
+  "byKind": {
+    "model": {
+      "provider": "Poly Haven", "license": "CC0 1.0", "licenseUrl": "https://polyhaven.com/license",
+      "author": "Poly Haven (per-asset author not recorded in pack manifest)", "attributionRequired": false,
+      "sourceTemplate": "https://polyhaven.com/a/{sourceId}",
+      "verification": "verified-file-metadata",
+      "modifications": "Repacked as binary glTF by glTF-Transform v4.5.1 before packing (generator string in each GLB). No geometry edits in this project."
+    },
+    "hdri": {
+      "provider": "Poly Haven", "license": "CC0 1.0", "licenseUrl": "https://polyhaven.com/license",
+      "author": "Poly Haven (per-asset author not recorded in pack manifest)", "attributionRequired": false,
+      "verification": "verified-source-url", "modifications": "none"
+    },
+    "pbr": {
+      "provider": "Poly Haven", "license": "CC0 1.0", "licenseUrl": "https://polyhaven.com/license",
+      "author": "Poly Haven (per-asset author not recorded in pack manifest)", "attributionRequired": false,
+      "verification": "verified-source-url", "modifications": "Renamed to basecolor/normal(GL)/roughness/displacement/ao/arm.jpg; Poly Haven md5 kept per file."
+    },
+    "video": {
+      "provider": "Pexels", "license": "Pexels License", "licenseUrl": "https://www.pexels.com/license/",
+      "attributionRequired": false, "verification": "verified-source-url (licence per Pexels site terms; per-clip page not re-checked)",
+      "modifications": "none"
+    },
+    "image": {
+      "provider": "Pexels", "license": "Pexels License", "licenseUrl": "https://www.pexels.com/license/",
+      "attributionRequired": false, "verification": "verified-source-url (licence per Pexels site terms; per-photo page not re-checked)",
+      "modifications": "Converted from the Pexels JPEG to WebP before packing."
+    },
+    "audio": {
+      "provider": "Mixkit", "license": "Mixkit Sound Effects Free License", "licenseUrl": "https://mixkit.co/license/#sfxFree",
+      "attributionRequired": false,
+      "verification": "verified-category (mixkit.co/free-sound-effects states all SFX are under the Mixkit SFX licence; per-file page not matched to CDN id)",
+      "modifications": "none (Mixkit preview MP3 as published)"
+    },
+    "canva": {
+      "provider": "Canva", "license": "Canva Content License (export of a user design)", "licenseUrl": "https://www.canva.com/policies/content-license-agreement/",
+      "attributionRequired": false, "verification": "pending",
+      "canonical": false,
+      "notes": "Canva design DAHWmDfAn6s = the LATER Mediterranean sample. It is NOT the canonical original card (DAHWaLT4OLI). Kept isolated; never used as Wine & Gold or any canonical CardFace."
+    }
+  },
+  "byId": {
+    "modular_fort_01": {
+      "provider": "Poly Haven", "license": "CC0 1.0", "licenseUrl": "https://polyhaven.com/license", "attributionRequired": false,
+      "sourceTemplate": "https://polyhaven.com/a/{sourceId}", "verification": "verified-file-metadata",
+      "modifications": "glTF-Transform v4.5.1 repack.",
+      "notes": "File is named arabic-arch-street.glb (the planned Sketchfab slot) but contains Poly Haven 'modular_fort_01' (node names modular_fort_01_*). Sketchfab slot was replaced by a CC0 Poly Haven fallback in the P0 build — filename kept, provenance corrected here."
+    },
+    "large_castle_door": {
+      "provider": "Poly Haven", "license": "CC0 1.0", "licenseUrl": "https://polyhaven.com/license", "attributionRequired": false,
+      "sourceTemplate": "https://polyhaven.com/a/{sourceId}", "verification": "verified-file-metadata",
+      "modifications": "glTF-Transform v4.5.1 repack.",
+      "notes": "File is named kasbah-ismailia-archway.glb (planned Sketchfab slot) but contains Poly Haven 'large_castle_door'. CC0 replacement, filename kept."
+    },
+    "large_iron_gate": {
+      "provider": "Poly Haven", "license": "CC0 1.0", "licenseUrl": "https://polyhaven.com/license", "attributionRequired": false,
+      "sourceTemplate": "https://polyhaven.com/a/{sourceId}", "verification": "verified-file-metadata",
+      "modifications": "glTF-Transform v4.5.1 repack.",
+      "notes": "File is named mediterranean-themed-garden.glb (planned Sketchfab slot) but contains Poly Haven 'large_iron_gate'. CC0 replacement, filename kept."
+    },
+    "video_mixkit_window_curtain": {
+      "provider": "Mixkit", "license": "Mixkit Stock Video Free License", "licenseUrl": "https://mixkit.co/license/#videoFree",
+      "author": "@edgarfernandez (Mixkit)", "attributionRequired": false,
+      "verification": "verified-source-page (mixkit.co/free-stock-video/view-of-a-window-with-a-curtain-3977/, checked 2026-10-02)",
+      "modifications": "none",
+      "notes": "This is clip 3977 'View of a window with a curtain' — Free licence. It is NOT the previously rejected restricted-licence Mixkit curtain clip."
+    },
+    "video_pixabay_curtain_breeze": {
+      "provider": "Pixabay", "license": "Pixabay Content License", "licenseUrl": "https://pixabay.com/service/license-summary/",
+      "attributionRequired": false, "verification": "verified-source-url (per-clip page not re-checked)", "modifications": "none"
+    }
+  },
+  "rejected": [
+    { "what": "Mixkit curtain clip with Mixkit Restricted License (personal use only)", "reason": "Restricted licence — not distributable in a commercial production pack. Not present in the supplied packs; must not be re-introduced." },
+    { "what": "canva-card-crop.png", "reason": "Wrong, unrelated editorial card — never the exact original design. Not present in the supplied packs." }
+  ],
+  "usedBy": {}
+}

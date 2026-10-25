@@ -1,0 +1,22 @@
+/** A non-destructive review index; links use current local data, never fabricated guests. */
+import { useNow } from '../../app/data';
+import { Link } from '../../app/router';
+import { paths } from '../../app/paths';
+import { eventPhase } from '../../domain/event';
+import { AppShell, ErrorState, Icon, LinkButton, PageHeader, Skeleton } from '../../ui';
+import { useEvents, useParties } from '../shared/queries';
+export function ScreenReview(){
+ const events=useEvents(),now=useNow(),event=events.data?.find(e=>!['completed','archived'].includes(eventPhase(e,now)))??events.data?.[0],past=events.data?.find(e=>['completed','archived'].includes(eventPhase(e,now)))??event,parties=useParties(event?.id??'');
+ const party=parties.data?.find(p=>p.rsvpStatus==='confirmed')??parties.data?.[0];
+ const groups=[
+  {title:'01 / البداية',note:'الهدف واضح من الهيرو. اختر المناسبة وأدخل الضروري فقط.',links:[{label:'الهيرو والمناسبات',to:paths.events,note:'ثيم أفق: عرض التخرج، مناسباتك، ثم بقية الأنواع'},{label:'إنشاء مناسبة',to:paths.newEvent,note:'اختيار المناسبة ثم البيانات الأساسية'},{label:'ابدأ بتخرج',to:paths.newEvent+'?type=graduation',note:'نوع المناسبة جاهز دون قرار إضافي'}]},
+  ...(event?[
+   {title:'02 / الدعوة',note:'قالب جاهز، ثم تخصيص اختياري. راجع النسخة قبل النشر.',links:[{label:'حالة الدعوة والمشاركة',to:paths.invitation(event.id),note:'مسودة، منشورة، أو تعديلات تنتظر النشر'},{label:'التصميم والمحتوى',to:paths.design(event.id),note:'الأسماء، البرنامج، الشكل، والحركة'},{label:'معرض القوالب',to:paths.templates(event.id),note:'16 بطاقة أصلية و50 قالبًا جاهزًا'},{label:'معاينة الضيف',to:paths.preview(event.id),note:'عرض النسخة قبل مشاركة الروابط'}]},
+   {title:'03 / الأحباب',note:'ضيف واحد أو ملف كامل؛ مراجعة البيانات تسبق إضافتها.',links:[{label:'الخطوة التالية',to:paths.overview(event.id),note:'دعوتك، ضيوفك، ثم الاستقبال'},{label:'الضيوف',to:paths.guests(event.id),note:'إضافة، بحث، تفاصيل الدعوة ومشاركة الرابط'},{label:'استيراد القائمة',to:paths.importGuests(event.id),note:'رفع الملف، مطابقة الأعمدة عند الحاجة، مراجعة ثم اعتماد'},{label:'الردود',to:paths.rsvp(event.id),note:'التأكيد والاعتذار ومطابقة ردود الرابط العام'}]},
+   {title:'04 / بعين الضيف',note:'الدعوة، الموعد والمكان، الرد، ثم بطاقة الدخول للمؤكد.',links:[{label:'الدعوة العامة',to:paths.guestLink(event.slug),note:'تأكيد الحضور دون هوية دعوة شخصية'},...(party?[{label:'دعوة شخصية حقيقية',to:paths.guestLink(event.slug,party.code),note:`دعوة ${party.primaryGuestName} من قائمتك؛ تغيير الرد يحفظ على هذا الجهاز`}]:[])]},
+   {title:'05 / يوم المناسبة',note:'بحث سريع وتسجيل الوصول على دفعات مع إمكانية التراجع.',links:[{label:'تجهيز الاستقبال',to:paths.checkin(event.id),note:'راجع الدعوات وتجهيز فريقك'},{label:'شاشة فريق الاستقبال',to:paths.gate(event.id),note:'محاكاة QR، بحث، وصول جزئي وتراجع'},{label:'الطاولات الاختيارية',to:paths.seating(event.id),note:'تنظيم المقاعد عندما تحتاجها فقط'}]},
+   {title:'06 / آخر التفاصيل',note:'تعديلات محفوظة بوضوح، وملخص يحتفظ باللحظة.',links:[{label:'الإعدادات',to:paths.settings(event.id),note:'بيانات المناسبة، قواعد الرد والأرشفة'},{label:'المزيد',to:paths.event(event.id)+'/more',note:'الخيارات الأقل استخدامًا في مكان واحد'},{label:'ملخص المناسبة',to:paths.summary(past!.id),note:'التأكيدات والوصول والشكر والأرشفة'}]},
+  ]:[]),
+ ];
+ return <AppShell><main id="main" className="page" tabIndex={-1}><PageHeader title="نراجعها، شاشة بشاشة." subtitle="امشِ بالترتيب، وجرّب نفس الرحلة من أول الدعوة لآخر ضيف." actions={<LinkButton to="/prototype/design-directions" variant="secondary" icon="palette">جرّب ثيمًا آخر</LinkButton>}/><p className="screen-review-note">هذه نسخة تجريبية تحفظ البيانات على هذا الجهاز. النشر والردود وتسجيل الوصول يعملون داخل التجربة؛ الرسائل والكاميرا محاكاة. غيّر الثيم من أعلى الصفحة. حالات القائمة الفارغة وانقطاع الاتصال وأخطاء الحفظ متاحة من أدوات التجربة أسفل الشاشة.</p>{events.loading?<Skeleton lines={4} block/>:events.error?<ErrorState error={events.error} onRetry={events.refetch}/>:<div className="screen-review-groups">{groups.map(g=><section key={g.title} className="screen-review-group"><h2>{g.title}</h2><p>{g.note}</p><ol>{g.links.map(l=><li key={l.to}><Link to={l.to}><span>{l.label}<small>{l.note}</small></span><Icon name="forward" size="sm"/></Link></li>)}</ol></section>)}</div>}{!events.loading&&!event&&<LinkButton to={paths.newEvent} variant="primary">أنشئ مناسبة لفتح بقية الرحلة</LinkButton>}</main></AppShell>;
+}

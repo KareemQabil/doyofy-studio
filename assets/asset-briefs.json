@@ -1,0 +1,2568 @@
+{
+  "generated_by": "tools/asset-briefs.mjs",
+  "owner_rule": "No AI image generation of any kind (no Canva Magic Media / Dream Lab / Magic Design / text-to-image, no AI upscaling). Native vector shapes, the official Doyofy logo and pattern files, Phosphor icons (MIT) and licensed fonts only. No hand-drawn icons.",
+  "palette": "Doyofy identity only: gold #C7A661, ivory #F2EAD9, beige #E4D5B4, red #BC4749, turquoise #2EB7B7, charcoal #262626, plus white #FFFFFF and paper #FFFDF8. Text contrast pairs allowed: white on red (5.1:1), charcoal on gold (6.5:1), charcoal on turquoise (6.2:1), gold on charcoal (6.5:1), charcoal on ivory/white. Never gold or turquoise text on white, never white text on gold or turquoise.",
+  "records": [
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "matches supplied SVG path-for-path",
+        "LTR wordmark inside RTL header (direction:ltr)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.identity.logo.v1",
+      "style_id": "signature",
+      "family": "identity",
+      "title_ar": "شعار ضيوفي الرسمي",
+      "description": "Official Doyofy logomark + wordmark, vector paths taken from the owner's identity files.",
+      "occasion": "all",
+      "surface_ids": [
+        "shell.header",
+        "home.closing",
+        "seal.stamp",
+        "guest.cover.seal"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner-supplied identity; used as-is.",
+      "placement": {
+        "component": "src/ui/brand.tsx",
+        "slot": "Logo / LogoMark",
+        "layer": "ui"
+      },
+      "source_size_px": [
+        2630,
+        976
+      ],
+      "runtime_sizes_px": [
+        [
+          0,
+          30
+        ]
+      ],
+      "aspect_ratio": "2.81:1",
+      "runtime_format": "inline SVG paths",
+      "editable_source_format": "AI + SVG",
+      "text_policy": "Wordmark only, never altered.",
+      "palette": "currentColor — gold, charcoal or white per surface.",
+      "source_path": "design-source/brand/ASSETS/LOGO [PNG+SVG]/Doyofy Logo Variations.svg",
+      "runtime_path": "src/ui/brand.tsx",
+      "alt_policy": "aria-label \"Doyofy\" / «ضيوفي — مناسباتي» on the home link.",
+      "license_provenance": "Owner's own identity (Doyofy_Visual_Identity_Assets.zip, uploaded 10 Oct 2026).",
+      "file_weight_budget": "inline, ~6 KB",
+      "acceptance": "Identical to the supplied logo at 30 px and 120 px.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "tile seams invisible at 230 px",
+        "opacity keeps text contrast"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.identity.pattern.v1",
+      "style_id": "signature",
+      "family": "identity",
+      "title_ar": "نقش الهوية",
+      "description": "Official pattern extracted from the owner SVG: grid tiles in six brand colours + three motifs (bloom, knot, column).",
+      "occasion": "all",
+      "surface_ids": [
+        "home.hero",
+        "home.closing",
+        "guest.cover",
+        "summary.closure",
+        "overview.moment",
+        "reviewer.end"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "adapt",
+      "reason": "Extracted geometry, recoloured to the six identity colours; not redrawn.",
+      "placement": {
+        "component": "src/features/signature/BrandPattern.tsx + SignatureArt.tsx (Stage pattern prop)",
+        "slot": "sig-stage-pattern",
+        "layer": "background"
+      },
+      "source_size_px": [
+        354,
+        492
+      ],
+      "runtime_sizes_px": [
+        [
+          230,
+          320
+        ],
+        [
+          260,
+          362
+        ]
+      ],
+      "aspect_ratio": "0.72:1 (grid cell 354.1 × 492.46)",
+      "runtime_format": "svg",
+      "editable_source_format": "svg",
+      "text_policy": "No text.",
+      "palette": "pattern-grid-{gold,ivory,beige,charcoal,red,turquoise}.svg; opacity 0.06–0.14 behind text.",
+      "source_path": "design-source/brand/ASSETS/PATTERN [PNG+SVG]",
+      "runtime_path": "public/assets/brand/pattern-grid-*.svg, public/assets/brand/motif-{bloom,knot,column}.svg, src/features/signature/brand-pattern.generated.ts",
+      "alt_policy": "Decorative (aria-hidden).",
+      "license_provenance": "Owner's identity; extraction script tools/extract-brand-pattern.mjs.",
+      "file_weight_budget": "≤ 6 KB per tile",
+      "acceptance": "Repeats seamlessly; never sits behind body text above 0.14 opacity.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [
+        "owner: TPTQ web licence"
+      ],
+      "variants": [],
+      "qa": [
+        "fallback stack renders when files are removed"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "Readex Pro (OFL, already shipped) via the --font-display stack",
+      "notes": "Invitation card faces deliberately do NOT use Ping: published invitations use OFL fonts (Reem Kufi, Aref Ruqaa, Cormorant Garamond).",
+      "asset_id": "signature.identity.fonts.v1",
+      "style_id": "signature",
+      "family": "identity",
+      "title_ar": "خط الهوية Ping AR + LT",
+      "description": "Brand display font (TPTQ Arabic, Ping AR + LT 400/500/700) + Shinko Sans; organizer UI headings only.",
+      "occasion": "all",
+      "surface_ids": [
+        "all organizer headings"
+      ],
+      "priority": "P0",
+      "status": "blocked",
+      "reuse_or_create": "reuse",
+      "reason": "Owner permitted local prototype use. Desktop licence (fsType 4) does not cover web embedding.",
+      "placement": {
+        "component": "src/ui/styles/fonts.css",
+        "slot": "--font-display: 'Ping AR LT'",
+        "layer": "type"
+      },
+      "source_size_px": [
+        0,
+        0
+      ],
+      "runtime_sizes_px": [],
+      "aspect_ratio": "n/a",
+      "runtime_format": "woff",
+      "editable_source_format": "otf (owner)",
+      "text_policy": "n/a",
+      "palette": "n/a",
+      "source_path": "design-source/brand/fonts/",
+      "runtime_path": "public/assets/fonts/brand/ping-ar-lt-{400,500,700}.woff, shinko-sans-400.woff",
+      "alt_policy": "n/a",
+      "license_provenance": "TPTQ Arabic commercial font; desktop licence; owner permission for local prototype only (README.txt beside the files). BLOCKER: buy a web licence before any public deployment, or remove the files and fall back to Readex Pro (OFL) which is already in the font stack.",
+      "file_weight_budget": "≤ 70 KB per weight",
+      "acceptance": "Web licence on file, or files removed before deployment.",
+      "positive_prompt": "See notes.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "legible at 16 px"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.identity.favicon.v1",
+      "style_id": "signature",
+      "family": "identity",
+      "title_ar": "أيقونة المتصفح",
+      "description": "Gold logomark on a charcoal rounded square; SVG favicon + 180 px touch icon.",
+      "occasion": "all",
+      "surface_ids": [
+        "browser.tab",
+        "ios.home-screen"
+      ],
+      "priority": "P1",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "reason": "Previous favicon was an unrelated plum diamond.",
+      "placement": {
+        "component": "src/index.html",
+        "slot": "link[rel=icon], link[rel=apple-touch-icon]",
+        "layer": "meta"
+      },
+      "source_size_px": [
+        64,
+        64
+      ],
+      "runtime_sizes_px": [
+        [
+          64,
+          64
+        ],
+        [
+          180,
+          180
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "svg + png",
+      "editable_source_format": "svg (tools/gen-favicon.mjs)",
+      "text_policy": "Mark only, no wordmark.",
+      "palette": "gold #C7A661 on charcoal #262626",
+      "source_path": "tools/gen-favicon.mjs",
+      "runtime_path": "public/assets/brand/favicon.svg, public/assets/brand/touch-icon-180.png",
+      "alt_policy": "n/a",
+      "license_provenance": "Derived from the official mark by script.",
+      "file_weight_budget": "svg ≤ 3 KB, png ≤ 12 KB",
+      "acceptance": "Recognisable mark at 16 px tab size.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "safe area 60 px all sides",
+        "readable at 600 × 315"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "og:image needs an absolute URL after the production domain exists (PRODUCTION_GAP_MATRIX).",
+      "asset_id": "signature.identity.share-preview.v1",
+      "style_id": "signature",
+      "family": "identity",
+      "title_ar": "صورة المشاركة",
+      "description": "1200×630 share image: red mesh, ivory pattern, three real rendered signature faces, white logo, Plex headline.",
+      "occasion": "all",
+      "surface_ids": [
+        "social.share"
+      ],
+      "priority": "P1",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "reason": "No share preview existed.",
+      "placement": {
+        "component": "src/index.html",
+        "slot": "meta[property=og:image]",
+        "layer": "meta"
+      },
+      "source_size_px": [
+        1200,
+        630
+      ],
+      "runtime_sizes_px": [
+        [
+          1200,
+          630
+        ]
+      ],
+      "aspect_ratio": "1.91:1",
+      "runtime_format": "png",
+      "editable_source_format": "html (design-source/signature/share-preview.html)",
+      "text_policy": "Headline in IBM Plex Sans Arabic (OFL) — not the desktop-licensed brand font. Card faces carry sample names (labelled sample in the source).",
+      "palette": "mesh-red + ivory pattern 8% + white type",
+      "source_path": "design-source/signature/share-preview.html, tools/gen-share-preview.mjs",
+      "runtime_path": "public/assets/brand/share-preview.png",
+      "alt_policy": "n/a",
+      "license_provenance": "Composed by script from brand assets and rendered card faces.",
+      "file_weight_budget": "≤ 300 KB",
+      "acceptance": "Headline readable in a chat preview thumbnail.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "RTL: forward = CaretLeft"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.icons.phosphor.v1",
+      "style_id": "signature",
+      "family": "icons",
+      "title_ar": "أيقونات Phosphor",
+      "description": "58 UI glyphs (Regular), 13 occasion glyphs (Light + Thin), 9 journey spot glyphs (Light) — vendored SVG paths.",
+      "occasion": "all",
+      "surface_ids": [
+        "all"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no self-drawn icons; use free online icons.",
+      "placement": {
+        "component": "src/ui/icons.tsx, src/ui/primitives/JourneyArtwork.tsx, src/cards/signature-cards.js",
+        "slot": "Icon / OccasionGlyph / journey-spot",
+        "layer": "ui"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          16,
+          16
+        ],
+        [
+          20,
+          20
+        ],
+        [
+          48,
+          48
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG paths",
+      "editable_source_format": "react-icons/pi 5.7.0 (Phosphor 2.1.1)",
+      "text_policy": "n/a",
+      "palette": "currentColor",
+      "source_path": "tools/gen-phosphor-icons.mjs",
+      "runtime_path": "src/ui/vendor-icons/phosphor.ts",
+      "alt_policy": "Decorative unless the control has no text; then the control has an aria-label.",
+      "license_provenance": "Phosphor Icons, MIT licence, © 2020 Phosphor Icons — src/ui/vendor-icons/PHOSPHOR-LICENSE.txt.",
+      "file_weight_budget": "whole vendored set ≤ 60 KB",
+      "acceptance": "No glyph drawn by hand anywhere in «توقيع».",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.theme.thumbnail.v1",
+      "style_id": "signature",
+      "family": "identity",
+      "title_ar": "صورة الأسلوب",
+      "description": "Theme thumbnail for /prototype/design-directions and the theme list: the three fields of the mix + logomark disc + flat silhouettes of the three faces.",
+      "occasion": "all",
+      "surface_ids": [
+        "prototype.design-directions"
+      ],
+      "priority": "P2",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "reason": "Replaced the rejected plum/cobalt thumbnail.",
+      "placement": {
+        "component": "src/domain/themes.ts (artwork)",
+        "slot": "direction-demo-art",
+        "layer": "art"
+      },
+      "source_size_px": [
+        800,
+        600
+      ],
+      "runtime_sizes_px": [
+        [
+          800,
+          600
+        ]
+      ],
+      "aspect_ratio": "4:3",
+      "runtime_format": "svg",
+      "editable_source_format": "svg",
+      "text_policy": "No text.",
+      "palette": "red mesh / charcoal night / white + tiles",
+      "source_path": "tools/gen-signature-world.mjs, design-source/signature/signature-world.svg",
+      "runtime_path": "public/assets/directions/signature-world.svg",
+      "alt_policy": "«خامات ومشهد اتجاه توقيع»",
+      "license_provenance": "Script from brand geometry.",
+      "file_weight_budget": "≤ 12 KB",
+      "acceptance": "Reads as the same world as the home hero.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.review.directions.v1",
+      "style_id": "signature",
+      "family": "review",
+      "title_ar": "لقطات الاتجاهات الثلاثة",
+      "description": "Captures of the exploration board for A/B/C used on the reviewer page.",
+      "occasion": "all",
+      "surface_ids": [
+        "prototype.signature-directions"
+      ],
+      "priority": "P2",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "reason": "Reviewer evidence.",
+      "placement": {
+        "component": "src/features/signature/SignatureDirections.tsx",
+        "slot": "sig-dir-item figure",
+        "layer": "content"
+      },
+      "source_size_px": [
+        1440,
+        900
+      ],
+      "runtime_sizes_px": [
+        [
+          1200,
+          750
+        ]
+      ],
+      "aspect_ratio": "16:10",
+      "runtime_format": "webp",
+      "editable_source_format": "html board",
+      "text_policy": "Board copy is real exploration copy.",
+      "palette": "per direction",
+      "source_path": "design-source/directions/direction-board.html, tools/capture-directions.mjs",
+      "runtime_path": "public/assets/directions/signature-d{1,2,3}.webp",
+      "alt_policy": "Describes the direction.",
+      "license_provenance": "Captured from our own board with real rendered faces.",
+      "file_weight_budget": "≤ 70 KB each",
+      "acceptance": "Labelled as explorations, not as product UI.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "single short / single long / couple / couple long (tests/dev/faces.mjs)",
+        "no «و» for single names",
+        "year from event date"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.card.sig-diploma.face.v1",
+      "style_id": "signature",
+      "family": "stationery",
+      "title_ar": "توقيع التخرّج",
+      "occasion": "graduation (glyph adapts for other single-person occasions)",
+      "surface_ids": [
+        "create.preview",
+        "studio.card",
+        "templates.deck",
+        "home.fan",
+        "guest.cover"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "placement": {
+        "component": "src/cards/signature-cards.js",
+        "slot": "CardRegistry 'sig-diploma'",
+        "layer": "card face"
+      },
+      "source_size_px": [
+        300,
+        420
+      ],
+      "runtime_sizes_px": [
+        [
+          300,
+          420
+        ],
+        [
+          140,
+          196
+        ],
+        [
+          220,
+          308
+        ]
+      ],
+      "aspect_ratio": "5:7",
+      "runtime_format": "inline SVG + DOM text",
+      "editable_source_format": "code (studio-design-book/CANVA_RECIPES.md §Signature for a Canva master)",
+      "text_policy": "All text is live data from deriveContent(); the only pictorial element is a Phosphor Thin glyph.",
+      "palette": "Doyofy identity only: gold #C7A661, ivory #F2EAD9, beige #E4D5B4, red #BC4749, turquoise #2EB7B7, charcoal #262626, plus white #FFFFFF and paper #FFFDF8. Text contrast pairs allowed: white on red (5.1:1), charcoal on gold (6.5:1), charcoal on turquoise (6.2:1), gold on charcoal (6.5:1), charcoal on ivory/white. Never gold or turquoise text on white, never white text on gold or turquoise.",
+      "source_path": "src/cards/signature-cards.js",
+      "alt_policy": "Card is aria-hidden inside labelled thumbnails; text is real DOM text.",
+      "license_provenance": "Original code-native design (this pass). Glyph: Phosphor (MIT). Fonts: Reem Kufi / Aref Ruqaa / Cormorant Garamond (OFL, shipped).",
+      "file_weight_budget": "inline, ≤ 6 KB markup",
+      "canva_recipe_id": "canva.signature.sig-diploma",
+      "runtime_path": "src/cards/signature-cards.js#sig-diploma",
+      "description": "Charcoal top band with a Phosphor Thin occasion glyph in gold, gold year disc on the band edge (event year, never fixed), double gold frame, gold rules.",
+      "reason": "Graduation needed an original signature face; replaces the cobalt hand-drawn first draft.",
+      "acceptance": "Year matches the event; long two-line names fit; no wedding copy.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a"
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "single short / single long / couple / couple long (tests/dev/faces.mjs)",
+        "no «و» for single names",
+        "year from event date"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.card.sig-ribbon.face.v1",
+      "style_id": "signature",
+      "family": "stationery",
+      "title_ar": "حروف الفرح",
+      "occasion": "wedding, engagement, katb_kitab, henna (single works too)",
+      "surface_ids": [
+        "create.preview",
+        "studio.card",
+        "templates.deck",
+        "home.fan"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "placement": {
+        "component": "src/cards/signature-cards.js",
+        "slot": "CardRegistry 'sig-ribbon'",
+        "layer": "card face"
+      },
+      "source_size_px": [
+        300,
+        420
+      ],
+      "runtime_sizes_px": [
+        [
+          300,
+          420
+        ],
+        [
+          140,
+          196
+        ],
+        [
+          220,
+          308
+        ]
+      ],
+      "aspect_ratio": "5:7",
+      "runtime_format": "inline SVG + DOM text",
+      "editable_source_format": "code (studio-design-book/CANVA_RECIPES.md §Signature for a Canva master)",
+      "text_policy": "All text is live data from deriveContent(); the only pictorial element is a Phosphor Thin glyph.",
+      "palette": "Doyofy identity only: gold #C7A661, ivory #F2EAD9, beige #E4D5B4, red #BC4749, turquoise #2EB7B7, charcoal #262626, plus white #FFFFFF and paper #FFFDF8. Text contrast pairs allowed: white on red (5.1:1), charcoal on gold (6.5:1), charcoal on turquoise (6.2:1), gold on charcoal (6.5:1), charcoal on ivory/white. Never gold or turquoise text on white, never white text on gold or turquoise.",
+      "source_path": "src/cards/signature-cards.js",
+      "alt_policy": "Card is aria-hidden inside labelled thumbnails; text is real DOM text.",
+      "license_provenance": "Original code-native design (this pass). Glyph: Phosphor (MIT). Fonts: Reem Kufi / Aref Ruqaa / Cormorant Garamond (OFL, shipped).",
+      "file_weight_budget": "inline, ≤ 6 KB markup",
+      "canva_recipe_id": "canva.signature.sig-ribbon",
+      "runtime_path": "src/cards/signature-cards.js#sig-ribbon",
+      "description": "Brand-red top band with a small ivory occasion glyph, ivory monogram disc (Arabic initials of each name, skipping «عائلة/آل/ال»), double gold frame.",
+      "reason": "Couple ceremonies needed a signature face in identity colours (was plum satin ribbon).",
+      "acceptance": "Two initials for couples, one for single; Ruqaa names fit at four lengths.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a"
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "single short / single long / couple / couple long (tests/dev/faces.mjs)",
+        "no «و» for single names",
+        "year from event date"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.card.sig-ticket.face.v1",
+      "style_id": "signature",
+      "family": "stationery",
+      "title_ar": "تذكرة الفرح",
+      "occasion": "birthday, family, opening, other",
+      "surface_ids": [
+        "create.preview",
+        "studio.card",
+        "templates.deck"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "placement": {
+        "component": "src/cards/signature-cards.js",
+        "slot": "CardRegistry 'sig-ticket'",
+        "layer": "card face"
+      },
+      "source_size_px": [
+        300,
+        420
+      ],
+      "runtime_sizes_px": [
+        [
+          300,
+          420
+        ],
+        [
+          140,
+          196
+        ],
+        [
+          220,
+          308
+        ]
+      ],
+      "aspect_ratio": "5:7",
+      "runtime_format": "inline SVG + DOM text",
+      "editable_source_format": "code (studio-design-book/CANVA_RECIPES.md §Signature for a Canva master)",
+      "text_policy": "All text is live data from deriveContent(); the only pictorial element is a Phosphor Thin glyph.",
+      "palette": "Doyofy identity only: gold #C7A661, ivory #F2EAD9, beige #E4D5B4, red #BC4749, turquoise #2EB7B7, charcoal #262626, plus white #FFFFFF and paper #FFFDF8. Text contrast pairs allowed: white on red (5.1:1), charcoal on gold (6.5:1), charcoal on turquoise (6.2:1), gold on charcoal (6.5:1), charcoal on ivory/white. Never gold or turquoise text on white, never white text on gold or turquoise.",
+      "source_path": "src/cards/signature-cards.js",
+      "alt_policy": "Card is aria-hidden inside labelled thumbnails; text is real DOM text.",
+      "license_provenance": "Original code-native design (this pass). Glyph: Phosphor (MIT). Fonts: Reem Kufi / Aref Ruqaa / Cormorant Garamond (OFL, shipped).",
+      "file_weight_budget": "inline, ≤ 6 KB markup",
+      "canva_recipe_id": "canva.signature.sig-ticket",
+      "runtime_path": "src/cards/signature-cards.js#sig-ticket",
+      "description": "Perforated ticket: a row of five flat identity shapes (pill, quarter, disc, triangle, dot), names in Kufi, ivory stub with a charcoal/gold day tile and full date/venue.",
+      "reason": "Playful occasions needed a non-wedding, non-floral signature face.",
+      "acceptance": "Stub never overflows with a 60-character venue; shapes contain no text.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a"
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "newborn single name",
+        "iftar host family name «عائلة …»"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "newborn-moon (occasion-cards.js) remains the starter until built.",
+      "notes": "",
+      "asset_id": "signature.card.sig-crescent.face.v1",
+      "style_id": "signature",
+      "family": "stationery",
+      "title_ar": "هلال (مخطط)",
+      "description": "Planned face for newborn and iftar: charcoal night band, a large Phosphor Thin MoonStars / Baby glyph in gold, ivory disc carrying the day number, turquoise hairline frame.",
+      "occasion": "newborn, iftar",
+      "surface_ids": [
+        "studio.card",
+        "templates.deck"
+      ],
+      "priority": "P1",
+      "status": "brief-ready",
+      "reuse_or_create": "create",
+      "reason": "Newborn and iftar currently fall back to non-signature families (newborn-moon, canon faces).",
+      "placement": {
+        "component": "src/cards/signature-cards.js (new entry) + src/domain/templates.ts (presets) + src/domain/invitation.ts CARD_NAMES",
+        "slot": "CardRegistry 'sig-crescent'",
+        "layer": "card face"
+      },
+      "source_size_px": [
+        300,
+        420
+      ],
+      "runtime_sizes_px": [
+        [
+          300,
+          420
+        ]
+      ],
+      "aspect_ratio": "5:7",
+      "runtime_format": "inline SVG + DOM text",
+      "editable_source_format": "code; optional Canva master per CANVA_RECIPES",
+      "text_policy": "Live data only. No prayer or sunset time ever printed as art.",
+      "palette": "Doyofy identity only: gold #C7A661, ivory #F2EAD9, beige #E4D5B4, red #BC4749, turquoise #2EB7B7, charcoal #262626, plus white #FFFFFF and paper #FFFDF8. Text contrast pairs allowed: white on red (5.1:1), charcoal on gold (6.5:1), charcoal on turquoise (6.2:1), gold on charcoal (6.5:1), charcoal on ivory/white. Never gold or turquoise text on white, never white text on gold or turquoise.",
+      "safe_area": "Band 0–132 px; names 170–300 px; meta 300–392 px.",
+      "source_path": "studio-design-book/CANVA_RECIPES.md#sig-crescent",
+      "runtime_path": "src/cards/signature-cards.js#sig-crescent",
+      "alt_policy": "as other faces",
+      "license_provenance": "To be original code; Phosphor MIT glyph.",
+      "file_weight_budget": "≤ 6 KB",
+      "acceptance": "Distinct silhouette from sig-diploma (not a recolour): disc low on the band, no year disc.",
+      "canva_recipe_id": "canva.signature.sig-crescent",
+      "positive_prompt": "Build an editable Canva design (custom size 1500 × 2100 px = 5 × the 300 × 420 runtime face). No AI image generation of any kind (no Canva Magic Media / Dream Lab / Magic Design / text-to-image, no AI upscaling). Native vector shapes, the official Doyofy logo and pattern files, Phosphor icons (MIT) and licensed fonts only. No hand-drawn icons. Layers back to front: (1) paper rectangle #FFFDF8 full canvas, corner radius 0 (the app rounds corners); (2) charcoal #262626 rectangle x 0, y 0, w 1500, h 660; (3) a 5 px turquoise #2EB7B7 rectangle outline inset 60 px (x 60, y 60, w 1380, h 1980) — turquoise, not gold, so it is not a recolour of sig-diploma; (4) Phosphor \"MoonStars\" Thin icon (download SVG from phosphoricons.com, MIT) in gold, 420 px, centred at x 750, y 330 — for newborn swap to Phosphor \"Baby\" Thin; (5) ivory #F2EAD9 circle 220 px diameter centred x 750, y 660 with a 5 px gold ring at 190 px; (6) SAMPLE COPY text boxes, all centred, Reem Kufi: day number \"20\" Cormorant Garamond 600 110 px charcoal inside the disc; greeting «أهلًا بالقمر» 85 px #7A5E26 at y 860; Latin label \"NEWBORN\" Cormorant 45 px letter-spacing 12 px #5F594F at y 960; name «سارة» 155 px charcoal at y 1180 (two-line long-name variant at 110 px); thin gold rule 600 px at y 1460; date «الأحد ٢٠ يونيو ٢٠٢٧» 60 px, time 55 px, venue 55 px, city 50 px #5F594F stacked from y 1520; footer \"NEWBORN · CELEBRATION · RSVP\" Cormorant 40 px tracking 6 px at y 1990. Group \"data-zones\" (sample, not exported) separately from \"ornament\". Export: ornament-only SVG (hide data-zones), PNG 1500 × 2100 preview, PNG 600 × 840 thumbnail.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)"
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "60-character conference title wraps to 3 lines"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "forum-grid stays the starter.",
+      "notes": "",
+      "asset_id": "signature.card.sig-agenda.face.v1",
+      "style_id": "signature",
+      "family": "stationery",
+      "title_ar": "أجندة (مخطط)",
+      "description": "Planned face for conference and corporate: white face, a turquoise left-edge column with the day tile, right-aligned title block, a 3×2 grid of thin gold rules as the only ornament.",
+      "occasion": "conference, corporate",
+      "surface_ids": [
+        "studio.card",
+        "templates.deck"
+      ],
+      "priority": "P1",
+      "status": "brief-ready",
+      "reuse_or_create": "create",
+      "reason": "Professional events use forum-grid (cobalt). A signature professional face is planned.",
+      "placement": {
+        "component": "src/cards/signature-cards.js (new entry)",
+        "slot": "CardRegistry 'sig-agenda'",
+        "layer": "card face"
+      },
+      "source_size_px": [
+        300,
+        420
+      ],
+      "runtime_sizes_px": [
+        [
+          300,
+          420
+        ]
+      ],
+      "aspect_ratio": "5:7",
+      "runtime_format": "inline SVG + DOM text",
+      "editable_source_format": "code",
+      "text_policy": "Prints the event title (c.arA for organisation events) and real date/venue. No sponsor marks, no fake agenda items.",
+      "palette": "Doyofy identity only: gold #C7A661, ivory #F2EAD9, beige #E4D5B4, red #BC4749, turquoise #2EB7B7, charcoal #262626, plus white #FFFFFF and paper #FFFDF8. Text contrast pairs allowed: white on red (5.1:1), charcoal on gold (6.5:1), charcoal on turquoise (6.2:1), gold on charcoal (6.5:1), charcoal on ivory/white. Never gold or turquoise text on white, never white text on gold or turquoise.",
+      "safe_area": "Column 0–78 px; text 96–276 px.",
+      "source_path": "studio-design-book/CANVA_RECIPES.md#sig-agenda",
+      "runtime_path": "src/cards/signature-cards.js#sig-agenda",
+      "alt_policy": "as other faces",
+      "license_provenance": "To be original code.",
+      "file_weight_budget": "≤ 6 KB",
+      "acceptance": "Reads as professional, not festive; no couple separator.",
+      "canva_recipe_id": "canva.signature.sig-agenda",
+      "positive_prompt": "Build an editable Canva design 1500 × 2100 px (5 × the 300 × 420 runtime face). No AI image generation of any kind (no Canva Magic Media / Dream Lab / Magic Design / text-to-image, no AI upscaling). Native vector shapes, the official Doyofy logo and pattern files, Phosphor icons (MIT) and licensed fonts only. No hand-drawn icons. Layers: (1) white #FFFFFF canvas; (2) turquoise #2EB7B7 column x 1110–1500 (390 px wide), full height — this is the inline-start side in RTL; (3) inside the column a charcoal #262626 rounded rectangle 270 × 300 px, radius 40, at x 1170, y 140 holding SAMPLE day \"20\" Cormorant 600 140 px gold #C7A661, month «يونيو» Reem Kufi 55 px gold, year \"2027\" Cormorant 45 px gold; (4) a 3 × 2 grid of 2 px gold lines (cells 300 × 220) at x 120–1020, y 1500–1940 as the only ornament; (5) SAMPLE COPY right-aligned at x 1020, Reem Kufi: label «مؤتمر» 70 px charcoal, Latin \"CONFERENCE\" Cormorant 42 px tracking 10 px #5F594F, title «ملتقى الأفكار للابتكار» 130 px charcoal up to three lines, venue/city 55 px #5F594F, date/time 55 px charcoal. No sponsor logos, no fake agenda lines, no charts. Export ornament-only SVG + previews as above.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)"
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "flap/back clip animation",
+        "reduced motion = instant open"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.envelope.flat.v1",
+      "style_id": "signature-b-night",
+      "family": "stationery",
+      "title_ar": "ظرف الضيف",
+      "description": "Flat gold envelope back + front (two SVG layers) with the logomark seal; card rises between them.",
+      "occasion": "all",
+      "surface_ids": [
+        "guest.cover"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "reason": "Guest reveal needed a tactile, comprehensible object without imagery.",
+      "placement": {
+        "component": "src/features/signature/SignatureArt.tsx (EnvelopeBack, EnvelopeFront) used by SealCover.tsx",
+        "slot": "sig-cover-env",
+        "layer": "foreground"
+      },
+      "source_size_px": [
+        400,
+        300
+      ],
+      "runtime_sizes_px": [
+        [
+          480,
+          360
+        ],
+        [
+          336,
+          252
+        ]
+      ],
+      "aspect_ratio": "4:3",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "code",
+      "text_policy": "No text; seal is the logomark.",
+      "palette": "gold #C7A661 body, ivory flap lining, red seal #BC4749",
+      "source_path": "src/features/signature/SignatureArt.tsx",
+      "runtime_path": "src/features/signature/SignatureArt.tsx",
+      "alt_policy": "Decorative; the seal button has its own label.",
+      "license_provenance": "Original code.",
+      "file_weight_budget": "inline",
+      "acceptance": "Opens by drag, tap or button in under 1 s.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": false,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "seam-free at flap edge"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "Plain ivory lining (current).",
+      "notes": "",
+      "asset_id": "signature.envelope.lining.v1",
+      "style_id": "signature-b-night",
+      "family": "stationery",
+      "title_ar": "بطانة الظرف (اختياري)",
+      "description": "Optional envelope lining: the official pattern grid in gold on ivory, clipped to the flap triangle.",
+      "occasion": "all",
+      "surface_ids": [
+        "guest.cover"
+      ],
+      "priority": "P2",
+      "status": "brief-ready",
+      "reuse_or_create": "adapt",
+      "reason": "Adds material richness at the reveal; not needed for function.",
+      "placement": {
+        "component": "src/features/signature/SignatureArt.tsx EnvelopeBack (new <pattern> fill)",
+        "slot": "flap lining",
+        "layer": "midground"
+      },
+      "source_size_px": [
+        800,
+        300
+      ],
+      "runtime_sizes_px": [
+        [
+          400,
+          150
+        ]
+      ],
+      "aspect_ratio": "8:3",
+      "runtime_format": "svg",
+      "editable_source_format": "svg / Canva",
+      "text_policy": "No text.",
+      "palette": "pattern-grid-gold.svg at 35% on ivory #F2EAD9",
+      "source_path": "public/assets/brand/pattern-grid-gold.svg",
+      "runtime_path": "public/assets/brand/envelope-lining.svg",
+      "alt_policy": "Decorative.",
+      "license_provenance": "Owner pattern.",
+      "file_weight_budget": "≤ 8 KB",
+      "acceptance": "Visible only when the flap opens; does not compete with the card.",
+      "canva_recipe_id": "canva.signature.envelope-lining",
+      "positive_prompt": "Build an editable Canva design 800 × 300 px. No AI image generation of any kind (no Canva Magic Media / Dream Lab / Magic Design / text-to-image, no AI upscaling). Native vector shapes, the official Doyofy logo and pattern files, Phosphor icons (MIT) and licensed fonts only. No hand-drawn icons. Fill with ivory #F2EAD9. Upload the official file public/assets/brand/pattern-grid-gold.svg (Doyofy pattern) and tile it at 230 px cell width across the canvas, opacity 35%. Add a downward-pointing triangle mask (apex at x 400, y 300; base on the top edge) and export only the masked triangle as SVG with transparency outside the triangle. No text, no logo. This lines the envelope flap in src/features/signature/SignatureArt.tsx.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a"
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.occasion.wedding.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "زفاف — رمز ولون",
+      "description": "Occasion mark for wedding: Phosphor HeartStraight (Light; Thin on card faces) on a red identity tile, paired with the real sig-ribbon card thumbnail.",
+      "occasion": "wedding",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile red; glyph colour by contrast rule (white)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.wedding",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.occasion.engagement.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "خطوبة — رمز ولون",
+      "description": "Occasion mark for engagement: Phosphor Diamond (Light; Thin on card faces) on a gold identity tile, paired with the real sig-ribbon card thumbnail.",
+      "occasion": "engagement",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile gold; glyph colour by contrast rule (charcoal)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.engagement",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.occasion.katb_kitab.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "عقد قران — رمز ولون",
+      "description": "Occasion mark for katb_kitab: Phosphor PenNib (Light; Thin on card faces) on a charcoal identity tile, paired with the real sig-ribbon card thumbnail.",
+      "occasion": "katb_kitab",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile charcoal; glyph colour by contrast rule (gold)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.katb_kitab",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.occasion.henna.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "حنة — رمز ولون",
+      "description": "Occasion mark for henna: Phosphor HandPalm (Light; Thin on card faces) on a gold identity tile, paired with the real sig-ribbon card thumbnail.",
+      "occasion": "henna",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile gold; glyph colour by contrast rule (charcoal)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.henna",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.occasion.birthday.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "عيد ميلاد — رمز ولون",
+      "description": "Occasion mark for birthday: Phosphor Cake (Light; Thin on card faces) on a turquoise identity tile, paired with the real sig-ticket card thumbnail.",
+      "occasion": "birthday",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile turquoise; glyph colour by contrast rule (charcoal)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.birthday",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.occasion.graduation.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "تخرج — رمز ولون",
+      "description": "Occasion mark for graduation: Phosphor GraduationCap (Light; Thin on card faces) on a red identity tile, paired with the real sig-diploma card thumbnail.",
+      "occasion": "graduation",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile red; glyph colour by contrast rule (white)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.graduation",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "Card face for this occasion is still a non-signature family; see the planned face record.",
+      "asset_id": "signature.occasion.newborn.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "مولود — رمز ولون",
+      "description": "Occasion mark for newborn: Phosphor Baby (Light; Thin on card faces) on a turquoise identity tile, paired with the real newborn-moon (sig-crescent planned) card thumbnail.",
+      "occasion": "newborn",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile turquoise; glyph colour by contrast rule (charcoal)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.newborn",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.occasion.family.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "تجمع عائلي — رمز ولون",
+      "description": "Occasion mark for family: Phosphor UsersThree (Light; Thin on card faces) on a red identity tile, paired with the real sig-ticket card thumbnail.",
+      "occasion": "family",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile red; glyph colour by contrast rule (white)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.family",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "Card face for this occasion is still a non-signature family; see the planned face record.",
+      "asset_id": "signature.occasion.iftar.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "إفطار رمضان — رمز ولون",
+      "description": "Occasion mark for iftar: Phosphor MoonStars (Light; Thin on card faces) on a charcoal identity tile, paired with the real canon faces (sig-crescent planned) card thumbnail.",
+      "occasion": "iftar",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile charcoal; glyph colour by contrast rule (gold)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.iftar",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "Card face for this occasion is still a non-signature family; see the planned face record.",
+      "asset_id": "signature.occasion.conference.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "مؤتمر — رمز ولون",
+      "description": "Occasion mark for conference: Phosphor MicrophoneStage (Light; Thin on card faces) on a ivory identity tile, paired with the real forum-grid (sig-agenda planned) card thumbnail.",
+      "occasion": "conference",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile ivory; glyph colour by contrast rule (charcoal)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.conference",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.occasion.opening.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "افتتاح — رمز ولون",
+      "description": "Occasion mark for opening: Phosphor Storefront (Light; Thin on card faces) on a gold identity tile, paired with the real sig-ticket card thumbnail.",
+      "occasion": "opening",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile gold; glyph colour by contrast rule (charcoal)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.opening",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "Card face for this occasion is still a non-signature family; see the planned face record.",
+      "asset_id": "signature.occasion.corporate.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "مناسبة شركة — رمز ولون",
+      "description": "Occasion mark for corporate: Phosphor Briefcase (Light; Thin on card faces) on a charcoal identity tile, paired with the real forum-grid (sig-agenda planned) card thumbnail.",
+      "occasion": "corporate",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile charcoal; glyph colour by contrast rule (gold)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.corporate",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "recognisable at 30 px",
+        "neighbour tiles never share a colour (tones.ts order)"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature.occasion.other.tile.v1",
+      "style_id": "signature-c-editorial",
+      "family": "occasion-object",
+      "title_ar": "مناسبة أخرى — رمز ولون",
+      "description": "Occasion mark for other: Phosphor Confetti (Light; Thin on card faces) on a turquoise identity tile, paired with the real sig-ticket card thumbnail.",
+      "occasion": "other",
+      "surface_ids": [
+        "home.occasion-band",
+        "home.deck-posters",
+        "create.occasion-deck",
+        "create.list-search",
+        "workspace.event-art",
+        "overview.moment"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Owner: no generated objects. The generated occasion WebPs (public/assets/occasions/*.webp) are not loaded by «توقيع» (verified: tests/dev/signature-no-generated.mjs).",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (OccasionPoster), src/features/occasions/OccasionArtwork.tsx (signature branch), src/features/workspace/EventWorkspace.tsx",
+        "slot": "occasion tile",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          30,
+          30
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          92,
+          92
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor SVG",
+      "text_policy": "No text in the mark; label is live.",
+      "palette": "tile turquoise; glyph colour by contrast rule (charcoal)",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "OCCASION_GLYPHS.other",
+      "alt_policy": "Decorative — the occasion name is always printed next to it.",
+      "license_provenance": "Phosphor Icons, MIT.",
+      "file_weight_budget": "inline ≤ 2 KB",
+      "acceptance": "Recognisable at chooser size; no tile repeats its neighbour's colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "white h1 ≥ 4.5:1 in the quiet zone"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature-a.hero.mesh.v1",
+      "style_id": "signature-a-celebration",
+      "family": "hero",
+      "title_ar": "خلفية الاحتفال",
+      "description": "Red mesh gradient: five radial stops (light red focal top-inline-start, gold glow, deep red base, 10% turquoise accent) over #BC4749, with the ivory pattern at 9%.",
+      "occasion": "all",
+      "surface_ids": [
+        "home.hero",
+        "summary.closure",
+        "share-preview"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "reason": "Gives the entry soul and depth without imagery.",
+      "placement": {
+        "component": "src/features/signature/signature.css (--mesh-red)",
+        "slot": ".sig-hero, .summary-closure",
+        "layer": "background"
+      },
+      "source_size_px": [
+        0,
+        0
+      ],
+      "runtime_sizes_px": [],
+      "aspect_ratio": "fluid",
+      "runtime_format": "CSS",
+      "editable_source_format": "CSS",
+      "text_policy": "n/a",
+      "palette": "#D46A66 focal, rgba(199,166,97,.38), #8F3034, rgba(46,183,183,.10), base #BC4749",
+      "source_path": "src/features/signature/signature.css",
+      "runtime_path": "src/features/signature/signature.css",
+      "alt_policy": "n/a",
+      "license_provenance": "Original CSS.",
+      "file_weight_budget": "0 bytes of imagery",
+      "acceptance": "One focal light; text zone stays ≥ 5:1.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "swipe, click, arrow keys",
+        "reduced motion: instant swap"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature-a.hero.fan.v1",
+      "style_id": "signature-a-celebration",
+      "family": "hero",
+      "title_ar": "مروحة الدعوات",
+      "description": "Three REAL invitation faces (the organizer's own draft in three suited looks, or labelled samples) fanned and swipeable; turquoise «13 مناسبة» sticker.",
+      "occasion": "all",
+      "surface_ids": [
+        "home.hero"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "reason": "Tactile object built from real data instead of a hero image.",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx (HeroFan)",
+        "slot": ".sig-fan",
+        "layer": "foreground"
+      },
+      "source_size_px": [
+        300,
+        420
+      ],
+      "runtime_sizes_px": [
+        [
+          230,
+          322
+        ],
+        [
+          150,
+          210
+        ]
+      ],
+      "aspect_ratio": "5:7",
+      "runtime_format": "DOM (CardThumb)",
+      "editable_source_format": "code",
+      "text_policy": "Live names; samples are labelled «مثال».",
+      "palette": "faces as designed",
+      "source_path": "src/features/signature/SignatureHome.tsx",
+      "runtime_path": "src/features/signature/SignatureHome.tsx",
+      "alt_policy": "Group labelled; current look announced.",
+      "license_provenance": "Original code.",
+      "file_weight_budget": "n/a",
+      "acceptance": "Phone: fan sits below the copy without horizontal scroll.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "ivory text ≥ 12:1"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature-b.stage.mesh-night.v1",
+      "style_id": "signature-b-night",
+      "family": "scene",
+      "title_ar": "خلفية المساء",
+      "description": "Night mesh: gold glow top, 14% turquoise low corner, warm charcoal core over #1E1E1E; pattern field at 6–8% gold.",
+      "occasion": "all",
+      "surface_ids": [
+        "guest.cover",
+        "editor.stage",
+        "reception.prep",
+        "overview.moment",
+        "gate",
+        "reviewer.end"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "reason": "Focus on the invitation and on staff tasks; calm hall before guests arrive.",
+      "placement": {
+        "component": "src/features/signature/signature.css (--mesh-night), SignatureArt.tsx Stage tone=\"charcoal\"",
+        "slot": "sig-stage",
+        "layer": "background"
+      },
+      "source_size_px": [
+        0,
+        0
+      ],
+      "runtime_sizes_px": [],
+      "aspect_ratio": "fluid",
+      "runtime_format": "CSS",
+      "editable_source_format": "CSS",
+      "text_policy": "n/a",
+      "palette": "rgba(199,166,97,.30), rgba(46,183,183,.14), #2E2B27, base #1E1E1E",
+      "source_path": "src/features/signature/signature.css",
+      "runtime_path": "src/features/signature/signature.css",
+      "alt_policy": "n/a",
+      "license_provenance": "Original CSS.",
+      "file_weight_budget": "0",
+      "acceptance": "Gate inputs and counts readable at arm's length.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "partial arrival shows remaining"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature-b.reception.success.v1",
+      "style_id": "signature-b-night",
+      "family": "reception",
+      "title_ar": "تأكيد الوصول",
+      "description": "Arrival success: Phosphor Check on a turquoise tile, real counts beneath («وصل 2 من 2»). No ornament over staff input.",
+      "occasion": "all",
+      "surface_ids": [
+        "gate.done"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Brief: no confetti over staff input; counts already correct.",
+      "placement": {
+        "component": "src/features/check-in/GateMode.tsx (DoneCard) + signature-pages.css",
+        "slot": "gate-done",
+        "layer": "ui"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          64,
+          64
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor",
+      "text_policy": "Counts are live text.",
+      "palette": "charcoal glyph on turquoise",
+      "source_path": "src/ui/vendor-icons/phosphor.ts",
+      "runtime_path": "UI_GLYPHS.check",
+      "alt_policy": "Status text is announced.",
+      "license_provenance": "Phosphor MIT.",
+      "file_weight_budget": "inline",
+      "acceptance": "Next guest reachable immediately.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "does not block the «أضف الضيوف» banner"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature-b.publish.stamp.v1",
+      "style_id": "signature-b-night",
+      "family": "motion",
+      "title_ar": "ختم النشر والرد",
+      "description": "Gold disc with logomark + label («نُشرت دعوتك» / reply confirmed), 1.5 s, non-blocking; static in reduced motion.",
+      "occasion": "all",
+      "surface_ids": [
+        "editor.publish",
+        "guest.rsvp"
+      ],
+      "priority": "P1",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "reason": "Authored, short success moment.",
+      "placement": {
+        "component": "src/features/signature/SealStamp.tsx",
+        "slot": "overlay (pointer-events:none)",
+        "layer": "overlay"
+      },
+      "source_size_px": [
+        0,
+        0
+      ],
+      "runtime_sizes_px": [
+        [
+          150,
+          150
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "DOM + CSS",
+      "editable_source_format": "code",
+      "text_policy": "Live label.",
+      "palette": "gold disc, charcoal mark",
+      "source_path": "src/features/signature/SealStamp.tsx",
+      "runtime_path": "src/features/signature/SealStamp.tsx",
+      "alt_policy": "role=status message",
+      "license_provenance": "Original code.",
+      "file_weight_budget": "n/a",
+      "acceptance": "Disappears on its own; never covers an input.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": true,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "works on white, red and night surfaces"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature-c.spots.v1",
+      "style_id": "signature-c-editorial",
+      "family": "empty-states",
+      "title_ar": "رموز الحالات الفارغة",
+      "description": "Nine Phosphor Light glyphs (EnvelopeOpen, UsersThree, EnvelopeSimpleOpen, Armchair, DoorOpen, Confetti, FileArrowUp, MagnifyingGlass, WifiSlash) in an ivory disc with a double gold ring and a red dot.",
+      "occasion": "all",
+      "surface_ids": [
+        "guests.empty",
+        "import.dropzone",
+        "import.done",
+        "rsvp.empty",
+        "seating.empty",
+        "reception.prep",
+        "summary.closure",
+        "search.no-results",
+        "error.offline",
+        "not-found"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "reuse",
+      "reason": "Replaces the drawn journey illustrations (with \"+\" sparkles) in «توقيع».",
+      "placement": {
+        "component": "src/ui/primitives/JourneyArtwork.tsx (journey-spot) + signature-pages.css",
+        "slot": "journey-artwork",
+        "layer": "art"
+      },
+      "source_size_px": [
+        256,
+        256
+      ],
+      "runtime_sizes_px": [
+        [
+          104,
+          104
+        ],
+        [
+          76,
+          76
+        ],
+        [
+          96,
+          96
+        ]
+      ],
+      "aspect_ratio": "1:1",
+      "runtime_format": "inline SVG",
+      "editable_source_format": "Phosphor",
+      "text_policy": "No text; the message is real copy next to it.",
+      "palette": "ivory disc, gold rings, charcoal glyph, red dot (gold on red surfaces)",
+      "source_path": "tools/gen-phosphor-icons.mjs (SPOT)",
+      "runtime_path": "SPOT_GLYPHS in src/ui/vendor-icons/phosphor.ts",
+      "alt_policy": "Decorative.",
+      "license_provenance": "Phosphor MIT.",
+      "file_weight_budget": "inline",
+      "acceptance": "Same disc language as the year disc and monogram disc on the cards.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": true,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [
+        "contrast check 234/234"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "signature-c.tiles.v1",
+      "style_id": "signature-c-editorial",
+      "family": "workspace",
+      "title_ar": "بلاطات الألوان",
+      "description": "Colour tiles holding real card thumbnails (home tickets, occasion posters, faces section); tri-colour page-head bar (red/gold/turquoise).",
+      "occasion": "all",
+      "surface_ids": [
+        "home.tickets",
+        "home.deck",
+        "page-head (all workspace pages)"
+      ],
+      "priority": "P0",
+      "status": "approved-runtime",
+      "reuse_or_create": "create",
+      "reason": "Editorial hierarchy with colour, not empty white cards.",
+      "placement": {
+        "component": "src/features/signature/SignatureHome.tsx, signature.css, signature-pages.css",
+        "slot": ".sig-ticket, .sig-poster, .page-head::after",
+        "layer": "ui"
+      },
+      "source_size_px": [
+        0,
+        0
+      ],
+      "runtime_sizes_px": [],
+      "aspect_ratio": "fluid",
+      "runtime_format": "CSS",
+      "editable_source_format": "CSS",
+      "text_policy": "Live text.",
+      "palette": "Doyofy identity only: gold #C7A661, ivory #F2EAD9, beige #E4D5B4, red #BC4749, turquoise #2EB7B7, charcoal #262626, plus white #FFFFFF and paper #FFFDF8. Text contrast pairs allowed: white on red (5.1:1), charcoal on gold (6.5:1), charcoal on turquoise (6.2:1), gold on charcoal (6.5:1), charcoal on ivory/white. Never gold or turquoise text on white, never white text on gold or turquoise.",
+      "source_path": "src/features/signature/signature.css",
+      "runtime_path": "src/features/signature/signature.css",
+      "alt_policy": "n/a",
+      "license_provenance": "Original CSS.",
+      "file_weight_budget": "0",
+      "acceptance": "No two adjacent tiles share a colour.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": false,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [],
+      "variants": [],
+      "qa": [],
+      "generation_mode": "none — code-native",
+      "fallback": "n/a — code-native",
+      "notes": "",
+      "asset_id": "legacy.occasions.generated-objects.v1",
+      "style_id": "legacy-themes",
+      "family": "occasion-object",
+      "title_ar": "أجسام المناسبات المولّدة",
+      "description": "13 generated occasion WebPs used by warm/sage/rose/night/bahja/horizon themes.",
+      "occasion": "all",
+      "surface_ids": [
+        "other themes only"
+      ],
+      "priority": "P2",
+      "status": "existing-reviewed",
+      "reuse_or_create": "reuse",
+      "reason": "Kept for the comparison themes. Excluded from «توقيع» by the owner's no-AI rule; verified not requested on any signature route.",
+      "placement": {
+        "component": "src/features/occasions/OccasionArtwork.tsx",
+        "slot": "non-signature branch",
+        "layer": "art"
+      },
+      "source_size_px": [
+        0,
+        0
+      ],
+      "runtime_sizes_px": [],
+      "aspect_ratio": "1:1",
+      "runtime_format": "webp",
+      "editable_source_format": "png",
+      "text_policy": "n/a",
+      "palette": "n/a",
+      "source_path": "design-source/generated/",
+      "runtime_path": "public/assets/occasions/*.webp",
+      "alt_policy": "n/a",
+      "license_provenance": "Generated; prompts and hashes in docs/GENERATED_ASSETS.json.",
+      "file_weight_budget": "n/a",
+      "acceptance": "Never shown under data-theme=signature.",
+      "positive_prompt": "n/a — asset exists; built by code/script listed in source_path.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    },
+    {
+      "required": false,
+      "transparency": false,
+      "reference_paths": [],
+      "reference_asset_ids": [],
+      "blocking_dependencies": [
+        "owner or previous agent: confirm the origin of 3d-candlelit.webp"
+      ],
+      "variants": [],
+      "qa": [
+        "confirm origin"
+      ],
+      "generation_mode": "none — code-native",
+      "fallback": "Live 2D scene thumbnail (TemplateThumb non-3D branch).",
+      "notes": "",
+      "asset_id": "legacy.wizard.3d-candlelit-thumb.v1",
+      "style_id": "legacy-themes",
+      "family": "scene",
+      "title_ar": "صورة قاعة الشموع المصغّرة",
+      "description": "Thumbnail shown in the template deck/editor for 3D-experience presets (all themes, including «توقيع»).",
+      "occasion": "all",
+      "surface_ids": [
+        "templates.deck",
+        "editor"
+      ],
+      "priority": "P1",
+      "status": "needs-redesign",
+      "reuse_or_create": "reuse",
+      "reason": "Provenance undocumented (not in GENERATED_ASSETS.json, asset-index.json or ASSET_PROVENANCE.md). Probably a render of the candlelit 3D hall — must be confirmed or replaced by a capture of the real engine scene.",
+      "placement": {
+        "component": "src/features/templates/TemplateThumb.tsx:58, src/wizard/Wizard.js:262",
+        "slot": "tpl-photo",
+        "layer": "background"
+      },
+      "source_size_px": [
+        0,
+        0
+      ],
+      "runtime_sizes_px": [
+        [
+          300,
+          420
+        ]
+      ],
+      "aspect_ratio": "5:7",
+      "runtime_format": "webp",
+      "editable_source_format": "unknown",
+      "text_policy": "No text.",
+      "palette": "n/a",
+      "source_path": "unknown",
+      "runtime_path": "public/assets/wizard/3d-candlelit.webp",
+      "alt_policy": "Decorative.",
+      "license_provenance": "UNVERIFIED — do not ship publicly until confirmed.",
+      "file_weight_budget": "≤ 60 KB",
+      "acceptance": "Replaced by a screenshot of the actual candlelit-hall chunk at the same crop, or provenance recorded.",
+      "positive_prompt": "See notes.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "camera": "n/a (flat vector)",
+      "lighting": "n/a (flat; depth only through shadows defined in CSS)",
+      "materials": "flat colour fields; paper #FFFDF8; optional official pattern at low opacity",
+      "desktop_crop": "n/a (vector / fluid)",
+      "mobile_crop": "n/a (vector / fluid)",
+      "safe_area": "n/a",
+      "canva_recipe_id": ""
+    }
+  ]
+}

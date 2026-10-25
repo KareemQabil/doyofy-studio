@@ -1,0 +1,6 @@
+/* Doyofy brand faces (owner-supplied; local prototype use with owner permission — see assets/fonts/brand/README.txt).
+ * Used by the «توقيع» appearance; every stack falls back to the open faces above. */
+@font-face { font-family: 'Ping AR LT'; src: url('assets/fonts/brand/ping-ar-lt-400.woff') format('woff'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Ping AR LT'; src: url('assets/fonts/brand/ping-ar-lt-500.woff') format('woff'); font-weight: 500 600; font-display: swap; }
+@font-face { font-family: 'Ping AR LT'; src: url('assets/fonts/brand/ping-ar-lt-700.woff') format('woff'); font-weight: 700 800; font-display: swap; }
+@font-face { font-family: 'Shinko Sans'; src: url('assets/fonts/brand/shinko-sans-400.woff') format('woff'); font-weight: 400; font-display: swap; }

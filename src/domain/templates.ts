@@ -1,0 +1,147 @@
+/**
+ * TemplatePreset — curated starting points over the Invitation Studio's card × setting × experience
+ * space (16 cards × 10 settings × 2D/3D × animated/static). The gallery shows presets; the editor
+ * still lets the organizer change every underlying option.
+ *
+ * Every preset uses real engine assets and a pairing the engine itself recommends (card.compat /
+ * scene.compat). Every preset renders live; the catalogue covers all recommended card/scene pairings.
+ */
+import type { EventType, InvitationDesignContent } from './types';
+
+export type TemplateStyle = 'classic' | 'modern' | 'minimal' | 'bold';
+
+export interface TemplatePreset {
+  id: string;
+  name: string;
+  /** one short line for the preview */
+  line: string;
+  cardId: string;
+  sceneId: string;
+  experience: InvitationDesignContent['experience'];
+  styles: TemplateStyle[];
+  /** occasions it suits best (shown first for those) */
+  occasionTags: EventType[];
+  featured?: boolean;
+  /** Dedicated starting point for an occasion; prioritised ahead of general recommendations. */
+  primaryOccasion?: EventType;
+}
+
+export const TEMPLATE_STYLES: Array<{ id: TemplateStyle; label: string }> = [
+  { id: 'classic', label: 'كلاسيكي' },
+  { id: 'modern', label: 'عصري' },
+  { id: 'minimal', label: 'بسيط' },
+  { id: 'bold', label: 'جريء' },
+];
+
+const A = { dimension: '2d', motion: 'animated' } as const;
+
+export const TEMPLATE_PRESETS: TemplatePreset[] = [
+  {"id": "wedding-vow-silk", "name": "وعد على ورق", "line": "قوسان يلتقيان، وأسماء لها مساحة للتنفس.", "cardId": "wedding-vow", "sceneId": "silk", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["classic"], "occasionTags": ["wedding"], "primaryOccasion": "wedding", "featured": true},
+  {"id": "wedding-vow-palace", "name": "وعد على ورق", "line": "قوسان يلتقيان، وأسماء لها مساحة للتنفس.", "cardId": "wedding-vow", "sceneId": "palace", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["classic"], "occasionTags": ["wedding"], "primaryOccasion": "wedding", "featured": false},
+  {"id": "wedding-vow-candlelit", "name": "وعد على ورق", "line": "قوسان يلتقيان، وأسماء لها مساحة للتنفس.", "cardId": "wedding-vow", "sceneId": "candlelit", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["classic"], "occasionTags": ["wedding"], "primaryOccasion": "wedding", "featured": false},
+  {"id": "engagement-rings-petals", "name": "مداران للفرح", "line": "دائرتان متداخلتان في لقاء خفيف ومضيء.", "cardId": "engagement-rings", "sceneId": "petals", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["minimal"], "occasionTags": ["engagement"], "primaryOccasion": "engagement", "featured": true},
+  {"id": "engagement-rings-silk", "name": "مداران للفرح", "line": "دائرتان متداخلتان في لقاء خفيف ومضيء.", "cardId": "engagement-rings", "sceneId": "silk", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["minimal"], "occasionTags": ["engagement"], "primaryOccasion": "engagement", "featured": false},
+  {"id": "engagement-rings-marble", "name": "مداران للفرح", "line": "دائرتان متداخلتان في لقاء خفيف ومضيء.", "cardId": "engagement-rings", "sceneId": "marble", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["minimal"], "occasionTags": ["engagement"], "primaryOccasion": "engagement", "featured": false},
+  {"id": "katb-seal-palace", "name": "ميثاق وختم", "line": "إطار من الذهب وختم أحمر لوعد يجمعكما.", "cardId": "katb-seal", "sceneId": "palace", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["classic"], "occasionTags": ["katb_kitab"], "primaryOccasion": "katb_kitab", "featured": true},
+  {"id": "katb-seal-silk", "name": "ميثاق وختم", "line": "إطار من الذهب وختم أحمر لوعد يجمعكما.", "cardId": "katb-seal", "sceneId": "silk", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["classic"], "occasionTags": ["katb_kitab"], "primaryOccasion": "katb_kitab", "featured": false},
+  {"id": "katb-seal-marble", "name": "ميثاق وختم", "line": "إطار من الذهب وختم أحمر لوعد يجمعكما.", "cardId": "katb-seal", "sceneId": "marble", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["classic"], "occasionTags": ["katb_kitab"], "primaryOccasion": "katb_kitab", "featured": false},
+  {"id": "henna-lattice-palace", "name": "نقش الحنّة", "line": "أحمر الهوية ونقش هندسي يحتفل بليلتك.", "cardId": "henna-lattice", "sceneId": "palace", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["bold"], "occasionTags": ["henna"], "primaryOccasion": "henna", "featured": true},
+  {"id": "henna-lattice-desert", "name": "نقش الحنّة", "line": "أحمر الهوية ونقش هندسي يحتفل بليلتك.", "cardId": "henna-lattice", "sceneId": "desert", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["bold"], "occasionTags": ["henna"], "primaryOccasion": "henna", "featured": false},
+  {"id": "henna-lattice-petals", "name": "نقش الحنّة", "line": "أحمر الهوية ونقش هندسي يحتفل بليلتك.", "cardId": "henna-lattice", "sceneId": "petals", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["bold"], "occasionTags": ["henna"], "primaryOccasion": "henna", "featured": false},
+  {"id": "family-table-garden", "name": "على مائدة واحدة", "line": "تكوين يجمع الأحبة حول مائدة واحدة.", "cardId": "family-table", "sceneId": "garden", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["modern"], "occasionTags": ["family"], "primaryOccasion": "family", "featured": true},
+  {"id": "family-table-marble", "name": "على مائدة واحدة", "line": "تكوين يجمع الأحبة حول مائدة واحدة.", "cardId": "family-table", "sceneId": "marble", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["modern"], "occasionTags": ["family"], "primaryOccasion": "family", "featured": false},
+  {"id": "family-table-desert", "name": "على مائدة واحدة", "line": "تكوين يجمع الأحبة حول مائدة واحدة.", "cardId": "family-table", "sceneId": "desert", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["modern"], "occasionTags": ["family"], "primaryOccasion": "family", "featured": false},
+  {"id": "iftar-arch-palace", "name": "نور اللقاء", "line": "هلال ذهبي وقوس مضيء للمّة رمضان.", "cardId": "iftar-arch", "sceneId": "palace", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["classic"], "occasionTags": ["iftar"], "primaryOccasion": "iftar", "featured": true},
+  {"id": "iftar-arch-candlelit", "name": "نور اللقاء", "line": "هلال ذهبي وقوس مضيء للمّة رمضان.", "cardId": "iftar-arch", "sceneId": "candlelit", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["classic"], "occasionTags": ["iftar"], "primaryOccasion": "iftar", "featured": false},
+  {"id": "iftar-arch-desert", "name": "نور اللقاء", "line": "هلال ذهبي وقوس مضيء للمّة رمضان.", "cardId": "iftar-arch", "sceneId": "desert", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["classic"], "occasionTags": ["iftar"], "primaryOccasion": "iftar", "featured": false},
+  {"id": "opening-door-palace", "name": "الباب الأول", "line": "أبواب وشريط ذهبي لبداية تستحق الحضور.", "cardId": "opening-door", "sceneId": "palace", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["modern"], "occasionTags": ["opening"], "primaryOccasion": "opening", "featured": true},
+  {"id": "opening-door-marble", "name": "الباب الأول", "line": "أبواب وشريط ذهبي لبداية تستحق الحضور.", "cardId": "opening-door", "sceneId": "marble", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["modern"], "occasionTags": ["opening"], "primaryOccasion": "opening", "featured": false},
+  {"id": "opening-door-garden", "name": "الباب الأول", "line": "أبواب وشريط ذهبي لبداية تستحق الحضور.", "cardId": "opening-door", "sceneId": "garden", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["modern"], "occasionTags": ["opening"], "primaryOccasion": "opening", "featured": false},
+  {"id": "corporate-edition-marble", "name": "العدد القادم", "line": "إخراج تحريري واضح للقاءات العمل.", "cardId": "corporate-edition", "sceneId": "marble", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["modern"], "occasionTags": ["corporate"], "primaryOccasion": "corporate", "featured": true},
+  {"id": "corporate-edition-sea", "name": "العدد القادم", "line": "إخراج تحريري واضح للقاءات العمل.", "cardId": "corporate-edition", "sceneId": "sea", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["modern"], "occasionTags": ["corporate"], "primaryOccasion": "corporate", "featured": false},
+  {"id": "corporate-edition-palace", "name": "العدد القادم", "line": "إخراج تحريري واضح للقاءات العمل.", "cardId": "corporate-edition", "sceneId": "palace", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["modern"], "occasionTags": ["corporate"], "primaryOccasion": "corporate", "featured": false},
+  {"id": "celebration-shapes-clay", "name": "شكل للفرح", "line": "أشكال جريئة تحتفي بكل مناسبة بطريقتها.", "cardId": "celebration-shapes", "sceneId": "clay", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["bold"], "occasionTags": ["other"], "primaryOccasion": "other", "featured": true},
+  {"id": "celebration-shapes-silk", "name": "شكل للفرح", "line": "أشكال جريئة تحتفي بكل مناسبة بطريقتها.", "cardId": "celebration-shapes", "sceneId": "silk", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["bold"], "occasionTags": ["other"], "primaryOccasion": "other", "featured": false},
+  {"id": "celebration-shapes-petals", "name": "شكل للفرح", "line": "أشكال جريئة تحتفي بكل مناسبة بطريقتها.", "cardId": "celebration-shapes", "sceneId": "petals", "experience": {"dimension": "2d", "motion": "animated"}, "styles": ["bold"], "occasionTags": ["other"], "primaryOccasion": "other", "featured": false},
+  // «توقيع» family — original Signature stationery (src/cards/signature-cards.js)
+  { id: 'sig-diploma-marble', name: 'توقيع التخرّج · ورق مضيء', line: 'شريط فحمي وقبعة ذهبية، ودائرة بسنة تخرّجك الحقيقية.', cardId: 'sig-diploma', sceneId: 'marble', experience: A, styles: ['modern', 'bold'], occasionTags: ['graduation'], primaryOccasion: 'graduation', featured: true },
+  { id: 'sig-diploma-palace', name: 'توقيع التخرّج · الأقواس', line: 'شريط فحمي وقبعة ذهبية، ودائرة بسنة تخرّجك الحقيقية.', cardId: 'sig-diploma', sceneId: 'palace', experience: A, styles: ['classic', 'bold'], occasionTags: ['graduation'], primaryOccasion: 'graduation', featured: false },
+  { id: 'sig-diploma-silk', name: 'توقيع التخرّج · حرير', line: 'شريط فحمي وقبعة ذهبية، ودائرة بسنة تخرّجك الحقيقية.', cardId: 'sig-diploma', sceneId: 'silk', experience: A, styles: ['modern', 'minimal'], occasionTags: ['graduation'], primaryOccasion: 'graduation', featured: false },
+  { id: 'sig-ribbon-candlelit', name: 'حروف الفرح · ضوء الشموع', line: 'شريط أحمر ودائرة بحروف الأسماء وإطار ذهبي مزدوج.', cardId: 'sig-ribbon', sceneId: 'candlelit', experience: A, styles: ['classic', 'bold'], occasionTags: ['wedding', 'engagement', 'katb_kitab'], primaryOccasion: 'wedding', featured: true },
+  { id: 'sig-ribbon-palace', name: 'حروف الفرح · الأقواس', line: 'شريط أحمر ودائرة بحروف الأسماء وإطار ذهبي مزدوج.', cardId: 'sig-ribbon', sceneId: 'palace', experience: A, styles: ['classic'], occasionTags: ['katb_kitab', 'wedding', 'henna'], primaryOccasion: 'katb_kitab', featured: false },
+  { id: 'sig-ribbon-silk', name: 'حروف الفرح · حرير', line: 'شريط أحمر ودائرة بحروف الأسماء وإطار ذهبي مزدوج.', cardId: 'sig-ribbon', sceneId: 'silk', experience: A, styles: ['classic', 'minimal'], occasionTags: ['engagement', 'henna', 'wedding'], primaryOccasion: 'engagement', featured: false },
+  { id: 'sig-ticket-clay', name: 'تذكرة الفرح · مرح', line: 'تذكرة مثقّبة، أشكال مقصوصة، وتاريخك على الطرف.', cardId: 'sig-ticket', sceneId: 'clay', experience: A, styles: ['modern', 'bold'], occasionTags: ['birthday', 'other'], primaryOccasion: 'birthday', featured: true },
+  { id: 'sig-ticket-petals', name: 'تذكرة الفرح · بتلات', line: 'تذكرة مثقّبة، أشكال مقصوصة، وتاريخك على الطرف.', cardId: 'sig-ticket', sceneId: 'petals', experience: A, styles: ['modern'], occasionTags: ['family', 'birthday', 'other'], primaryOccasion: 'family', featured: false },
+  { id: 'sig-ticket-marble', name: 'تذكرة الفرح · ورق مضيء', line: 'تذكرة مثقّبة، أشكال مقصوصة، وتاريخك على الطرف.', cardId: 'sig-ticket', sceneId: 'marble', experience: A, styles: ['modern', 'minimal'], occasionTags: ['opening', 'corporate', 'other'], primaryOccasion: 'opening', featured: false },
+  { id: 'grad-editorial-marble', name: 'تخرج بأفق جديد · ورق مضيء', line: 'قبعة وشهادة وتفاصيل تحتفي بإنجازك.', cardId: 'grad-editorial', sceneId: 'marble', experience: A, styles: ['modern', 'bold'], occasionTags: ['graduation'], primaryOccasion: 'graduation', featured: true },
+  { id: 'grad-editorial-silk', name: 'تخرج بأفق جديد · حرير', line: 'قبعة وشهادة وتفاصيل تحتفي بإنجازك.', cardId: 'grad-editorial', sceneId: 'silk', experience: A, styles: ['modern', 'bold'], occasionTags: ['graduation'], primaryOccasion: 'graduation', featured: false },
+  { id: 'grad-editorial-sea', name: 'تخرج بأفق جديد · البحر', line: 'قبعة وشهادة وتفاصيل تحتفي بإنجازك.', cardId: 'grad-editorial', sceneId: 'sea', experience: A, styles: ['modern', 'bold'], occasionTags: ['graduation'], primaryOccasion: 'graduation', featured: false },
+  { id: 'grad-campus-garden', name: 'ختم الإنجاز · الحديقة', line: 'قبعة وشهادة وتفاصيل تحتفي بإنجازك.', cardId: 'grad-campus', sceneId: 'garden', experience: A, styles: ['classic', 'minimal'], occasionTags: ['graduation'], primaryOccasion: 'graduation', featured: true },
+  { id: 'grad-campus-marble', name: 'ختم الإنجاز · ورق مضيء', line: 'قبعة وشهادة وتفاصيل تحتفي بإنجازك.', cardId: 'grad-campus', sceneId: 'marble', experience: A, styles: ['classic', 'minimal'], occasionTags: ['graduation'], primaryOccasion: 'graduation', featured: false },
+  { id: 'grad-campus-palace', name: 'ختم الإنجاز · الأقواس', line: 'قبعة وشهادة وتفاصيل تحتفي بإنجازك.', cardId: 'grad-campus', sceneId: 'palace', experience: A, styles: ['classic', 'minimal'], occasionTags: ['graduation'], primaryOccasion: 'graduation', featured: false },
+  { id: 'grad-constellation-starry', name: 'نجمة التخرج · النجوم', line: 'قبعة وشهادة وتفاصيل تحتفي بإنجازك.', cardId: 'grad-constellation', sceneId: 'starry', experience: A, styles: ['bold', 'classic'], occasionTags: ['graduation'], primaryOccasion: 'graduation', featured: true },
+  { id: 'grad-constellation-sea', name: 'نجمة التخرج · البحر', line: 'قبعة وشهادة وتفاصيل تحتفي بإنجازك.', cardId: 'grad-constellation', sceneId: 'sea', experience: A, styles: ['bold', 'classic'], occasionTags: ['graduation'], primaryOccasion: 'graduation', featured: false },
+  { id: 'grad-constellation-candlelit', name: 'نجمة التخرج · ضوء الشموع', line: 'قبعة وشهادة وتفاصيل تحتفي بإنجازك.', cardId: 'grad-constellation', sceneId: 'candlelit', experience: A, styles: ['bold', 'classic'], occasionTags: ['graduation'], primaryOccasion: 'graduation', featured: false },
+  { id: 'birthday-confetti-clay', name: 'عيد من الألوان · مرح', line: 'كعكة وألوان وبهجة من أول نظرة.', cardId: 'birthday-confetti', sceneId: 'clay', experience: A, styles: ['modern', 'bold'], occasionTags: ['birthday'], primaryOccasion: 'birthday', featured: true },
+  { id: 'birthday-confetti-petals', name: 'عيد من الألوان · البتلات', line: 'كعكة وألوان وبهجة من أول نظرة.', cardId: 'birthday-confetti', sceneId: 'petals', experience: A, styles: ['modern', 'bold'], occasionTags: ['birthday'], primaryOccasion: 'birthday', featured: false },
+  { id: 'birthday-confetti-silk', name: 'عيد من الألوان · حرير', line: 'كعكة وألوان وبهجة من أول نظرة.', cardId: 'birthday-confetti', sceneId: 'silk', experience: A, styles: ['modern', 'bold'], occasionTags: ['birthday'], primaryOccasion: 'birthday', featured: false },
+  { id: 'newborn-moon-silk', name: 'أهلًا بالقمر · حرير', line: 'قمر وغيوم ونجوم لبداية صغيرة جميلة.', cardId: 'newborn-moon', sceneId: 'silk', experience: A, styles: ['minimal', 'classic'], occasionTags: ['newborn'], primaryOccasion: 'newborn', featured: true },
+  { id: 'newborn-moon-petals', name: 'أهلًا بالقمر · البتلات', line: 'قمر وغيوم ونجوم لبداية صغيرة جميلة.', cardId: 'newborn-moon', sceneId: 'petals', experience: A, styles: ['minimal', 'classic'], occasionTags: ['newborn'], primaryOccasion: 'newborn', featured: false },
+  { id: 'newborn-moon-marble', name: 'أهلًا بالقمر · ورق مضيء', line: 'قمر وغيوم ونجوم لبداية صغيرة جميلة.', cardId: 'newborn-moon', sceneId: 'marble', experience: A, styles: ['minimal', 'classic'], occasionTags: ['newborn'], primaryOccasion: 'newborn', featured: false },
+  { id: 'forum-grid-marble', name: 'ملتقى الأفكار · ورق مضيء', line: 'شبكة هندسية بصرية لحوار يستحق اللقاء.', cardId: 'forum-grid', sceneId: 'marble', experience: A, styles: ['modern', 'minimal'], occasionTags: ['conference', 'corporate', 'opening'], primaryOccasion: 'conference', featured: true },
+  { id: 'forum-grid-sea', name: 'ملتقى الأفكار · البحر', line: 'شبكة هندسية بصرية لحوار يستحق اللقاء.', cardId: 'forum-grid', sceneId: 'sea', experience: A, styles: ['modern', 'minimal'], occasionTags: ['conference', 'corporate', 'opening'], primaryOccasion: 'corporate', featured: false },
+  { id: 'forum-grid-palace', name: 'ملتقى الأفكار · الأقواس', line: 'شبكة هندسية بصرية لحوار يستحق اللقاء.', cardId: 'forum-grid', sceneId: 'palace', experience: A, styles: ['modern', 'minimal'], occasionTags: ['conference', 'corporate', 'opening'], primaryOccasion: 'corporate', featured: false },
+  { id: 'candle-night', primaryOccasion: 'wedding', name: 'ليلة الشموع', line: 'بطاقة نبيذية بحواف ذهبية في قاعة شموع مجسّمة.', cardId: 'wine', sceneId: 'candlelit', experience: { dimension: '3d', motion: 'animated' }, styles: ['classic', 'bold'], occasionTags: ['wedding', 'engagement', 'katb_kitab'], featured: true },
+  { id: 'emerald-candle', primaryOccasion: 'corporate', name: 'زمرّد الشموع', line: 'زخرفة آرت ديكو على الأخضر العميق، في القاعة المجسّمة.', cardId: 'emerald', sceneId: 'candlelit', experience: { dimension: '3d', motion: 'animated' }, styles: ['bold'], occasionTags: ['wedding', 'engagement', 'corporate'] },
+  { id: 'ivory-morning', primaryOccasion: 'engagement', name: 'دانتيل الصباح', line: 'دانتيل عاجي ناعم على رخام فاتح.', cardId: 'lace', sceneId: 'marble', experience: A, styles: ['classic', 'minimal'], occasionTags: ['wedding', 'engagement', 'katb_kitab', 'henna'], featured: true },
+  { id: 'arabesque-palace', primaryOccasion: 'katb_kitab', name: 'أقواس القصر', line: 'أرابيسك هادئ تحت أقواس دافئة.', cardId: 'arabesque', sceneId: 'palace', experience: A, styles: ['classic'], occasionTags: ['katb_kitab', 'henna', 'iftar', 'family', 'wedding'], featured: true },
+  { id: 'wine-palace', primaryOccasion: 'henna', name: 'نبيذ القصر', line: 'الأحمر النبيذي والذهب بين الأقواس.', cardId: 'wine', sceneId: 'palace', experience: A, styles: ['classic', 'bold'], occasionTags: ['wedding', 'katb_kitab', 'henna'] },
+  { id: 'emerald-garden', primaryOccasion: 'opening', name: 'حديقة الزمرّد', line: 'أخضر عميق وذهب في ليلة حديقة.', cardId: 'emerald', sceneId: 'garden', experience: A, styles: ['bold'], occasionTags: ['wedding', 'henna', 'engagement', 'opening'] },
+  { id: 'sage-morning', primaryOccasion: 'newborn', name: 'أغصان المريمية', line: 'أوراق ناعمة وألوان هادئة.', cardId: 'sage', sceneId: 'marble', experience: A, styles: ['minimal', 'modern'], occasionTags: ['engagement', 'newborn', 'family', 'birthday'], featured: true },
+  { id: 'blush-petals', primaryOccasion: 'birthday', name: 'بتلات وردية', line: 'ألوان مائية وبتلات تطفو بخفة.', cardId: 'blush', sceneId: 'petals', experience: A, styles: ['modern'], occasionTags: ['engagement', 'henna', 'newborn', 'birthday'] },
+  { id: 'midnight-stars', primaryOccasion: 'graduation', name: 'ليلة النجوم', line: 'كحلي عميق ونجوم ذهبية.', cardId: 'midnight', sceneId: 'starry', experience: A, styles: ['bold', 'modern'], occasionTags: ['graduation', 'iftar', 'wedding', 'corporate'], featured: true },
+  { id: 'desert-sun', primaryOccasion: 'family', name: 'شمس الصحراء', line: 'تراكوتا دافئة وغروب صحراوي.', cardId: 'terracotta', sceneId: 'desert', experience: A, styles: ['bold', 'modern'], occasionTags: ['family', 'iftar', 'opening', 'birthday'] },
+  { id: 'quiet-silk', primaryOccasion: 'conference', name: 'حرير بسيط', line: 'تصميم عصري هادئ، يفتح مباشرة على البطاقة.', cardId: 'minimal', sceneId: 'silk', experience: { dimension: '2d', motion: 'static' }, styles: ['minimal', 'modern'], occasionTags: ['conference', 'corporate', 'opening', 'graduation', 'other'], featured: true },
+  { id: 'moonlit-sea', primaryOccasion: 'other', name: 'بحر مقمر', line: 'خطوط بسيطة على بحر ليلي.', cardId: 'minimal', sceneId: 'sea', experience: A, styles: ['minimal', 'modern'], occasionTags: ['graduation', 'conference', 'corporate', 'other'] },
+  { id: 'clay-party', primaryOccasion: 'birthday', name: 'صلصال مرح', line: 'ألوان باستيل ومسرح مرح.', cardId: 'clay', sceneId: 'clay', experience: A, styles: ['modern', 'bold'], occasionTags: ['birthday', 'newborn'] },
+  { id: 'wedding-silk', name: 'وعد من حرير', line: 'دانتيل عاجي وخط رقعة عربي في ضوء الحرير الناعم.', cardId: 'lace', sceneId: 'silk', experience: A, styles: ['classic', 'minimal'], occasionTags: ['wedding', 'engagement'], primaryOccasion: 'wedding' },
+  { id: 'engagement-petals', name: 'موعد بين الأغصان', line: 'مريمية فاتحة وأغصان هادئة، مع بتلات تتحرك بخفة.', cardId: 'sage', sceneId: 'petals', experience: A, styles: ['minimal', 'modern'], occasionTags: ['engagement', 'newborn'], primaryOccasion: 'engagement' },
+  { id: 'contract-ivory', name: 'ميثاق عاجي', line: 'إطار دانتيل دقيق ورقعة عربية تحت أقواس القصر.', cardId: 'lace', sceneId: 'palace', experience: A, styles: ['classic'], occasionTags: ['katb_kitab', 'wedding'], primaryOccasion: 'katb_kitab' },
+  { id: 'henna-earth', name: 'نقش ودفء', line: 'تراكوتا دافئة وخط كوفي واضح بين الأقواس الذهبية.', cardId: 'terracotta', sceneId: 'palace', experience: A, styles: ['bold', 'modern'], occasionTags: ['henna', 'family'], primaryOccasion: 'henna' },
+  { id: 'birthday-bloom', name: 'فرحة تتفتح', line: 'صلصال وردي وبتلات طافية لاحتفال خفيف ومرح.', cardId: 'clay', sceneId: 'petals', experience: A, styles: ['modern', 'bold'], occasionTags: ['birthday', 'newborn'], primaryOccasion: 'birthday' },
+  { id: 'graduation-horizon', name: 'أفق الإنجاز', line: 'نجوم ذهبية على الكحلي العميق، أمام بحر مقمر.', cardId: 'midnight', sceneId: 'sea', experience: A, styles: ['bold', 'classic'], occasionTags: ['graduation', 'other'], primaryOccasion: 'graduation' },
+  { id: 'newborn-cloud', name: 'أول حكاية', line: 'ألوان مائية وردية ورخام مضيء، مع كتابة عربية ناعمة.', cardId: 'blush', sceneId: 'marble', experience: A, styles: ['minimal', 'modern'], occasionTags: ['newborn', 'birthday'], primaryOccasion: 'newborn' },
+  { id: 'family-garden', name: 'لمّة في الحديقة', line: 'أغصان المريمية على ورق فاتح، في حديقة ليلية.', cardId: 'sage', sceneId: 'garden', experience: A, styles: ['minimal', 'classic'], occasionTags: ['family', 'engagement'], primaryOccasion: 'family' },
+  { id: 'iftar-lantern', name: 'نور المائدة', line: 'أرابيسك عاجي وذهبي في قاعة الشموع الدافئة.', cardId: 'arabesque', sceneId: 'candlelit', experience: A, styles: ['classic'], occasionTags: ['iftar', 'family'], primaryOccasion: 'iftar' },
+  { id: 'iftar-sunset', name: 'غروب ولمّة', line: 'نقوش هندسية عربية وألوان عاجية على غروب الصحراء.', cardId: 'arabesque', sceneId: 'desert', experience: A, styles: ['classic', 'modern'], occasionTags: ['iftar', 'family'], primaryOccasion: 'iftar' },
+  { id: 'conference-editorial', name: 'مساحة للحوار', line: 'تصميم أبيض تحريري بخط كوفي واضح على الرخام.', cardId: 'minimal', sceneId: 'marble', experience: A, styles: ['minimal', 'modern'], occasionTags: ['conference', 'corporate'], primaryOccasion: 'conference' },
+  { id: 'opening-palace', name: 'الباب الأول', line: 'زمرّد وذهب وخط كوفي داخل أقواس معمارية دافئة.', cardId: 'emerald', sceneId: 'palace', experience: A, styles: ['bold', 'classic'], occasionTags: ['opening', 'corporate'], primaryOccasion: 'opening' },
+  { id: 'corporate-candle', name: 'لقاء الزمرّد', line: 'بطاقة هندسية خضراء وخط كوفي في مشهد شموع خفيف.', cardId: 'emerald', sceneId: 'candlelit', experience: A, styles: ['bold', 'modern'], occasionTags: ['corporate', 'conference'], primaryOccasion: 'corporate' },
+  { id: 'other-sunset', name: 'مساء على مهل', line: 'سماء نجمية وكحلي ذهبي على أفق صحراوي دافئ.', cardId: 'midnight', sceneId: 'desert', experience: A, styles: ['bold', 'modern'], occasionTags: ['other', 'graduation'], primaryOccasion: 'other' },
+  { id: 'wine-constellation', primaryOccasion: 'corporate', name: 'لقاء تحت النجوم', line: 'بطاقة نبيذية بإطار ذهبي وخلفية ليلية نجمية.', cardId: 'wine', sceneId: 'starry', experience: A, styles: ['classic', 'bold'], occasionTags: ['wedding', 'engagement', 'corporate'] },
+  { id: 'wedding-candlelight', name: 'شموع وحكاية', line: 'نبيذي وذهب ورقعة عربية في قاعة شموع خفيفة.', cardId: 'wine', sceneId: 'candlelit', experience: A, styles: ['classic', 'bold'], occasionTags: ['wedding', 'katb_kitab', 'henna'] },
+  { id: 'blush-silk', name: 'ورد على حرير', line: 'ألوان مائية وردية وخط رقعة في ثنايا حرير مضيئة.', cardId: 'blush', sceneId: 'silk', experience: A, styles: ['classic', 'modern'], occasionTags: ['engagement', 'henna'] },
+  { id: 'terracotta-garden', name: 'حديقة الشمس', line: 'درجات ترابية دافئة وخط كوفي أمام حديقة خضراء.', cardId: 'terracotta', sceneId: 'garden', experience: A, styles: ['modern', 'bold'], occasionTags: ['opening', 'family', 'birthday'] },
+  { id: 'clay-silk', name: 'مرح من حرير', line: 'صلصال باستيل وإطار لطيف في ضوء الحرير الناعم.', cardId: 'clay', sceneId: 'silk', experience: A, styles: ['modern'], occasionTags: ['birthday', 'newborn'] },
+];
+
+export const presetById = (id: string) => TEMPLATE_PRESETS.find((p) => p.id === id);
+
+/** gallery order for an occasion: suited ones first (featured first), then the rest in catalogue order */
+export function presetsFor(type: EventType | null): { suited: TemplatePreset[]; rest: TemplatePreset[] } {
+  if (!type) return { suited: TEMPLATE_PRESETS.filter((p) => p.featured), rest: TEMPLATE_PRESETS.filter((p) => !p.featured) };
+  const suited = TEMPLATE_PRESETS.filter((p) => p.occasionTags.includes(type))
+    .sort((a, b) => Number(b.primaryOccasion === type) - Number(a.primaryOccasion === type) || Number(!!b.featured) - Number(!!a.featured) || a.occasionTags.indexOf(type) - b.occasionTags.indexOf(type));
+  const rest = TEMPLATE_PRESETS.filter((p) => !suited.includes(p));
+  return { suited, rest };
+}
+
+/** a template changes only the look — never the organizer's text, names or program */
+export function applyPreset(c: InvitationDesignContent, p: TemplatePreset): InvitationDesignContent {
+  return { ...c, cardId: p.cardId, sceneId: p.sceneId, experience: { ...p.experience } };
+}
+
+/** the preset the current design matches, if any */
+export function presetOf(c: Pick<InvitationDesignContent, 'cardId' | 'sceneId' | 'experience'>): TemplatePreset | undefined {
+  return TEMPLATE_PRESETS.find((p) => p.cardId === c.cardId && p.sceneId === c.sceneId && p.experience.dimension === c.experience.dimension && p.experience.motion === c.experience.motion);
+}

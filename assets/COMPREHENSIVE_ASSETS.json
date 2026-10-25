@@ -1,0 +1,47 @@
+{
+  "created": "2026-10-10",
+  "assets": [
+    {
+      "key": "celebration-folds",
+      "prompt": "Use case: product-mockup. Asset type: Doyofy welcome and sign-in page hero photograph. Premium expressive physical paper art photographed as a real studio installation, not a 3D render. Landscape 3:2. Large sculptural loops and folded arches made of thick matte brick-red paper #BC4749 alongside warm ivory #F2EAD9 folded sheets, a small restrained brass #C7A661 accent; charcoal shadows #262626. Bold scale and asymmetrical composition, sculptural forms mainly on the left and center with uncluttered rightmost 25 percent. Honest paper fibers and bent edges, beautifully controlled hard afternoon daylight casting graphic shadows, luxury invitation atelier meets creative contemporary print campaign. The forms must feel constructed by hand with slight physical imperfections and no impossible joins. No typography, text, logos, invitation text, people, hands, screens, gradients, flowers, glossy plastic, floating objects, excessive props or AI-art surrealism. This is a decorative brand material photograph; real Arabic heading and official brand logo will be overlaid in HTML.",
+      "tool": "built-in image_gen",
+      "ai_generated": true,
+      "source": "design-source/editorial/celebration-folds.png",
+      "outputs": [
+        "public/assets/editorial/celebration-folds.avif",
+        "public/assets/editorial/celebration-folds.webp"
+      ],
+      "role": "decorative",
+      "text_baked_in": false,
+      "use": "Welcome, sign-in, sign-up and logout hero"
+    },
+    {
+      "key": "occasion-collection",
+      "prompt": "Use case: product-mockup. Asset type: wide editorial banner for Doyofy Arabic invitation template library. Landscape 3:2, top-down real photographic still life of a carefully art-directed collection of celebration stationery. Three blank warm ivory sheets in a loose staggered arrangement, one brick-red envelope #BC4749, a small black graduation tassel, a single unlit deep-red birthday candle, and one tiny dried cream botanical stem. Large graphic charcoal #262626 and muted gold #C7A661 paper circles at the edges. Warm ivory paper table #F2EAD9 with enough uncluttered ivory negative space on the right third. Strong but restrained composition, tactile uncoated paper, beautiful side sunlight and sharp real shadows, real material imperfections. Show diversity of occasions through physical objects, not separate collaged pictures. No text, logo, numbers, printed handwriting, cakes, people, hands, electronic screens, watermarks, 3D-render surfaces, floating confetti, sparkle effects or too many props.",
+      "tool": "built-in image_gen",
+      "ai_generated": true,
+      "source": "design-source/editorial/occasion-collection.png",
+      "outputs": [
+        "public/assets/editorial/occasion-collection.avif",
+        "public/assets/editorial/occasion-collection.webp"
+      ],
+      "role": "decorative",
+      "text_baked_in": false,
+      "use": "Invitation template library banner"
+    },
+    {
+      "key": "reception-desk",
+      "prompt": "Use case: product-mockup. Asset type: brand editorial banner for the Doyofy organizer overview and reception preparation. Landscape 3:2. Intimate side view of an elegantly prepared event welcome desk, no people: one matte charcoal tray with two brick-red blank envelopes #BC4749, one ivory folded blank place card, a brass clip #C7A661, soft warm ivory linen #F2EAD9 and a single small unlit candle at far left. Materials physically realistic, carefully folded cotton, tiny tactile details, golden late afternoon daylight, editorial hospitality photography. Objects arranged on left and center, quiet right area for native Arabic text. Clearly a decorative hospitality scene, not a specific venue. No text, logo, QR code, name, phone, screens, hands, chairs repeated unnaturally, flowers, lush fake bokeh, glitter, gradients, or glossy 3D-render look.",
+      "tool": "built-in image_gen",
+      "ai_generated": true,
+      "source": "design-source/editorial/reception-desk.png",
+      "outputs": [
+        "public/assets/editorial/reception-desk.avif",
+        "public/assets/editorial/reception-desk.webp"
+      ],
+      "role": "decorative",
+      "text_baked_in": false,
+      "use": "Organizer overview and reception preparation banners"
+    }
+  ]
+}

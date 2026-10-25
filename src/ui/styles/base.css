@@ -1,0 +1,71 @@
+/* Base element styles for the Doyofy app (scoped to body.dy so the legacy invitation pages keep theirs). */
+html:has(body.dy) { height: auto; background: var(--c-bg); }
+body.dy {
+  margin: 0;
+  min-height: 100dvh;
+  height: auto;
+  overflow: auto;
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--dur) var(--ease-in-out);
+}
+::selection { background: var(--c-accent-soft); color: var(--c-text); }
+body.dy *, body.dy *::before, body.dy *::after { box-sizing: border-box; }
+.dy-root { min-height: 100dvh; }
+:where(.dy) h1, :where(.dy) h2, :where(.dy) h3, :where(.dy) h4 { margin: 0; line-height: var(--lh-tight); font-weight: var(--fw-bold); }
+/* display face for page/section titles; UI face for small headings inside components */
+:where(.dy) :is(h1, h2) { font-family: var(--font-display); font-weight: var(--fw-display); letter-spacing: var(--tracking-display); }
+/* guest pages keep UI-face headings; only their named display elements use the invitation face */
+:where(.theme-guest) :is(h1, h2) { font-family: var(--font-ui); font-weight: var(--fw-bold); letter-spacing: 0; }
+.dy .t-display { font-family: var(--font-display); font-weight: var(--fw-display); font-size: var(--fs-4xl); line-height: var(--lh-display); letter-spacing: var(--tracking-display); }
+:where(.dy) p { margin: 0; }
+:where(.dy) a { color: var(--c-primary-text); text-underline-offset: 3px; }
+:where(.dy) :is(button, input, select, textarea) { font: inherit; color: inherit; }
+:where(.dy) :is(img, svg) { display: block; max-width: 100%; }
+:where(.dy) :is(ul, ol) { margin: 0; padding: 0; }
+.dy [hidden] { display: none !important; }
+/* focus: two rings (surface gap + ink) — always clearer than hover, visible on every surface and both themes */
+.dy :focus-visible { outline: 2px solid var(--c-focus); outline-offset: 2px; box-shadow: 0 0 0 2px var(--c-surface); }
+.theme-gate :focus-visible { box-shadow: 0 0 0 2px var(--c-bg); }
+.dy .num, .dy [data-num] { font-variant-numeric: tabular-nums; }
+.dy .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+.dy .muted { color: var(--c-text-2); }
+.dy .faint { color: var(--c-text-3); }
+.dy .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.dy .skip-link { position: absolute; inset-inline-start: var(--s-3); top: -60px; z-index: 100; background: var(--c-primary); color: var(--c-on-primary); padding: var(--s-2) var(--s-4); border-radius: var(--r-sm); }
+.dy .skip-link:focus { top: var(--s-3); }
+.dy .icon { flex: none; width: 20px; height: 20px; }
+.dy .icon-sm { width: 16px; height: 16px; }
+.dy .icon-lg { width: 24px; height: 24px; }
+/* directional icons are drawn for RTL (forward = left); mirror them if a page is ever LTR */
+[dir='ltr'] .icon-dirfixed { transform: scaleX(-1); }
+
+/* text helpers */
+.t-xs { font-size: var(--fs-xs); }
+.t-sm { font-size: var(--fs-sm); }
+.t-lg { font-size: var(--fs-lg); }
+.t-xl { font-size: var(--fs-xl); }
+.t-bold { font-weight: var(--fw-bold); }
+.t-medium { font-weight: var(--fw-medium); }
+
+/* layout helpers (spacing only — no colours) */
+.stack { display: flex; flex-direction: column; gap: var(--gap, var(--s-4)); }
+.row { display: flex; align-items: center; gap: var(--gap, var(--s-3)); }
+.row.wrap { flex-wrap: wrap; }
+.row.between { justify-content: space-between; }
+.row.start { align-items: flex-start; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.gap-1 { --gap: var(--s-1); } .gap-2 { --gap: var(--s-2); } .gap-3 { --gap: var(--s-3); } .gap-4 { --gap: var(--s-4); } .gap-6 { --gap: var(--s-6); } .gap-8 { --gap: var(--s-8); }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.status { display: inline-flex; align-items: center; gap: 7px; font-size: var(--fs-sm); line-height: 1.6; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.gap-5 { --gap: var(--s-5); }
+.dy :is(input,textarea,select) { scroll-margin-block: 100px; }
+@media (max-width: 640px) { .dy :is(input,textarea,select) { font-size: max(16px, 1rem); } }

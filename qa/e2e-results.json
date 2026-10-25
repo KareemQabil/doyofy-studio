@@ -1,0 +1,139 @@
+{
+  "at": "2026-10-09T15:35:25.982Z",
+  "passed": 22,
+  "total": 22,
+  "results": [
+    {
+      "vp": "desk",
+      "name": "1. open Doyofy: events home",
+      "ok": true,
+      "detail": "3 seeded events"
+    },
+    {
+      "vp": "desk",
+      "name": "2a. choose the occasion (coverflow)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "2b. essentials → create → template gallery",
+      "ok": true,
+      "detail": "evt_9fbirxan0e"
+    },
+    {
+      "vp": "desk",
+      "name": "3. gallery: curated presets with the event’s names; preview; use template",
+      "ok": true,
+      "detail": "ليلة الشموع"
+    },
+    {
+      "vp": "desk",
+      "name": "4a. editor · content: the message autosaves",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "4b. editor · design + motion: card changes in place; experience switch",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "4c. editor · event details: saved to the EVENT (with notice)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "5a. publish from the editor",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "5b. preview as guest, back to the same section, close",
+      "ok": true,
+      "detail": "/i/lina-omar"
+    },
+    {
+      "vp": "desk",
+      "name": "5c. overview: next action moves on to guests",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "6a. add a guest",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "6b. import sample file: issues highlighted, resolved, imported",
+      "ok": true,
+      "detail": "تمت إضافة 20 ضيفًا"
+    },
+    {
+      "vp": "desk",
+      "name": "7. open the guest’s personal link (drawer) and share (simulated)",
+      "ok": true,
+      "detail": "http://localhost:5370/i/lina-omar/V56YK"
+    },
+    {
+      "vp": "desk",
+      "name": "8. guest: invitation → RSVP (name from link, count bounded) → hub with QR",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "9. organizer sees the reply without reloading",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "10. create tables and seat the confirmed guest",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "11. open check-in mode (gate)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "12-13a. search the guest; partial check-in 2 of 3",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "13b. scan the QR code later: remaining 1 → complete",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "13c. exception: unknown code is not silently accepted",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "14. overview counts and activity reflect check-in",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "vp": "desk",
+      "name": "no console errors during the journey",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

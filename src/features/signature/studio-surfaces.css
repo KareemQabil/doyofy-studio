@@ -1,0 +1,37 @@
+/* The same material direction follows the invitation from discovery to editing and sharing. */
+.sig-fan-ribbon { position: absolute; z-index: 0; width: clamp(160px, 22vw, 250px); height: auto; inset-inline-end: -4%; top: -10px; transform: rotate(16deg); pointer-events: none; }
+.sig-fan { z-index: 1; }
+:root[data-theme='signature'] .tg-head { flex-direction: row; align-items: center; justify-content: space-between; max-width: none; gap: 30px; }
+.tg-studio-prop { width: clamp(140px, 20vw, 220px); height: auto; flex: none; transform: rotate(-10deg); pointer-events: none; }
+.sig-tpl-tableau { position: relative; isolation: isolate; display: grid; place-items: center; width: 100%; aspect-ratio: 390 / 630; background: var(--brand-ivory); }
+.sig-tpl-surface { position: absolute; inset: 0; z-index: -1; }
+.sig-tpl-surface img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.sig-tpl-tableau > .card-thumb { border-radius: 3px; transform: rotate(-2deg); box-shadow: 0 15px 28px -12px rgba(38,38,38,.4), 0 1px 2px rgba(38,38,38,.2); transition: transform 350ms var(--ease-out); }
+.tp-stationery { position: absolute; inset: 0; width: 100%; aspect-ratio: auto; }
+.tp-stage .tp-stationery .ed-workbench { width: 100%; height: 100%; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+.tp-stationery :is(.ed-workbench-caption, .ed-workbench-mark) { display: none; }
+:root[data-theme='signature'] .tp-stage:not(.is-playing) { background: var(--brand-ivory); border: 1px solid var(--brand-beige); }
+:root[data-theme='signature'] .invite-card-panel { border: 1px solid var(--brand-beige); color: var(--brand-charcoal); background: var(--brand-ivory); }
+:root[data-theme='signature'] .invite-card-panel::before { content: none; }
+.invite-stationery-surface { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.invite-stationery-surface img { display: block; width: 100%; height: 100%; object-fit: cover; }
+:root[data-theme='signature'] .invite-card-panel .card-thumb { border-radius: 3px; transform: rotate(-2deg); box-shadow: 0 20px 30px -18px rgba(38,38,38,.4), 0 2px 3px rgba(38,38,38,.14); }
+:root[data-theme='signature'] .invite-card-panel .invite-card-actions { padding: 12px; border: 1px solid var(--brand-beige); border-radius: 10px; background: var(--brand-ivory); }
+:root[data-theme='signature'] .invite-card-panel .btn-secondary { color: var(--brand-charcoal); border-color: var(--brand-charcoal); }
+:root[data-theme='signature'] .invite-card-panel .btn-secondary:hover:not(:disabled) { color: var(--brand-ivory); background: var(--brand-charcoal); }
+:root[data-theme='signature'] .invite-card-panel .btn-ghost, :root[data-theme='signature'] .invite-card-panel a:not(.btn) { color: var(--brand-charcoal); }
+@media (hover: hover) and (pointer: fine) {
+  .sig-tpl-deck .deck-card:hover .sig-tpl-tableau > .card-thumb { transform: translateY(-4px) rotate(0); }
+}
+@media (max-width: 760px) {
+  .sig-fan-ribbon { width: 140px; inset-inline-end: -2%; top: -5px; }
+  :root[data-theme='signature'] .tg-head { gap: 12px; }
+  .tg-studio-prop { width: 95px; align-self: flex-start; }
+}
+@media (max-width: 390px) {
+  .tg-studio-prop { display: none; }
+  .sig-tpl-tableau > .card-thumb { transform: scale(.92) rotate(-2deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sig-tpl-tableau > .card-thumb, .sig-tpl-deck .deck-card:hover .sig-tpl-tableau > .card-thumb { transition: none; transform: none; }
+}

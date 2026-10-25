@@ -1,0 +1,123 @@
+[
+  {
+    "original": "design-source/generated/wedding-object.png",
+    "runtime": "public/assets/occasions/wedding-object.webp",
+    "bytes": 192750,
+    "reason": "Preserve RGB beneath alpha to prevent opaque-looking WebP blocks during display.",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "original": "design-source/generated/newborn-object.png",
+    "runtime": "public/assets/occasions/newborn-object.webp",
+    "bytes": 319006,
+    "reason": "Preserve RGB beneath alpha to prevent opaque-looking WebP blocks during display.",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "original": "design-source/generated/birthday-object.png",
+    "runtime": "public/assets/occasions/birthday-object.webp",
+    "bytes": 241046,
+    "reason": "Preserve RGB beneath alpha to prevent opaque-looking WebP blocks during display.",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "original": "design-source/generated/night-world.png",
+    "runtime": "public/assets/directions/night-world.webp",
+    "bytes": 189892,
+    "reason": "Preserve RGB beneath alpha to prevent opaque-looking WebP blocks during display.",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "original": "design-source/generated/graduation-object.png",
+    "runtime": "public/assets/occasions/graduation-object.webp",
+    "bytes": 256242,
+    "reason": "Preserve RGB beneath alpha to prevent opaque-looking WebP blocks during display.",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "original": "design-source/generated/rose-world.png",
+    "runtime": "public/assets/directions/rose-world.webp",
+    "bytes": 52092,
+    "reason": "Preserve RGB beneath alpha to prevent opaque-looking WebP blocks during display.",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "original": "design-source/generated/sage-world.png",
+    "runtime": "public/assets/directions/sage-world.webp",
+    "bytes": 199174,
+    "reason": "Preserve RGB beneath alpha to prevent opaque-looking WebP blocks during display.",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "original": "design-source/generated/iftar-object.png",
+    "runtime": "public/assets/occasions/iftar-object.webp",
+    "bytes": 244708,
+    "reason": "Preserve RGB beneath alpha to prevent opaque-looking WebP blocks during display.",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "original": "design-source/generated/family-object.png",
+    "runtime": "public/assets/occasions/family-object.webp",
+    "bytes": 275880,
+    "reason": "Preserve RGB beneath alpha to prevent opaque-looking WebP blocks during display.",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "original": "design-source/generated/ink-world.png",
+    "runtime": "public/assets/directions/ink-world.webp",
+    "bytes": 92278,
+    "reason": "Preserve RGB beneath alpha to prevent opaque-looking WebP blocks during display.",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "original": "design-source/generated/warm-world.png",
+    "runtime": "public/assets/directions/warm-world.webp",
+    "bytes": 264960,
+    "reason": "Preserve RGB beneath alpha to prevent opaque-looking WebP blocks during display.",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  }
+]

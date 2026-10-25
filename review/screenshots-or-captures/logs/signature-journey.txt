@@ -1,0 +1,75 @@
+PASS  [phone] 01 home renders (A celebration hero)  — no horizontal scroll
+PASS  [phone] 02 occasion deck: keyboard steps, button steps  — counter 01→02→01; no horizontal scroll
+PASS  [phone] 03 occasion deck: swipe (pointer drag) moves to the next card  — swipe left → 02
+PASS  [phone] 04 graduation details + live card preview  — no horizontal scroll
+PASS  [phone] 05 prepared invitation opens in the editor  — /app/events/evt_gw33ym2vz0/invitation/design?first=1
+PASS  [phone] 05b editor sheet: keyboard snaps peek/half/full  — up: full · down: peek
+PASS  [phone] 06 publish → seal stamp  — stamp shown
+PASS  [phone] 07 graduation invitation summary has no wedding copy  — no horizontal scroll
+PASS  [phone] 08 add a guest  — code JNN7B; no horizontal scroll
+PASS  [phone] 09 guest: envelope cover (B night), single-name copy  — no horizontal scroll
+PASS  [phone] 10 guest: skip straight to date + RSVP, confirm attendance  — confirmed
+PASS  [phone] 11 organizer sees the reply  — no horizontal scroll
+PASS  [phone] 12 reception gate: find guest → check in  — checked in
+PASS  [phone] 13 summary (red closure) counts the arrival  — no horizontal scroll
+PASS  [phone] couple-overview renders  — no horizontal scroll
+PASS  [phone] couple-invitation renders  — no horizontal scroll
+PASS  [phone] couple-guests renders  — no horizontal scroll
+PASS  [phone] couple-replies renders  — no horizontal scroll
+PASS  [phone] couple-reception renders  — no horizontal scroll
+PASS  [phone] couple-summary renders  — no horizontal scroll
+PASS  [phone] couple-seating renders  — no horizontal scroll
+PASS  [phone] couple-templates renders  — no horizontal scroll
+PASS  [phone] couple guest cover → open → invitation plays  — opened
+PASS  [phone] reduced motion: cover still opens by button, no seal drag needed  — ok
+PASS  [phone] no page errors
+PASS  [tab] 01 home renders (A celebration hero)  — no horizontal scroll
+PASS  [tab] 02 occasion deck: keyboard steps, button steps  — counter 01→02→01; no horizontal scroll
+PASS  [tab] 03 occasion deck: swipe (pointer drag) moves to the next card  — swipe left → 02
+PASS  [tab] 04 graduation details + live card preview  — no horizontal scroll
+PASS  [tab] 05 prepared invitation opens in the editor  — /app/events/evt_kvi0u9jg5e/invitation/design?first=1
+PASS  [tab] 06 publish → seal stamp  — stamp shown
+PASS  [tab] 07 graduation invitation summary has no wedding copy  — no horizontal scroll
+PASS  [tab] 08 add a guest  — code DUKQB; no horizontal scroll
+PASS  [tab] 09 guest: envelope cover (B night), single-name copy  — no horizontal scroll
+PASS  [tab] 10 guest: skip straight to date + RSVP, confirm attendance  — confirmed
+PASS  [tab] 11 organizer sees the reply  — no horizontal scroll
+PASS  [tab] 12 reception gate: find guest → check in  — checked in
+PASS  [tab] 13 summary (red closure) counts the arrival  — no horizontal scroll
+PASS  [tab] couple-overview renders  — no horizontal scroll
+PASS  [tab] couple-invitation renders  — no horizontal scroll
+PASS  [tab] couple-guests renders  — no horizontal scroll
+PASS  [tab] couple-replies renders  — no horizontal scroll
+PASS  [tab] couple-reception renders  — no horizontal scroll
+PASS  [tab] couple-summary renders  — no horizontal scroll
+PASS  [tab] couple-seating renders  — no horizontal scroll
+PASS  [tab] couple-templates renders  — no horizontal scroll
+PASS  [tab] couple guest cover → open → invitation plays  — opened
+PASS  [tab] reduced motion: cover still opens by button, no seal drag needed  — ok
+PASS  [tab] no page errors
+PASS  [desk] 01 home renders (A celebration hero)  — no horizontal scroll
+PASS  [desk] 02 occasion deck: keyboard steps, button steps  — counter 01→02→01; no horizontal scroll
+PASS  [desk] 03 occasion deck: swipe (pointer drag) moves to the next card  — swipe left → 02
+PASS  [desk] 04 graduation details + live card preview  — no horizontal scroll
+PASS  [desk] 05 prepared invitation opens in the editor  — /app/events/evt_agyeh8utg0/invitation/design?first=1
+PASS  [desk] 06 publish → seal stamp  — stamp shown
+PASS  [desk] 07 graduation invitation summary has no wedding copy  — no horizontal scroll
+PASS  [desk] 08 add a guest  — code S93WT; no horizontal scroll
+PASS  [desk] 09 guest: envelope cover (B night), single-name copy  — no horizontal scroll
+PASS  [desk] 10 guest: skip straight to date + RSVP, confirm attendance  — confirmed
+PASS  [desk] 11 organizer sees the reply  — no horizontal scroll
+PASS  [desk] 12 reception gate: find guest → check in  — checked in
+PASS  [desk] 13 summary (red closure) counts the arrival  — no horizontal scroll
+PASS  [desk] couple-overview renders  — no horizontal scroll
+PASS  [desk] couple-invitation renders  — no horizontal scroll
+PASS  [desk] couple-guests renders  — no horizontal scroll
+PASS  [desk] couple-replies renders  — no horizontal scroll
+PASS  [desk] couple-reception renders  — no horizontal scroll
+PASS  [desk] couple-summary renders  — no horizontal scroll
+PASS  [desk] couple-seating renders  — no horizontal scroll
+PASS  [desk] couple-templates renders  — no horizontal scroll
+PASS  [desk] couple guest cover → open → invitation plays  — opened
+PASS  [desk] reduced motion: cover still opens by button, no seal drag needed  — ok
+PASS  [desk] no page errors
+
+73/73 passed

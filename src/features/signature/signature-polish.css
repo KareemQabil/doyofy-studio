@@ -1,0 +1,98 @@
+/* Final craft pass: stationery, official geometry, restrained feedback. Signature only. */
+:root[data-theme='signature'] {
+  --polish-ease: cubic-bezier(.22, 1, .36, 1);
+  --polish-shadow: 0 20px 40px -28px rgba(38, 38, 38, .42);
+}
+.sig-hero-pattern { opacity: .048; }
+.sig-fan-wrap { position: relative; isolation: isolate; padding: 30px 0 10px; }
+.sig-fan-mat { position: absolute; z-index: -1; inset: -2% -12%; pointer-events: none; background: url('assets/brand/signature-stationery-mat.svg') center / contain no-repeat; transform: rotate(5deg); opacity: .30; }
+.sig-fan { transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 380ms var(--polish-ease); }
+.sig-fan-wrap.is-tilting .sig-fan { transition-duration: 80ms; }
+.sig-fan[data-dragging], .sig-fan[data-dragging] .sig-fan-card { cursor: grabbing; }
+.sig-fan[data-dragging] .sig-fan-card { transition: none; }
+.sig-fan-hint { display: flex; align-items: center; gap: 10px; margin: 0; color: rgba(255,255,255,.9); font-size: 12px; }
+.sig-fan-hint span { font-size: 20px; }
+.sig-fan-arrow { transition: background 180ms, color 180ms, transform 180ms var(--polish-ease); }
+.sig-fan-arrow:active { transform: scale(.92); }
+.sig-fan-card:active .card-thumb { filter: brightness(.98); }
+:root[data-theme='signature'] :is(.sig-stage.tone-charcoal, .sig-hero) :focus-visible { outline-color: var(--brand-ivory); }
+:root[data-theme='signature'] .sig-hero-next :focus-visible { outline-color: var(--brand-charcoal); }
+
+/* One featured occasion. The rendered card remains editable, with no baked-in event text. */
+.sig-celebration-banner { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: 32px; padding: clamp(28px, 4vw, 56px); margin-top: 80px; background: var(--brand-ivory); border: 1px solid var(--c-hairline-strong); border-radius: 16px; overflow: hidden; }
+.sig-banner-copy { display: grid; justify-items: start; gap: 22px; }
+.sig-banner-copy h2 { font: 700 clamp(34px, 4.2vw, 60px)/1.24 var(--font-display); color: var(--brand-charcoal); }
+.sig-banner-copy > p:not(.sig-index) { max-width: 26em; color: var(--c-text-2); line-height: 1.85; }
+.sig-banner-copy .sig-index .num { width: auto; min-width: 64px; padding-inline: 12px; border-radius: 999px; }
+.sig-banner-stationery { position: relative; display: grid; place-items: center; min-height: 370px; isolation: isolate; }
+.sig-banner-motif { position: absolute; z-index: -1; inset-block: -50%; inset-inline-end: -40%; width: 70%; color: var(--brand-gold); opacity: .17; pointer-events: none; }
+.sig-banner-motif .brand-motif { width: 100%; height: 100%; }
+.sig-banner-paper { position: relative; padding: 32px 42px 24px; transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) rotate(-5deg); transition: transform 450ms var(--polish-ease); }
+.sig-banner-paper.is-tilting { transition-duration: 80ms; }
+.sig-banner-envelope { position: absolute; inset: 0; z-index: -1; background: url('assets/brand/signature-stationery-mat.svg') center / 120% 120% no-repeat; transform: rotate(12deg); }
+.sig-banner-paper .card-thumb { box-shadow: 0 28px 40px -24px rgba(38,38,38,.55), 0 2px 4px rgba(38,38,38,.12); border-radius: 4px; }
+.sig-banner-seal { position: absolute; bottom: 14px; inset-inline-start: 8px; box-shadow: 0 8px 20px -10px rgba(38,38,38,.45), inset 0 0 0 5px var(--brand-gold), inset 0 0 0 6px var(--brand-charcoal); transform: rotate(8deg); }
+.sig-banner-caption { margin-top: 12px; text-align: center; font-size: 12px; color: var(--c-text-3); }
+
+/* Small responses have a shared rhythm, never a new interaction to learn. */
+:root[data-theme='signature'] :is(.btn, .sig-header-nav a, .sig-chip-toggle, .sig-view-switch button, .sig-more-toggle, .sig-tab-icon) { transition: background 180ms, color 180ms, border-color 180ms, box-shadow 220ms, transform 220ms var(--polish-ease); }
+:root[data-theme='signature'] :is(.btn, .sig-header-nav a, .sig-chip-toggle, .sig-view-switch button):active:not(:disabled) { transform: scale(.97); }
+:root[data-theme='signature'] :is(input:not([type='checkbox']):not([type='radio']), textarea, select) { transition: border-color 180ms, box-shadow 180ms, background 180ms; }
+:root[data-theme='signature'] :is(input:not([type='checkbox']):not([type='radio']), textarea, select):focus { border-color: var(--brand-charcoal); box-shadow: 0 0 0 3px var(--brand-ivory); }
+:root[data-theme='signature'] :is(.sig-text-link, .sig-hero-link) { text-decoration-thickness: 1px; transition: text-underline-offset 180ms, text-decoration-color 180ms; }
+.sig-ticket { transition: border-color 220ms, box-shadow 250ms, transform 300ms var(--polish-ease); }
+.sig-ticket:focus-within { border-color: var(--brand-gold); box-shadow: var(--polish-shadow); }
+.sig-new-ticket { transition: background 200ms, border-color 200ms, transform 300ms var(--polish-ease); }
+.sig-step-art { display: grid; place-items: center; width: 60px; height: 60px; margin-bottom: 22px; background: var(--brand-ivory); color: var(--brand-charcoal); border-radius: 50% 50% 8px 8px; box-shadow: inset 0 0 0 6px var(--c-surface), inset 0 0 0 7px var(--brand-gold); }
+.sig-steps li:nth-child(2) .sig-step-art { background: var(--brand-red); color: #fff; }
+.sig-steps li:nth-child(3) .sig-step-art { background: var(--brand-turquoise); }
+.sig-steps li { transition: border-color 220ms; }
+
+/* Make the ready invitation visible while leaving room for the actual editing task. */
+:root[data-theme='signature'] .ed-simple-intro { display: flex; align-items: start; gap: 10px; padding: 12px 14px; margin-bottom: 18px; }
+:root[data-theme='signature'] .ed-simple-intro > .icon { flex: none; margin-top: 3px; color: var(--c-success); }
+:root[data-theme='signature'] .ed-simple-intro p { margin: 0; line-height: 1.7; font-size: 13px; }
+:root[data-theme='signature'] .ed-simple-intro strong { display: inline; font-size: inherit; }
+:root[data-theme='signature'] .ed-handle { min-height: 36px; }
+.sig-cover-env { perspective: 1000px; }
+.sig-cover-flap { background: linear-gradient(165deg, var(--brand-gold), #B8955A); backface-visibility: hidden; }
+.sig-cover-seal .sig-seal { box-shadow: inset 0 0 0 6px var(--brand-red), inset 0 0 0 7px var(--brand-ivory), 0 8px 14px -8px rgba(38,38,38,.6); }
+.sig-cover-seal-hint { transition: opacity 200ms, transform 250ms; }
+.sig-cover-seal[data-dragging] .sig-cover-seal-hint { opacity: .25; transform: translateY(4px); }
+.sig-cover-seal:active .sig-seal { filter: brightness(.96); }
+
+@media (hover: hover) and (pointer: fine) {
+  :root[data-theme='signature'] .btn:hover:not(:disabled):not(.is-loading) { transform: translateY(-2px); box-shadow: var(--polish-shadow); }
+  :root[data-theme='signature'] .btn-icon:hover:not(:disabled) { transform: translateY(-1px); box-shadow: none; }
+  :root[data-theme='signature'] :is(.sig-text-link, .sig-hero-link):hover { text-underline-offset: 9px; }
+  .sig-ticket:hover { border-color: var(--brand-gold); box-shadow: var(--polish-shadow); transform: translateY(-3px); }
+  .sig-new-ticket:hover { transform: translateY(-3px); border-color: var(--brand-charcoal); }
+  .sig-fan-arrow:hover { transform: translateY(-2px); }
+  .sig-poster.is-active .sig-poster-card .card-thumb { transition: transform 350ms var(--polish-ease); }
+  .deck-card.is-active:hover .sig-poster-card .card-thumb { transform: rotate(-3deg) translateY(-5px); }
+  .sig-cover-seal:hover .sig-seal { filter: brightness(1.05); }
+  .sig-steps li:hover { border-color: var(--brand-gold); }
+}
+@media (max-width: 959px) {
+  :root[data-theme='signature'] .ed.sheet-half { --sheet-h: 48dvh; }
+  :root[data-theme='signature'] .ed.is-edit .ed-stage { padding: 8px 12px; gap: 4px; }
+  :root[data-theme='signature'] .ed-stage-caption { font-size: 11px; }
+  :root[data-theme='signature'] .ed-tabs { padding-block: 6px; }
+}
+@media (max-width: 760px) {
+  .sig-celebration-banner { grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 56px; padding: 26px 22px 18px; }
+  .sig-banner-copy { gap: 16px; }
+  .sig-banner-copy h2 { font-size: clamp(32px, 9vw, 44px); }
+  .sig-banner-copy .btn { width: 100%; justify-content: center; }
+  .sig-banner-stationery { min-height: 340px; }
+  .sig-banner-paper { padding: 24px 28px 20px; }
+  .sig-fan-wrap { padding-top: 12px; }
+  .sig-fan-mat { inset-inline: -6%; }
+  .sig-fan-hint { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-theme='signature'] :is(.btn, .sig-header-nav a, .sig-chip-toggle, .sig-view-switch button, .sig-ticket, .sig-new-ticket, .sig-fan, .sig-fan-arrow, .sig-banner-paper, .sig-cover-seal-hint, input, textarea, select) { transition: none !important; }
+  .sig-fan { transform: none; }
+  .sig-banner-paper { transform: rotate(-5deg); }
+  :root[data-theme='signature'] :is(.btn, .sig-ticket, .sig-new-ticket, .sig-fan-arrow):hover { transform: none !important; }
+}

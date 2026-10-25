@@ -1,0 +1,30 @@
+{
+  "name": "invitation-experience-engine",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A modular, configuration-driven engine for premium interactive wedding invitations.",
+  "scripts": {
+    "start": "node tools/build.mjs --serve",
+    "dev": "node tools/build.mjs --watch --serve",
+    "build": "node tools/build.mjs",
+    "serve": "node tools/serve.mjs",
+    "assets": "node tools/build-assets.mjs && node tools/make-video.mjs && python3 tools/make-audio.py && node tools/make-thumbnails.mjs",
+    "assets:images": "node tools/build-assets.mjs",
+    "assets:video": "node tools/make-video.mjs",
+    "assets:audio": "python3 tools/make-audio.py",
+    "assets:thumbs": "node tools/make-thumbnails.mjs",
+    "import:canva": "node tools/import-canva-pack.mjs",
+    "fonts:localize": "node tools/localize-fonts.mjs",
+    "test": "node tests/e2e.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.0",
+    "playwright": "^1.56.0",
+    "sharp": "^0.34.0"
+  },
+  "optionalDependencies": {
+    "gsap": "^3.12.5",
+    "three": "^0.170.0"
+  }
+}

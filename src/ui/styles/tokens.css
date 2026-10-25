@@ -1,0 +1,219 @@
+/*
+ * Doyofy design tokens — the ONLY place raw colours, type, spacing, radii, shadows and motion live.
+ * Re-skinning = editing this file (plus primitives/layouts), never feature code.
+ *
+ * Design System v2 · "Quiet Editorial". Base appearances share every role name; appearance.css and orbit.css add the six-direction system:
+ *   A · Warm Editorial  (default)  ivory, sand and taupe · charcoal ink · brand gold in small details
+ *   B · Soft Sage                  warm off-white, stone and muted sage · deep-sage actions
+ * Switch: <html data-theme="warm|sage|rose|ink|night|orbit">. UI artwork and composition follow the preference.
+ *
+ * Brand palette (Visual Identity Guidelines): gold #C7A661 · ivory #F2EAD9 · beige #E4D5B4 ·
+ * red #BC4749 · turquoise #2EB7B7 · charcoal #262626. Gold is decorative (logo, art, details) —
+ * never text or the only signal of a state. Red/turquoise appear darkened as danger/info text.
+ */
+:root, :root[data-theme='warm'] {
+  /* ---- brand constants (decorative use) */
+  --brand-gold: #C7A661;
+  --brand-ivory: #F2EAD9;
+  --brand-beige: #E4D5B4;
+  --brand-charcoal: #262626;
+
+  /* ---- surfaces */
+  --c-canvas: #F8F6F1;            /* page */
+  --c-surface: #FFFEFA;           /* content surface */
+  --c-surface-elevated: #FFFFFF;  /* sheets, menus, popovers */
+  --c-surface-subtle: #F0EAE0;    /* sand: quiet blocks, tracks */
+  --c-surface-hover: #F3EDE3;
+  --c-hairline: #E7E2D8;
+  --c-hairline-strong: #D3C8B5;
+
+  /* ---- text (all ≥ 4.7:1 on every surface above) */
+  --c-text: #262626;
+  --c-text-2: #57514A;
+  --c-text-3: #6B645B;
+  --c-text-inverse: #FBF7EF;
+
+  /* ---- action */
+  --c-primary: #493D30;           /* warm charcoal ink */
+  --c-primary-hover: #342B22;
+  --c-primary-pressed: #1E1A17;
+  --c-primary-soft: #ECE4D6;
+  --c-primary-text: #493D30;
+  --c-on-primary: #FBF7EF;
+
+  /* ---- brand accent */
+  --c-accent: #C7A661;            /* = brand gold (decorative) */
+  --c-accent-strong: #7E5F25;     /* gold as text/icon (≥ 4.5:1) */
+  --c-accent-soft: #F3EAD6;
+
+  /* ---- selection & focus */
+  --c-selected: #9C7A36;          /* ring / check fill (≥ 3:1 on surfaces) */
+  --c-selected-soft: #F5EEDF;
+  --c-on-selected: #FFFDF9;
+  --c-focus: #262626;
+  --c-logo: #B8954F;            /* brand gold, a touch deeper for the light canvas */
+
+  /* ---- art grounds (occasion & template art; muted, low-saturation) */
+  --art-1: #EADFCB; --art-2: #E5D9D2; --art-3: #DCE0D3; --art-4: #E1DED6; --art-5: #E8DCC7; --art-6: #D9DCD9;
+  --art-ink: #8A6A2C;
+
+  /* ---- semantic */
+  --c-success: #2F6B4A; --c-success-soft: #E4EEE5;
+  --c-warning: #875A10; --c-warning-soft: #F6ECD6;
+  --c-danger: #A63E40;  --c-danger-soft: #F7E4E2;
+  --c-info: #1E6E70;    --c-info-soft: #DDEEEC;
+  --c-neutral: #57514A; --c-neutral-soft: #EFE8DC;
+
+  --c-stage: #0E0A08;             /* behind full-screen invitations */
+  --c-qr-dark: #111111;           /* QR codes must stay black on white to scan */
+  --c-qr-light: #FFFFFF;
+  --c-backdrop: rgba(38, 30, 22, 0.38);
+
+  --shadow-1: 0 1px 2px rgba(48, 36, 20, 0.05);
+  --shadow-2: 0 10px 28px -16px rgba(48, 36, 20, 0.22), 0 1px 2px rgba(48, 36, 20, 0.04);
+  --shadow-pop: 0 28px 64px -24px rgba(48, 36, 20, 0.34), 0 2px 8px rgba(48, 36, 20, 0.06);
+  --shadow-art: 0 22px 44px -22px rgba(60, 40, 18, 0.45);
+}
+
+:root[data-theme='sage'] {
+  --c-canvas: #F3F4EF;
+  --c-surface: #FBFBF8;
+  --c-surface-elevated: #FFFFFF;
+  --c-surface-subtle: #E7EBE3;
+  --c-surface-hover: #EEF1EA;
+  --c-hairline: #DEE3D8;
+  --c-hairline-strong: #C7CFC1;
+
+  --c-text: #262626;
+  --c-text-2: #525A52;
+  --c-text-3: #5F685F;
+  --c-text-inverse: #F6F8F3;
+
+  --c-primary: #46584A;           /* deep sage */
+  --c-primary-hover: #3A4A3E;
+  --c-primary-pressed: #2F3D33;
+  --c-primary-soft: #E2E9DF;
+  --c-primary-text: #3E5042;
+  --c-on-primary: #F6F8F3;
+
+  --c-accent: #8DA088;            /* muted sage (decorative) */
+  --c-accent-strong: #566A52;
+  --c-accent-soft: #E6ECE3;
+
+  --c-selected: #5B6E57;
+  --c-selected-soft: #E8EEE5;
+  --c-on-selected: #FBFBF8;
+  --c-focus: #262626;
+  --c-logo: #3E4A40;
+
+  --art-1: #DCE3D6; --art-2: #E4E2DA; --art-3: #D5DDD5; --art-4: #E6E1D6; --art-5: #DEE2D2; --art-6: #D8DDDC;
+  --art-ink: #4F6450;
+
+  --c-neutral: #525A52; --c-neutral-soft: #E7EBE3;
+  --c-backdrop: rgba(30, 38, 32, 0.36);
+
+  --shadow-1: 0 1px 2px rgba(30, 40, 32, 0.05);
+  --shadow-2: 0 10px 28px -16px rgba(30, 40, 32, 0.22), 0 1px 2px rgba(30, 40, 32, 0.04);
+  --shadow-pop: 0 28px 64px -24px rgba(30, 40, 32, 0.32), 0 2px 8px rgba(30, 40, 32, 0.06);
+  --shadow-art: 0 22px 44px -22px rgba(28, 40, 30, 0.42);
+}
+
+:root {
+  /* ---- role aliases kept for existing features (do not remove: features use them) */
+  --c-bg: var(--c-canvas);
+  --c-surface-sunken: var(--c-surface-subtle);
+  --c-line: var(--c-hairline);
+  --c-line-strong: var(--c-hairline-strong);
+
+  /* invitation card standing in its setting (art, not UI) */
+  --shadow-card: 0 30px 50px rgba(0, 0, 0, 0.45);
+
+  /* ---- typography */
+  --font-ui: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
+  --font-display: 'Readex Pro', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', system-ui, sans-serif;
+  --font-latin: var(--font-ui);
+  --fs-xs: 0.8125rem;  /* 13 */
+  --fs-sm: 0.875rem;   /* 14 */
+  --fs-md: 1rem;       /* 16 */
+  --fs-lg: 1.125rem;   /* 18 */
+  --fs-xl: 1.375rem;   /* 22 */
+  --fs-2xl: 1.75rem;   /* 28 */
+  --fs-3xl: 2.25rem;   /* 36 */
+  --fs-4xl: clamp(2.25rem, 1.6rem + 2.4vw, 3.25rem); /* 36–52 display */
+  --lh-tight: 1.3;
+  --lh-display: 1.2;
+  --lh-body: 1.75;     /* Arabic needs generous leading */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 600;
+  --fw-display: 500;   /* display face reads heavier; keep headlines medium */
+  --tracking-display: -0.01em;
+
+  /* ---- spacing (4-based) */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px; --s-20: 80px;
+
+  /* ---- radius: soft geometry; visual surfaces rounder than controls */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+  --r-art: 24px;
+  --r-pill: 999px;
+
+  /* ---- motion (Interaction System): one curve for entering, one for state changes */
+  --dur-instant: 100ms;   /* press / acknowledgement */
+  --dur-fast: 160ms;      /* hover, focus, small state */
+  --dur: 220ms;           /* component transition */
+  --dur-slow: 280ms;      /* sheet, dialog, drawer */
+  --dur-layout: 360ms;    /* meaningful layout change (carousel settle) */
+  --ease-out: cubic-bezier(0.22, 0.8, 0.24, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease: var(--ease-out);
+  --press-scale: 0.98;
+  --hover-zoom: 1.025;
+
+  /* ---- layout */
+  --container: 1200px;
+  --container-wide: 1280px;
+  --container-narrow: 720px;
+  --sidebar-w: 228px;
+  --topbar-h: 64px;
+  --tabbar-h: 64px;
+  --touch: 44px;
+}
+
+/* guest-facing pages (event hub): an invitation-flavoured scope, same roles (not part of the A/B) */
+.theme-guest {
+  --c-bg: #F4ECE8;
+  --c-surface: #FFFDFB;
+  --c-surface-sunken: #EFE3DE;
+  --c-line: #E1D2CC;
+  --c-line-strong: #CDB8B0;
+  --c-text: #2A1418;
+  --c-text-2: #6A5458;
+  --c-text-3: #715F64;
+  --c-primary: #6E1F2E;
+  --c-primary-hover: #58172A;
+  --c-primary-pressed: #4A1323;
+  --c-primary-soft: #F2E1E3;
+  --c-primary-text: #6E1F2E;
+  --c-accent: #9C7836;
+  --c-accent-strong: #76591F;
+  --c-accent-soft: #F3E9D6;
+  --c-focus: #6E1F2E;
+  --font-display: 'Readex Pro', 'IBM Plex Sans Arabic', serif;
+}
+
+/* gate (check-in) mode: dark, high-contrast, glanceable from a phone/tablet at the door */
+.theme-gate {
+  --c-bg: #121A2E; --c-surface: #1B2540; --c-surface-sunken: #24304F; --c-surface-hover: #22304F;
+  --c-line: #2E3A5C; --c-line-strong: #4A5A86; --c-text: #F4F5F9; --c-text-2: #B5BCD3; --c-text-3: #8F98B8;
+  --c-primary: #E8C77E; --c-primary-hover: #F2D597; --c-primary-pressed: #D9B66A; --c-on-primary: #1A1408; --c-primary-soft: #2C3A61; --c-primary-text: #F2D597;
+  --c-warning-soft: #3B321C; --c-warning: #F0C266; --c-danger: #E0675E; --c-danger-soft: #3D2026; --c-success: #6FCF97; --c-success-soft: #1C3B2E;
+  --c-focus: #F2D597;
+  --c-gate-deep: #0B1120;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-instant: 0ms; --dur-fast: 0ms; --dur: 0ms; --dur-slow: 0ms; --dur-layout: 0ms; --press-scale: 1; --hover-zoom: 1; }
+}

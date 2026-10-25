@@ -1,0 +1,27 @@
+{
+  "style_id": "signature",
+  "batch_id": "signature-envelope-lining-v1",
+  "title": "Optional envelope lining",
+  "owner_rule": "No AI image generation of any kind (no Canva Magic Media / Dream Lab / Magic Design / text-to-image, no AI upscaling). Native vector shapes, the official Doyofy logo and pattern files, Phosphor icons (MIT) and licensed fonts only. No hand-drawn icons.",
+  "assets": [
+    {
+      "asset_id": "signature.envelope.lining.v1",
+      "prompt": "Build an editable Canva design 800 × 300 px. No AI image generation of any kind (no Canva Magic Media / Dream Lab / Magic Design / text-to-image, no AI upscaling). Native vector shapes, the official Doyofy logo and pattern files, Phosphor icons (MIT) and licensed fonts only. No hand-drawn icons. Fill with ivory #F2EAD9. Upload the official file public/assets/brand/pattern-grid-gold.svg (Doyofy pattern) and tile it at 230 px cell width across the canvas, opacity 35%. Add a downward-pointing triangle mask (apex at x 400, y 300; base on the top edge) and export only the masked triangle as SVG with transparency outside the triangle. No text, no logo. This lines the envelope flap in src/features/signature/SignatureArt.tsx.",
+      "avoid": "AI-generated imagery, hand-drawn icons, colours outside the identity palette, text baked into art, fake data, purple/blue gradients, glassmorphism, blobs, sparkles.",
+      "size_px": [
+        800,
+        300
+      ],
+      "aspect_ratio": "8:3",
+      "transparent_background": true,
+      "reference_asset_ids": [],
+      "references_required": true,
+      "reference_paths": [
+        "public/assets/brand/pattern-grid-gold.svg"
+      ],
+      "runtime_path": "public/assets/brand/envelope-lining.svg",
+      "placement_notes": "src/features/signature/SignatureArt.tsx EnvelopeBack (new <pattern> fill) — flap lining. Safe area: n/a",
+      "acceptance": "Visible only when the flap opens; does not compete with the card."
+    }
+  ]
+}

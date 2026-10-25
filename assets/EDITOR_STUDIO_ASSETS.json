@@ -1,0 +1,36 @@
+{
+  "created": "2026-10-10",
+  "assets": [
+    {
+      "key": "workbench",
+      "prompt": "Use case: product-mockup. Asset type: background photograph for Doyofy Arabic invitation editor's material workbench. Landscape 3:2. Primary request: authentic premium stationery atelier tabletop viewed straight overhead. Smooth warm ivory uncoated paper #F2EAD9 covers 85 percent of the canvas with extremely subtle paper fibers, no excessive wrinkles. At the far lower left edge only: cropped deep muted brick-red #BC4749 paper envelope and short red cotton ribbon. At far upper right edge only: one small brass binder clip #C7A661. Center must be completely blank with a large uninterrupted rectangular ivory surface across the middle 75 percent where a real editable invitation card will be rendered in HTML. Physically believable sizes, contact shadows, natural soft daylight from top left, restrained documentary product photography, slight film grain. No people, hands, cards in the center, text, typography, logo, wax logos, repeated decorative objects, flowers, bokeh, spotlight, gradient background, floating items, overly silky artificial surfaces or 3D-render appearance. Show real craftsmanship through tactile material detail and honest lighting, keep the frame simple and carefully composed.",
+      "name": "studio-workbench",
+      "tool": "built-in image_gen",
+      "ai_generated": true,
+      "use": "Signature invitation editor, template deck and template preview, invitation summary",
+      "role": "decorative",
+      "text_baked_in": false,
+      "source": "design-source/editorial/studio-workbench.png",
+      "outputs": [
+        "public/assets/editorial/studio-workbench.avif",
+        "public/assets/editorial/studio-workbench.webp"
+      ],
+      "transparent_background": false
+    },
+    {
+      "key": "ribbon",
+      "prompt": "Use case: product-mockup. Asset type: genuinely transparent cutout decorative stationery prop for the Doyofy website hero and invitation studio. Primary request: one small loose loop of matte muted gold #C7A661 cotton ribbon, gently curled in a soft asymmetric S shape, beside one deep muted brick-red #BC4749 plain round wax seal. The seal is completely blank with only a shallow simple circular rim, no letters, logos, crests or symbols. Top-down photographic cutout, one physically coherent stationery arrangement, real subtle woven ribbon texture and small material imperfections, restrained natural soft contact shadow. Objects lie flat rather than float, warm daylight. Composition landscape 3:2, arrangement centered with transparent breathing room around all edges. Premium editorial paper atelier feel, no glossy plastic, confetti, flowers, typography, hands, or extra props. Output true alpha transparency, no opaque background, no checkerboard drawn into the image.",
+      "name": "ribbon-seal",
+      "tool": "built-in image_gen",
+      "ai_generated": true,
+      "use": "Signature homepage hero and template gallery header",
+      "role": "decorative",
+      "text_baked_in": false,
+      "source": "design-source/editorial/ribbon-seal.png",
+      "outputs": [
+        "public/assets/editorial/ribbon-seal.webp"
+      ],
+      "transparent_background": true
+    }
+  ]
+}

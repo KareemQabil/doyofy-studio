@@ -1,0 +1,178 @@
+[
+  {
+    "name": "engagement",
+    "source_path": "/workspace/scratch/130e9f18c140/generated_images/exec-9a173829-7c04-4cb2-9b96-c42b2ee91ce4.png",
+    "original": "design-source/bahja/engagement.png",
+    "runtime": "public/assets/occasions/engagement-object.webp",
+    "size": [
+      1254,
+      1254
+    ],
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 269666,
+    "prompt": "Use case: product-mockup. Asset type: premium occasion selector art for an Arabic invitation website named Doyofy. Create a single cohesive isolated premium studio still life. Subject: One polished rose-gold solitaire diamond ring standing upright in a small open ivory velvet jewel box, with a soft blush silk ribbon loosely arranged beside it. Style: photorealistic with a subtly stylized sculptural high-end product photography aesthetic, tactile ivory paper, soft velvet and silk, brass and sage palette. Square 1:1 composition, centered three-quarter camera view, all objects comfortably inside frame with at least 14% clear transparent margins. Soft sophisticated warm studio illumination with carefully controlled realistic reflections and contact shadows integrated into objects only. Background must be genuinely transparent, clean isolated cutout, no floor or backdrop. No text, lettering, numerals, logos, watermarks, people, hands, UI, frames, cartoon styling. One composition only, not a grid.",
+    "mode": "built-in image_gen",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "name": "katb_kitab",
+    "source_path": "/workspace/scratch/130e9f18c140/generated_images/exec-feff93f3-4e0d-4288-baf1-b1d202296e00.png",
+    "original": "design-source/bahja/katb_kitab.png",
+    "runtime": "public/assets/occasions/katb_kitab-object.webp",
+    "size": [
+      1254,
+      1254
+    ],
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 240194,
+    "prompt": "Use case: product-mockup. Asset type: premium occasion selector art for an Arabic invitation website named Doyofy. Create a single cohesive isolated premium studio still life. Subject: An elegant closed ivory ceremonial marriage contract folder, completely blank with no lettering, a refined brass fountain pen placed diagonally across it, and a small fresh jasmine sprig beside it. Style: photorealistic with a subtly stylized sculptural high-end product photography aesthetic, tactile ivory paper, soft velvet and silk, brass and sage palette. Square 1:1 composition, centered three-quarter camera view, all objects comfortably inside frame with at least 14% clear transparent margins. Soft sophisticated warm studio illumination with carefully controlled realistic reflections and contact shadows integrated into objects only. Background must be genuinely transparent, clean isolated cutout, no floor or backdrop. No text, lettering, numerals, logos, watermarks, people, hands, UI, frames, cartoon styling. One composition only, not a grid.",
+    "mode": "built-in image_gen",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "name": "henna",
+    "source_path": "/workspace/scratch/130e9f18c140/generated_images/exec-53c868e6-9f8f-4693-b1c1-5ac610aa59cb.png",
+    "original": "design-source/bahja/henna.png",
+    "runtime": "public/assets/occasions/henna-object.webp",
+    "size": [
+      1254,
+      1254
+    ],
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 248638,
+    "prompt": "Use case: product-mockup. Asset type: premium occasion selector art for an Arabic invitation website named Doyofy. Create a single cohesive isolated premium studio still life. Subject: An ornate low brass henna dish resting on a minimalist ceremonial tray, surrounded by a restrained marigold flower accent and folded blush fabric. The dish contains natural henna paste, no hands. Style: photorealistic with a subtly stylized sculptural high-end product photography aesthetic, tactile ivory paper, soft velvet and silk, brass and sage palette. Square 1:1 composition, centered three-quarter camera view, all objects comfortably inside frame with at least 14% clear transparent margins. Soft sophisticated warm studio illumination with carefully controlled realistic reflections and contact shadows integrated into objects only. Background must be genuinely transparent, clean isolated cutout, no floor or backdrop. No text, lettering, numerals, logos, watermarks, people, hands, UI, frames, cartoon styling. One composition only, not a grid.",
+    "mode": "built-in image_gen",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "name": "conference",
+    "source_path": "/workspace/scratch/130e9f18c140/generated_images/exec-33c12a2f-f3e5-4b30-ad66-2a246f26b938.png",
+    "original": "design-source/bahja/conference.png",
+    "runtime": "public/assets/occasions/conference-object.webp",
+    "size": [
+      1254,
+      1254
+    ],
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 262086,
+    "prompt": "Use case: product-mockup. Asset type: premium occasion selector art for an Arabic invitation website named Doyofy. Create a single cohesive isolated premium studio still life. Subject: One sculptural brushed-brass and matte-ivory microphone on a minimalist short stand alongside a completely blank ivory conference badge on a soft sage-green lanyard. Style: photorealistic with a subtly stylized sculptural high-end product photography aesthetic, tactile ivory paper, soft velvet and silk, brass and sage palette. Square 1:1 composition, centered three-quarter camera view, all objects comfortably inside frame with at least 14% clear transparent margins. Soft sophisticated warm studio illumination with carefully controlled realistic reflections and contact shadows integrated into objects only. Background must be genuinely transparent, clean isolated cutout, no floor or backdrop. No text, lettering, numerals, logos, watermarks, people, hands, UI, frames, cartoon styling. One composition only, not a grid.",
+    "mode": "built-in image_gen",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "name": "opening",
+    "source_path": "/workspace/scratch/130e9f18c140/generated_images/exec-70f01122-c6fb-406f-b43f-060c1ba6d198.png",
+    "original": "design-source/bahja/opening.png",
+    "runtime": "public/assets/occasions/opening-object.webp",
+    "size": [
+      1254,
+      1254
+    ],
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 233680,
+    "prompt": "Use case: product-mockup. Asset type: premium occasion selector art for an Arabic invitation website named Doyofy. Create a single cohesive isolated premium studio still life. Subject: A refined miniature ceremonial arrangement: polished brass scissors with blades open around a rich coral-red silk ribbon stretched between two small sculptural brass doorway pillars. Ribbon cutting celebration, no people. Style: photorealistic with a subtly stylized sculptural high-end product photography aesthetic, tactile ivory paper, soft velvet and silk, brass and sage palette. Square 1:1 composition, centered three-quarter camera view, all objects comfortably inside frame with at least 14% clear transparent margins. Soft sophisticated warm studio illumination with carefully controlled realistic reflections and contact shadows integrated into objects only. Background must be genuinely transparent, clean isolated cutout, no floor or backdrop. No text, lettering, numerals, logos, watermarks, people, hands, UI, frames, cartoon styling. One composition only, not a grid.",
+    "mode": "built-in image_gen",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "name": "corporate",
+    "source_path": "/workspace/scratch/130e9f18c140/generated_images/exec-e514d70a-1b82-48ef-87f5-3855d5d2606d.png",
+    "original": "design-source/bahja/corporate.png",
+    "runtime": "public/assets/occasions/corporate-object.webp",
+    "size": [
+      1254,
+      1254
+    ],
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 154694,
+    "prompt": "Use case: product-mockup. Asset type: premium occasion selector art for an Arabic invitation website named Doyofy. Create a single cohesive isolated premium studio still life. Subject: Three beautifully sculptural miniature ivory and sage chairs arranged around a miniature ivory oval meeting table, one polished brass accent on table. Elegant corporate hospitality still life. Style: photorealistic with a subtly stylized sculptural high-end product photography aesthetic, tactile ivory paper, soft velvet and silk, brass and sage palette. Square 1:1 composition, centered three-quarter camera view, all objects comfortably inside frame with at least 14% clear transparent margins. Soft sophisticated warm studio illumination with carefully controlled realistic reflections and contact shadows integrated into objects only. Background must be genuinely transparent, clean isolated cutout, no floor or backdrop. No text, lettering, numerals, logos, watermarks, people, hands, UI, frames, cartoon styling. One composition only, not a grid.",
+    "mode": "built-in image_gen",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "name": "other",
+    "source_path": "/workspace/scratch/130e9f18c140/generated_images/exec-3481378d-6291-471b-a61b-db068202dc74.png",
+    "original": "design-source/bahja/other.png",
+    "runtime": "public/assets/occasions/other-object.webp",
+    "size": [
+      1254,
+      1254
+    ],
+    "alpha": [
+      0,
+      255
+    ],
+    "bytes": 328938,
+    "prompt": "Use case: product-mockup. Asset type: premium occasion selector art for an Arabic invitation website named Doyofy. Create a single cohesive isolated premium studio still life. Subject: An ivory gift-wrapped box with an architectural sculptural copper silk ribbon, tiny restrained ivory and pale gold confetti nearby. Style: photorealistic with a subtly stylized sculptural high-end product photography aesthetic, tactile ivory paper, soft velvet and silk, brass and sage palette. Square 1:1 composition, centered three-quarter camera view, all objects comfortably inside frame with at least 14% clear transparent margins. Soft sophisticated warm studio illumination with carefully controlled realistic reflections and contact shadows integrated into objects only. Background must be genuinely transparent, clean isolated cutout, no floor or backdrop. No text, lettering, numerals, logos, watermarks, people, hands, UI, frames, cartoon styling. One composition only, not a grid.",
+    "mode": "built-in image_gen",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  },
+  {
+    "name": "bahja-world",
+    "source_path": "/workspace/scratch/130e9f18c140/generated_images/exec-46a90845-8fb2-4da0-ade5-55d1a1055d82.png",
+    "original": "design-source/bahja/bahja-world.png",
+    "runtime": "public/assets/directions/bahja-world.webp",
+    "size": [
+      1536,
+      1024
+    ],
+    "alpha": [
+      0,
+      254
+    ],
+    "bytes": 159076,
+    "prompt": "Use case: stylized-concept. Asset type: premium artistic editorial hero image for a vivid Arabic celebration and invitation website. Primary request: a dynamic sculptural still-life of a looping coral and mandarin lacquer ribbon sweeping in an expressive airy curve around an oversized completely blank folded ivory invitation card, alongside a translucent cobalt-blue glass crescent, a bright citron-yellow ceramic ring and one tiny polished chrome sphere. Art direction: sophisticated contemporary Awwwards-quality editorial 3D product sculpture, joyful kinetic composition with tactile glossy materials, carefully designed bold geometric interplay, physically plausible rich reflections, strong shadows inside objects, cream ivory counterpoint to bright coral, orange, cobalt, citron. Landscape composition 3:2, all objects fully in view, ample empty transparent margin around the entire sculptural composition for responsive layouts; no crop. Camera three-quarter perspective. Soft premium studio key light plus fine edge highlights. Background genuinely transparent, isolated cutout, no backdrop, no stage, no floor. NO text, lettering, numerals, logos, people, UI, watermarks, grids, flat generic cartoon. Folded invitation must be perfectly blank. The whole composition should feel like a coherent celebration world that can float and animate above a warm ivory webpage.",
+    "mode": "built-in image_gen",
+    "encoder": {
+      "quality": 87,
+      "method": 4,
+      "exact": true
+    }
+  }
+]
