@@ -78,6 +78,17 @@ export async function run(){
   const link=document.querySelector('a[href^="https://wa.me"]')!;assert.ok(link);link.addEventListener('click',e=>e.preventDefault());await click(link);
   assert.equal((await made.services.parties.get(p.id)).delivery.status,'not_shared');await click(button('نعم، أرسلته'));assert.equal((await made.services.parties.get(p.id)).delivery.status,'shared');
  });
+ await check('guest row places WhatsApp beside the name without assuming the message was sent',async()=>{
+  const p=await made.services.parties.create(event.id,{primaryGuestName:'ضيف مشاركة مباشرة',phone:'0559876544',maxPartySize:2});
+  await render(wrap(<GuestsPage event={event}/>));await settle();
+  const row=Array.from(document.querySelectorAll('.gt-row')).find(el=>el.textContent?.includes('ضيف مشاركة مباشرة'))!;
+  const link=row.querySelector<HTMLAnchorElement>('.gt-name-actions .gt-share[href^="https://wa.me/"]')!;assert.ok(link);
+  link.addEventListener('click',e=>e.preventDefault());await click(link);
+  assert.equal((await made.services.parties.get(p.id)).delivery.status,'not_shared');
+  assert.ok(document.body.textContent?.includes('فتح واتساب يجهّز الرسالة فقط'));
+  await click(button('نعم، أرسلتها يدويًا'));
+  assert.equal((await made.services.parties.get(p.id)).delivery.status,'shared');
+ });
  await check('guest editing replaces parent dialog instead of stacking modals',async()=>{
   const p=await made.services.parties.create(event.id,{primaryGuestName:'ضيف الحوار',maxPartySize:2});
   await render(wrap(<PartyDrawer event={event} party={p} all={[p]} tables={[]} publish="published" onClose={()=>{}}/>));await click(button('سجّل الرد يدويًا'));
@@ -345,6 +356,24 @@ export async function run(){
   await render(wrap(<GateMode eventId={ev.id}/>));await settle();await fill(document.querySelector<HTMLInputElement>('#gate-q')!,'عائلة الوصول');await click(button('عائلة الوصول'));assert.ok(!document.getElementById('root')!.textContent?.includes('بلا طاولة'));
   await click(document.querySelector('[aria-label="إنقاص كم شخصًا يدخل الآن؟"]')!);await click(button('دخول جزئي'));await settle();assert.equal((await made.services.parties.get(p.id)).checkedInCount,2);assert.ok(!document.getElementById('root')!.textContent?.includes('وجّههم'));
   await click(button('تراجع عن التسجيل'));await settle();assert.equal((await made.services.parties.get(p.id)).checkedInCount,0);
+ });
+ await check('Signature table overview filters the detailed list and updates from a real transfer',async()=>{
+  const ev=await made.services.events.create({type:'graduation',names:{a:'خريطة الطاولات'},date:event.date,time:'19:00',venue:{name:'قاعة',city:'الرياض'}});
+  const p=await made.services.parties.create(ev.id,{primaryGuestName:'عائلة الخريطة',maxPartySize:2});
+  await made.services.rsvp.setByOrganizer(p.id,{attending:true,count:2});
+  const tables=await made.services.seating.createTables(ev.id,[{name:'طاولة الورد',capacity:10},{name:'طاولة النور',capacity:8}]);
+  await made.services.seating.assign(p.id,tables[0]!.id);
+  await act(async()=>made.prototype.update({theme:'signature'}));
+  await render(wrap(<SeatingPage event={ev}/>));await settle();
+  assert.equal(document.querySelectorAll('.seat-overview-table').length,2);
+  assert.ok(document.querySelector('.seat-overview-table')?.textContent?.includes('2/10'));
+  await click(document.querySelectorAll('.seat-overview-table')[1]!);
+  assert.equal(document.querySelectorAll('.table-card').length,1);
+  assert.ok(document.querySelector('.table-card')?.textContent?.includes('طاولة النور'));
+  await made.services.seating.assign(p.id,tables[1]!.id);await settle();
+  assert.ok(document.querySelectorAll('.seat-overview-table')[1]!.textContent?.includes('2/8'));
+  await click(button('كل الطاولات'));assert.equal(document.querySelectorAll('.table-card').length,2);
+  await act(async()=>made.prototype.update({theme:'warm'}));
  });
  await check('reception separates lookup failure from invalid code and keeps the retry input',async()=>{
   const party=await made.services.parties.create(event.id,{primaryGuestName:'ضيف اختبار الشبكة',maxPartySize:1});

@@ -64,7 +64,7 @@ export function SeatingPage({ event }: { event: Event }) {
   };
   const cap = totalCapacity(tables.data ?? []);
   const focus=q||tableFocus==='all'?'all':occ.some(o=>o.table.id===tableFocus)?tableFocus:occ[0]?.table.id??'';
-  const shown=theme==='orbit'&&focus!=='all'?occ.filter(o=>o.table.id===focus):occ;
+  const shown=(theme==='orbit'||theme==='signature')&&focus!=='all'?occ.filter(o=>o.table.id===focus):occ;
 
   return (
     <>
@@ -86,6 +86,14 @@ export function SeatingPage({ event }: { event: Event }) {
           )}
 
           {theme==='orbit'&&<OrbitTableAtlas tables={occ} value={focus} onChange={setTableFocus}/>}
+          {theme==='signature'&&<div className="seat-overview" role="group" aria-label="خريطة الطاولات وتصفية القائمة">
+            <div className="seat-overview-head"><div><p className="sig-index"><span className="num">01</span>خريطة القاعة</p><h2>كل طاولة في مكانها.</h2><p>اضغط طاولة لعرض ضيوفها، أو اعرض الجميع. الأعداد تتحدث مع كل نقل.</p></div>
+              <Button size="sm" variant={focus==='all'?'primary':'secondary'} aria-pressed={focus==='all'} onClick={()=>setTableFocus('all')}>كل الطاولات</Button></div>
+            <div className="seat-overview-grid">{occ.map(o=><button key={o.table.id} type="button" className={`seat-overview-table${focus===o.table.id?' is-active':''}${o.over?' is-over':''}`} aria-pressed={focus===o.table.id} onClick={()=>setTableFocus(o.table.id)}>
+              <span className="seat-overview-disc"><Icon name="table" size="sm" /><strong className="num">{o.used}<small>/{o.table.capacity}</small></strong></span>
+              <span className="seat-overview-name">{o.table.name}</span><span className="seat-overview-status">{o.over?`زيادة ${-o.remaining}`:o.remaining===0?'ممتلئة':`${o.remaining} مقاعد متاحة`}</span>
+            </button>)}</div>
+          </div>}
           <div className="seating">
             <Panel className="seat-pool" title={`من ينتظر مكانًا؟ (${warn.unassigned.length})`} subtitle={warn.unassigned.length ? `${people(warn.unassigned.reduce((n, p) => n + seatsFor(p), 0))} مؤكدون بانتظار مكان` : 'كل المؤكدين لهم طاولات'}>
               <div className="stack gap-3">

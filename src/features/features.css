@@ -62,6 +62,7 @@
 .guest-toolbar { display: flex; flex-direction: column; gap: var(--s-3); }
 .guest-toolbar .search { max-width: 460px; }
 .bulk-bar { position: sticky; top: calc(var(--topbar-h) + var(--s-2)); z-index: 10; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-4); background: var(--c-primary-soft); border: 1px solid color-mix(in srgb, var(--c-primary) 25%, transparent); border-radius: var(--r-md); }
+.guest-demo-scope { display: flex; align-items: center; gap: 8px; color: var(--c-text-2); font-size: var(--fs-xs); line-height: 1.65; }
 
 .guest-table { container-type:inline-size; container-name:guests; background: var(--c-surface); border: 1px solid var(--c-line); border-radius: var(--r-lg); overflow: hidden; }
 .gt-row {
@@ -75,7 +76,12 @@
 .gt-check { display: flex; position: relative; z-index: 2; }
 .gt-check input { width: 18px; height: 18px; accent-color: var(--c-primary); cursor: pointer; }
 .gt-name { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
+.gt-name-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
 .gt-open { appearance: none; border: 0; background: none; padding: 0; font: inherit; font-weight: var(--fw-bold); color: var(--c-text); text-align: start; cursor: pointer; }
+.gt-share { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 4px 9px; border: 1px solid var(--c-hairline-strong, var(--c-line)); border-radius: 999px; background: var(--c-surface); color: var(--c-text); font: inherit; font-size: var(--fs-xs); font-weight: 600; text-decoration: none; cursor: pointer; white-space: nowrap; }
+.gt-share:hover, .gt-share:focus-visible { border-color: var(--c-primary); background: var(--c-primary-soft); }
+.gt-share:active { transform: scale(.97); }
+.gt-share.is-muted { color: var(--c-text-2); border-style: dashed; }
 .gt-open::after { content: ''; position: absolute; inset: 0; z-index: 1; }
 .gt-open:focus-visible { outline: none; }
 .gt-open:focus-visible::after { outline: 2px solid var(--c-focus); outline-offset: -2px; border-radius: var(--r-sm); }
@@ -85,7 +91,8 @@
 @container guests (max-width: 940px) { .gt-row { grid-template-columns:32px minmax(150px,2fr) 54px minmax(90px,1fr) minmax(95px,1fr) minmax(65px,.8fr); } .gt-phone, .gt-in { display: none; } }
 @container guests (max-width: 660px) {
   .gt-head { display: none; }
-  .gt-row { grid-template-columns: 28px minmax(0, 1fr) auto; grid-template-areas: 'check name rsvp' '. inv table'; gap: var(--s-1) var(--s-2); padding: var(--s-3); }
+  .guest-table { display: grid; gap: 10px; border: 0; background: transparent; overflow: visible; }
+  .gt-row { grid-template-columns: 28px minmax(0, 1fr) auto; grid-template-areas: 'check name rsvp' '. inv table'; gap: var(--s-1) var(--s-2); padding: var(--s-3); border: 1px solid var(--c-line); border-radius: var(--r-md); background: var(--c-surface); box-shadow: var(--shadow-1); }
   .gt-check { grid-area: check; align-self: start; padding-top: 8px; }
   .gt-name { grid-area: name; }
   .gt-rsvp { grid-area: rsvp; justify-self: end; }
@@ -93,6 +100,8 @@
   .gt-table { grid-area: table; justify-self: end; font-size: var(--fs-xs); color: var(--c-text-2); }
   .gt-num { display: none; }
   .gt-name .avatar { display: none; }
+  .gt-name-actions { display: grid; justify-items: start; }
+  .gt-share { min-height: 44px; margin-block-start: 2px; }
 }
 
 .drawer-section { display: flex; flex-direction: column; gap: var(--s-3); padding-top: var(--s-4); border-top: 1px solid var(--c-line); }
