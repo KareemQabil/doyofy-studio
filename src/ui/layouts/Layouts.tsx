@@ -30,7 +30,7 @@ export function Brand({ to = '/app/events' }: { to?: string }) {
 export function AppShell({ children, right, mobileContext, compact }: { children: ReactNode; right?: ReactNode; mobileContext?: ReactNode; compact?: boolean }) {
   const {theme}=useReviewSettings();
   right = right ?? <AccountMenu />;
-  if(theme==='signature')return <SignatureShell right={right}>{children}</SignatureShell>;
+  if(theme==='signature')return <SignatureShell right={right} mobileContext={mobileContext}>{children}</SignatureShell>;
   if(theme==='horizon')return <HorizonShell right={right}>{children}</HorizonShell>;
   if(theme==='bahja')return <BahjaShell right={right}>{children}</BahjaShell>;
   if(theme==='orbit')return <OrbitShell right={right}>{children}</OrbitShell>;

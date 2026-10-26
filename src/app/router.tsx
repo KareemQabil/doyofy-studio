@@ -3,6 +3,7 @@
  * hosts), <Link>, navigate(), and navigation blocking for unsaved changes.
  * Route paths mirror the spec IA 1:1 so they map onto Next.js App Router folders later.
  */
+import { flushSync } from 'react-dom';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type AnchorHTMLAttributes, type MouseEvent, type ReactNode } from 'react';
 
 export type RouterMode = 'history' | 'hash';
@@ -65,13 +66,24 @@ export function RouterProvider({ mode, children }: { mode: RouterMode; children:
   const absolute = useCallback((to: string) => (mode === 'hash' ? `${window.location.origin}${window.location.pathname}${window.location.search}#${to}` : `${window.location.origin}${to}`), [mode]);
 
   const go = useCallback((to: string, replace?: boolean) => {
-    last.current = to; // in-app navigation: never mistaken for back/forward by the blocker check below
-    if (mode === 'hash') {
-      if (replace) history.replaceState(null, '', `#${to}`); else if (window.location.hash !== `#${to}`) history.pushState(null, '', `#${to}`);
-    } else if (replace) history.replaceState(null, '', to);
-    else history.pushState(null, '', to);
-    notify();
-    window.scrollTo(0, 0);
+    const from = parse(currentPath(mode)).pathname, next = parse(to).pathname;
+    const commit = () => {
+      last.current = to; // in-app navigation: never mistaken for back/forward by the blocker check below
+      if (mode === 'hash') {
+        if (replace) history.replaceState(null, '', `#${to}`); else if (window.location.hash !== `#${to}`) history.pushState(null, '', `#${to}`);
+      } else if (replace) history.replaceState(null, '', to);
+      else history.pushState(null, '', to);
+      notify();
+      // a filter, search or drawer change keeps the reader's place; a new page starts at its top
+      if (from !== next) window.scrollTo(0, 0);
+    };
+    // page changes cross-fade with the View Transitions API where available; query changes stay instant
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+    const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (from !== next && typeof doc.startViewTransition === 'function' && !still) {
+      document.documentElement.dataset.nav = next.split('/').length >= from.split('/').length ? 'forward' : 'back';
+      doc.startViewTransition(() => flushSync(commit));
+    } else commit();
   }, [mode]);
 
   const blocking = () => [...blockers.current].find((b) => b.when());

@@ -81,8 +81,8 @@ export async function run(){
  await check('guest row places WhatsApp beside the name without assuming the message was sent',async()=>{
   const p=await made.services.parties.create(event.id,{primaryGuestName:'ضيف مشاركة مباشرة',phone:'0559876544',maxPartySize:2});
   await render(wrap(<GuestsPage event={event}/>));await settle();
-  const row=Array.from(document.querySelectorAll('.gt-row')).find(el=>el.textContent?.includes('ضيف مشاركة مباشرة'))!;
-  const link=row.querySelector<HTMLAnchorElement>('.gt-name-actions .gt-share[href^="https://wa.me/"]')!;assert.ok(link);
+  const row=Array.from(document.querySelectorAll('.g2-row')).find(el=>el.textContent?.includes('ضيف مشاركة مباشرة'))!;
+  const link=row.querySelector<HTMLAnchorElement>('.g2-share-line .g2-wa[href^="https://wa.me/"]')!;assert.ok(link);
   link.addEventListener('click',e=>e.preventDefault());await click(link);
   assert.equal((await made.services.parties.get(p.id)).delivery.status,'not_shared');
   assert.ok(document.body.textContent?.includes('فتح واتساب يجهّز الرسالة فقط'));
@@ -431,8 +431,8 @@ export async function run(){
  await check('guest checkbox label selects a party without opening its drawer',async()=>{
   history.replaceState(null,'',`/app/events/${event.id}/guests`);
   await render(wrap(<GuestsPage event={event}/>));await settle();
-  const label=document.querySelector('.gt-row:not(.gt-head) .gt-check-hit')!;assert.ok(label);
-  await click(label);assert.ok(document.querySelector('.gt-row.is-selected'));
+  const label=document.querySelector('.g2-row .gt-check-hit')!;assert.ok(label);
+  await click(label);assert.ok(document.querySelector('.g2-row.is-selected'));
   assert.ok(document.querySelector('.bulk-bar'));assert.equal(document.querySelector('dialog[open]'),null);
   assert.equal(new URLSearchParams(location.search).has('party'),false);
  });
