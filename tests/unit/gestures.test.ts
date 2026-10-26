@@ -27,7 +27,7 @@ test('drawer dismisses only with deliberate downward drag or flick',()=>{
   assert.equal(shouldDismiss(70,.2),false);
 });
 
-import { deckDragPosition, deckRelease, deckPose, sheetSnapPoint, sealOpens } from '../../src/domain/gestures';
+import { deckDragPosition, deckRelease, deckPose, sheetSnapPoint, sheetSnapHeight, sealOpens } from '../../src/domain/gestures';
 test('deck: leftward drag advances in RTL, with resistance past the ends', () => {
   assert.equal(deckDragPosition(2, -100, 100, 13), 3);
   assert.equal(deckDragPosition(2, 100, 100, 13), 1);
@@ -54,6 +54,12 @@ test('sheet: snaps to the nearest stop, flings move one stop', () => {
   assert.equal(sheetSnapPoint(0.3, 0, 'half'), 'peek');
   assert.equal(sheetSnapPoint(0.5, -1, 'half'), 'full');
   assert.equal(sheetSnapPoint(0.5, 1, 'peek'), 'peek');
+});
+test('editor sheet snaps against rendered pixel stops when the keyboard shrinks the viewport', () => {
+  const stops = { peek: 88, half: 216, full: 264 };
+  assert.equal(sheetSnapHeight(224, 0, 'peek', stops), 'half');
+  assert.equal(sheetSnapHeight(256, 0, 'half', stops), 'full');
+  assert.equal(sheetSnapHeight(224, 0.8, 'full', stops), 'half');
 });
 test('seal: opens on a long lift or a quick flick, not on a nudge or a downward pull', () => {
   assert.ok(sealOpens(-80, 0, 120));

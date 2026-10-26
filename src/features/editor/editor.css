@@ -84,9 +84,9 @@
 
 /* ---- phone: preview-first */
 @media (max-width: 959px) {
-  .ed { --bar-h: 56px; --dock-h: calc(68px + env(safe-area-inset-bottom)); --sheet-h: 54dvh; height: 100dvh; overflow: hidden; }
-  .ed.sheet-full { --sheet-h: calc(100dvh - var(--bar-h) - var(--dock-h) - 12px); }
-  .ed.sheet-peek { --sheet-h: 22dvh; }
+  .ed { --bar-h: 56px; --dock-h: calc(68px + env(safe-area-inset-bottom)); --sheet-h: calc(var(--editor-viewport, 100dvh) * .54); height: var(--editor-viewport, 100dvh); overflow: hidden; }
+  .ed.sheet-full { --sheet-h: calc(var(--editor-viewport, 100dvh) - var(--bar-h) - var(--dock-h) - 12px); }
+  .ed.sheet-peek { --sheet-h: calc(var(--editor-viewport, 100dvh) * .22); }
   .ed-panel[data-dragging] { transition: none; }
   .ed-bar { grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--s-2); padding: 0 var(--s-2) 0 var(--s-3); }
   .ed-actions, .ed-pub { display: none; }
@@ -100,7 +100,7 @@
   .ed-poster { height: 100%; }
   .ed-panel {
     position: fixed; z-index: 20; inset-inline: 0; bottom: var(--dock-h); top: auto;
-    height: calc(var(--sheet-h) - var(--drag, 0px)); max-height: calc(100dvh - var(--bar-h) - var(--dock-h) - 12px);
+    height: calc(var(--sheet-h) - var(--drag, 0px)); max-height: calc(var(--editor-viewport, 100dvh) - var(--bar-h) - var(--dock-h) - 12px);
     border-inline-end: 0; border-radius: var(--r-xl) var(--r-xl) 0 0; background: var(--c-surface-elevated); box-shadow: var(--shadow-pop);
     transition: height var(--dur-slow) var(--ease-out);
   }

@@ -3,12 +3,16 @@ import { saveDemoAccount, currentDemoAccount } from '../../src/features/account/
 import { EditorWorkbench } from '../../src/features/editor/EditorWorkbench';
 import { defaultDesign } from '../../src/domain/invitation';
 import { App } from '../../src/app/App';
+import { paths } from '../../src/app/paths';
 import { act, StrictMode, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { Dialog, ConfirmDialog } from '../../src/ui/primitives/Overlay';
 import { CuratedChooser } from '../../src/features/occasions/CuratedChooser';
 import { PartyDrawer } from '../../src/features/guests/PartyDrawer';
 import { GateMode } from '../../src/features/check-in/GateMode';
+import { RsvpPage } from '../../src/features/rsvp/RsvpPage';
+import { AppError } from '../../src/services/errors';
+import { Studio } from '../../src/studio/Studio.js';
 import { ImportFlow } from '../../src/features/guests/import/ImportFlow';
 import { SettingsPage } from '../../src/features/settings/SettingsPage';
 import { GuestHub } from '../../src/features/guest/GuestHub';
@@ -32,6 +36,7 @@ import { OrbitQuickOpen } from '../../src/features/orbit/OrbitShell';
 import { Field, Input } from '../../src/ui/primitives/Form';
 import { GuestsPage } from '../../src/features/guests/GuestsPage';
 import { SeatingPage } from '../../src/features/seating/SeatingPage';
+import { usePointerGesture } from '../../src/ui/hooks/usePointerGesture';
 
 export async function run(){
  let root:Root;
@@ -87,6 +92,28 @@ export async function run(){
   await act(async()=>{document.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});
   assert.equal(saved,true);assert.ok((await made.services.rsvp.listResponses(event.id)).some(r=>r.name==='ضيف الاختبار'&&!r.partyId));
  });
+ await check('general replies remain actionable with no invitation parties',async()=>{
+  const created=await made.services.events.create({type:'graduation',names:{a:'رد بلا قائمة'},date:event.date,time:'19:00',venue:{name:'قاعة',city:'الرياض'}});
+  const ev=await made.services.events.update(created.id,{settings:{...created.settings,allowGeneralLink:true}});
+  await made.services.invitations.publish(ev.id);
+  await made.services.guest.submitRsvp(ev.slug,null,{name:'ضيف من الرابط العام',attending:true,count:1});
+  history.replaceState(null,'',paths.rsvp(ev.id));
+  await render(wrap(<RsvpPage event={ev}/>));await settle();
+  assert.ok(document.body.textContent?.includes('ضيف من الرابط العام'));
+  assert.ok(button('أضفه كضيف جديد'));
+ });
+ await check('Studio waits for RSVP receipt and permits retry after a rejected save',async()=>{
+  let resolve!:(value:{ok:boolean;id?:string;error?:string})=>void;
+  let submissions=0,success=0;
+  const fake={sm:{state:'pages',send:(event:string)=>{if(event==='submit')success++;}},
+    rsvp:{name:'ريم',attending:'yes',guests:2,sent:false,submitting:false,error:''},
+    rsvpAdapter:{submit:()=>{submissions++;return new Promise<{ok:boolean;id?:string;error?:string}>(r=>{resolve=r;});}},
+    _syncRsvp:()=>{}};
+  const submit=()=>((Studio.prototype as unknown as {submit:()=>Promise<void>}).submit.call(fake));
+  const first=submit();assert.equal(fake.rsvp.submitting,true);assert.equal(success,0);
+  resolve({ok:false,error:'تعذر الحفظ'});await first;assert.equal(fake.rsvp.sent,false);assert.equal(fake.rsvp.submitting,false);assert.equal(fake.rsvp.error,'تعذر الحفظ');assert.equal(success,0);
+  const retry=submit();assert.equal(submissions,2);resolve({ok:true,id:'receipt'});await retry;assert.equal(success,1);assert.equal(fake.rsvp.sent,true);
+ });
  await check('StrictMode mutations retain error feedback after mount cleanup',async()=>{
   function Fail(){const m=useMutation(async()=>{throw new Error('خطأ اختبار');});return <><button onClick={()=>void m.run()}>جرّب</button>{m.error?<p>تعذر الحفظ</p>:null}</>;}
   await render(wrap(<StrictMode><Fail/></StrictMode>));await click(button('جرّب'));assert.ok(document.body.textContent?.includes('تعذر الحفظ'));
@@ -105,6 +132,19 @@ export async function run(){
   assert.equal(closed,0);assert.equal(document.querySelector('.dialog-panel')!.getAttribute('data-dragging'),null);
   await pointer(grip,'pointerdown',0,0,1000);await pointer(grip,'pointermove',0,130,1400);await pointer(grip,'pointerup',0,130,1500);assert.equal(closed,1);
   await render(show(true));await pointer(grip,'pointerdown',0,0,2000);await pointer(grip,'pointermove',0,160,2200);await pointer(grip,'pointerup',0,160,2400);assert.equal(closed,1);
+ });
+ await check('child capture transfer and second pointer do not cancel the active deck gesture',async()=>{
+  const ends:Array<{cancelled:boolean;moved:boolean}>=[];
+  function Surface(){const gesture=usePointerGesture({axis:'x',onEnd:g=>ends.push(g)});return <div id="surface" {...gesture}><button data-gesture-surface id="child">بطاقة</button></div>;}
+  await render(<Surface/>);
+  const surface=document.getElementById('surface')!,child=document.getElementById('child')!;
+  await pointer(child,'pointerdown',100,0,0);
+  await pointer(child,'lostpointercapture',100,0,10);
+  await pointer(surface,'pointermove',50,0,100);
+  await pointer(surface,'pointerdown',40,0,120,2);
+  await pointer(surface,'pointerup',40,0,130,2);
+  await pointer(surface,'pointerup',50,0,200);
+  assert.equal(ends.length,1);assert.equal(ends[0]!.cancelled,false);assert.equal(ends[0]!.moved,true);
  });
  await check('template browsing defers live playback and swipes respect scroll and cancellation',async()=>{
   const design=await made.services.invitations.get(event.id);let navigated='';
@@ -305,6 +345,22 @@ export async function run(){
   await render(wrap(<GateMode eventId={ev.id}/>));await settle();await fill(document.querySelector<HTMLInputElement>('#gate-q')!,'عائلة الوصول');await click(button('عائلة الوصول'));assert.ok(!document.getElementById('root')!.textContent?.includes('بلا طاولة'));
   await click(document.querySelector('[aria-label="إنقاص كم شخصًا يدخل الآن؟"]')!);await click(button('دخول جزئي'));await settle();assert.equal((await made.services.parties.get(p.id)).checkedInCount,2);assert.ok(!document.getElementById('root')!.textContent?.includes('وجّههم'));
   await click(button('تراجع عن التسجيل'));await settle();assert.equal((await made.services.parties.get(p.id)).checkedInCount,0);
+ });
+ await check('reception separates lookup failure from invalid code and keeps the retry input',async()=>{
+  const party=await made.services.parties.create(event.id,{primaryGuestName:'ضيف اختبار الشبكة',maxPartySize:1});
+  const original=made.services.checkIn.findByCode;
+  made.services.checkIn.findByCode=async()=>{throw new AppError('network','تعذر الاتصال أثناء التحقق');};
+  try {
+    await render(wrap(<GateMode eventId={event.id}/>));await settle();
+    await click(button('مسح رمز QR'));
+    await fill(document.querySelector<HTMLInputElement>('input[aria-label="الرمز أو الرابط"]')!,party.code);
+    await click(button('تحقق'));await settle();
+    assert.ok(document.body.textContent?.includes('تعذر التحقق من الرمز'));
+    assert.ok(!document.body.textContent?.includes('الرمز غير صحيح أو أن الدعوة حُذفت'));
+    made.services.checkIn.findByCode=original;
+    await click(button('أعد المحاولة بنفس الرمز'));await settle();
+    assert.ok(document.body.textContent?.includes('ضيف اختبار الشبكة'));
+  } finally {made.services.checkIn.findByCode=original;}
  });
  await check('Signature hero supports RTL keyboard browsing and keeps the graduation banner a direct start',async()=>{
   history.replaceState(null,'','/app/events?theme=signature');await render(<App mode="history"/>);await settle();

@@ -40,7 +40,7 @@ export function RsvpPage({ event }: { event: Event }) {
 
   const all = parties.data ?? [];
   const unmatched = (responses.data ?? []).filter((r) => !r.partyId && !r.resolution);
-  const tab = (loc.search.get('tab') as Tab | null) ?? 'pending';
+  const tab = (loc.search.get('tab') as Tab | null) ?? (all.length === 0 && unmatched.length ? 'unmatched' : 'pending');
   const c = countParties(all);
   const ps = publishState(design.data);
   const pending = all.filter((p) => p.rsvpStatus === 'pending');
@@ -57,13 +57,13 @@ export function RsvpPage({ event }: { event: Event }) {
 
   return (
     <>
-      <PageHeader title="الضيوف" subtitle={c.parties ? `ردّت ${replied} من ${pluralOf(c.parties, P.invitation)}` : 'لا دعوات بعد'} />
+      <PageHeader title="الضيوف" subtitle={c.parties ? `ردّت ${replied} من ${pluralOf(c.parties, P.invitation)}` : unmatched.length ? `${pluralOf(unmatched.length, P.invitation)} من الرابط العام تحتاج مطابقة` : 'لا دعوات بعد'} />
       <GuestViews eventId={event.id} active="responses" />
-      {c.parties === 0 ? (
+      {c.parties === 0 && unmatched.length === 0 ? (
         <EmptyState icon="envelope" title="لا ردود بعد" action={<Link to={paths.guests(event.id)} className="btn btn-primary btn-md">أضف الضيوف</Link>}>تظهر الردود هنا عندما يرد الضيوف من روابطهم.</EmptyState>
       ) : (
         <div className="stack gap-6">
-          <div className="rsvp-head">
+          {c.parties > 0 && <div className="rsvp-head">
             <Stat label="سيحضرون" value={c.confirmedPeople} sub={`شخصًا · من ${pluralOf(c.confirmedParties, P.invitation)}`} tone="success" emphasis />
             <div className="rsvp-head-side">
               <div className="row gap-6 wrap">
@@ -73,7 +73,7 @@ export function RsvpPage({ event }: { event: Event }) {
               <ProgressBar value={replied} max={c.parties} tone="success" label="نسبة الرد" />
               <p className="faint t-sm">نسبة الرد {Math.round((replied / Math.max(1, c.parties)) * 100)}٪ · الحد الأقصى لو حضر الجميع {people(c.maxSeats)}</p>
             </div>
-          </div>
+          </div>}
 
           {theme==='orbit'?<OrbitResponseLenses value={tab} onChange={t=>navigate(paths.rsvp(event.id,t==='pending'?undefined:t),{replace:true})} pending={c.pendingParties} recent={(responses.data??[]).filter(r=>r.partyId).length} unmatched={unmatched.length}/>:<FilterChips label="عرض" value={tab} onChange={(t) => navigate(paths.rsvp(event.id, t === 'pending' ? undefined : t), { replace: true })} options={[
             { id: 'pending', label: 'بانتظار الرد', count: c.pendingParties },

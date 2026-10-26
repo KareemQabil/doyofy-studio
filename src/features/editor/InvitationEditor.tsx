@@ -23,7 +23,7 @@ import { AccountMenu } from '../account/AccountMenu';
 import { usePointerGesture } from '../../ui/hooks/usePointerGesture';
 import { useReviewSettings } from '../../app/review';
 import { OrbitEditorSurface } from '../orbit/OrbitEditorSurface';
-import { sheetSnapPoint, type SheetPoint } from '../../domain/gestures';
+import { sheetSnapHeight, type SheetPoint } from '../../domain/gestures';
 import { SealStamp } from '../signature/SealStamp';
 import { DraftQueue } from '../../domain/draft-queue';
 import { defaultDesign, publishState, toInvitationData } from '../../domain/invitation';
@@ -175,7 +175,11 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
       clearDrag();
       if(g.cancelled)return; // pointer cancel restores the previous stop
       if(!g.moved){setSheet(s=>s==='full'?'half':s==='peek'?'half':'full');return;}
-      setSheet(s=>sheetSnapPoint(h/Math.max(1,window.innerHeight),g.velocity,s));
+      const viewport = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--editor-viewport')) || window.innerHeight;
+      const bar = document.querySelector('.ed-bar')?.getBoundingClientRect().height ?? 56;
+      const dock = document.querySelector('.ed-dock')?.getBoundingClientRect().height ?? 68;
+      const full = Math.max(0, viewport - bar - dock - 12);
+      setSheet(s=>sheetSnapHeight(h,g.velocity,s,{peek:Math.min(viewport*.22,full),half:Math.min(viewport*.54,full),full}));
     }
   });
   const sheetKeys = (e: React.KeyboardEvent) => {

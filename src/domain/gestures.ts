@@ -66,6 +66,14 @@ export function sheetSnapPoint(fraction: number, velocityY: number, current: She
   }
   return order.reduce((best, p) => Math.abs(SHEET_HEIGHT[p] - fraction) < Math.abs(SHEET_HEIGHT[best] - fraction) ? p : best, current);
 }
+/** Snap against the rendered editor stops, including the bar, dock and keyboard viewport. */
+export function sheetSnapHeight(height: number, velocityY: number, current: SheetPoint, stops: Record<SheetPoint, number>): SheetPoint {
+  const order: SheetPoint[] = ['peek', 'half', 'full'];
+  if (Math.abs(velocityY) >= 0.55) {
+    return order[Math.max(0, Math.min(2, order.indexOf(current) + (velocityY < 0 ? 1 : -1)))]!;
+  }
+  return order.reduce((best, point) => Math.abs(stops[point] - height) < Math.abs(stops[best] - height) ? point : best, current);
+}
 /** the invitation seal: lifting it far enough (or a quick flick up) opens the invitation */
 export function sealOpens(dy: number, velocityY: number, travel: number): boolean {
   return -dy >= travel * 0.55 || (-dy >= travel * 0.2 && velocityY <= -0.6);

@@ -1,6 +1,6 @@
 /** Full-screen "what guests will see" preview of the latest draft. Replies are not recorded. */
 import { useEffect, useRef, useState } from 'react';
-import { defaultDesign, toInvitationData } from '../../domain/invitation';
+import { defaultDesign, publishState, toInvitationData } from '../../domain/invitation';
 import { ErrorState, Icon, Skeleton } from '../../ui';
 import { Link, useLocation } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -16,6 +16,7 @@ export function GuestPreview({ eventId }: { eventId: string }) {
   const back = loc.search.get('from') === 'design' ? `${paths.design(eventId)}${loc.search.get('section') ? `?section=${loc.search.get('section')}` : ''}` : paths.invitation(eventId);
   const event = ev.data;
   const content = design.data?.draft ?? (event ? defaultDesign(event) : null);
+  const publication = publishState(design.data);
 
   useEffect(() => {
     if (!event || !content || !host.current) return;
@@ -39,7 +40,7 @@ export function GuestPreview({ eventId }: { eventId: string }) {
   return (
     <div className="preview-page">
       <div className="preview-bar" role="note">
-        <span className="preview-bar-text"><Icon name="eye" size="sm" />معاينة — هكذا يراها الضيف. لن يُسجل أي رد.</span>
+        <span className="preview-bar-text"><Icon name="eye" size="sm" />{publication === 'published' ? 'معاينة الدعوة المنشورة' : 'معاينة المسودة — هذه التعديلات ليست منشورة للضيوف'}. لن يُسجل أي رد.</span>
         <Link to={back} className="preview-close"><Icon name="close" size="sm" />إغلاق المعاينة</Link>
       </div>
       {(ev.loading || design.loading) && <div className="preview-loading"><Skeleton lines={3} /></div>}
