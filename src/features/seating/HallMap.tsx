@@ -7,6 +7,7 @@
  *   useLiftDrag  phones: press and hold a family to lift it, then drag it onto a table in the dock.
  *             Desktop keeps native drag-and-drop; the «نقل» button does the same by tapping.
  */
+import { hasAllergy } from '../../domain/guest-experience';
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import type { InvitationParty } from '../../domain/types';
 import { checkAssign, type TableOccupancy } from '../../domain/seating';
@@ -60,12 +61,13 @@ export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragO
           <button key={o.table.id} type="button" style={{ '--hall-i': i } as CSSProperties}
             className={`hall-table seat-overview-table${focus === o.table.id ? ' is-active' : ''}${o.over ? ' is-over' : o.remaining === 0 ? ' is-full' : ''}${dragOver === o.table.id ? ' is-drop-target' : ''}`}
             aria-pressed={focus === o.table.id}
-            aria-label={`${o.table.name}: ${o.used} من ${o.table.capacity}${o.over ? `، زيادة ${-o.remaining}` : ''}`}
+            aria-label={`${o.table.name}: ${o.used} من ${o.table.capacity}${o.over ? `، زيادة ${-o.remaining}` : ''}${o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) ? '، عليها حساسية طعام' : ''}`}
             onClick={() => { haptic('tick'); onFocus(o.table.id); }}
             onDragOver={onDropParty ? (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDragOverTable?.(o.table.id); } : undefined}
             onDragLeave={onDropParty ? () => onDragOverTable?.(null) : undefined}
             onDrop={onDropParty?.(o)}>
-            <span className="hall-table-art"><TableDisc o={o} /><strong className="hall-count num">{o.used}<small>/{o.table.capacity}</small></strong></span>
+            <span className="hall-table-art"><TableDisc o={o} /><strong className="hall-count num">{o.used}<small>/{o.table.capacity}</small></strong>
+              {o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) && <span className="hall-allergy" aria-hidden="true"><Icon name="alert" size="sm" /></span>}</span>
             <span className="hall-name">{o.table.name}</span>
             <span className="hall-status">{o.over ? `زيادة ${-o.remaining}` : o.remaining === 0 ? 'ممتلئة' : `${o.remaining} متاح`}</span>
           </button>

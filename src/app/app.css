@@ -33,4 +33,7 @@
 @import '../features/account/welcome.css';
 @import '../features/guests/guests-v2.css';
 @import '../features/seating/seating-v2.css';
+@import '../features/guest/guest-extras.css';
+@import '../features/settings/guest-experience.css';
+@import '../features/guests/food.css';
 @import '../ui/styles/v2-craft.css';

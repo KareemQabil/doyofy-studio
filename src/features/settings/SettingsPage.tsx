@@ -15,6 +15,7 @@ import { errorMessage, isAppError } from '../../services/errors';
 import { useDesign } from '../shared/queries';
 import { localDateOf } from '../../domain/format';
 import { TIME_ZONES } from '../events/CreateEvent';
+import { GuestExperienceSettings } from './GuestExperienceSettings';
 
 type Form = {
   type: EventType; title: string; a: string; b: string; aEn: string; bEn: string; date: string; time: string; timeZone: string; durationHours: number;
@@ -38,7 +39,10 @@ export function SettingsPage({ event }: { event: Event }) {
   const base = fromEvent(event);
   const dirty = JSON.stringify(f) !== JSON.stringify(base);
   useBlocker(dirty, 'لم تحفظ تغييرات المناسبة. هل تريد المغادرة دون حفظها؟');
-  useEffect(() => { if (loc.search.get('focus') === 'map') setTimeout(() => { mapRef.current?.focus(); mapRef.current?.scrollIntoView({ block: 'center' }); }, 150); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (loc.search.get('focus') === 'map') setTimeout(() => { mapRef.current?.focus(); mapRef.current?.scrollIntoView({ block: 'center' }); }, 150);
+    if (loc.search.get('focus') === 'guest-experience') setTimeout(() => document.getElementById('guest-experience')?.scrollIntoView({ block: 'start' }), 150);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = useMutation((s, input: UpdateEventInput) => s.events.update(event.id, input), { onSuccess: (e) => { setF(fromEvent(e)); toast({ tone: 'success', text: 'تم حفظ تفاصيل المناسبة' }); } });
   const archive = useMutation((s) => (event.archivedAt ? s.events.restore(event.id) : s.events.archive(event.id)), {
@@ -112,6 +116,21 @@ export function SettingsPage({ event }: { event: Event }) {
           </div>
         </Panel>
 
+        {dirty && (
+          <div className="save-bar" role="region" aria-label="حفظ التغييرات">
+            <span className="t-sm">لديك تغييرات غير محفوظة</span>
+            <div className="row gap-2">
+              <Button variant="ghost" onClick={() => setF(base)}>تجاهل</Button>
+              <Button variant="primary" type="submit" loading={save.pending} disabled={missing || badMap}>حفظ التغييرات</Button>
+            </div>
+          </div>
+        )}
+      </form>
+
+      {/* saved on its own: the guest-facing questions have their own revision (D11) */}
+      <div className="stack gap-6 settings">
+        <GuestExperienceSettings event={event} />
+
         <Panel title="الدعوة">
           <div className="row wrap between gap-3">
             <Badge tone={PUBLISH_LABEL[ps].tone} dot>{PUBLISH_LABEL[ps].label}</Badge>
@@ -127,17 +146,7 @@ export function SettingsPage({ event }: { event: Event }) {
               : <p className="faint t-sm">الأرشفة متاحة لصاحب المناسبة فقط.</p>}
           </div>
         </Panel>
-
-        {dirty && (
-          <div className="save-bar" role="region" aria-label="حفظ التغييرات">
-            <span className="t-sm">لديك تغييرات غير محفوظة</span>
-            <div className="row gap-2">
-              <Button variant="ghost" onClick={() => setF(base)}>تجاهل</Button>
-              <Button variant="primary" type="submit" loading={save.pending} disabled={missing || badMap}>حفظ التغييرات</Button>
-            </div>
-          </div>
-        )}
-      </form>
+      </div>
       {archive.error ? <Banner tone="danger" title="لم تتغيّر حالة المناسبة">{errorMessage(archive.error)}</Banner> : null}
       <ConfirmDialog open={archiveOpen} title={event.archivedAt ? 'إعادة المناسبة؟' : 'أرشفة المناسبة؟'} tone={event.archivedAt ? 'primary' : 'danger'}
         body={event.archivedAt ? 'ستظهر في القائمة ويعمل رابط الدعوة من جديد.' : 'سيتوقف رابط الدعوة عن العمل للضيوف. البيانات تبقى محفوظة.'}

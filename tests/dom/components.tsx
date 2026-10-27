@@ -37,6 +37,7 @@ import { Field, Input } from '../../src/ui/primitives/Form';
 import { GuestsPage } from '../../src/features/guests/GuestsPage';
 import { SeatingPage } from '../../src/features/seating/SeatingPage';
 import { usePointerGesture } from '../../src/ui/hooks/usePointerGesture';
+import { experienceOf, mealReport } from '../../src/domain/guest-experience';
 
 export async function run(){
  let root:Root;
@@ -427,6 +428,83 @@ export async function run(){
   history.replaceState(null,'','/app/events/new?theme=signature');await render(<App mode="history"/>);await settle();
   await click(button('قائمة وبحث'));assert.ok(document.querySelector('.sig-create-sub')?.textContent?.includes('ابحث عن مناسبتك'));
   await click(button('بطاقات'));assert.ok(document.querySelector('.sig-create-sub')?.textContent?.includes('اسحب البطاقات'));
+ });
+ await check('food after «نعم»: meals are split per person and saved once with the reply (F047, F051, T28)',async()=>{
+  const p=await made.services.parties.create(event.id,{primaryGuestName:'عائلة الوجبات',maxPartySize:4});
+  const view=await made.services.guest.open(event.slug,p.code);let latest=view;
+  await render(wrap(<GuestHub view={view} code={p.code} submission={null} onView={(v)=>{latest=v;}} onReplay={()=>{}}/>));
+  assert.equal(document.querySelector('.gx'),null,'no food questions before attending');
+  await click(document.querySelector('input[type=radio][value=yes]')!);
+  await click(document.querySelector('[aria-label="زيادة عدد الحضور"]')!);
+  const plus=(label:string)=>document.querySelector<HTMLButtonElement>(`[aria-label="زيادة ${label}"]`)!;
+  await click(plus('كبسة لحم'));await click(plus('كبسة لحم'));await click(plus('سمك هامور'));
+  assert.equal(document.querySelectorAll('.gx-plate:not(.is-empty)').length,3);
+  assert.ok(plus('طبق نباتي').disabled,'no more plates than people');
+  await click(button('لا شيء، شكرًا'));
+  const before=(await made.services.rsvp.listResponses(event.id)).length;
+  await click(button('إرسال الرد'));await settle();
+  const saved=await made.services.parties.get(p.id);
+  assert.deepEqual(saved.meals,[{optionId:'meal_meat',count:2},{optionId:'meal_fish',count:1}]);
+  assert.equal(saved.dietary?.answered,true);assert.deepEqual(saved.dietary?.needs,[]);
+  assert.equal((await made.services.rsvp.listResponses(event.id)).length,before+1,'one reply, not two');
+  assert.equal(latest.party?.rsvpStatus,'confirmed');
+ });
+ await check('required meals keep the reply local until every person has a plate (T29)',async()=>{
+  const cur=(await made.services.events.get(event.id)).guestExperience!;const {revision,...draft}=cur;
+  await made.services.events.updateExperience(event.id,{...draft,meals:{...draft.meals,required:true}},revision);
+  try{
+   const p=await made.services.parties.create(event.id,{primaryGuestName:'عائلة الإلزام',maxPartySize:2});
+   await render(wrap(<GuestHub view={await made.services.guest.open(event.slug,p.code)} code={p.code} submission={null} onView={()=>{}} onReplay={()=>{}}/>));
+   await click(document.querySelector('input[type=radio][value=yes]')!);
+   await click(document.querySelector('[aria-label="زيادة دجاج مشوي"]')!);
+   await click(button('إرسال الرد'));await settle();
+   assert.ok(document.getElementById('root')!.textContent!.includes('اختاروا وجبة لكل'));
+   assert.equal((await made.services.parties.get(p.id)).rsvpStatus,'pending');
+  }finally{
+   const now=(await made.services.events.get(event.id)).guestExperience!;const {revision:r2,...d2}=now;
+   await made.services.events.updateExperience(event.id,{...d2,meals:{...d2.meals,required:false}},r2);
+  }
+ });
+ await check('a decline is accepted first, then wishes are offered as plain external links (F066–F068, T37, T38)',async()=>{
+  const p=await made.services.parties.create(event.id,{primaryGuestName:'ضيف معتذر',maxPartySize:2});
+  await made.services.guest.submitRsvp(event.slug,p.code,{attending:false,count:0});
+  await render(wrap(<GuestHub view={await made.services.guest.open(event.slug,p.code)} code={p.code} submission={{ok:true}} onView={()=>{}} onReplay={()=>{}}/>));
+  const text=document.getElementById('root')!.textContent!;
+  assert.ok(text.includes('سجّلنا اعتذاركم')&&text.includes('مشاركتكم من بعيد'));
+  assert.ok(text.indexOf('سجّلنا اعتذاركم')<text.indexOf('مشاركتكم من بعيد'),'the decline is confirmed before any wish');
+  const links=Array.from(document.querySelectorAll<HTMLAnchorElement>('.gx-wish a'));
+  assert.ok(links.length>=2);
+  for(const a of links){assert.ok(a.href.startsWith('https://'));assert.equal(a.target,'_blank');assert.ok(a.rel.includes('noopener'));}
+  assert.equal(document.querySelector('.gx-wish')!.className.includes('is-flowers'),true,'flowers lead after a decline');
+  links[0]!.addEventListener('click',e=>e.preventDefault());await click(links[0]!);
+  const after=await made.services.parties.get(p.id);assert.equal(after.rsvpStatus,'declined');assert.equal(JSON.stringify(after).includes('paid'),false);
+ });
+ await check('food lens totals come from the same parties as the list; allergies stand out (F053, F054)',async()=>{
+  history.replaceState(null,'',paths.guests(event.id)+'?view=food');
+  const ev=await made.services.events.get(event.id);
+  await render(wrap(<GuestsPage event={ev}/>));await settle();
+  const r=mealReport(experienceOf(ev),await made.services.parties.list(event.id),await made.services.rsvp.listResponses(event.id));
+  const bars=Array.from(document.querySelectorAll('.food-bar:not(.is-none) .food-bar-n')).map(e=>Number(e.textContent));
+  assert.deepEqual(bars,r.rows.map(x=>x.people));
+  assert.equal(Number(document.querySelector('.food-bar.is-none .food-bar-n')!.textContent),r.unspecified);
+  assert.ok(document.querySelector('.food-need.is-allergy'));
+  assert.ok(!document.getElementById('root')!.textContent!.includes('+966'),'no phone numbers in the food report');
+  history.replaceState(null,'','/');
+ });
+ await check('guest experience settings: unsafe wish links block saving; answered meals are hidden, not deleted (T33, T39)',async()=>{
+  const ev=await made.services.events.get(event.id);const rev=ev.guestExperience!.revision;
+  await render(wrap(<SettingsPage event={ev}/>));await settle();
+  const url=document.querySelector<HTMLInputElement>('.gxs-item input[type=url]')!;assert.ok(url);
+  await fill(url,'javascript:alert(1)');assert.ok((button('حفظ ونشر للضيوف') as HTMLButtonElement).disabled);
+  await fill(url,'https://shop.example.com/watch');assert.ok(!(button('حفظ ونشر للضيوف') as HTMLButtonElement).disabled);
+  await click(document.querySelector('[aria-label="إخفاء كبسة لحم (اختاره ضيوف)"]')!);
+  await click(button('حفظ ونشر للضيوف'));await settle();
+  const x=(await made.services.events.get(event.id)).guestExperience!;
+  assert.equal(x.revision,rev+1);
+  assert.equal(x.meals.options.find(o=>o.id==='meal_meat')?.archived,true);
+  assert.equal(x.gifts.items[0]!.url,'https://shop.example.com/watch');
+  const view=await made.services.guest.open(event.slug,(await made.services.parties.list(event.id)).find(p=>p.rsvpStatus==='pending')!.code);
+  assert.ok(!view.experience!.meals.options.some(o=>o.id==='meal_meat'),'hidden from guests');
  });
  await check('import reviews and blocks ambiguous sample rows before explicit batch approval',async()=>{
   const before=(await made.services.parties.list(event.id)).length;await render(wrap(<ImportFlow eventId={event.id}/>));await settle();await click(button('استخدم الملف النموذجي'));await settle();assert.ok(document.getElementById('root')!.textContent?.includes('راجع قبل الإضافة'));assert.equal((await made.services.parties.list(event.id)).length,before);const add=Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(b=>b.textContent?.startsWith('أضف ')&&!b.textContent.includes('على أي حال'));assert.ok(add?.disabled);

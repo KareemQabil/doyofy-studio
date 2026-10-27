@@ -3,6 +3,7 @@
  * Every action works with buttons; drag and drop is an extra on pointer devices.
  * Warnings (over capacity, does not fit, unassigned, declined but seated) are shown, never auto-fixed.
  */
+import { DietBadge } from '../guests/FoodReport';
 import { useMemo, useRef, useState, type DragEvent } from 'react';
 import { useReviewSettings } from '../../app/review';
 import { OrbitTableAtlas } from '../orbit/OrbitWorkLenses';
@@ -110,7 +111,7 @@ export function SeatingPage({ event }: { event: Event }) {
                   <ul className="pool-list">
                     {unassigned.map((p) => (
                       <li key={p.id} className={`pool-item${dragId === p.id || moving?.id === p.id ? ' is-drag-source' : ''}`} {...(signature ? lift.bind(p) : {})} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', p.id); setDragId(p.id); }} onDragEnd={endDrag}>
-                        <span className="grow"><span className="t-bold">{p.primaryGuestName}</span><span className="faint t-xs"> · {p.side ?? ''}</span></span>
+                        <span className="grow"><span className="t-bold">{p.primaryGuestName}</span><span className="faint t-xs"> · {p.side ?? ''}</span><DietBadge p={p} /></span>
                         <Badge tone="success">{people(seatsFor(p))}</Badge>
                         <Button size="sm" onClick={() => startMove(p)}>اختر طاولة</Button>
                       </li>
@@ -143,7 +144,7 @@ export function SeatingPage({ event }: { event: Event }) {
                       {o.parties.map((p) => (
                         <li key={p.id} className={`table-party${p.rsvpStatus === 'declined' ? ' is-declined' : ''}${match?.has(p.id) ? ' is-match' : ''}${moving?.id === p.id ? ' is-drag-source' : ''}`} {...(signature ? lift.bind(p) : {})} draggable={p.rsvpStatus === 'confirmed'}
                           onDragStart={(e) => { e.dataTransfer.setData('text/plain', p.id); setDragId(p.id); }} onDragEnd={endDrag}>
-                          <span className="grow truncate">{p.primaryGuestName}</span>
+                          <span className="grow truncate">{p.primaryGuestName}<DietBadge p={p} /></span>
                           {p.rsvpStatus === 'declined' ? <Badge tone="warning">اعتذر</Badge> : <span className="num faint t-sm">{seatsFor(p)}</span>}
                           <Menu label={`خيارات ${p.primaryGuestName}`} items={[
                             p.rsvpStatus === 'confirmed' ? { label: 'نقل إلى طاولة أخرى', icon: 'move', onSelect: () => startMove(p) } : null,

@@ -6,6 +6,7 @@
  *     right for select/details; press and hold to start selecting. Every gesture has a visible button.
  *   · «حسب الطاولة» groups invitations under their table with alternating bands (F034, F035)
  *   · selected invitations can be shared one after another, honestly: opening WhatsApp is not delivery (F044)
+ *   · «الطعام» is a third lens on the same list: meal totals, needs and food per table (F053, F054)
  * Details open in a drawer (?party=). Filter, search and grouping live in the URL.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -14,11 +15,13 @@ import { CHECKIN_STATUS, PARTY_FILTERS, RSVP_STATUS, countParties, duplicatePhon
 import { publishState } from '../../domain/invitation';
 import { formatPhone, plural, pluralOf, P } from '../../domain/format';
 import { Avatar, Banner, Button, EmptyState, ErrorState, Icon, LinkButton, Menu, PageHeader, SearchInput, Skeleton } from '../../ui';
-import { useMutation } from '../../app/data';
+import { useMutation, useNow } from '../../app/data';
 import { Link, useLocation, useNavigate, useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
-import { useDesign, useParties, useTables } from '../shared/queries';
+import { useDesign, useParties, useResponses, useTables } from '../shared/queries';
+import { asksAfterAttending, experienceOf } from '../../domain/guest-experience';
+import { FoodLine, FoodReport } from './FoodReport';
 import { GuestViews } from '../shared/GuestViews';
 import { errorMessage } from '../../services/errors';
 import { PartyDrawer } from './PartyDrawer';
@@ -39,7 +42,13 @@ export function GuestsPage({ event }: { event: Event }) {
   const { absolute } = useRouter();
   const toast = useToast();
   const filter = (loc.search.get('filter') as PartyFilter | null) ?? 'all';
-  const grouped = loc.search.get('view') === 'tables';
+  const view = loc.search.get('view');
+  const grouped = view === 'tables';
+  const responses = useResponses(event.id);
+  const now = useNow();
+  const xp = experienceOf(event);
+  const foodOn = asksAfterAttending(xp) || xp.meals.options.length > 0;
+  const food = view === 'food' && foodOn;
   const openId = loc.search.get('party');
   const [q, setQ] = useState(loc.search.get('q') ?? '');
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -108,7 +117,7 @@ export function GuestsPage({ event }: { event: Event }) {
   const rowProps = (p: InvitationParty, i: number) => ({
     p, publish: ps, table: tableName(p.tableId), seatingEnabled: tableList.length > 0, attention: partyNeedsAttention(p, dup), checked: selected.has(p.id), selecting,
     hint: hintRow && i === 0, onToggle: () => toggle(p.id), onSelectStart: () => { setSelectMode(true); setSelected((s) => new Set(s).add(p.id)); },
-    onOpen: () => setParam('party', p.id), shareUrl: shareUrl(p), onShare: () => setSharePrompt(p.id),
+    onOpen: () => setParam('party', p.id), shareUrl: shareUrl(p), onShare: () => setSharePrompt(p.id), event,
   });
 
   return (
@@ -140,16 +149,17 @@ export function GuestsPage({ event }: { event: Event }) {
           {!published && <Banner tone="warning" compact title="الدعوة غير منشورة" action={<LinkButton to={paths.invitation(event.id)} size="sm">إلى الدعوة</LinkButton>}>رتّب القائمة الآن؛ الروابط تعمل بعد النشر.</Banner>}
 
           <div className="g2-toolbar">
-            <SearchInput value={q} onChange={setQ} placeholder="ابحث بالاسم أو الجوال أو الرمز" />
+            {!food && <SearchInput value={q} onChange={setQ} placeholder="ابحث بالاسم أو الجوال أو الرمز" />}
             <div className="g2-toolbar-row">
-              {tableList.length > 0 && <div className="g2-switch" role="group" aria-label="طريقة العرض">
-                <button type="button" aria-pressed={!grouped} onClick={() => setParam('view', null)}><Icon name="list" size="sm" />قائمة</button>
-                <button type="button" aria-pressed={grouped} onClick={() => setParam('view', 'tables')}><Icon name="table" size="sm" />حسب الطاولة</button>
+              {(tableList.length > 0 || foodOn) && <div className="g2-switch" role="group" aria-label="طريقة العرض">
+                <button type="button" aria-pressed={!grouped && !food} onClick={() => setParam('view', null)}><Icon name="list" size="sm" />قائمة</button>
+                {tableList.length > 0 && <button type="button" aria-pressed={grouped} onClick={() => setParam('view', 'tables')}><Icon name="table" size="sm" />الطاولات</button>}
+                {foodOn && <button type="button" aria-pressed={food} onClick={() => { haptic('tick'); setParam('view', 'food'); }}><Icon name="sparkle" size="sm" />الطعام</button>}
               </div>}
-              <Button variant="ghost" size="sm" icon="sliders" aria-expanded={moreFilters} onClick={() => setMoreFilters((v) => !v)}>{moreFilters ? 'فلاتر أقل' : 'فلاتر'}</Button>
-              {!selecting && visible.length > 0 && <Button variant="ghost" size="sm" icon="check" onClick={() => { haptic('tick'); setSelectMode(true); }}>تحديد</Button>}
+              {!food && <Button variant="ghost" size="sm" icon="sliders" aria-expanded={moreFilters} onClick={() => setMoreFilters((v) => !v)}>{moreFilters ? 'فلاتر أقل' : 'فلاتر'}</Button>}
+              {!food && !selecting && visible.length > 0 && <Button variant="ghost" size="sm" icon="check" onClick={() => { haptic('tick'); setSelectMode(true); }}>تحديد</Button>}
             </div>
-            {moreFilters && <div className="g2-chips" role="group" aria-label="تصفية الضيوف">
+            {!food && moreFilters && <div className="g2-chips" role="group" aria-label="تصفية الضيوف">
               {PARTY_FILTERS.map((f) => <button key={f.id} type="button" className="chip v2-press" aria-pressed={filter === f.id} onClick={() => { clearSelection(); setParam('filter', f.id === 'all' ? null : f.id); }}>{f.label}<span className="num">{counts[f.id]}</span></button>)}
             </div>}
           </div>
@@ -177,7 +187,9 @@ export function GuestsPage({ event }: { event: Event }) {
             فتح واتساب يجهّز الرسالة فقط؛ سجّلها بعد أن ترسلها بنفسك. {quickManual.error ? errorMessage(quickManual.error) : null}
           </Banner>}
 
-          {visible.length === 0 ? (
+          {food ? (
+            <FoodReport event={event} parties={all} responses={responses.data ?? []} tables={tableList} now={now} onOpen={(id) => setParam('party', id)} />
+          ) : visible.length === 0 ? (
             <EmptyState compact icon="search" title="لا نتائج" action={<Button onClick={() => { setQ(''); setParam('filter', null); }}>اعرض كل الضيوف</Button>}>
               {q ? `لا يوجد ضيف يطابق «${q}»` : 'لا يوجد ضيوف في هذا التصنيف.'}
             </EmptyState>
@@ -197,7 +209,7 @@ export function GuestsPage({ event }: { event: Event }) {
           ) : (
             <ul className="g2-list" aria-label="قائمة الضيوف">{visible.map((p, i) => <GuestCard key={p.id} {...rowProps(p, i)} />)}</ul>
           )}
-          <p className="faint t-sm g2-foot">{visible.length !== all.length ? `يعرض ${visible.length} من ${all.length}` : plural(all.length, P.invitation)}{published ? ' · روابط هذه النسخة التجريبية تعمل على هذا الجهاز فقط.' : ''}</p>
+          {!food && <p className="faint t-sm g2-foot">{visible.length !== all.length ? `يعرض ${visible.length} من ${all.length}` : plural(all.length, P.invitation)}{published ? ' · روابط هذه النسخة التجريبية تعمل على هذا الجهاز فقط.' : ''}</p>}
         </div>
       )}
 
@@ -234,8 +246,8 @@ function DeliveryTicks({ p, publish }: { p: InvitationParty; publish: PublishSta
   );
 }
 
-function GuestCard({ p, publish, table, seatingEnabled, attention, checked, selecting, hint, onToggle, onSelectStart, onOpen, shareUrl, onShare }: {
-  p: InvitationParty; publish: PublishState; table?: string; seatingEnabled: boolean; attention: string[]; checked: boolean; selecting: boolean; hint: boolean;
+function GuestCard({ p, publish, table, seatingEnabled, attention, checked, selecting, hint, onToggle, onSelectStart, onOpen, shareUrl, onShare, event }: {
+  p: InvitationParty; publish: PublishState; table?: string; seatingEnabled: boolean; attention: string[]; checked: boolean; selecting: boolean; hint: boolean; event: Event;
   onToggle: () => void; onSelectStart: () => void; onOpen: () => void; shareUrl?: string; onShare: () => void;
 }) {
   const share = () => { if (!shareUrl) return; window.open(shareUrl, '_blank', 'noopener'); onShare(); };
@@ -266,6 +278,7 @@ function GuestCard({ p, publish, table, seatingEnabled, attention, checked, sele
               : <button type="button" className="g2-wa is-muted v2-press" data-gesture-surface="" onClick={onOpen} aria-label={publish === 'draft' || publish === 'none' ? `انشر الدعوة قبل مشاركة رابط ${name}` : `أضف رقمًا لمشاركة دعوة ${name}`}><Icon name="chat" size="sm" />{publish === 'draft' || publish === 'none' ? 'بعد النشر' : 'أضف رقمًا'}</button>}
             <DeliveryTicks p={p} publish={publish} />
           </span>
+          <FoodLine event={event} p={p} />
           {attention.length > 0 && <span className="g2-flag"><Icon name="alert" size="sm" />{attention[0]}</span>}
         </div>
         <div className="g2-state">

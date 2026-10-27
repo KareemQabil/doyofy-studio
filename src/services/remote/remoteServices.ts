@@ -130,6 +130,10 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
         await db.update<EventRow>('events', [['id', eq(requireId(id, 'event_not_found'))], ['check_in_prepared_at', 'is.null']], { check_in_prepared_at: now().toISOString() });
         return changed(await services.events.get(id));
       },
+      // the shared schema has no guest-experience tables yet (P06/P11): refuse honestly instead of dropping the edit
+      updateExperience: async () => {
+        throw new AppError('forbidden', 'إعداد الطعام والهدايا متاح في نسخة التجربة فقط حتى تُربط الخدمة المشتركة.');
+      },
       archive: async (id) => {
         const [r] = await db.update<EventRow>('events', [['id', eq(requireId(id, 'event_not_found'))]], { archived_at: now().toISOString() });
         if (!r) throw appError('not_found', 'event_not_found');
