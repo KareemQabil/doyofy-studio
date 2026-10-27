@@ -12,10 +12,7 @@ function AuthLayout({ children, title, line }: { children: ReactNode; title: str
   return <div className="auth-page"><header className="auth-header"><Link to="/app/welcome" aria-label="ضيوفي"><Logo height={32} /></Link><Link to="/app/events">الدخول للمنصة<Icon name="forward" size="sm" /></Link></header><main className="auth-main"><section className="auth-copy"><p className="auth-kicker">كل فرحة تبدأ بدعوة.</p><h1>{title}</h1><p className="auth-line">{line}</p>{children}</section><aside className="auth-art" aria-label="خامات من هوية ضيوفي"><picture><source srcSet="assets/editorial/celebration-folds.avif" type="image/avif" /><img src="assets/editorial/celebration-folds.webp" alt="" width="1536" height="1024" decoding="async" /></picture><div className="auth-art-caption"><span className="auth-art-index">01 / ضيوفي</span><p>فرحتك لها<br />شكلها الخاص.</p><span>دعوة · ضيوف · ردود · استقبال</span></div></aside></main><footer className="auth-footer">ضيوفي — من أول دعوة إلى آخر ضيف.<span>نسخة تجربة</span></footer></div>;
 }
 
-export function WelcomePage() {
-  const navigate = useNavigate();
-  return <AuthLayout title="للفرح، مكان يجمعه." line="صمّم دعوتك، رتّب ضيوفك، وابدأ مناسبتك وأنت مطمئن."><div className="auth-welcome-actions"><LinkButton to="/app/signup" variant="primary" size="lg" iconEnd="forward">ابدأ فرحتك</LinkButton><LinkButton to="/app/login" variant="secondary" size="lg">عندي حساب</LinkButton></div><button type="button" className="auth-demo-link" onClick={() => { saveDemoAccount({ status: 'demo' }); navigate('/app/events'); }}>جاهز للتجربة؟ استكشف بمناسبة جاهزة ←</button><ol className="auth-journey"><li><b>01</b><span>اختر مناسبتك</span></li><li><b>02</b><span>أضف لمستك</span></li><li><b>03</b><span>رحّب بضيوفك</span></li></ol></AuthLayout>;
-}
+export { WelcomePage } from './Welcome';
 
 export function LoginPage({ signup = false }: { signup?: boolean }) {
   const navigate = useNavigate(), loc = useLocation(); const a = useDemoAccount();

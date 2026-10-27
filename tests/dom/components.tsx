@@ -157,6 +157,24 @@ export async function run(){
   await pointer(surface,'pointerup',50,0,200);
   assert.equal(ends.length,1);assert.equal(ends[0]!.cancelled,false);assert.equal(ends[0]!.moved,true);
  });
+ await check('a pointer that leaves the surface before locking still completes, and a lost release never blocks the next gesture',async()=>{
+  const ends:Array<{cancelled:boolean;moved:boolean;dy:number}>=[];
+  function Surface(){const gesture=usePointerGesture({axis:'y',onEnd:g=>ends.push(g)});return <div><div id="surface" {...gesture}>ختم</div><div id="elsewhere">خارج</div></div>;}
+  await render(<Surface/>);
+  const surface=document.getElementById('surface')!,elsewhere=document.getElementById('elsewhere')!;
+  // a fast mouse: the first move already lands outside the surface; the window listener carries it
+  await pointer(surface,'pointerdown',10,200,0);
+  await pointer(elsewhere,'pointermove',10,90,20);
+  await pointer(elsewhere,'pointerup',10,60,40);
+  assert.equal(ends.length,1);assert.equal(ends[0]!.cancelled,false);assert.equal(ends[0]!.moved,true);assert.equal(ends[0]!.dy,-140);
+  // a press whose release was never delivered: the next press cancels it and starts fresh
+  await pointer(surface,'pointerdown',10,200,100);
+  await pointer(surface,'pointerdown',10,200,300);
+  assert.equal(ends.length,2);assert.equal(ends[1]!.cancelled,true);
+  await pointer(surface,'pointermove',10,120,320);
+  await pointer(surface,'pointerup',10,100,340);
+  assert.equal(ends.length,3);assert.equal(ends[2]!.cancelled,false);assert.equal(ends[2]!.moved,true);
+ });
  await check('template browsing defers live playback and swipes respect scroll and cancellation',async()=>{
   const design=await made.services.invitations.get(event.id);let navigated='';
   await render(wrap(<TemplatePreview event={event} base={design.draft} presets={TEMPLATE_PRESETS} preset={TEMPLATE_PRESETS[1]!} isCurrent={false} pending={false} onNavigate={p=>{navigated=p.id;}} onClose={()=>{}} onUse={()=>{}}/>));
