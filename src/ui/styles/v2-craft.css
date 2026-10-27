@@ -105,3 +105,27 @@ html { -webkit-tap-highlight-color: transparent; }
   .sig-occ-groups button { flex: none; }
 }
 @media (prefers-reduced-motion: reduce) { .sig-poster-object { transition: none; } }
+
+/* ------------------------------------------------------------------ guest cover: the envelope follows the lifted seal */
+.sig-cover:not(.is-opening) .sig-cover-flap { transform: rotateX(calc(var(--open-p, 0) * 62deg)); transform-origin: 50% 0; }
+.sig-cover:not(.is-opening) .sig-cover-card { transform: translate(-50%, calc(var(--open-p, 0) * -22%)) rotate(calc(var(--open-p, 0) * -2deg)); }
+.sig-cover-env[data-dragging] :is(.sig-cover-flap, .sig-cover-card) { transition: none; }
+.sig-cover-seal .sig-seal { position: relative; overflow: hidden; }
+.sig-cover-seal .sig-seal::after { content: ''; position: absolute; inset: -20%; background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.32) 50%, transparent 60%); transform: translateX(-120%); animation: v2-sheen 3.6s 1.2s ease-in-out infinite; pointer-events: none; }
+@keyframes v2-sheen { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+@media (prefers-reduced-motion: reduce) { .sig-cover-seal .sig-seal::after { animation: none; display: none; } }
+
+/* ------------------------------------------------------------------ guest entry code: tap to fill the screen */
+.qrfs-trigger { display: grid; justify-items: center; gap: 8px; padding: 10px; border: 0; border-radius: 18px; background: #fff; cursor: zoom-in; }
+.qrfs-hint { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--c-text-3); }
+.qrfs { position: fixed; inset: 0; z-index: 200; display: grid; place-content: center; justify-items: center; gap: 10px; padding: 24px; padding-bottom: max(24px, env(safe-area-inset-bottom)); background: #fff; color: #111; text-align: center; touch-action: none; transform: translateY(var(--qr-drag, 0px)); transition: transform 280ms var(--v2-out); animation: qrfs-in 320ms var(--v2-out) both; }
+.qrfs[data-dragging] { transition: none; }
+.qrfs-title { font-size: 13px; color: #555; }
+.qrfs-name { font: 700 22px/1.3 var(--font-display); }
+.qrfs-code { font: 700 28px/1 var(--font-display); letter-spacing: .18em; }
+.qrfs-tip { font-size: 12px; color: #666; }
+.qrfs-close { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; margin-top: 6px; padding: 0 22px; border: 1px solid #ddd; border-radius: 999px; background: #fff; font: 600 14px/1 var(--font-display); cursor: pointer; }
+@keyframes qrfs-in { from { opacity: 0; transform: scale(.96); } }
+@media (prefers-reduced-motion: reduce) { .qrfs { animation: none; transition: none; } }
+.ed-page-swipe { display: flex; flex-direction: column; align-items: center; width: 100%; min-height: 0; touch-action: pan-y; }
+@media (max-width: 959px) { .ed-page-swipe { flex: 1 1 auto; } .ed-page-swipe > .ed-workbench { flex: 1 1 auto; } }

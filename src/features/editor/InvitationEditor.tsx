@@ -23,7 +23,8 @@ import { AccountMenu } from '../account/AccountMenu';
 import { usePointerGesture } from '../../ui/hooks/usePointerGesture';
 import { useReviewSettings } from '../../app/review';
 import { OrbitEditorSurface } from '../orbit/OrbitEditorSurface';
-import { sheetSnapHeight, type SheetPoint } from '../../domain/gestures';
+import { sheetSnapHeight, swipeStep, type SheetPoint } from '../../domain/gestures';
+import { haptic } from '../../ui/motion/motion';
 import { SealStamp } from '../signature/SealStamp';
 import { DraftQueue } from '../../domain/draft-queue';
 import { defaultDesign, publishState, toInvitationData } from '../../domain/invitation';
@@ -88,6 +89,14 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   const [section, setSection] = useState<EditorSection>(SECTIONS.some((s) => s.value === initial) ? initial! : 'content');
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [page, setPage] = useState<WorkbenchPage>('card');
+  // phones: swipe the workbench sideways to turn the invitation's pages (RTL: left = next); the tabs remain
+  const PAGES: WorkbenchPage[] = ['card', 'message', 'program'];
+  const pageSwipe = usePointerGesture({ axis: 'x', onEnd: (g) => {
+    if (!g.moved || g.cancelled) return;
+    const step = swipeStep(g.dx, g.dy, g.duration);
+    if (!step) return;
+    setPage((p) => { const i = Math.max(0, Math.min(PAGES.length - 1, PAGES.indexOf(p) + step)); if (PAGES[i] !== p) haptic('snap'); return PAGES[i]!; });
+  } });
   const [sheet, setSheet] = useState<SheetPoint>('half');
   const [replay, setReplay] = useState(0);
   const [sound, setSound] = useState(false);
@@ -242,7 +251,7 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
         <section className="ed-stage" aria-label="معاينة الدعوة">
           {signature ? <div className="ed-stage-heading"><div><p className="ed-stage-kicker">{live ? 'التجربة الكاملة' : 'على طاولة التصميم'}</p><p className="ed-stage-caption">{live ? 'شاهد الدعوة كما تُفتح لضيوفك' : 'دعوتك، بكل تفاصيلها'}</p></div><Segmented label="عرض الاستوديو" value={mode} onChange={setMode} options={[{value:'edit',label:'تعديل',icon:'edit'},{value:'preview',label:'معاينة',icon:'play'}]} /></div> : <p className="ed-stage-caption">هكذا تأخذ دعوتك شكلها</p>}
           {signature && !live && <Segmented className="ed-canvas-tabs" label="صفحة الدعوة المعروضة" value={page} onChange={setPage} options={[{value:'card',label:'البطاقة'},{value:'message',label:'الكلمة'},{value:'program',label:'البرنامج'}]} />}
-          {signature && !live ? <EditorWorkbench event={shown} content={content} page={page} /> : theme==='orbit'&&!live?<OrbitEditorSurface content={content} invitation={invitation}/>:<div className="ed-screen-wrap">
+          {signature && !live ? <div className="ed-page-swipe" {...pageSwipe}><EditorWorkbench event={shown} content={content} page={page} /></div> : theme==='orbit'&&!live?<OrbitEditorSurface content={content} invitation={invitation}/>:<div className="ed-screen-wrap">
             {live
               ? <div className="ed-screen"><LivePreview start="card" invitation={invitation} content={content} replayToken={replay} muted={!sound} /></div>
               : <TemplateThumb className="ed-poster" preset={{ id: 'current', name: '', line: '', styles: [], occasionTags: [], cardId: content.cardId, sceneId: content.sceneId, experience: content.experience }} invitation={invitation} />}

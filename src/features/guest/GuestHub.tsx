@@ -14,7 +14,7 @@ import { useNow, useServices } from '../../app/data';
 import { useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
 import { errorMessage } from '../../services/errors';
-import { QrCode } from './QrCode';
+import { QrFullscreen } from './QrFullscreen';
 
 type Submission = { ok: true; name?: string } | { ok: false; error: string } | null;
 
@@ -95,7 +95,7 @@ export function GuestHub({ view, code, submission, onView, onReplay }: { view: G
           <section className="hub-card hub-qr" aria-labelledby="hub-qr">
             <h2 id="hub-qr" className="hub-h">رمز الدخول</h2>
             <p className="muted t-sm">اعرضوه على فريق الاستقبال عند الوصول.</p>
-            <QrCode value={absolute(paths.guestLink(view.event.slug, p.code))} size={196} label={`رمز QR لدخول ${p.name}`} />
+            <QrFullscreen value={absolute(paths.guestLink(view.event.slug, p.code))} code={p.code} name={p.name} title={view.event.title} />
             <p className="hub-code num" dir="ltr">{p.code}</p>
           </section>
         )}
