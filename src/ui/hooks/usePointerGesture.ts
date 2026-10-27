@@ -33,7 +33,12 @@ export function usePointerGesture({ axis, enabled = true, onMove, onEnd, onStart
     },
     onPointerUp: (e: ReactPointerEvent<HTMLElement>)=>finish(e,false),
     onPointerCancel: (e: ReactPointerEvent<HTMLElement>)=>finish(e,true),
-    onLostPointerCapture: (e: ReactPointerEvent<HTMLElement>)=>{if(state.current)finish(e,true);},
+    // lostpointercapture bubbles. A child may relinquish capture to this surface;
+    // only losing capture owned by our active surface cancels its gesture.
+    onLostPointerCapture: (e: ReactPointerEvent<HTMLElement>)=>{
+      const s=state.current;
+      if(s && e.pointerId===s.id && e.target===s.target) finish(e,true);
+    },
     onClickCapture: (e: React.MouseEvent<HTMLElement>)=>{if(suppress.current){suppress.current=false;e.preventDefault();e.stopPropagation();}},
   };
 }

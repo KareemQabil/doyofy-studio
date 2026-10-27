@@ -264,7 +264,7 @@ export function SignatureHome() {
         <Stage tone="charcoal" size="lg" className="sig-closing" pattern="bloom" as="section" aria-label="ابدأ">
           <p className="sig-closing-kicker">ضيوفي</p>
           <p className="sig-closing-line">فرحتك علينا.<br /><em>وضيوفك في انتظارك.</em></p>
-          <div className="sig-closing-actions"><LinkButton to={paths.newEvent} variant="primary" size="lg" icon="plus">مناسبة جديدة</LinkButton><Link to="/prototype/signature-directions" className="sig-text-link">كيف بُني هذا الأسلوب</Link></div>
+          <div className="sig-closing-actions"><LinkButton to={paths.newEvent} variant="primary" size="lg" icon="plus">مناسبة جديدة</LinkButton><Link to="/app/help" className="sig-text-link">كيف تعمل ضيوفي؟</Link></div>
         </Stage>
       </main>
     </SignatureShell>

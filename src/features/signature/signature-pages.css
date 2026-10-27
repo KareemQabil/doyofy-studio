@@ -127,6 +127,29 @@
 :root[data-theme='signature'] .bulk-bar { border-radius: 999px; background: var(--brand-charcoal); color: var(--brand-ivory); }
 :root[data-theme='signature'] .bulk-bar .btn { color: var(--brand-ivory); }
 :root[data-theme='signature'] .table-card, :root[data-theme='signature'] .seat-table { border-radius: var(--r-md); }
+.seat-overview { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 24px; padding: clamp(20px, 3vw, 36px); border-radius: var(--r-md); background: var(--mesh-night); color: var(--brand-ivory); }
+.seat-overview::before { content: ''; position: absolute; inset: 0; z-index: -1; background: url('assets/brand/pattern-grid-gold.svg') center / 180px repeat; opacity: .09; pointer-events: none; }
+.seat-overview-head { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
+.seat-overview-head h2 { margin-block: 9px; color: #fff; font: 700 clamp(25px, 2.8vw, 38px)/1.35 var(--font-display); }
+.seat-overview-head p { color: color-mix(in srgb, var(--brand-ivory) 86%, transparent); }
+.seat-overview-head .sig-index { color: var(--brand-gold); }
+.seat-overview-head .sig-index .num { color: var(--brand-charcoal); background: var(--brand-gold); }
+.seat-overview-head .btn-secondary { color: #fff; border-color: var(--brand-ivory); }
+.seat-overview-head .btn-primary { color: var(--brand-charcoal); background: var(--brand-gold); }
+.seat-overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(142px, 1fr)); gap: 12px; }
+.seat-overview-table { display: grid; justify-items: center; gap: 8px; min-height: 166px; padding: 17px 10px; border: 1px solid color-mix(in srgb, var(--brand-gold) 38%, transparent); border-radius: 8px; background: rgba(255,255,255,.055); color: #fff; font: inherit; cursor: pointer; transition: transform 220ms var(--ease-out), background 220ms var(--ease-out), border-color 220ms var(--ease-out); }
+.seat-overview-table:hover, .seat-overview-table:focus-visible { transform: translateY(-3px); background: rgba(255,255,255,.12); border-color: var(--brand-gold); }
+.seat-overview-table:active { transform: scale(.98); }
+.seat-overview-table.is-active { background: color-mix(in srgb, var(--brand-gold) 19%, transparent); border-color: var(--brand-gold); box-shadow: inset 0 0 0 1px var(--brand-gold); }
+.seat-overview-table.is-over { border-color: var(--brand-red); }
+.seat-overview-disc { display: grid; place-items: center; align-content: center; gap: 3px; width: 77px; height: 77px; border: 2px solid var(--brand-gold); border-radius: 50%; color: var(--brand-gold); }
+.seat-overview-disc strong { font-size: 20px; line-height: 1; }
+.seat-overview-disc small { font-size: 12px; }
+.seat-overview-name { font-weight: 700; }
+.seat-overview-status { font-size: 12px; color: color-mix(in srgb, var(--brand-ivory) 82%, transparent); }
+.seat-overview-table.is-over .seat-overview-status { color: #FFC8C8; }
+@media (max-width: 660px) { :root[data-theme='signature'] .guest-table { border: 0; background: transparent; overflow: visible; } .seat-overview-head { align-items: start; flex-direction: column; } .seat-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .seat-overview-table { transition: none; } .seat-overview-table:hover { transform: none; } }
 
 /* ------------------------------------------------------------------ reception: preparation on charcoal; the gate stays high-contrast */
 :root[data-theme='signature'] .reception-prep { position: relative; overflow: hidden; isolation: isolate; color: var(--brand-ivory); background: var(--mesh-night); border: 0; border-radius: var(--r-md); }

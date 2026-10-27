@@ -17,7 +17,7 @@ import { paths } from '../../app/paths';
 import { errorMessage } from '../../services/errors';
 import { useEvent, useParties, useTables } from '../shared/queries';
 
-type View = { kind: 'search' } | { kind: 'party'; id: string; method: 'qr' | 'search' } | { kind: 'done'; record: CheckInRecord; party: InvitationParty } | { kind: 'notfound'; input: string };
+type View = { kind: 'search' } | { kind: 'party'; id: string; method: 'qr' | 'search' } | { kind: 'done'; record: CheckInRecord; party: InvitationParty } | { kind: 'notfound'; input: string } | { kind: 'lookup-error'; input: string; message: string };
 
 export function GateMode({ eventId }: { eventId: string }) {
   const ev = useEvent(eventId);
@@ -43,7 +43,11 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
   const onScan = async (payload: string) => {
     setScanning(false);
     const code = codeFromScan(payload);
-    const p = code ? await services.checkIn.findByCode(event.id, code).catch(() => null) : null;
+    let p: InvitationParty | null = null;
+    if (code) {
+      try { p = await services.checkIn.findByCode(event.id, code); }
+      catch (error) { setView({ kind: 'lookup-error', input: payload, message: errorMessage(error) }); return; }
+    }
     if (!p) { setView({ kind: 'notfound', input: payload }); return; }
     setView({ kind: 'party', id: p.id, method: 'qr' });
   };
@@ -115,6 +119,14 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
             <h2 className="gate-h">لم نجد هذا الرمز</h2>
             <p>الرمز غير صحيح أو أن الدعوة حُذفت. لا تسمح بالدخول قبل التأكد: ابحث باسم الضيف، أو تواصل مع المنظم.</p>
             <div className="gate-actions"><Button variant="primary" size="lg" icon="search" onClick={back}>ابحث بالاسم</Button><Button size="lg" icon="scan" onClick={() => setScanning(true)}>امسح مرة أخرى</Button></div>
+          </div>
+        )}
+        {view.kind === 'lookup-error' && (
+          <div className="gate-card is-alert" role="alert">
+            <Icon name="alert" size="lg" />
+            <h2 className="gate-h">تعذر التحقق من الرمز</h2>
+            <p>{view.message} لم نسجّل وصولًا. احتفظ بالرمز وحاول مجددًا.</p>
+            <div className="gate-actions"><Button variant="primary" size="lg" onClick={() => void onScan(view.input)}>أعد المحاولة بنفس الرمز</Button><Button size="lg" icon="search" onClick={back}>ابحث بالاسم</Button></div>
           </div>
         )}
       </main>

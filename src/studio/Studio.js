@@ -145,7 +145,7 @@ export class Studio {
     this.rsvp = {
       name: g?.name ?? '', locked: !!g?.nameLocked, attending: g?.attending ?? null,
       guests: Math.min(this.data.rsvp.maxGuests, Math.max(this.data.rsvp.minGuests ?? 1, g?.guests ?? this.data.rsvp.defaultGuests ?? 2)),
-      tried: false, sent: false,
+      tried: false, sent: false, submitting: false, error: '',
     };
     this.nx = 0; this.ny = 0;
     const noIntro = startAt !== 'intro' || this.quality.reducedMotion;
@@ -417,18 +417,26 @@ export class Studio {
     if (need) need.classList.toggle('is-on', r.tried && (!r.name.trim() || !r.attending));
     const input = root.querySelector('#st-name');
     if (input) input.setAttribute('aria-invalid', String(r.tried && !r.name.trim()));
+    const submit = root.querySelector('.rsvp-submit');
+    if (submit) submit.disabled = r.submitting;
+    const error = root.querySelector('.rsvp-save-error');
+    if (error) { error.hidden = !r.error; error.textContent = r.error; }
   }
 
   async submit() {
-    if (this.sm.state !== 'pages' || this.rsvp.sent) return;
+    if (this.sm.state !== 'pages' || this.rsvp.sent || this.rsvp.submitting) return;
     const r = this.rsvp;
     if (!r.name.trim() || !r.attending) { r.tried = true; this._syncRsvp(); return; }
-    r.sent = true;                      // the pack sequence can only trigger once per run
-    r.tried = false;
-    this.sm.send('submit');
+    r.submitting = true;
+    r.error = '';
+    this._syncRsvp();
     try {
-      r.receipt = await this.rsvpAdapter.submit({ name: r.name.trim(), attending: r.attending === 'yes', guests: r.attending === 'yes' ? r.guests : 0 });
-    } catch (err) { r.receipt = { ok: false, error: String(err) }; }
+      const receipt = await this.rsvpAdapter.submit({ name: r.name.trim(), attending: r.attending === 'yes', guests: r.attending === 'yes' ? r.guests : 0 });
+      if (this.rsvp !== r || this.sm.state !== 'pages') return;
+      if (receipt?.ok === true) { r.receipt = receipt; r.sent = true; this.sm.send('submit'); return; }
+      r.error = receipt?.error || 'تعذر حفظ الرد. أعد المحاولة.';
+    } catch (err) { r.error = err instanceof Error ? err.message : 'تعذر حفظ الرد. أعد المحاولة.'; }
+    if (this.rsvp === r && this.sm.state === 'pages') { r.submitting = false; this._syncRsvp(); }
   }
 
   _renderDone() {
@@ -487,17 +495,24 @@ export class Studio {
 
     // sheet gestures: vertical swipe (50 px), wheel (900 ms debounce) — canonical thresholds
     const sheet = this.el.sheet;
-    on(sheet, 'pointerdown', (ev) => { this._down = [ev.clientX, ev.clientY]; });
+    on(sheet, 'pointerdown', (ev) => {
+      if (ev.isPrimary === false || ev.button !== 0) { this._down = null; return; }
+      if (ev.target.closest?.('button, a, input, textarea, select, [contenteditable], [data-gesture-ignore]')) { this._down = null; return; }
+      this._down = { id: ev.pointerId, x: ev.clientX, y: ev.clientY };
+    });
     on(sheet, 'pointerup', (ev) => {
-      if (!this._down || this.sm.state !== 'pages') return;
-      const s = this.stageRect.scale;
-      const dx = (ev.clientX - this._down[0]) / s, dy = (ev.clientY - this._down[1]) / s;
+      if (!this._down || ev.pointerId !== this._down.id) return;
+      const down = this._down;
       this._down = null;
-      if (ev.target.tagName === 'INPUT') return;
+      if (this.sm.state !== 'pages') return;
+      const s = this.stageRect.scale;
+      const dx = (ev.clientX - down.x) / s, dy = (ev.clientY - down.y) / s;
       if (Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx)) this.go(this.page + (dy < 0 ? 1 : -1));
     });
+    on(sheet, 'pointercancel', (ev) => { if (this._down?.id === ev.pointerId) this._down = null; });
     on(sheet, 'wheel', (ev) => {
       if (this.sm.state !== 'pages' || Math.abs(ev.deltaY) < 24) return;
+      if (ev.target.closest?.('button, a, input, textarea, select, [contenteditable], [data-gesture-ignore]')) return;
       const now = Date.now();
       if (this._lastWheel && now - this._lastWheel < 900) return;
       this._lastWheel = now;

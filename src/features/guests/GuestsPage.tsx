@@ -9,7 +9,7 @@ import { publishState } from '../../domain/invitation';
 import { formatPhone, people, peopleOf, plural, pluralOf, P } from '../../domain/format';
 import { Avatar, Badge, Banner, Button, EmptyState, ErrorState, FilterChips, Icon, LinkButton, PageHeader, SearchInput, Skeleton, Status } from '../../ui';
 import { useMutation } from '../../app/data';
-import { useLocation, useNavigate } from '../../app/router';
+import { useLocation, useNavigate, useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
 import { useDesign, useParties, useTables } from '../shared/queries';
@@ -17,6 +17,7 @@ import { GuestViews } from '../shared/GuestViews';
 import { errorMessage } from '../../services/errors';
 import { PartyDrawer } from './PartyDrawer';
 import { PartyFormDialog } from './PartyForm';
+import { inviteMessage, whatsappUrl } from './share';
 
 export function GuestsPage({ event }: { event: Event }) {
   const parties = useParties(event.id);
@@ -24,6 +25,7 @@ export function GuestsPage({ event }: { event: Event }) {
   const tables = useTables(event.id);
   const loc = useLocation();
   const navigate = useNavigate();
+  const { absolute } = useRouter();
   const toast = useToast();
   const filter = (loc.search.get('filter') as PartyFilter | null) ?? 'all';
   const openId = loc.search.get('party');
@@ -31,6 +33,7 @@ export function GuestsPage({ event }: { event: Event }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [adding, setAdding] = useState(false);
   const [moreFilters, setMoreFilters] = useState(false);
+  const [sharePrompt, setSharePrompt] = useState<string | null>(null);
 
   const setParam = (k: string, v: string | null) => {
     const sp = new URLSearchParams(loc.search);
@@ -49,6 +52,7 @@ export function GuestsPage({ event }: { event: Event }) {
   });
   const bulkManual = useMutation((s, ids: string[]) => s.parties.markShared(ids, 'manual'), { onSuccess: () => { setSelected(new Set()); toast({ tone: 'success', text: 'تم التحديد كمُرسلة يدويًا' }); } });
   const bulkRemind = useMutation((s, ids: string[]) => s.parties.sendReminder(ids), { onSuccess: (n) => { setSelected(new Set()); toast({ tone: 'success', text: `تم إرسال تذكير إلى ${pluralOf(n, P.invitation)} (محاكاة)` }); } });
+  const quickManual = useMutation((s, id: string) => s.parties.markShared([id], 'manual'), { onSuccess: () => { setSharePrompt(null); toast({ tone: 'success', text: 'سُجّل التواصل اليدوي' }); } });
 
   const all = parties.data ?? [];
   const ps = publishState(design.data);
@@ -60,6 +64,7 @@ export function GuestsPage({ event }: { event: Event }) {
   const open = all.find((p) => p.id === openId) ?? null;
   const tableName = (id?: string) => tables.data?.find((t) => t.id === id)?.name;
   const sel = [...selected].filter((id) => all.some((p) => p.id === id));
+  const visibleSelected = visible.filter((p) => selected.has(p.id)).length;
   const allVisibleSelected = visible.length > 0 && visible.every((p) => selected.has(p.id));
   const toggle = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
@@ -83,6 +88,7 @@ export function GuestsPage({ event }: { event: Event }) {
         <div className="stack gap-4">
           <dl className="guest-facts"><div><dt>أكدوا الحضور</dt><dd><strong className="num">{c.confirmedPeople}</strong> شخص</dd></div><div><dt>بانتظار الرد</dt><dd><strong className="num">{c.pendingParties}</strong> دعوة</dd></div><div><dt>العدد المتاح</dt><dd><strong className="num">{c.maxSeats}</strong> مقعد</dd></div></dl>
           {!published && <Banner tone="warning" title="الدعوة غير منشورة" action={<LinkButton to={paths.invitation(event.id)} size="sm">إلى الدعوة</LinkButton>}>يمكنك ترتيب القائمة الآن، لكن الروابط لا تعمل حتى تنشر الدعوة.</Banner>}
+          {published && <p className="guest-demo-scope" role="note"><Icon name="info" size="sm" />روابط هذه النسخة التجريبية تعمل على جهازك فقط. لا ترسلها لضيوف حقيقيين قبل تفعيل الخدمة المشتركة.</p>}
 
           <div className="guest-toolbar">
             <SearchInput value={q} onChange={setQ} placeholder="ابحث بالاسم أو الجوال أو الرمز" />
@@ -93,7 +99,7 @@ export function GuestsPage({ event }: { event: Event }) {
 
           {sel.length > 0 && (
             <div className="bulk-bar" role="region" aria-label="إجراءات على المحدد">
-              <span className="t-bold">{plural(sel.length, P.invitation)} محددة</span>
+              <span className="t-bold">{plural(sel.length, P.invitation)} محددة{visibleSelected < sel.length ? ` · منها ${visibleSelected} في العرض الحالي` : ''}</span>
               <div className="row wrap gap-2">
                 <Button size="sm" variant="primary" icon="send" disabled={!published} loading={bulkSend.pending} onClick={() => void bulkSend.run(sel)}>إرسال (محاكاة)</Button>
                 <Button size="sm" icon="check" disabled={!published} loading={bulkManual.pending} onClick={() => void bulkManual.run(sel)}>تم التواصل يدويًا</Button>
@@ -104,6 +110,9 @@ export function GuestsPage({ event }: { event: Event }) {
           )}
 
           {(bulkSend.error || bulkManual.error || bulkRemind.error) ? <Banner tone="danger" title="لم يكتمل الإجراء">{errorMessage(bulkSend.error || bulkManual.error || bulkRemind.error)}</Banner> : null}
+          {sharePrompt && <Banner tone="info" title="هل أرسلت الرسالة؟" action={<div className="row gap-2 wrap"><Button size="sm" loading={quickManual.pending} onClick={() => void quickManual.run(sharePrompt)}>نعم، أرسلتها يدويًا</Button><Button size="sm" variant="ghost" onClick={() => setSharePrompt(null)}>لاحقًا</Button></div>}>
+            فتح واتساب يجهّز الرسالة فقط؛ سجّلها بعد أن ترسلها بنفسك. {quickManual.error ? errorMessage(quickManual.error) : null}
+          </Banner>}
           {visible.length === 0 ? (
             <EmptyState compact icon="search" title="لا نتائج" action={<Button onClick={() => { setQ(''); setParam('filter', null); }}>اعرض كل الضيوف</Button>}>
               {q ? `لا يوجد ضيف يطابق «${q}»` : 'لا يوجد ضيوف في هذا التصنيف.'}
@@ -114,7 +123,7 @@ export function GuestsPage({ event }: { event: Event }) {
                 <span role="columnheader" className="gt-check">
                   <label className="gt-check-hit"><input type="checkbox" aria-label="تحديد الكل" checked={allVisibleSelected} onChange={() => setSelected(allVisibleSelected ? new Set() : new Set(visible.map((p) => p.id)))} /></label>
                 </span>
-                <span role="columnheader">الضيف</span>
+                <span role="columnheader">الضيف والمشاركة</span>
                 <span role="columnheader" className="gt-phone">الجوال</span>
                 <span role="columnheader" className="gt-num">المسموح</span>
                 <span role="columnheader">الدعوة</span>
@@ -122,7 +131,9 @@ export function GuestsPage({ event }: { event: Event }) {
                 <span role="columnheader" className="gt-table">الطاولة</span>
                 <span role="columnheader" className="gt-in">الوصول</span>
               </div>
-              {visible.map((p) => <PartyRow key={p.id} p={p} published={ps} table={tableName(p.tableId)} attention={partyNeedsAttention(p, dup)} checked={selected.has(p.id)} onToggle={() => toggle(p.id)} onOpen={() => setParam('party', p.id)} />)}
+              {visible.map((p) => <PartyRow key={p.id} p={p} published={ps} table={tableName(p.tableId)} seatingEnabled={!!tables.data?.length} attention={partyNeedsAttention(p, dup)} checked={selected.has(p.id)} onToggle={() => toggle(p.id)} onOpen={() => setParam('party', p.id)}
+                shareUrl={published && p.phone ? whatsappUrl(p.phone, inviteMessage(event, p, absolute(paths.guestLink(event.slug, p.code)))) : undefined}
+                onShare={() => setSharePrompt(p.id)} />)}
             </div>
           )}
           <p className="faint t-sm">{visible.length !== all.length ? `يعرض ${visible.length} من ${all.length}` : `${all.length} دعوة`}</p>
@@ -139,8 +150,8 @@ export function GuestsPage({ event }: { event: Event }) {
   );
 }
 
-function PartyRow({ p, published, table, attention, checked, onToggle, onOpen }: {
-  p: InvitationParty; published: ReturnType<typeof publishState>; table?: string; attention: string[]; checked: boolean; onToggle: () => void; onOpen: () => void;
+function PartyRow({ p, published, table, seatingEnabled, attention, checked, onToggle, onOpen, shareUrl, onShare }: {
+  p: InvitationParty; published: ReturnType<typeof publishState>; table?: string; seatingEnabled: boolean; attention: string[]; checked: boolean; onToggle: () => void; onOpen: () => void; shareUrl?: string; onShare: () => void;
 }) {
   const inv = invitationStatus(p, published);
   return (
@@ -149,7 +160,9 @@ function PartyRow({ p, published, table, attention, checked, onToggle, onOpen }:
       <span role="cell" className="gt-name">
         <Avatar name={p.primaryGuestName} tone={p.rsvpStatus === 'confirmed' ? 'success' : p.rsvpStatus === 'declined' ? 'neutral' : 'warning'} />
         <span className="grow">
-          <button type="button" className="gt-open" onClick={onOpen}>{p.primaryGuestName}</button>
+          <span className="gt-name-actions"><button type="button" className="gt-open" onClick={onOpen}>{p.primaryGuestName}</button>
+            {shareUrl ? <a className="gt-share" href={shareUrl} target="_blank" rel="noopener noreferrer" onClick={onShare} aria-label={`جهّز رسالة واتساب إلى ${p.primaryGuestName}`}><Icon name="chat" size="sm" />واتساب</a>
+              : <button type="button" className="gt-share is-muted" onClick={onOpen} aria-label={published === 'draft' || published === 'none' ? `انشر الدعوة قبل مشاركة رابط ${p.primaryGuestName}` : `أضف رقمًا لمشاركة دعوة ${p.primaryGuestName}`}><Icon name="chat" size="sm" />{published === 'draft' || published === 'none' ? 'بعد النشر' : 'أضف رقمًا'}</button>}</span>
           <span className="gt-sub">{[p.side, `حتى ${p.maxPartySize} أشخاص`, p.companionNames?.length ? `+${p.companionNames.length} مرافقين` : null].filter(Boolean).join(' · ')}{attention.length > 0 && <span className="gt-flag"><Icon name="alert" size="sm" />{attention[0]}</span>}</span>
         </span>
       </span>
@@ -157,7 +170,7 @@ function PartyRow({ p, published, table, attention, checked, onToggle, onOpen }:
       <span role="cell" className="gt-num num"><span className="gt-mlabel">المسموح </span>{p.maxPartySize}</span>
       <span role="cell" className="gt-inv"><Status label="الدعوة" tone={INVITATION_STATUS[inv].tone}>{INVITATION_STATUS[inv].label}</Status></span>
       <span role="cell" className="gt-rsvp"><Status label="الرد" tone={p.rsvpStatus === 'declined' ? 'neutral' : RSVP_STATUS[p.rsvpStatus].tone}>{RSVP_STATUS[p.rsvpStatus].label}{p.rsvpStatus === 'confirmed' ? ` · ${p.confirmedPartySize}` : ''}</Status></span>
-      <span role="cell" className="gt-table">{table ?? (p.rsvpStatus === 'confirmed' ? <span className="text-warning t-sm">بلا طاولة</span> : <span className="faint">—</span>)}</span>
+      <span role="cell" className="gt-table">{table ?? (seatingEnabled && p.rsvpStatus === 'confirmed' ? <span className="text-warning t-sm">بلا طاولة</span> : <span className="faint">—</span>)}</span>
       <span role="cell" className="gt-in">{p.checkedInCount ? <Badge tone={CHECKIN_STATUS[p.checkInStatus].tone}>{CHECKIN_STATUS[p.checkInStatus].label} {p.checkedInCount}</Badge> : <span className="faint">—</span>}</span>
     </div>
   );
