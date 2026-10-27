@@ -129,3 +129,12 @@ html { -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) { .qrfs { animation: none; transition: none; } }
 .ed-page-swipe { display: flex; flex-direction: column; align-items: center; width: 100%; min-height: 0; touch-action: pan-y; }
 @media (max-width: 959px) { .ed-page-swipe { flex: 1 1 auto; } .ed-page-swipe > .ed-workbench { flex: 1 1 auto; } }
+
+/* overview counts are doors to their lists */
+.event-facts.is-linked > div { position: relative; transition: border-color 180ms, box-shadow 220ms, transform 140ms var(--v2-press); }
+.event-facts.is-linked .fact-link { display: inline-flex; align-items: baseline; gap: 6px; color: inherit; text-decoration: none; }
+.event-facts.is-linked .fact-link::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+.event-facts.is-linked .fact-link .icon { align-self: center; opacity: .45; transition: transform 220ms var(--v2-out), opacity 180ms; }
+.event-facts.is-linked > div:hover .fact-link .icon { opacity: 1; transform: translateX(-3px); }
+.event-facts.is-linked > div:active { transform: scale(.98); }
+.event-facts.is-linked > div:has(.fact-link:focus-visible) { outline: 2.5px solid var(--brand-charcoal, currentColor); outline-offset: 3px; }
