@@ -3,7 +3,8 @@
  * Every action works with buttons; drag and drop is an extra on pointer devices.
  * Warnings (over capacity, does not fit, unassigned, declined but seated) are shown, never auto-fixed.
  */
-import { useMemo, useState, type DragEvent } from 'react';
+import { DietBadge } from '../guests/FoodReport';
+import { useMemo, useRef, useState, type DragEvent } from 'react';
 import { useReviewSettings } from '../../app/review';
 import { OrbitTableAtlas } from '../orbit/OrbitWorkLenses';
 import type { Event, InvitationParty } from '../../domain/types';
@@ -17,10 +18,13 @@ import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
 import { errorMessage } from '../../services/errors';
 import { useParties, useTables } from '../shared/queries';
+import { HallMap, SeatDock, useLiftDrag } from './HallMap';
+import { useLocation } from '../../app/router';
 
 export function SeatingPage({ event }: { event: Event }) {
   const {theme}=useReviewSettings();
-  const [tableFocus,setTableFocus]=useState('');
+  const loc=useLocation();
+  const [tableFocus,setTableFocus]=useState(loc.search.get('table')??'');
   const parties = useParties(event.id);
   const tables = useTables(event.id);
   const toast = useToast();
@@ -32,6 +36,9 @@ export function SeatingPage({ event }: { event: Event }) {
   const [dragTarget, setDragTarget] = useState<string | null>(null);
   const endDrag = () => { setDragId(null); setDragTarget(null); };
   const [override, setOverride] = useState<{ party: InvitationParty; table: TableOccupancy } | null>(null);
+  // Signature: moving a family shows every table as a destination (tap), or lift-and-drag on touch
+  const [moving, setMoving] = useState<InvitationParty | null>(null);
+  const [dockHover, setDockHover] = useState<string | null>(null);
 
   const assign = useMutation((s, partyId: string, tableId: string | null) => s.seating.assign(partyId, tableId), {
     onSuccess: (p) => toast({ tone: 'success', text: p.tableId ? `تم توزيع ${p.primaryGuestName} على ${tables.data?.find((t) => t.id === p.tableId)?.name ?? 'الطاولة'}` : `تمت إزالة ${p.primaryGuestName} من الطاولة` }),
@@ -45,6 +52,9 @@ export function SeatingPage({ event }: { event: Event }) {
   const c = countParties(all);
   const unassigned = searchParties(warn.unassigned, q).sort((a, b) => seatsFor(b) - seatsFor(a));
   const match = q ? new Set(searchParties(all, q).map((p) => p.id)) : null;
+  // the lifted family is dropped by the hall dock; the handler is refreshed below once tryAssign exists
+  const dropTo = useRef<(id: string | null) => void>(() => {});
+  const lift = useLiftDrag({ onLift: (p) => setMoving(p), onHover: setDockHover, onDrop: (id) => dropTo.current(id), onCancel: () => setMoving(null) });
 
   if (parties.error || tables.error) return <ErrorState error={parties.error || tables.error} onRetry={() => { parties.refetch(); tables.refetch(); }} />;
   if (parties.loading || tables.loading) return <Skeleton lines={8} block />;
@@ -55,6 +65,7 @@ export function SeatingPage({ event }: { event: Event }) {
     if (!ok.ok) { toast({ tone: 'warning', text: 'يمكن توزيع الدعوات المؤكدة فقط' }); return; }
     void assign.run(party.id, t.table.id);
     setAssigning(null);
+    setMoving(null);
   };
   const onDrop = (t: TableOccupancy) => (e: DragEvent) => {
     e.preventDefault();
@@ -62,6 +73,9 @@ export function SeatingPage({ event }: { event: Event }) {
     endDrag();
     if (party && party.tableId !== t.table.id) tryAssign(party, t);
   };
+  const signature = theme === 'signature';
+  const startMove = (p: InvitationParty) => { if (signature) setMoving(p); else setAssigning(p); };
+  dropTo.current = (id) => { const t = occ.find((o) => o.table.id === id); const p = moving; if (t && p && p.tableId !== t.table.id) tryAssign(p, t); else if (!t) setMoving(null); };
   const cap = totalCapacity(tables.data ?? []);
   const focus=q||tableFocus==='all'?'all':occ.some(o=>o.table.id===tableFocus)?tableFocus:occ[0]?.table.id??'';
   const shown=(theme==='orbit'||theme==='signature')&&focus!=='all'?occ.filter(o=>o.table.id===focus):occ;
@@ -74,6 +88,7 @@ export function SeatingPage({ event }: { event: Event }) {
 
       {occ.length === 0 ? <QuickSetup event={event} confirmedPeople={c.confirmedPeople} /> : (
         <div className="stack gap-5">
+          {signature&&<HallMap tables={occ} focus={focus} onFocus={setTableFocus} onDropParty={onDrop} dragOver={dragTarget} onDragOverTable={(id)=>{if(dragId)setDragTarget(id);}} />}
           {(warn.overCapacity.length > 0 || warn.declinedAssigned.length > 0 || cap < c.confirmedPeople) && (
             <div className="stack gap-2">
               {warn.overCapacity.map((o) => <Banner key={o.table.id} tone="danger" compact title={`${o.table.name} فوق السعة`}>عليها {people(o.used)} والسعة {o.table.capacity}. انقل دعوة إلى طاولة أخرى أو زِد السعة.</Banner>)}
@@ -86,14 +101,6 @@ export function SeatingPage({ event }: { event: Event }) {
           )}
 
           {theme==='orbit'&&<OrbitTableAtlas tables={occ} value={focus} onChange={setTableFocus}/>}
-          {theme==='signature'&&<div className="seat-overview" role="group" aria-label="خريطة الطاولات وتصفية القائمة">
-            <div className="seat-overview-head"><div><p className="sig-index"><span className="num">01</span>خريطة القاعة</p><h2>كل طاولة في مكانها.</h2><p>اضغط طاولة لعرض ضيوفها، أو اعرض الجميع. الأعداد تتحدث مع كل نقل.</p></div>
-              <Button size="sm" variant={focus==='all'?'primary':'secondary'} aria-pressed={focus==='all'} onClick={()=>setTableFocus('all')}>كل الطاولات</Button></div>
-            <div className="seat-overview-grid">{occ.map(o=><button key={o.table.id} type="button" className={`seat-overview-table${focus===o.table.id?' is-active':''}${o.over?' is-over':''}`} aria-pressed={focus===o.table.id} onClick={()=>setTableFocus(o.table.id)}>
-              <span className="seat-overview-disc"><Icon name="table" size="sm" /><strong className="num">{o.used}<small>/{o.table.capacity}</small></strong></span>
-              <span className="seat-overview-name">{o.table.name}</span><span className="seat-overview-status">{o.over?`زيادة ${-o.remaining}`:o.remaining===0?'ممتلئة':`${o.remaining} مقاعد متاحة`}</span>
-            </button>)}</div>
-          </div>}
           <div className="seating">
             <Panel className="seat-pool" title={`من ينتظر مكانًا؟ (${warn.unassigned.length})`} subtitle={warn.unassigned.length ? `${people(warn.unassigned.reduce((n, p) => n + seatsFor(p), 0))} مؤكدون بانتظار مكان` : 'كل المؤكدين لهم طاولات'}>
               <div className="stack gap-3">
@@ -103,10 +110,10 @@ export function SeatingPage({ event }: { event: Event }) {
                 ) : (
                   <ul className="pool-list">
                     {unassigned.map((p) => (
-                      <li key={p.id} className={`pool-item${dragId === p.id ? ' is-drag-source' : ''}`} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', p.id); setDragId(p.id); }} onDragEnd={endDrag}>
-                        <span className="grow"><span className="t-bold">{p.primaryGuestName}</span><span className="faint t-xs"> · {p.side ?? ''}</span></span>
+                      <li key={p.id} className={`pool-item${dragId === p.id || moving?.id === p.id ? ' is-drag-source' : ''}`} {...(signature ? lift.bind(p) : {})} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', p.id); setDragId(p.id); }} onDragEnd={endDrag}>
+                        <span className="grow"><span className="t-bold">{p.primaryGuestName}</span><span className="faint t-xs"> · {p.side ?? ''}</span><DietBadge p={p} /></span>
                         <Badge tone="success">{people(seatsFor(p))}</Badge>
-                        <Button size="sm" onClick={() => setAssigning(p)}>اختر طاولة</Button>
+                        <Button size="sm" onClick={() => startMove(p)}>اختر طاولة</Button>
                       </li>
                     ))}
                   </ul>
@@ -135,12 +142,12 @@ export function SeatingPage({ event }: { event: Event }) {
                   {o.parties.length === 0 ? <p className="faint t-sm table-empty">طاولة فارغة</p> : (
                     <ul className="table-parties">
                       {o.parties.map((p) => (
-                        <li key={p.id} className={`table-party${p.rsvpStatus === 'declined' ? ' is-declined' : ''}${match?.has(p.id) ? ' is-match' : ''}`} draggable={p.rsvpStatus === 'confirmed'}
+                        <li key={p.id} className={`table-party${p.rsvpStatus === 'declined' ? ' is-declined' : ''}${match?.has(p.id) ? ' is-match' : ''}${moving?.id === p.id ? ' is-drag-source' : ''}`} {...(signature ? lift.bind(p) : {})} draggable={p.rsvpStatus === 'confirmed'}
                           onDragStart={(e) => { e.dataTransfer.setData('text/plain', p.id); setDragId(p.id); }} onDragEnd={endDrag}>
-                          <span className="grow truncate">{p.primaryGuestName}</span>
+                          <span className="grow truncate">{p.primaryGuestName}<DietBadge p={p} /></span>
                           {p.rsvpStatus === 'declined' ? <Badge tone="warning">اعتذر</Badge> : <span className="num faint t-sm">{seatsFor(p)}</span>}
                           <Menu label={`خيارات ${p.primaryGuestName}`} items={[
-                            p.rsvpStatus === 'confirmed' ? { label: 'نقل إلى طاولة أخرى', icon: 'move', onSelect: () => setAssigning(p) } : null,
+                            p.rsvpStatus === 'confirmed' ? { label: 'نقل إلى طاولة أخرى', icon: 'move', onSelect: () => startMove(p) } : null,
                             { label: 'إزالة من الطاولة', icon: 'close', onSelect: () => void assign.run(p.id, null) },
                           ]} />
                         </li>
@@ -154,7 +161,9 @@ export function SeatingPage({ event }: { event: Event }) {
         </div>
       )}
 
-      {assigning && !override && <AssignDialog party={assigning} tables={occ} onClose={() => setAssigning(null)} onPick={(t) => tryAssign(assigning, t)} />}
+      {moving && !override && !assigning && <SeatDock party={moving} tables={occ} hover={dockHover} onPick={(t) => tryAssign(moving, t)} onCancel={() => setMoving(null)} onList={() => setAssigning(moving)} />}
+      {lift.ghost}
+      {assigning && !override && <AssignDialog party={assigning} tables={occ} onClose={() => { setAssigning(null); setMoving(null); }} onPick={(t) => tryAssign(assigning, t)} />}
       {editing && <TableDialog event={event} table={editing === 'new' ? null : editing} existing={occ} onClose={() => setEditing(null)} />}
       <ConfirmDialog open={!!deleting} tone="danger" title={`حذف ${deleting?.table.name}؟`} confirmLabel="حذف الطاولة" loading={remove.pending}
         body={deleting?.parties.length ? `${plural(deleting.parties.length, P.invitation)} عليها ستنتقل إلى «بلا طاولة».` : 'الطاولة فارغة.'}
@@ -162,7 +171,7 @@ export function SeatingPage({ event }: { event: Event }) {
       <ConfirmDialog open={!!override} title="الدعوة لا تتسع على هذه الطاولة"
         body={override ? `${override.party.primaryGuestName} (${people(seatsFor(override.party))}) على ${override.table.table.name} المتبقي فيها ${Math.max(0, override.table.remaining)}. ستصبح الطاولة فوق السعة.` : ''}
         confirmLabel="وزّعهم رغم ذلك" cancelLabel="اختر طاولة أخرى"
-        onCancel={() => setOverride(null)} onConfirm={() => { if (override) { void assign.run(override.party.id, override.table.table.id); setOverride(null); setAssigning(null); } }} />
+        onCancel={() => setOverride(null)} onConfirm={() => { if (override) { void assign.run(override.party.id, override.table.table.id); setOverride(null); setAssigning(null); setMoving(null); } }} />
     </>
   );
 }

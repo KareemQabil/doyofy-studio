@@ -1,0 +1,81 @@
+/* «الطعام» lens on the guests page + the food line on guest cards (FoodReport.tsx). */
+.food { display: grid; gap: var(--s-4); container-type: inline-size; }
+.food-card { display: grid; gap: var(--s-4); padding: var(--s-5); border-radius: var(--r-lg); background: var(--c-surface); box-shadow: inset 0 0 0 1px var(--c-line); }
+.food-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--s-2); }
+.food-head h3 { font: 600 var(--fs-lg)/1.3 var(--font-display); }
+.food-total { font-size: var(--fs-sm); color: var(--c-text-2); }
+.food-total strong { font: 700 var(--fs-xl)/1 var(--font-display); color: var(--c-text); }
+
+/* bars grow from zero once, then follow the numbers */
+.food-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-3); }
+.food-bar { display: grid; grid-template-columns: minmax(7em, 11em) 1fr 3ch; align-items: center; gap: var(--s-3); }
+.food-bar-label { display: flex; align-items: center; gap: var(--s-2); font-weight: 500; min-inline-size: 0; }
+.food-bar-label small { color: var(--c-text-3); font-weight: 400; }
+.food-bar-track { block-size: 12px; border-radius: var(--r-pill); background: var(--c-surface-sunken); overflow: hidden; }
+.food-bar-track > span { display: block; block-size: 100%; inline-size: var(--w); border-radius: inherit; background: var(--gx-tone, var(--c-line-strong));
+  transition: inline-size .5s cubic-bezier(.2,.8,.2,1); animation: food-grow .8s cubic-bezier(.2,.8,.2,1) both; }
+.food-bar:nth-child(2) .food-bar-track > span { animation-delay: .05s; } .food-bar:nth-child(3) .food-bar-track > span { animation-delay: .1s; }
+.food-bar:nth-child(4) .food-bar-track > span { animation-delay: .15s; } .food-bar:nth-child(5) .food-bar-track > span { animation-delay: .2s; }
+@keyframes food-grow { from { inline-size: 0; } }
+.food-bar-n { font: 700 var(--fs-lg)/1 var(--font-display); text-align: end; }
+.food-bar.is-none .food-bar-label { color: var(--c-text-3); }
+.food-bar.is-none .food-bar-track > span { background: repeating-linear-gradient(-45deg, var(--c-line-strong) 0 4px, transparent 4px 8px); }
+.food-bar.is-archived { opacity: .75; }
+
+.food-review, .food-provisional, .food-fine { display: flex; gap: var(--s-2); align-items: flex-start; font-size: var(--fs-sm); }
+.food-review { padding: var(--s-3) var(--s-4); border-radius: var(--r-md); background: var(--c-warning-soft); color: var(--c-warning); }
+.food-provisional { color: var(--c-text-2); }
+.food-fine { font-size: var(--fs-xs); color: var(--c-text-3); }
+.food-link { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+.food-needs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.food-need { display: inline-flex; align-items: center; gap: 6px; min-block-size: 36px; padding: 0 var(--s-3); border-radius: var(--r-pill); background: var(--c-surface-sunken); font-size: var(--fs-sm); }
+.food-need b { font-family: var(--font-display); }
+.food-need.is-allergy { background: var(--c-danger-soft); color: var(--c-danger); }
+
+.food-entries { list-style: none; margin: 0; padding: 0; display: grid; }
+.food-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--s-3); padding: var(--s-3) 0; border-block-start: 1px solid var(--c-line); }
+.food-entry:first-child { border-block-start: 0; }
+.food-entry-name { justify-self: start; border: 0; background: none; padding: 0; font: 600 var(--fs-md)/1.4 var(--font-display); color: var(--c-text); cursor: pointer; text-align: start; }
+.food-entry-name:hover { text-decoration: underline; text-underline-offset: 3px; }
+.food-entry-needs { grid-column: 1; font-size: var(--fs-sm); color: var(--c-text-2); }
+.food-entry.is-allergy .food-entry-needs { color: var(--c-danger); font-weight: 500; }
+.food-entry-note { grid-column: 1; font-size: var(--fs-sm); color: var(--c-text-3); }
+.food-entry-table { grid-column: 2; grid-row: 1 / span 2; align-self: center; display: inline-flex; gap: 4px; align-items: center; font-size: var(--fs-xs); color: var(--c-text-2); white-space: nowrap; }
+.food-entry-table.is-missing { color: var(--c-warning); }
+
+.food-table-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.food-table { display: grid; gap: var(--s-2); align-content: start; padding: var(--s-4); border-radius: var(--r-md); background: var(--c-surface-sunken); }
+.food-table.has-allergy { box-shadow: inset 3px 0 0 var(--c-danger); }
+.food-table-head { display: flex; justify-content: space-between; align-items: baseline; }
+.food-table-head .num { font-family: var(--font-display); color: var(--c-text-2); }
+.food-table-meals { display: flex; flex-wrap: wrap; gap: 6px var(--s-3); }
+.food-pip { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); }
+.food-table-needs { display: flex; gap: 6px; align-items: flex-start; font-size: var(--fs-xs); color: var(--c-danger); }
+.food-actions { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center; }
+
+@container (max-width: 460px) {
+  .food-card { padding: var(--s-4); }
+  .food-bar { grid-template-columns: 1fr 3ch; row-gap: 6px; }
+  .food-bar-label { grid-column: 1; }
+  .food-bar-n { grid-column: 2; grid-row: 1; }
+  .food-bar-track { grid-column: 1 / -1; }
+}
+
+/* on a guest card: one quiet line, the allergy is the only thing that raises its voice */
+.g2-food { display: flex; flex-wrap: wrap; gap: 4px var(--s-2); align-items: center; font-size: var(--fs-xs); color: var(--c-text-2); }
+.g2-food-flag { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: var(--r-pill); background: var(--c-surface-sunken); }
+.g2-food-flag.is-allergy { background: var(--c-danger-soft); color: var(--c-danger); font-weight: 500; }
+
+@media (prefers-reduced-motion: reduce) { .food-bar-track > span { animation: none; transition: none; } }
+.g2-switch button { white-space: nowrap; }
+@media (max-width: 520px) { .g2-switch button { padding: 0 10px; gap: 4px; } }
+
+/* seating: the need travels with the party to whichever table it sits at */
+.seat-diet { display: flex; align-items: center; gap: 4px; margin-block-start: 2px; font-size: var(--fs-xs); font-weight: 400; color: var(--c-text-2); white-space: normal; }
+.seat-diet.is-allergy { color: var(--c-danger); font-weight: 500; }
+.seat-diet-text { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+.hall-table-art { position: relative; }
+.hall-allergy { position: absolute; inset-block-start: 4%; inset-inline-end: 4%; inline-size: 22px; block-size: 22px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--c-danger); color: #fff; box-shadow: 0 0 0 2px var(--c-surface); }
+.hall-allergy svg { inline-size: 13px; block-size: 13px; }

@@ -13,8 +13,10 @@ import { Banner, Button, ChoiceGroup, Field, Icon, Input, Stepper, Textarea } fr
 import { useNow, useServices } from '../../app/data';
 import { useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
-import { errorMessage } from '../../services/errors';
-import { QrCode } from './QrCode';
+import { errorMessage, isAppError } from '../../services/errors';
+import { QrFullscreen } from './QrFullscreen';
+import { asksAfterAttending, dietaryLabel, mealSummary, showsAfterDecline, showsWishlist } from '../../domain/guest-experience';
+import { GuestExtrasFields, Wishlist, emptyExtras, extrasError, extrasPayload, fitExtras, type ExtrasValue } from './GuestExtras';
 
 type Submission = { ok: true; name?: string } | { ok: false; error: string } | null;
 
@@ -71,7 +73,9 @@ export function GuestHub({ view, code, submission, onView, onReplay }: { view: G
           ) : p.rsvpStatus === 'confirmed' ? (
             <div className="hub-status is-yes">
               <Icon name="check-circle" size="lg" />
-              <div><h2 id="hub-status" className="hub-h">حضوركم مؤكد</h2><p className="muted">{p.name} · {people(p.confirmedPartySize ?? 1)}</p></div>
+              <div><h2 id="hub-status" className="hub-h">حضوركم مؤكد</h2><p className="muted">{p.name} · {people(p.confirmedPartySize ?? 1)}</p>
+                {view.experience && p.meals?.length ? <p className="gx-mine">العشاء: {mealSummary(view.experience, p.meals)}</p> : null}
+                {p.dietary?.needs.length ? <p className="gx-mine">نراعي: {dietaryLabel(p.dietary)}</p> : null}</div>
             </div>
           ) : p.rsvpStatus === 'declined' ? (
             <div className="hub-status is-no">
@@ -87,15 +91,18 @@ export function GuestHub({ view, code, submission, onView, onReplay }: { view: G
 
           {p && view.canEdit && !editing && <Button variant="secondary" icon="edit" onClick={() => setEditing(true)}>{p.rsvpStatus === 'pending' ? 'ردّوا الآن' : 'تعديل الرد'}</Button>}
           {p && !view.canEdit && view.phase !== 'after' && p.rsvpStatus !== 'pending' && <p className="faint t-sm">بدأت المناسبة — لتعديل الرد تواصلوا مع صاحب الدعوة.</p>}
-          {p && editing && view.canEdit && <RsvpForm view={view} code={code!} onSaved={(v) => { onView(v); setEditing(false); }} onCancel={p.rsvpStatus !== 'pending' ? () => setEditing(false) : undefined} />}
+          {p && editing && view.canEdit && <RsvpForm view={view} code={code!} onSaved={(v) => { onView(v); setEditing(false); }} onRefresh={onView} onCancel={p.rsvpStatus !== 'pending' ? () => setEditing(false) : undefined} />}
         </section>
+
+        {/* ---------------- after a decline: the reply is accepted first, then an optional way to share the joy (F066–F068) */}
+        {p?.rsvpStatus === 'declined' && !editing && view.experience && showsAfterDecline(view.experience) && <Wishlist x={view.experience} mode="decline" />}
 
         {/* ---------------- QR for the gate */}
         {p && p.rsvpStatus === 'confirmed' && view.phase !== 'after' && (
           <section className="hub-card hub-qr" aria-labelledby="hub-qr">
             <h2 id="hub-qr" className="hub-h">رمز الدخول</h2>
             <p className="muted t-sm">اعرضوه على فريق الاستقبال عند الوصول.</p>
-            <QrCode value={absolute(paths.guestLink(view.event.slug, p.code))} size={196} label={`رمز QR لدخول ${p.name}`} />
+            <QrFullscreen value={absolute(paths.guestLink(view.event.slug, p.code))} code={p.code} name={p.name} title={view.event.title} />
             <p className="hub-code num" dir="ltr">{p.code}</p>
           </section>
         )}
@@ -122,6 +129,8 @@ export function GuestHub({ view, code, submission, onView, onReplay }: { view: G
           </section>
         )}
 
+        {view.experience && showsWishlist(view.experience) && !(p?.rsvpStatus === 'declined' && !editing && showsAfterDecline(view.experience)) && <Wishlist x={view.experience} mode="hub" />}
+
         <Button variant="ghost" icon="play" onClick={onReplay}>شاهدوا الدعوة مرة أخرى</Button>
         <p className="hub-foot" lang="en" dir="ltr">Doyofy</p>
       </div>
@@ -129,26 +138,36 @@ export function GuestHub({ view, code, submission, onView, onReplay }: { view: G
   );
 }
 
-function RsvpForm({ view, code, onSaved, onCancel }: { view: GuestView; code: string; onSaved: (v: GuestView) => void; onCancel?: () => void }) {
+function RsvpForm({ view, code, onSaved, onRefresh, onCancel }: { view: GuestView; code: string; onSaved: (v: GuestView) => void; onRefresh: (v: GuestView) => void; onCancel?: () => void }) {
   const services = useServices();
   const p = view.party!;
   const [attending, setAttending] = useState<'yes' | 'no' | null>(p.rsvpStatus === 'confirmed' ? 'yes' : p.rsvpStatus === 'declined' ? 'no' : null);
   const [count, setCount] = useState(Math.min(p.maxPartySize, p.confirmedPartySize || Math.min(2, p.maxPartySize)));
   const [companions, setCompanions] = useState<string[]>(p.companionNames ?? []);
   const [note, setNote] = useState(p.guestNote ?? '');
+  const [extras, setExtras] = useState<ExtrasValue>(() => emptyExtras(p));
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tried, setTried] = useState(false);
+  const x = view.experience;
+  const asks = attending === 'yes' && !!x && asksAfterAttending(x);
   const err = attending === 'yes' ? validateRsvp({ attending: true, count }, p.maxPartySize) : null;
+  const xErr = asks ? extrasError(x, extras, count) : null;
 
   const save = async () => {
     setTried(true);
-    if (!attending || err) return;
+    if (!attending || err || xErr) return;
     setPending(true); setError(null);
     try {
-      const v = await services.guest.submitRsvp(view.event.slug, code, { attending: attending === 'yes', count: attending === 'yes' ? count : 0, companionNames: companions.slice(0, Math.max(0, count - 1)).filter(Boolean), note: note || undefined });
+      const v = await services.guest.submitRsvp(view.event.slug, code, { attending: attending === 'yes', count: attending === 'yes' ? count : 0, companionNames: companions.slice(0, Math.max(0, count - 1)).filter(Boolean), note: note || undefined, ...(asks ? extrasPayload(x, extras) : {}) });
       onSaved(v);
-    } catch (e) { setError(errorMessage(e)); } finally { setPending(false); }
+    } catch (e) {
+      setError(errorMessage(e));
+      // the host changed the menu while this form was open: load it, keep every answer that still exists (T17)
+      if (isAppError(e) && e.code === 'conflict' && e.field === 'meals') {
+        try { const fresh = await services.guest.open(view.event.slug, code); onRefresh(fresh); } catch { /* the banner already explains */ }
+      }
+    } finally { setPending(false); }
   };
 
   return (
@@ -158,7 +177,7 @@ function RsvpForm({ view, code, onSaved, onCancel }: { view: GuestView; code: st
         options={[{ value: 'yes', label: 'نعم، سنحضر' }, { value: 'no', label: 'نعتذر' }]} />
       {attending === 'yes' && (
         <>
-          <Stepper label="عدد الحضور" value={count} min={1} max={p.maxPartySize} onChange={setCount} />
+          <Stepper label="عدد الحضور" value={count} min={1} max={p.maxPartySize} onChange={(n) => { setCount(n); setExtras((v) => fitExtras(v, n)); }} />
           <p className="faint t-sm">الدعوة تشمل حتى {peopleOf(p.maxPartySize)}.</p>
           {err && <p className="field-error">{RSVP_ERROR_TEXT[err]}</p>}
           {count > 1 && (
@@ -169,6 +188,7 @@ function RsvpForm({ view, code, onSaved, onCancel }: { view: GuestView; code: st
               ))}
             </fieldset>
           )}
+          {asks && <GuestExtrasFields x={x!} count={count} value={extras} onChange={setExtras} error={tried ? xErr : null} />}
         </>
       )}
       <Field label="رسالة لأصحاب الدعوة" optional><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} maxLength={240} /></Field>
@@ -183,10 +203,13 @@ function RsvpForm({ view, code, onSaved, onCancel }: { view: GuestView; code: st
 function GeneralResponse({ view, onSaved }: { view: GuestView; onSaved: (v: GuestView, name: string) => void }) {
   const services=useServices();
   const [name,setName]=useState(''), [answer,setAnswer]=useState<'yes'|'no'|null>(null), [count,setCount]=useState(1), [busy,setBusy]=useState(false), [error,setError]=useState('');
+  const [extras,setExtras]=useState<ExtrasValue>(()=>emptyExtras()), [tried,setTried]=useState(false);
+  const x=view.experience, asks=answer==='yes'&&!!x&&asksAfterAttending(x), xErr=asks?extrasError(x,extras,count):null;
   return <form className="stack gap-4" onSubmit={async e=>{
-    e.preventDefault(); if(!name.trim()||!answer){setError('اكتبوا الاسم واختاروا تأكيد الحضور أو الاعتذار.');return;}
+    e.preventDefault(); setTried(true); if(!name.trim()||!answer){setError('اكتبوا الاسم واختاروا تأكيد الحضور أو الاعتذار.');return;}
+    if(xErr) return;
     setBusy(true);setError('');
-    try { const v=await services.guest.submitRsvp(view.event.slug,null,{name:name.trim(),attending:answer==='yes',count:answer==='yes'?count:0});onSaved(v,name.trim()); }
+    try { const v=await services.guest.submitRsvp(view.event.slug,null,{name:name.trim(),attending:answer==='yes',count:answer==='yes'?count:0,...(asks?extrasPayload(x,extras):{})});onSaved(v,name.trim()); }
     catch(e){setError(errorMessage(e));}finally{setBusy(false);}
-  }}><Field label="الاسم" required><Input value={name} onChange={e=>setName(e.target.value)} autoComplete="name" required/></Field><ChoiceGroup label="هل ستشرفوننا؟" value={answer} onChange={(v:'yes'|'no')=>setAnswer(v)} options={[{value:'yes',label:'بكل سرور، سنحضر'},{value:'no',label:'نعتذر عن الحضور'}]}/>{answer==='yes'&&<Stepper label="العدد شاملًا صاحب الدعوة" value={count} min={1} max={view.maxGuests} onChange={setCount}/>}<p className="field-hint">هذا رابط عام؛ يراجع صاحب المناسبة الرد قبل تخصيص رمز دخول.</p>{error&&<Banner tone="danger">{error}</Banner>}<Button variant="primary" type="submit" loading={busy}>تأكيد الرد</Button></form>;
+  }}><Field label="الاسم" required><Input value={name} onChange={e=>setName(e.target.value)} autoComplete="name" required/></Field><ChoiceGroup label="هل ستشرفوننا؟" value={answer} onChange={(v:'yes'|'no')=>setAnswer(v)} options={[{value:'yes',label:'بكل سرور، سنحضر'},{value:'no',label:'نعتذر عن الحضور'}]}/>{answer==='yes'&&<Stepper label="العدد شاملًا صاحب الدعوة" value={count} min={1} max={view.maxGuests} onChange={n=>{setCount(n);setExtras(v=>fitExtras(v,n));}}/>}{asks&&<GuestExtrasFields x={x!} count={count} value={extras} onChange={setExtras} error={tried?xErr:null}/>}<p className="field-hint">هذا رابط عام؛ يراجع صاحب المناسبة الرد قبل تخصيص رمز دخول.</p>{error&&<Banner tone="danger">{error}</Banner>}<Button variant="primary" type="submit" loading={busy}>تأكيد الرد</Button></form>;
 }

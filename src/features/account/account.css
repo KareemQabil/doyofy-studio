@@ -59,3 +59,15 @@
   .account-page { padding: 26px 16px 40px; } .account-page-grid, .help-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .account-trigger .icon { display: none; } .auth-welcome-actions { width: 100%; } .auth-welcome-actions .btn { flex: 1; }
 }
+
+/* V2: phones show the still life as a slim band above the form (A10), not a large picture below it */
+@media (max-width: 640px) {
+  .auth-art { order: -1; height: 132px !important; min-height: 0; margin: 12px 16px 0; border-radius: 18px; }
+  .auth-art-caption { display: none; }
+  .auth-art img { object-position: 50% 40%; animation: auth-band 1200ms var(--v2-out, ease) both; }
+  .auth-copy { padding-top: 24px; }
+}
+.art-collection .auth-art img { object-position: 30% 50%; }
+.art-table .auth-art img { object-position: 40% 55%; }
+@keyframes auth-band { from { transform: scale(1.12); } }
+@media (prefers-reduced-motion: reduce) { .auth-art img { animation: none; } }

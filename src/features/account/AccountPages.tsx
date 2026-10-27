@@ -8,26 +8,30 @@ import { ThemePicker } from '../../ui/primitives/ThemePicker';
 import { AccountMenu } from './AccountMenu';
 import { saveDemoAccount, useDemoAccount } from './session';
 
-function AuthLayout({ children, title, line }: { children: ReactNode; title: string; line: string }) {
-  return <div className="auth-page"><header className="auth-header"><Link to="/app/welcome" aria-label="ضيوفي"><Logo height={32} /></Link><Link to="/app/events">الدخول للمنصة<Icon name="forward" size="sm" /></Link></header><main className="auth-main"><section className="auth-copy"><p className="auth-kicker">كل فرحة تبدأ بدعوة.</p><h1>{title}</h1><p className="auth-line">{line}</p>{children}</section><aside className="auth-art" aria-label="خامات من هوية ضيوفي"><picture><source srcSet="assets/editorial/celebration-folds.avif" type="image/avif" /><img src="assets/editorial/celebration-folds.webp" alt="" width="1536" height="1024" decoding="async" /></picture><div className="auth-art-caption"><span className="auth-art-index">01 / ضيوفي</span><p>فرحتك لها<br />شكلها الخاص.</p><span>دعوة · ضيوف · ردود · استقبال</span></div></aside></main><footer className="auth-footer">ضيوفي — من أول دعوة إلى آخر ضيف.<span>نسخة تجربة</span></footer></div>;
+/** each account moment gets its own still life (A10) instead of one repeated hero; phones show it as a slim band */
+const AUTH_ART = {
+  folds: { src: 'celebration-folds', line: <>فرحتك لها<br />شكلها الخاص.</> },
+  collection: { src: 'occasion-collection', line: <>كل مناسبة<br />تبدأ بورقة بيضاء.</> },
+  table: { src: 'celebration-table', line: <>المائدة جاهزة،<br />والضيوف قادمون.</> },
+} as const;
+function AuthLayout({ children, title, line, art = 'folds' }: { children: ReactNode; title: string; line: string; art?: keyof typeof AUTH_ART }) {
+  const a = AUTH_ART[art];
+  return <div className={`auth-page art-${art}`}><header className="auth-header"><Link to="/app/welcome" aria-label="ضيوفي"><Logo height={32} /></Link><Link to="/app/events">الدخول للمنصة<Icon name="forward" size="sm" /></Link></header><main className="auth-main"><section className="auth-copy"><p className="auth-kicker">كل فرحة تبدأ بدعوة.</p><h1>{title}</h1><p className="auth-line">{line}</p>{children}</section><aside className="auth-art" aria-label="خامات من هوية ضيوفي"><picture><source srcSet={`assets/editorial/${a.src}.avif`} type="image/avif" /><img src={`assets/editorial/${a.src}.webp`} alt="" width="1536" height="1024" decoding="async" /></picture><div className="auth-art-caption"><span className="auth-art-index">ضيوفي</span><p>{a.line}</p><span>دعوة · ضيوف · ردود · استقبال</span></div></aside></main><footer className="auth-footer">ضيوفي — من أول دعوة إلى آخر ضيف.<span>نسخة تجربة</span></footer></div>;
 }
 
-export function WelcomePage() {
-  const navigate = useNavigate();
-  return <AuthLayout title="للفرح، مكان يجمعه." line="صمّم دعوتك، رتّب ضيوفك، وابدأ مناسبتك وأنت مطمئن."><div className="auth-welcome-actions"><LinkButton to="/app/signup" variant="primary" size="lg" iconEnd="forward">ابدأ فرحتك</LinkButton><LinkButton to="/app/login" variant="secondary" size="lg">عندي حساب</LinkButton></div><button type="button" className="auth-demo-link" onClick={() => { saveDemoAccount({ status: 'demo' }); navigate('/app/events'); }}>جاهز للتجربة؟ استكشف بمناسبة جاهزة ←</button><ol className="auth-journey"><li><b>01</b><span>اختر مناسبتك</span></li><li><b>02</b><span>أضف لمستك</span></li><li><b>03</b><span>رحّب بضيوفك</span></li></ol></AuthLayout>;
-}
+export { WelcomePage } from './Welcome';
 
 export function LoginPage({ signup = false }: { signup?: boolean }) {
   const navigate = useNavigate(), loc = useLocation(); const a = useDemoAccount();
   const [name, setName] = useState(a.name || ''), [email, setEmail] = useState(a.email || ''), [error, setError] = useState('');
   const submit = (e: React.FormEvent) => { e.preventDefault(); if (!name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('اكتب اسمك وبريدًا إلكترونيًا صحيحًا.'); return; }
     saveDemoAccount({ status: 'demo', name: name.trim(), email: email.trim() }); navigate(safeAccountReturn(loc.search.get('next')), { replace: true }); };
-  return <AuthLayout title={signup ? 'أول خطوة لفرحة مرتّبة.' : 'أهلًا بعودتك.'} line={signup ? 'مساحة لدعواتك ومناسباتك وكل من تحب.' : 'دعواتك وتفاصيل مناسباتك، في مكان واحد.'}><form className="auth-form" onSubmit={submit}><Field label="اسمك" required error={error && !name.trim() ? error : undefined}><Input autoComplete="name" value={name} maxLength={70} onChange={e => { setName(e.target.value); setError(''); }} placeholder="الاسم الذي تحب أن نناديك به" /></Field><Field label="البريد الإلكتروني" required error={error && !!name.trim() ? error : undefined}><Input type="email" ltr autoComplete="email" inputMode="email" value={email} maxLength={160} onChange={e => { setEmail(e.target.value); setError(''); }} placeholder="you@example.com" /></Field><Button type="submit" variant="primary" size="lg" block iconEnd="forward">{signup ? 'ابدأ التجربة' : 'دخول تجريبي'}</Button><p className="auth-demo-note"><Icon name="info" size="sm" />جلسة تجربة على هذا الجهاز. لا نطلب كلمة مرور ولا نرسل بريدًا فعليًا.</p></form><p className="auth-switch">{signup ? 'بدأت رحلتك من قبل؟' : 'أول مرة معنا؟'} <Link to={`${signup ? '/app/login' : '/app/signup'}?next=${encodeURIComponent(safeAccountReturn(loc.search.get('next')))}`}>{signup ? 'تسجيل الدخول' : 'ابدأ هنا'}</Link></p></AuthLayout>;
+  return <AuthLayout art={signup ? 'collection' : 'folds'} title={signup ? 'أول خطوة لفرحة مرتّبة.' : 'أهلًا بعودتك.'} line={signup ? 'مساحة لدعواتك ومناسباتك وكل من تحب.' : 'دعواتك وتفاصيل مناسباتك، في مكان واحد.'}><form className="auth-form" onSubmit={submit}><Field label="اسمك" required error={error && !name.trim() ? error : undefined}><Input autoComplete="name" value={name} maxLength={70} onChange={e => { setName(e.target.value); setError(''); }} placeholder="الاسم الذي تحب أن نناديك به" /></Field><Field label="البريد الإلكتروني" required error={error && !!name.trim() ? error : undefined}><Input type="email" ltr autoComplete="email" inputMode="email" value={email} maxLength={160} onChange={e => { setEmail(e.target.value); setError(''); }} placeholder="you@example.com" /></Field><Button type="submit" variant="primary" size="lg" block iconEnd="forward">{signup ? 'ابدأ التجربة' : 'دخول تجريبي'}</Button><p className="auth-demo-note"><Icon name="info" size="sm" />جلسة تجربة على هذا الجهاز. لا نطلب كلمة مرور ولا نرسل بريدًا فعليًا.</p></form><p className="auth-switch">{signup ? 'بدأت رحلتك من قبل؟' : 'أول مرة معنا؟'} <Link to={`${signup ? '/app/login' : '/app/signup'}?next=${encodeURIComponent(safeAccountReturn(loc.search.get('next')))}`}>{signup ? 'تسجيل الدخول' : 'ابدأ هنا'}</Link></p></AuthLayout>;
 }
 
 export function LogoutPage() {
   useEffect(() => { saveDemoAccount({ status: 'signed-out' }); }, []);
-  return <AuthLayout title="نراك في فرحة قادمة." line="تم تسجيل الخروج من جلسة التجربة. مناسباتك ودعواتك المحفوظة على هذا الجهاز بقيت كما هي."><LinkButton to="/app/login" variant="primary" size="lg" iconEnd="forward">العودة لتسجيل الدخول</LinkButton><Link to="/app/welcome" className="auth-switch">إلى الصفحة الترحيبية</Link></AuthLayout>;
+  return <AuthLayout art="table" title="نراك في فرحة قادمة." line="تم تسجيل الخروج من جلسة التجربة. مناسباتك ودعواتك المحفوظة على هذا الجهاز بقيت كما هي."><LinkButton to="/app/login" variant="primary" size="lg" iconEnd="forward">العودة لتسجيل الدخول</LinkButton><Link to="/app/welcome" className="auth-switch">إلى الصفحة الترحيبية</Link></AuthLayout>;
 }
 
 export function AccountPage() {

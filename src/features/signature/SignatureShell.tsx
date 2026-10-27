@@ -6,7 +6,9 @@
  *   as a bottom bar (safe-area aware). Reading order follows Arabic source order (no DOM re-ordering).
  */
 import { AccountMenu } from '../account/AccountMenu';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { haptic } from '../../ui/motion/motion';
+import { useScrolled } from '../../ui/hooks/useTouchGestures';
 import { Link } from '../../app/router';
 import { paths } from '../../app/paths';
 import { ThemePicker } from '../../ui/primitives/ThemePicker';
@@ -14,10 +16,13 @@ import { Logo } from '../../ui/brand';
 import { Icon } from '../../ui/icons';
 import type { NavItem } from '../../ui/layouts/Layouts';
 
-export function SignatureShell({ children, right }: { children: ReactNode; right?: ReactNode }) {
+export function SignatureShell({ children, right, mobileContext }: { children: ReactNode; right?: ReactNode; mobileContext?: ReactNode }) {
+  const scrolled = useScrolled(8);
   return (
-    <div className="sig-shell">
+    <div className={`sig-shell${mobileContext ? ' has-appbar' : ''}`}>
       <a href="#main" className="skip-link">تخطَّ إلى المحتوى</a>
+      {/* phones inside an event: one compact bar (back · event · account) instead of brand + banner + title */}
+      {mobileContext && <header className={`sig-appbar${scrolled ? ' is-scrolled' : ''}`}><div className="sig-appbar-context">{mobileContext}</div><span className="sig-appbar-tools">{right ?? <AccountMenu />}</span></header>}
       <header className="sig-header">
         <Link to={paths.events} className="sig-brand" aria-label="ضيوفي — مناسباتي"><Logo height={30} /></Link>
         <span className="sig-edition" aria-hidden="true">توقيع</span>
@@ -68,9 +73,10 @@ export function SignatureWorkspace({ context, nav, mobileNav, footer, children }
         {footer && <div className="sig-rail-foot">{footer}</div>}
       </aside>
       <main id="main" className="sig-content" tabIndex={-1}>{children}</main>
-      <nav className="sig-tabbar" aria-label="أقسام المناسبة">
+      <nav className="sig-tabbar" aria-label="أقسام المناسبة" style={{ '--tab-i': Math.max(0, mobileNav.findIndex((n) => n.active)), '--tab-n': mobileNav.length } as CSSProperties} data-has-active={mobileNav.some((n) => n.active) || undefined}>
+        <span className="sig-tab-indicator" aria-hidden="true" />
         {mobileNav.map((n) => (
-          <Link key={n.to} to={n.to} aria-current={n.active ? 'page' : undefined} className={`sig-tab${n.active ? ' is-active' : ''}`}>
+          <Link key={n.to} to={n.to} aria-current={n.active ? 'page' : undefined} className={`sig-tab${n.active ? ' is-active' : ''}`} onClick={() => { if (!n.active) haptic('tick'); }}>
             <span className="sig-tab-icon"><Icon name={n.icon} />{n.badge != null && n.badge !== 0 && <span className="sig-tab-dot" aria-hidden="true" />}</span>
             <span className="sig-tab-label">{n.label}</span>
           </Link>

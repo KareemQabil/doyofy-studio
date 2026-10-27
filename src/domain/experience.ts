@@ -30,14 +30,14 @@ export function overviewFacts(i: OverviewInput) {
   const c = countParties(i.parties);
   const phase = eventPhase(i.event, i.now);
   if (['event_day', 'completed', 'archived'].includes(phase)) return [
-    { label: 'وصلوا', value: c.checkedInPeople, unit: 'شخص', tone: 'success' },
-    { label: 'أكدوا الحضور', value: c.confirmedPeople, unit: 'شخص', tone: 'neutral' },
-    { label: phase === 'event_day' ? 'ننتظر وصولهم' : 'لم يُسجَّل وصولهم', value: i.parties.reduce((n, p) => n + (p.rsvpStatus === 'confirmed' ? Math.max(0, (p.confirmedPartySize ?? 0) - p.checkedInCount) : 0), 0), unit: 'شخص', tone: 'neutral' },
+    { label: 'وصلوا', value: c.checkedInPeople, unit: 'شخص', tone: 'success', filter: 'checked_in' },
+    { label: 'أكدوا الحضور', value: c.confirmedPeople, unit: 'شخص', tone: 'neutral', filter: 'confirmed' },
+    { label: phase === 'event_day' ? 'ننتظر وصولهم' : 'لم يُسجَّل وصولهم', value: i.parties.reduce((n, p) => n + (p.rsvpStatus === 'confirmed' ? Math.max(0, (p.confirmedPartySize ?? 0) - p.checkedInCount) : 0), 0), unit: 'شخص', tone: 'neutral', filter: 'confirmed' },
   ];
   return [
-    { label: 'أكدوا الحضور', value: c.confirmedPeople, unit: 'شخص', tone: 'success' },
-    { label: 'بانتظار الرد', value: c.pendingParties, unit: 'دعوة', tone: 'neutral' },
-    { label: 'قائمة ضيوفك', value: c.parties, unit: 'دعوة', tone: 'neutral' },
+    { label: 'أكدوا الحضور', value: c.confirmedPeople, unit: 'شخص', tone: 'success', filter: 'confirmed' },
+    { label: 'بانتظار الرد', value: c.pendingParties, unit: 'دعوة', tone: 'neutral', filter: 'pending' },
+    { label: 'قائمة ضيوفك', value: c.parties, unit: 'دعوة', tone: 'neutral', filter: 'all' },
   ];
 }
 

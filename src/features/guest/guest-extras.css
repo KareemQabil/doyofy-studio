@@ -1,0 +1,85 @@
+/* Guest extras: meals per person, dietary needs, wishlist (GuestExtras.tsx). Theme tokens only, plus six swatch tones. */
+.gx { display: grid; gap: var(--s-5); }
+.gx-block { display: grid; gap: var(--s-3); border: 0; padding: 0; margin: 0; min-inline-size: 0; }
+.gx-title { font: 600 var(--fs-md)/1.5 var(--font-display); color: var(--c-text); padding: 0; margin-block-end: var(--s-1); }
+.gx-sub { font-size: var(--fs-xs); color: var(--c-text-3); letter-spacing: .02em; }
+.gx-state { font-size: var(--fs-sm); color: var(--c-text-2); min-block-size: 1.5em; }
+.gx-privacy { display: flex; gap: var(--s-2); align-items: center; font-size: var(--fs-xs); color: var(--c-text-3); }
+
+/* swatches: one colour per menu choice, reused by plates, rows and the organizer report */
+.tone-a { --gx-tone: #C7A661; } .tone-b { --gx-tone: #BC4749; } .tone-c { --gx-tone: #2E9C9C; }
+.tone-d { --gx-tone: #6F8B4E; } .tone-e { --gx-tone: #4D4840; } .tone-f { --gx-tone: #A8874C; }
+.gx-swatch { inline-size: 12px; block-size: 12px; border-radius: 50%; background: var(--gx-tone); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gx-tone) 22%, transparent); flex: none; }
+
+/* the plates: one circle per person, filled as choices are made — the family's table at a glance */
+.gx-plates { display: flex; flex-wrap: wrap; gap: 10px; padding: var(--s-3) var(--s-4); border-radius: var(--r-md); background: var(--c-surface-sunken); }
+.gx-plate { inline-size: 30px; block-size: 30px; border-radius: 50%; position: relative; background: var(--c-surface); box-shadow: inset 0 0 0 1.5px var(--c-line-strong);
+  transition: background-color .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s, transform .38s cubic-bezier(.34,1.56,.64,1); transition-delay: calc(var(--i, 0) * 18ms); }
+.gx-plate::after { content: ''; position: absolute; inset: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-text) 12%, transparent); }
+.gx-plate:not(.is-empty) { background: var(--gx-tone); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--gx-tone) 70%, #000); transform: scale(1.06); }
+.gx-plate:not(.is-empty)::after { box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); }
+
+.gx-options { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); }
+.gx-option { border-radius: var(--r-md); background: var(--c-surface); box-shadow: inset 0 0 0 1px var(--c-line); transition: box-shadow .2s, background-color .2s; }
+.gx-option.is-on { box-shadow: inset 0 0 0 1.5px var(--gx-tone); background: color-mix(in srgb, var(--gx-tone) 8%, var(--c-surface)); }
+.gx-row, .gx-pick { display: flex; align-items: center; gap: var(--s-3); padding: 10px var(--s-3) 10px var(--s-2); min-block-size: 56px; }
+.gx-pick { inline-size: 100%; border: 0; background: none; font: inherit; color: inherit; text-align: start; cursor: pointer; border-radius: inherit; padding-inline: var(--s-4); }
+.gx-row { padding-inline-start: var(--s-4); }
+.gx-label { flex: 1; font-weight: 500; }
+.gx-stepper { display: flex; align-items: center; gap: 2px; }
+.gx-step { inline-size: 44px; block-size: 44px; border-radius: 50%; border: 0; display: grid; place-items: center; background: transparent; color: var(--c-text); cursor: pointer; transition: background-color .15s, transform .12s; }
+.gx-step:hover:not(:disabled) { background: var(--c-surface-sunken); }
+.gx-step:active:not(:disabled) { transform: scale(.9); }
+.gx-step:disabled { color: var(--c-text-3); opacity: .45; cursor: default; }
+.gx-n { inline-size: 28px; text-align: center; font: 600 var(--fs-lg)/1 var(--font-display); }
+.gx-block.has-error .gx-plates { box-shadow: inset 0 0 0 1.5px var(--c-danger); }
+
+/* dietary: two calm answers first, the details only for "yes" */
+.gx-yesno, .gx-chips, .gx-affected { display: flex; flex-wrap: wrap; gap: var(--s-2); align-items: center; }
+.gx-pill, .gx-chip { min-block-size: 44px; padding: 0 var(--s-4); border-radius: var(--r-pill); border: 0; font: inherit; font-size: var(--fs-sm); color: var(--c-text);
+  background: var(--c-surface); box-shadow: inset 0 0 0 1px var(--c-line-strong); display: inline-flex; gap: 6px; align-items: center; cursor: pointer; transition: background-color .18s, box-shadow .18s, transform .12s; }
+.gx-pill:active, .gx-chip:active { transform: scale(.97); }
+.gx-pill.is-on, .gx-chip.is-on { background: var(--c-text); color: var(--c-surface); box-shadow: none; }
+.gx-chip.is-allergy.is-on { background: var(--c-danger); color: #fff; }
+.gx-pill.is-sm { min-block-size: 40px; min-inline-size: 40px; padding: 0 var(--s-3); justify-content: center; }
+.gx-needs { display: grid; gap: var(--s-2); padding: var(--s-4); border-radius: var(--r-md); background: var(--c-surface-sunken); animation: gx-unfold .32s cubic-bezier(.2,.8,.2,1); }
+.gx-needs .gx-sub:not(:first-child) { margin-block-start: var(--s-2); }
+.gx-affected { margin-block-start: var(--s-2); }
+@keyframes gx-unfold { from { opacity: 0; transform: translateY(-6px); } }
+
+/* the extras sheet over the cinematic invitation */
+.gx-sheet .dialog-body { display: grid; gap: var(--s-4); }
+
+/* ------------------------------------------------------------------ wishlist */
+.gx-wishlist { gap: var(--s-4); }
+.gx-kicker { font-size: var(--fs-sm); color: var(--c-primary-text); }
+.gx-wishes { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-3); }
+.gx-wish { display: grid; grid-template-columns: 64px 1fr; gap: var(--s-2) var(--s-4); align-items: center; padding: var(--s-4); border-radius: var(--r-md);
+  background: var(--c-surface); box-shadow: inset 0 0 0 1px var(--c-line); }
+.gx-art { inline-size: 64px; block-size: 64px; padding: 10px; border-radius: 50%; color: var(--c-primary-text); background: var(--c-primary-soft); grid-row: span 2; }
+.gx-wish.is-flowers .gx-art { color: var(--c-accent-strong); background: var(--c-accent-soft); }
+.gx-wish-copy { display: grid; gap: 2px; min-inline-size: 0; }
+.gx-wish-kind { font-size: var(--fs-xs); color: var(--c-text-3); }
+.gx-wish-title { font: 600 var(--fs-md)/1.4 var(--font-display); }
+.gx-wish-note { font-size: var(--fs-sm); color: var(--c-text-2); }
+.gx-wish-act { display: grid; justify-items: start; gap: 4px; }
+.gx-wish-host { font-size: 11px; color: var(--c-text-3); padding-inline: var(--s-2); }
+.gx-wish-nolink { font-size: var(--fs-sm); color: var(--c-text-3); }
+.gx-wish-foot { display: flex; gap: var(--s-2); align-items: flex-start; font-size: var(--fs-xs); color: var(--c-text-3); }
+.gx-wishlist.is-decline { border-top: 4px solid var(--c-accent, var(--c-primary)); animation: gx-arrive .6s cubic-bezier(.2,.8,.2,1) both; }
+.gx-wishlist.is-decline .gx-wish { animation: gx-arrive .5s cubic-bezier(.2,.8,.2,1) both; }
+.gx-wishlist.is-decline .gx-wish:nth-child(2) { animation-delay: .08s; }
+.gx-wishlist.is-decline .gx-wish:nth-child(3) { animation-delay: .16s; }
+@keyframes gx-arrive { from { opacity: 0; transform: translateY(10px); } }
+
+@media (min-width: 640px) {
+  .gx-wish { grid-template-columns: 64px 1fr auto; }
+  .gx-art { grid-row: auto; }
+  .gx-wish-act { justify-self: end; justify-items: end; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gx-plate, .gx-needs, .gx-wishlist.is-decline, .gx-wishlist.is-decline .gx-wish { transition: none; animation: none; }
+}
+.gx-mine { font-size: var(--fs-sm); color: var(--c-text-2); margin-block-start: 2px; }
+.gx-wishlist, .gx-wishes, .gx-wish, .gx-wish-act { min-inline-size: 0; }
+.gx-wish-link { white-space: normal; text-align: start; max-inline-size: 100%; }

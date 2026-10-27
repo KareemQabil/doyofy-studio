@@ -15,6 +15,11 @@ import { loadEngine } from '../invitation/engine';
 import { GuestHub } from './GuestHub';
 import { SealCover } from '../signature/SealCover';
 import { useReviewSettings } from '../../app/review';
+import { asksAfterAttending } from '../../domain/guest-experience';
+import { ExtrasSheet, extrasPayload, type ExtrasValue } from './GuestExtras';
+
+type EngineReply = { name: string; attending: boolean; guests: number };
+type EngineResult = { ok: true; id: string } | { ok: false; error: string };
 
 type Submission = { ok: true; name?: string } | { ok: false; error: string } | null;
 
@@ -66,8 +71,22 @@ function InvitationPlayer({ view, code, onSubmitted, onDone }: { view: GuestView
   const services = useServices();
   const host = useRef<HTMLDivElement>(null);
   const [err, setErr] = useState<unknown>(null);
+  // an attending reply waits here while the guest answers food; the engine keeps its "sending" state meanwhile
+  const [held, setHeld] = useState<{ r: EngineReply; settle: (res: EngineResult) => void } | null>(null);
   const cb = useRef({ onSubmitted, onDone });
   cb.current = { onSubmitted, onDone };
+  const send = async (r: EngineReply, extras?: ExtrasValue): Promise<EngineResult> => {
+    try {
+      const v = await services.guest.submitRsvp(view.event.slug, code, { name: r.name, attending: r.attending, count: r.attending ? r.guests : 0, ...(extras ? extrasPayload(view.experience, extras) : {}) });
+      cb.current.onSubmitted(v, { ok: true, name: r.name });
+      return { ok: true, id: v.responseId };
+    } catch (e) {
+      cb.current.onSubmitted(null, { ok: false, error: errorMessage(e) });
+      return { ok: false, error: errorMessage(e) };
+    }
+  };
+  const sendRef = useRef(send);
+  sendRef.current = send;
 
   useEffect(() => {
     let studio: { destroy(): void } | null = null;
@@ -82,15 +101,9 @@ function InvitationPlayer({ view, code, onSubmitted, onDone }: { view: GuestView
         guest: p ? { name: p.name, nameLocked: true, maxGuests: p.maxPartySize, attending: p.rsvpStatus === 'confirmed' ? 'yes' : p.rsvpStatus === 'declined' ? 'no' : null, guests: p.confirmedPartySize || undefined } : { maxGuests: view.maxGuests },
         doneAction: { ar: p ? 'تفاصيل حضوركم' : 'متابعة', en: p ? 'Your details' : 'Continue', onClick: () => cb.current.onDone() },
         rsvp: {
-          submit: async (r) => {
-            try {
-              const v = await services.guest.submitRsvp(view.event.slug, code, { name: r.name, attending: r.attending, count: r.attending ? r.guests : 0 });
-              cb.current.onSubmitted(v, { ok: true, name: r.name });
-              return { ok: true, id: v.responseId };
-            } catch (e) {
-              cb.current.onSubmitted(null, { ok: false, error: errorMessage(e) });
-              return { ok: false, error: errorMessage(e) };
-            }
+          submit: (r) => {
+            if (r.attending && view.experience && asksAfterAttending(view.experience)) return new Promise<EngineResult>((settle) => setHeld({ r, settle }));
+            return sendRef.current(r);
           },
         },
       });
@@ -100,5 +113,20 @@ function InvitationPlayer({ view, code, onSubmitted, onDone }: { view: GuestView
   }, [view.event.slug, code]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (err) return <main className="guest-page theme-guest guest-center"><EmptyState icon="alert" title="تعذر تشغيل الدعوة" action={<Button onClick={onDone}>الموعد وتأكيد الحضور</Button>}>{errorMessage(err)}</EmptyState></main>;
-  return <><div ref={host} className="guest-studio" /><button type="button" className="guest-fast-track" onClick={onDone}>الموعد وتأكيد الحضور</button></>;
+  return (
+    <>
+      <div ref={host} className="guest-studio" />
+      <button type="button" className="guest-fast-track" onClick={onDone}>الموعد وتأكيد الحضور</button>
+      {held && view.experience && (
+        <ExtrasSheet x={view.experience} count={held.r.guests}
+          onBack={() => { held.settle({ ok: false, error: 'لم يُرسل الرد بعد — أكملوا الخطوة الأخيرة متى شئتم.' }); setHeld(null); }}
+          onSend={async (extras) => {
+            const res = await sendRef.current(held.r, extras);
+            if (!res.ok) return res.error;
+            held.settle(res); setHeld(null);
+            return null;
+          }} />
+      )}
+    </>
+  );
 }

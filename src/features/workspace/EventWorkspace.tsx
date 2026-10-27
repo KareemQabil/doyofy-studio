@@ -63,7 +63,10 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
   const mobileContext = (
     <>
       <Link to={paths.events} className="btn btn-ghost btn-icon" aria-label="كل المناسبات"><Icon name="back" /></Link>
-      <span className="ws-mobile-title truncate">{e?.title ?? ''}</span>
+      <span className="ws-mobile-head">
+        <span className="ws-mobile-title truncate">{e?.title ?? ''}</span>
+        {e && <span className="ws-mobile-meta"><span className={`ws-mobile-phase tone-${PHASE_LABEL[phase].tone}`} aria-hidden="true" />{PHASE_LABEL[phase].label} · {countdownLabel(e.date, todayFor(e, now))}</span>}
+      </span>
     </>
   );
 

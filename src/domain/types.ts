@@ -67,6 +67,8 @@ export interface Event extends EventDetails {
   slug: string;           // short guest link: /i/<slug>
   settings: EventSettings;
   checkInPreparedAt?: ISODateTime;
+  /** what guests are asked beyond attending (meals, dietary needs) and the wishlist they see; absent = all off */
+  guestExperience?: GuestExperience;
   archivedAt?: ISODateTime;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
@@ -74,6 +76,41 @@ export interface Event extends EventDetails {
 
 export type CreateEventInput = Pick<EventDetails, 'type' | 'names' | 'date' | 'time' | 'venue'> & { title?: string; timeZone?: string };
 export type UpdateEventInput = Partial<EventDetails> & { settings?: Partial<EventSettings> };
+
+// ------------------------------------------------------------------ guest experience (meals, dietary, wishlist)
+/** a menu choice the host defines (fish, meat…). Never deleted once answered: archived, so old answers keep their meaning. */
+export interface MealOption { id: string; label: string; archived?: boolean }
+/** allergies and diets are different things (D09): an allergy is a risk to follow up, a diet is a requirement to cater */
+export type DietaryNeed = 'nuts' | 'dairy' | 'gluten' | 'eggs' | 'seafood' | 'halal' | 'vegetarian' | 'vegan' | 'other';
+export type GiftKind = 'gift' | 'contribution' | 'flowers';
+/** a wish with an external link (D14). No payment state: opening the link proves nothing (D16). */
+export interface GiftItem {
+  id: string;
+  kind: GiftKind;
+  title: string;
+  note?: string;
+  url?: string;
+  linkLabel?: string;
+  archived?: boolean;
+}
+export interface GuestExperience {
+  /** bumps on every saved change; a reply carries the revision it was answered against */
+  revision: number;
+  meals: { enabled: boolean; required: boolean; options: MealOption[] };
+  dietary: { enabled: boolean };
+  /** enabled = wishlist on the guest page whatever the reply; afterDecline = offered gently right after a decline */
+  gifts: { enabled: boolean; afterDecline: boolean; intro?: string; items: GiftItem[] };
+}
+/** people per menu choice inside one reply (D08): a family of 4 can be 2 meat + 1 fish + 1 vegetarian */
+export interface MealAllocation { optionId: string; count: number }
+export interface DietaryAnswer {
+  /** false = the question was not answered; true with no needs = "nothing to note" (T31) */
+  answered: boolean;
+  needs: DietaryNeed[];
+  /** how many of the party it concerns, when the guest says; absent = unknown, never zero */
+  affectedCount?: number;
+  note?: string;
+}
 
 // ------------------------------------------------------------------ invitation design
 export type Dimension = '3d' | '2d';
@@ -139,6 +176,9 @@ export interface InvitationParty {
   confirmedPartySize?: number;
   respondedAt?: ISODateTime;
   guestNote?: string;           // the guest's own note from the RSVP
+  meals?: MealAllocation[];     // active answer; cleared on decline
+  dietary?: DietaryAnswer;
+  experienceRevision?: number;  // policy revision the active answer was given against
   tableId?: string;
   checkInStatus: CheckInStatus;
   checkedInCount: number;
@@ -167,6 +207,9 @@ export interface RSVPResponse {
   count: number;
   companionNames?: string[];
   note?: string;
+  meals?: MealAllocation[];
+  dietary?: DietaryAnswer;
+  experienceRevision?: number;
   channel: RsvpChannel;
   at: ISODateTime;
   /** for unmatched general-link replies */
@@ -177,6 +220,10 @@ export interface RsvpInput {
   count: number;
   companionNames?: string[];
   note?: string;
+  meals?: MealAllocation[];
+  dietary?: DietaryAnswer;
+  /** the policy revision the guest saw; a changed policy that invalidates the answer is a conflict, not a silent swap */
+  expectedExperienceRevision?: number;
 }
 
 // ------------------------------------------------------------------ seating

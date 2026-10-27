@@ -5,7 +5,8 @@
  */
 import { useEffect, useState } from 'react';
 import type { EventType } from '../../domain/types';
-import { OCCASIONS_ORDERED } from '../../domain/event';
+import { OCCASIONS_ORDERED, OCCASION_GROUPS } from '../../domain/event';
+import { haptic } from '../../ui/motion/motion';
 import { TactileDeck } from '../../ui/primitives/TactileDeck';
 import { Icon } from '../../ui';
 import { CuratedChooser } from '../occasions/CuratedChooser';
@@ -27,6 +28,16 @@ export function SignatureOccasions({ value, onChange, onConfirm }: { value: Even
           <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}><Icon name="search" size="sm" />قائمة وبحث</button>
         </div>
       </header>
+      {view === 'deck' && (
+        // jump straight to a family of occasions (F003): the deck glides there, nothing is hidden
+        <div className="sig-occ-groups" role="group" aria-label="انتقل إلى نوع مناسبة">
+          {OCCASION_GROUPS.filter((g) => OCCASIONS_ORDERED.some((t) => t.group === g.id)).map((g) => {
+            const first = OCCASIONS_ORDERED.find((t) => t.group === g.id)!;
+            const current = OCCASIONS_ORDERED[at]?.group === g.id;
+            return <button key={g.id} type="button" className="v2-press" aria-pressed={current} onClick={() => { haptic('tick'); onChange(first.id); }}>{g.label}</button>;
+          })}
+        </div>
+      )}
       {view === 'deck' ? (
         <TactileDeck items={OCCASIONS_ORDERED} index={at} onIndexChange={(i) => onChange(OCCASIONS_ORDERED[i]!.id)} getKey={(t) => t.id}
           label="اختر نوع المناسبة — اسحب يسارًا للتالي" itemLabel={(t) => `${t.label}، ${t.line}`} activateHint="اضغط للمتابعة"

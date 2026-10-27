@@ -14,6 +14,8 @@ import { eventPhase, eventStart, suggestTitle, validateEssentials, todayFor } fr
 import { normalisePhone } from '../../domain/phone';
 import { statusAfter, EXCEPTION_TEXT } from '../../domain/checkin';
 import { validateTable } from '../../domain/seating';
+import { checkAnswers, cleanAnswers, experienceOf, safeExternalUrl, validatePolicy } from '../../domain/guest-experience';
+import type { GuestExperience, RsvpInput } from '../../domain/types';
 import { AppError } from '../errors';
 import { findEvent, findParty, log, touch, type Ctx } from './helpers';
 
@@ -77,6 +79,37 @@ export function mockEvents({ store, now }: Ctx): EventRepository {
       if (!ev.title.trim()) ev.title = suggestTitle(ev.type, ev.names);
       touch(ev, t);
       log(db, t, ev.id, 'event_updated', { what: Object.keys(input).includes('venue') ? 'المكان' : Object.keys(input).includes('date') || Object.keys(input).includes('time') ? 'الموعد' : settings ? 'الإعدادات' : undefined });
+      return clone(ev);
+    }), 'write'),
+    updateExperience: (id, draft, expectedRevision) => store.request(() => store.write((db) => {
+      const ev = findEvent(db, id);
+      const cur = experienceOf(ev);
+      if (cur.revision !== expectedRevision) throw new AppError('conflict', 'عُدّلت هذه الإعدادات من نافذة أخرى. حمّلنا آخر نسخة — راجعها ثم احفظ.');
+      const problem = validatePolicy(draft);
+      if (problem) throw new AppError('validation', problem.message, problem.field);
+      // an answered option is archived, never removed: its id keeps meaning what the guest chose
+      const answered = new Set<string>();
+      for (const p of db.parties) if (p.eventId === id) p.meals?.forEach((a) => answered.add(a.optionId));
+      for (const r of db.responses) if (r.eventId === id) r.meals?.forEach((a) => answered.add(a.optionId));
+      const kept = new Set(draft.meals.options.map((o) => o.id));
+      const options = [
+        ...draft.meals.options.map((o) => ({ id: o.id || makeId('meal'), label: o.label.replace(/\s+/g, ' ').trim(), ...(o.archived ? { archived: true } : {}) })),
+        ...cur.meals.options.filter((o) => !kept.has(o.id) && answered.has(o.id)).map((o) => ({ ...o, archived: true })),
+      ];
+      const items = draft.gifts.items.map((g) => ({
+        id: g.id || makeId('gift'), kind: g.kind, title: g.title.trim(), note: g.note?.trim() || undefined,
+        url: safeExternalUrl(g.url) ?? undefined, linkLabel: g.linkLabel?.trim() || undefined, ...(g.archived ? { archived: true } : {}),
+      }));
+      const next: GuestExperience = {
+        revision: cur.revision + 1,
+        meals: { enabled: draft.meals.enabled, required: draft.meals.required, options },
+        dietary: { enabled: draft.dietary.enabled },
+        gifts: { enabled: draft.gifts.enabled, afterDecline: draft.gifts.enabled && draft.gifts.afterDecline, intro: draft.gifts.intro?.trim() || undefined, items },
+      };
+      ev.guestExperience = next;
+      const t = now();
+      touch(ev, t);
+      log(db, t, ev.id, 'event_updated', { what: 'تجربة الضيف' });
       return clone(ev);
     }), 'write'),
     markCheckInPrepared: (id) => store.request(() => store.write((db) => {
@@ -211,6 +244,23 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
   };
 }
 
+const answersFrom = (r: { attending: boolean; meals?: InvitationParty['meals']; dietary?: InvitationParty['dietary']; experienceRevision?: number }) =>
+  r.attending ? { meals: r.meals, dietary: r.dietary, experienceRevision: r.experienceRevision } : { meals: undefined, dietary: undefined, experienceRevision: undefined };
+
+/** answers checked against the policy now in force; a stale policy that no longer fits is a conflict to review */
+function guestAnswers(ev: Event, input: RsvpInput) {
+  const x = experienceOf(ev);
+  const check = checkAnswers(x, input);
+  if (!check.ok) throw new AppError(check.conflict ? 'conflict' : 'validation', check.message, check.field);
+  return { ...cleanAnswers(x, input), experienceRevision: input.attending ? x.revision : undefined };
+}
+/** what the guest page shows: archived menu choices and wishes stay out of sight */
+function publicExperience(ev: Event): GuestExperience | undefined {
+  const x = ev.guestExperience;
+  if (!x) return undefined;
+  return { ...x, meals: { ...x.meals, options: x.meals.options.filter((o) => !o.archived) }, gifts: { ...x.gifts, items: x.gifts.items.filter((g) => !g.archived) } };
+}
+
 // ------------------------------------------------------------------ RSVP (organizer side)
 export function mockRsvp({ store, now }: Ctx): RsvpRepository {
   return {
@@ -222,6 +272,8 @@ export function mockRsvp({ store, now }: Ctx): RsvpRepository {
       const t = now();
       const edited = p.rsvpStatus !== 'pending';
       Object.assign(p, applyRsvp(p, input, t.toISOString()));
+      // a decline clears food (invariant 5); a changed headcount keeps the guest's answer and the report flags a misfit
+      if (!input.attending) { p.meals = undefined; p.dietary = undefined; p.experienceRevision = undefined; }
       db.responses.push({ id: makeId('rsp'), eventId: p.eventId, partyId: p.id, name: p.primaryGuestName, attending: input.attending, count: input.attending ? input.count : 0, companionNames: input.companionNames, note: input.note, channel: 'organizer', at: t.toISOString() });
       log(db, t, p.eventId, edited ? 'rsvp_edited' : input.attending ? 'rsvp_confirmed' : 'rsvp_declined', { name: p.primaryGuestName, count: input.count, attending: input.attending, by: 'organizer' }, 'organizer', p.id);
       return clone(p);
@@ -233,6 +285,8 @@ export function mockRsvp({ store, now }: Ctx): RsvpRepository {
       if (r.attending && r.count > p.maxPartySize) throw new AppError('validation', `الرد لـ${r.count} أشخاص، والدعوة تسمح بـ${p.maxPartySize}. عدّل العدد المسموح أولًا.`);
       const t = now();
       Object.assign(p, applyRsvp(p, { attending: r.attending, count: r.count, note: r.note, companionNames: r.companionNames }, t.toISOString()));
+      // the answers move with the reply (D10): the response is resolved, so they are counted once, on the party
+      Object.assign(p, answersFrom(r));
       r.partyId = p.id; r.resolution = 'matched';
       log(db, t, p.eventId, 'rsvp_matched', { name: r.name }, 'organizer', p.id);
     }), 'write'),
@@ -247,6 +301,7 @@ export function mockRsvp({ store, now }: Ctx): RsvpRepository {
         source: 'general_link', createdAt: t.toISOString(), updatedAt: t.toISOString(),
       };
       Object.assign(p, applyRsvp(p, { attending: r.attending, count: Math.max(1, r.count), note: r.note }, r.at));
+      Object.assign(p, answersFrom(r));
       db.parties.push(p);
       r.partyId = p.id; r.resolution = 'added';
       log(db, t, r.eventId, 'party_added', { name: p.primaryGuestName }, 'organizer', p.id);
@@ -376,10 +431,11 @@ export function mockGuest({ store, now }: Ctx): GuestApi {
     return clone({
       event: { id: ev.id, slug: ev.slug, type: ev.type, title: ev.title, names: ev.names, date: ev.date, time: ev.time, timeZone: ev.timeZone, durationHours: ev.durationHours, venue: ev.venue },
       design: publishState(design) === 'none' ? design.draft : design.published,
-      party: party ? { code: party.code, name: party.primaryGuestName, maxPartySize: party.maxPartySize, rsvpStatus: party.rsvpStatus, confirmedPartySize: party.confirmedPartySize, companionNames: party.companionNames, guestNote: party.guestNote, tableName: table, checkedInCount: party.checkedInCount } : null,
+      party: party ? { code: party.code, name: party.primaryGuestName, maxPartySize: party.maxPartySize, rsvpStatus: party.rsvpStatus, confirmedPartySize: party.confirmedPartySize, companionNames: party.companionNames, guestNote: party.guestNote, meals: party.meals, dietary: party.dietary, tableName: table, checkedInCount: party.checkedInCount } : null,
       canEdit: phase === 'upcoming' || phase === 'final_week' || (phase === 'event_day' && now() < eventStart(ev)),
       phase: phase === 'completed' || phase === 'archived' ? 'after' : phase === 'event_day' ? 'event_day' : 'before',
       maxGuests: party?.maxPartySize ?? ev.settings.defaultPartySize,
+      experience: publicExperience(ev),
     });
   };
   return {
@@ -395,10 +451,11 @@ export function mockGuest({ store, now }: Ctx): GuestApi {
           const err = validateRsvp(input, p.maxPartySize);
           if (err) throw new AppError('validation', RSVP_ERROR_TEXT[err], 'count');
           const edited = p.rsvpStatus !== 'pending';
-          Object.assign(p, applyRsvp(p, input, t.toISOString()));
+          const answers = guestAnswers(ev, input);
+          Object.assign(p, applyRsvp(p, input, t.toISOString()), answers);
           if (p.delivery.status !== 'opened') p.delivery = { ...p.delivery, status: 'opened', source: 'platform', openedAt: t.toISOString() };
           const id = makeId('rsp');
-          db.responses.push({ id, eventId: ev.id, partyId: p.id, name: p.primaryGuestName, attending: input.attending, count: input.attending ? input.count : 0, companionNames: input.companionNames, note: input.note, channel: 'guest_link', at: t.toISOString() });
+          db.responses.push({ id, eventId: ev.id, partyId: p.id, name: p.primaryGuestName, attending: input.attending, count: input.attending ? input.count : 0, companionNames: input.companionNames, note: input.note, ...answers, channel: 'guest_link', at: t.toISOString() });
           log(db, t, ev.id, edited ? 'rsvp_edited' : input.attending ? 'rsvp_confirmed' : 'rsvp_declined', { name: p.primaryGuestName, count: input.count, attending: input.attending }, 'guest', p.id);
           return { id };
         }
@@ -406,8 +463,9 @@ export function mockGuest({ store, now }: Ctx): GuestApi {
         if (!name) throw new AppError('validation', 'اكتب اسمك ليعرف صاحب الدعوة من رد.', 'name');
         const err = validateRsvp(input, ev.settings.defaultPartySize);
         if (err) throw new AppError('validation', RSVP_ERROR_TEXT[err], 'count');
+        const answers = guestAnswers(ev, input);
         const id = makeId('rsp');
-        db.responses.push({ id, eventId: ev.id, name, attending: input.attending, count: input.attending ? input.count : 0, note: input.note, channel: 'general_link', at: t.toISOString() });
+        db.responses.push({ id, eventId: ev.id, name, attending: input.attending, count: input.attending ? input.count : 0, note: input.note, ...answers, channel: 'general_link', at: t.toISOString() });
         log(db, t, ev.id, 'rsvp_unmatched', { name }, 'guest');
         return { id };
       });

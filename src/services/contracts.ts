@@ -6,9 +6,10 @@
  * Every method is async and may reject with an AppError (services/errors.ts).
  */
 import type {
-  CheckInException, CheckInRecord, CreateEventInput, Event, EventActivity, InvitationDesign, InvitationDesignContent,
-  InvitationParty, PartyInput, RSVPResponse, RsvpInput, Table, UpdateEventInput, User,
+  CheckInException, CheckInRecord, CreateEventInput, DietaryAnswer, Event, EventActivity, GuestExperience, InvitationDesign, InvitationDesignContent,
+  InvitationParty, MealAllocation, PartyInput, RSVPResponse, RsvpInput, Table, UpdateEventInput, User,
 } from '../domain/types';
+import type { ExperienceDraft } from '../domain/guest-experience';
 
 export interface EventRepository {
   list(): Promise<Event[]>;
@@ -16,6 +17,9 @@ export interface EventRepository {
   create(input: CreateEventInput): Promise<Event>;
   update(id: string, input: UpdateEventInput): Promise<Event>;
   markCheckInPrepared(id: string): Promise<Event>;
+  /** meals / dietary / wishlist the guest sees. Rejects with 'conflict' when another tab saved first.
+   *  Answered meal options are archived, never dropped, so old replies keep their meaning (T33). */
+  updateExperience(id: string, draft: ExperienceDraft, expectedRevision: number): Promise<Event>;
   archive(id: string): Promise<Event>;
   restore(id: string): Promise<Event>;
 }
@@ -89,6 +93,8 @@ export interface GuestParty {
   confirmedPartySize?: number;
   companionNames?: string[];
   guestNote?: string;
+  meals?: MealAllocation[];
+  dietary?: DietaryAnswer;
   tableName?: string;          // only when the organizer reveals tables
   checkedInCount: number;
 }
@@ -100,6 +106,8 @@ export interface GuestView {
   /** RSVP allowance: the party's size, or the event default on the general link */
   maxGuests: number;
   phase: 'before' | 'event_day' | 'after';
+  /** the questions and wishlist this guest sees (archived entries removed); absent = none */
+  experience?: GuestExperience;
 }
 export interface GuestRsvpInput extends RsvpInput { name?: string }
 

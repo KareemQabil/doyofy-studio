@@ -12,6 +12,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { deckDragPosition, deckPose, deckRelease } from '../../domain/gestures';
 import { usePointerGesture } from '../hooks/usePointerGesture';
 import { Icon } from '../icons';
+import { SPRING } from '../../domain/motion';
+import { haptic, springTo } from '../motion/motion';
 
 const reduced = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const HINT_KEY = 'doyofy:deck-hint';
@@ -63,17 +65,13 @@ export function TactileDeck<T>({ items, index, onIndexChange, onActivate, getKey
     });
   }, [step]);
 
-  const animateTo = useCallback((to: number, done?: () => void) => {
+  // settle on a spring that starts with the release velocity (cards per second), so a flick feels thrown
+  const stopSpring = useRef<() => void>(() => {});
+  const animateTo = useCallback((to: number, done?: () => void, velocity = 0) => {
     cancelAnimationFrame(anim.current);
-    const from = pos.current;
-    if (reduced() || Math.abs(to - from) < 0.001) { paint(to); done?.(); return; }
-    const dur = Math.min(520, 300 + Math.abs(to - from) * 70), t0 = performance.now();
-    const tick = (t: number) => {
-      const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); // ease-out cubic
-      paint(from + (to - from) * e);
-      if (k < 1) anim.current = requestAnimationFrame(tick); else done?.();
-    };
-    anim.current = requestAnimationFrame(tick);
+    stopSpring.current();
+    if (reduced() || (Math.abs(to - pos.current) < 0.001 && Math.abs(velocity) < 0.01)) { paint(to); done?.(); return; }
+    stopSpring.current = springTo(pos.current, to, { velocity, config: SPRING.snap, precision: 0.002, onUpdate: paint, onRest: done });
   }, [paint]);
 
   // measure card width → spacing (responsive)
@@ -88,7 +86,7 @@ export function TactileDeck<T>({ items, index, onIndexChange, onActivate, getKey
   useLayoutEffect(() => { paint(pos.current); }, [paint, count]);
   // external index changes (buttons, keys, parent) glide to the new card
   useEffect(() => { setMounted(index); animateTo(index); }, [index, animateTo]);
-  useEffect(() => () => cancelAnimationFrame(anim.current), []);
+  useEffect(() => () => { cancelAnimationFrame(anim.current); stopSpring.current(); }, []);
 
   // teach once: a small nudge toward the next card, then back
   useEffect(() => {
@@ -106,14 +104,16 @@ export function TactileDeck<T>({ items, index, onIndexChange, onActivate, getKey
 
   const gesture = usePointerGesture({
     axis: 'x', enabled: !disabled,
-    onStart: () => { learned(); cancelAnimationFrame(anim.current); startPos.current = pos.current; },
+    onStart: () => { learned(); cancelAnimationFrame(anim.current); stopSpring.current(); startPos.current = pos.current; },
     onMove: (dx) => { stage.current?.classList.add('is-dragging'); const p = deckDragPosition(startPos.current, dx, step, count); setMounted(Math.round(p)); paint(p); },
     onEnd: (g) => {
       stage.current?.classList.remove('is-dragging');
       if (!g.moved || g.cancelled) { animateTo(index); return; }
       learned();
       const { target } = deckRelease(pos.current, g.velocity, step, count, index);
-      animateTo(target, () => { if (target !== index) onIndexChange(target); });
+      if (target !== index) haptic('snap');
+      // dx < 0 advances in RTL: px/ms → cards/s
+      animateTo(target, () => { if (target !== index) onIndexChange(target); }, (-g.velocity * 1000) / Math.max(1, step));
     },
   });
 

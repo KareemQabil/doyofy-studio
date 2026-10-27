@@ -1,0 +1,86 @@
+/*
+ * Hall map V2 — the «مساء» (evening) surface the reviewer liked: charcoal, gold seats, one glance.
+ * Compact on phones (8 tables ≈ one screen instead of four), seats are real counts, capacity is readable
+ * without colour (numbers + words). The move dock sits above the tab bar, within thumb reach.
+ */
+.hall { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 14px; padding: 20px 18px 16px; border-radius: 24px; background: var(--mesh-night, #1E1E1E); color: #fff; }
+.hall::before { content: ''; position: absolute; inset: 0; z-index: -1; background: url('assets/brand/pattern-grid-gold.svg') center / 160px repeat; opacity: .07; pointer-events: none; }
+.hall-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hall-kicker { display: inline-flex; align-items: center; gap: 6px; color: var(--brand-gold, #C7A661); font: 600 12.5px/1 var(--font-display); }
+.hall-head h2 { margin-top: 6px; font: 650 clamp(18px, 2.2vw, 24px)/1.35 var(--font-display); color: #fff; }
+.hall-head h2 .num { color: var(--brand-gold, #C7A661); }
+.hall-all { flex: none; min-height: 40px; padding: 0 16px; border: 1px solid color-mix(in srgb, var(--brand-ivory, #F2EAD9) 50%, transparent); border-radius: 999px; background: transparent; color: #fff; font: 600 13px/1 var(--font-display); cursor: pointer; transition: background-color 200ms, color 200ms, transform 140ms; }
+.hall-all.is-on { background: var(--brand-gold, #C7A661); border-color: var(--brand-gold, #C7A661); color: var(--brand-charcoal, #262626); }
+.hall-all:active { transform: scale(.96); }
+.hall-stage { display: grid; place-items: center; height: 26px; margin-inline: 18%; border-radius: 0 0 14px 14px; background: linear-gradient(180deg, rgba(199,166,97,.28), rgba(199,166,97,.08)); border: 1px solid rgba(199,166,97,.35); border-top: 0; }
+.hall-stage span { font-size: 11px; letter-spacing: .04em; color: color-mix(in srgb, var(--brand-gold, #C7A661) 90%, #fff); }
+.hall-floor { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px 8px; }
+.hall .hall-table { min-height: 0; font: inherit; position: relative; display: grid; justify-items: center; gap: 2px; padding: 8px 4px 10px; border: 1px solid transparent; border-radius: 18px; background: transparent; color: #fff; cursor: pointer; animation: hall-in 520ms var(--v2-out, ease) both; animation-delay: calc(var(--hall-i, 0) * 40ms); transition: background-color 220ms, border-color 220ms, transform 180ms var(--v2-press, ease); }
+.hall .hall-table:nth-child(even) { transform: translateY(10px); }
+.hall .hall-table:active { transform: scale(.95); }
+.hall .hall-table:nth-child(even):active { transform: translateY(10px) scale(.95); }
+@media (hover: hover) and (pointer: fine) { .hall .hall-table:hover { background: rgba(255,255,255,.06); border-color: rgba(199,166,97,.35); } }
+.hall .hall-table.is-active { background: rgba(199,166,97,.14); border-color: var(--brand-gold, #C7A661); }
+.hall .hall-table.is-drop-target { background: rgba(46,183,183,.16); border-color: var(--brand-turquoise, #2EB7B7); }
+.hall-table-art { position: relative; display: grid; place-items: center; width: 92px; height: 92px; }
+.hall-disc { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hall-disc-top { fill: rgba(255,255,255,.05); stroke: rgba(199,166,97,.28); stroke-width: 1; }
+.hall-disc-ring { fill: none; stroke: var(--brand-gold, #C7A661); stroke-width: 2.4; stroke-linecap: round; transition: stroke-dasharray 520ms var(--v2-out, ease); }
+.hall-seat { fill: transparent; stroke: rgba(242,234,217,.42); stroke-width: 1.2; transition: fill 300ms, stroke 300ms, r 300ms; }
+.hall-seat.is-taken { fill: var(--brand-gold, #C7A661); stroke: var(--brand-gold, #C7A661); }
+.hall-seat.is-new { fill: var(--brand-turquoise, #2EB7B7); stroke: var(--brand-turquoise, #2EB7B7); animation: seat-pop 420ms var(--v2-spring, ease) both; }
+.hall .hall-table.is-over .hall-disc-ring, .seat-dock-table.is-tight .hall-disc-ring { stroke: #F08A8C; }
+.hall .hall-table.is-over .hall-seat.is-taken { fill: #F08A8C; stroke: #F08A8C; }
+.hall .hall-table.is-full .hall-disc-ring { stroke: #7FD3CF; }
+.hall-count { position: relative; font: 700 19px/1 var(--font-display); color: #fff; }
+.hall-count small { font-size: 12px; font-weight: 500; color: color-mix(in srgb, var(--brand-ivory, #F2EAD9) 80%, transparent); }
+.hall-name { max-width: 100%; font: 600 12.5px/1.35 var(--font-display); text-align: center; overflow-wrap: anywhere; }
+.hall-status { font-size: 11px; color: color-mix(in srgb, var(--brand-ivory, #F2EAD9) 78%, transparent); }
+.hall .hall-table.is-over .hall-status { color: #FFC2C3; font-weight: 600; }
+.hall-note { font-size: 11px; color: color-mix(in srgb, var(--brand-ivory, #F2EAD9) 60%, transparent); text-align: center; }
+@keyframes hall-in { from { opacity: 0; transform: translateY(12px) scale(.92); } }
+@keyframes seat-pop { from { r: 0; } }
+
+/* ---------------------------------------------------------------- move dock */
+.seat-dock { position: fixed; z-index: 60; inset-inline: 10px; bottom: calc(10px + env(safe-area-inset-bottom)); display: grid; gap: 8px; padding: 12px 10px 10px; border-radius: 24px; background: #1E1E1E; color: #fff; box-shadow: 0 30px 60px -24px rgba(0,0,0,.7); animation: dock-in 380ms var(--v2-spring, ease) both; }
+.seat-dock-head { display: flex; align-items: center; gap: 8px; padding-inline: 4px; }
+.seat-dock-chip { flex: 1; min-width: 0; font-size: 13px; color: color-mix(in srgb, var(--brand-ivory, #F2EAD9) 88%, transparent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seat-dock-chip b { color: #fff; font-family: var(--font-display); }
+.seat-dock-hint { font-size: 11.5px; color: var(--brand-gold, #C7A661); white-space: nowrap; }
+.seat-dock-list, .seat-dock-cancel { display: grid; place-items: center; min-width: 40px; height: 40px; padding: 0 12px; border: 0; border-radius: 999px; background: rgba(255,255,255,.1); color: #fff; font: 600 12.5px/1 var(--font-display); cursor: pointer; }
+.seat-dock-cancel { padding: 0; }
+.seat-dock-strip { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; overscroll-behavior-x: contain; scrollbar-width: none; padding: 2px 2px 4px; }
+.seat-dock-strip::-webkit-scrollbar { display: none; }
+.seat-dock-table { flex: 0 0 104px; display: grid; justify-items: center; gap: 2px; padding: 6px 4px 8px; border: 1px solid rgba(255,255,255,.08); border-radius: 18px; background: rgba(255,255,255,.04); color: #fff; cursor: pointer; scroll-snap-align: center; transition: background-color 180ms, border-color 180ms, transform 220ms var(--v2-spring, ease); }
+.seat-dock-table .hall-table-art { width: 76px; height: 76px; }
+.seat-dock-table .hall-count { font-size: 16px; }
+.seat-dock-table.is-hover, .seat-dock-table:focus-visible { background: rgba(46,183,183,.18); border-color: var(--brand-turquoise, #2EB7B7); transform: translateY(-6px) scale(1.04); }
+.seat-dock-table.is-tight .hall-status { color: #FFC2C3; }
+.seat-dock-table.is-current { opacity: .45; }
+.seat-dock-table:active { transform: scale(.95); }
+@keyframes dock-in { from { opacity: 0; transform: translateY(40px) scale(.96); } }
+@media (min-width: 761px) { .seat-dock { inset-inline: auto 24px; bottom: 24px; width: min(720px, calc(100vw - 340px)); } }
+
+/* lifted family follows the finger */
+.lift-ghost { position: fixed; z-index: 80; left: 0; top: 0; display: grid; gap: 2px; margin: -64px 0 0 -70px; width: 140px; padding: 10px 12px; border-radius: 16px; background: #fff; color: var(--brand-charcoal, #262626); box-shadow: 0 24px 40px -14px rgba(0,0,0,.55), 0 0 0 2px var(--brand-turquoise, #2EB7B7); pointer-events: none; text-align: center; animation: ghost-lift 260ms var(--v2-spring, ease) both; }
+.lift-ghost b { font: 700 14px/1.3 var(--font-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lift-ghost span { font-size: 12px; color: var(--c-text-3); }
+@keyframes ghost-lift { from { opacity: 0; transform: scale(.8); } }
+:root[data-theme='signature'] .pool-item, :root[data-theme='signature'] .table-party { -webkit-touch-callout: none; user-select: none; }
+.pool-item.is-drag-source, .table-party.is-drag-source { opacity: .5; outline: 2px dashed var(--brand-turquoise, #2EB7B7); outline-offset: 2px; }
+
+@media (max-width: 760px) {
+  .hall { padding: 16px 12px 12px; border-radius: 22px; margin-inline: -4px; }
+  .hall-floor { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 4px; }
+  .hall .hall-table { padding: 6px 2px 8px; }
+  .hall .hall-table-art { width: 78px; height: 78px; }
+  .hall-count { font-size: 16px; }
+  .hall .hall-table:nth-child(even) { transform: none; }
+  .hall .hall-table:nth-child(3n+2) { transform: translateY(8px); }
+  .hall .hall-table:nth-child(even):active { transform: scale(.95); }
+  .hall-head h2 { font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hall .hall-table, .seat-dock, .lift-ghost, .hall-seat.is-new { animation: none; }
+  .hall-disc-ring { transition: none; }
+}

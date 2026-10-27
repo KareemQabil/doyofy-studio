@@ -5,7 +5,7 @@
  *   2. خطوبة ريم وخالد — draft event, nothing prepared yet
  *   3. عقد قران هند ومازن — completed 20 days ago, full attendance data
  */
-import type { CheckInRecord, Event, EventActivity, InvitationDesign, InvitationParty, RSVPResponse, Table } from '../../domain/types';
+import type { CheckInRecord, DietaryAnswer, Event, EventActivity, GuestExperience, InvitationDesign, InvitationParty, MealAllocation, RSVPResponse, Table } from '../../domain/types';
 import { addDays, localDateOf, zonedToInstant } from '../../domain/format';
 import { makeId, seededRng, type Rng } from '../../domain/ids';
 import { defaultDesign } from '../../domain/invitation';
@@ -64,6 +64,37 @@ const WEDDING: Spec[] = [
   { name: 'يوسف الشهري', max: 2, side: 'أصدقاء العريس', delivery: 'none' },
 ];
 
+// the wedding hosts switched on a simple menu, dietary needs and a wishlist (F050–F052, F061).
+// Links point at example.com on purpose: the prototype never pretends to be a real shop or wallet.
+const WEDDING_EXPERIENCE: GuestExperience = {
+  revision: 1,
+  meals: { enabled: true, required: false, options: [
+    { id: 'meal_meat', label: 'كبسة لحم' }, { id: 'meal_chicken', label: 'دجاج مشوي' },
+    { id: 'meal_fish', label: 'سمك هامور' }, { id: 'meal_veg', label: 'طبق نباتي' },
+  ] },
+  dietary: { enabled: true },
+  gifts: { enabled: true, afterDecline: true, intro: 'حضوركم أجمل هدية. ولمن أحب أن يشاركنا فرحتنا من قريب أو بعيد:', items: [
+    { id: 'gift_watch', kind: 'contribution', title: 'ساعة لفيصل', note: 'اخترناها معًا — المشاركة بأي مبلغ تُسعدنا', url: 'https://example.com/wishlist/watch', linkLabel: 'المساهمة في الساعة' },
+    { id: 'gift_flowers', kind: 'flowers', title: 'باقة ورد لنورة', note: 'تصل إلى القاعة يوم الزفاف', url: 'https://example.com/flowers/noura' },
+    { id: 'gift_coffee', kind: 'gift', title: 'ركن القهوة لبيتنا الجديد', note: 'آلة قهوة وفناجين', url: 'https://example.com/wishlist/coffee-corner' },
+  ] },
+};
+/** meals by WEDDING index: [meat, chicken, fish, veg]; parties not listed have not chosen (shown as «بلا اختيار») */
+const WEDDING_MEALS: Record<number, [number, number, number, number]> = {
+  0: [3, 1, 1, 0], 1: [2, 2, 0, 0], 2: [1, 0, 1, 0], 3: [0, 1, 0, 1], 4: [1, 1, 1, 0], 5: [0, 0, 0, 1],
+  6: [2, 0, 0, 0], 7: [2, 2, 1, 0], 9: [1, 1, 0, 0], 10: [2, 0, 2, 0], 11: [0, 2, 0, 0], 13: [1, 0, 1, 0], 16: [2, 0, 0, 0],
+};
+const WEDDING_DIETARY: Record<number, DietaryAnswer> = {
+  0: { answered: true, needs: [] }, 1: { answered: true, needs: [] }, 2: { answered: true, needs: [] },
+  3: { answered: true, needs: ['nuts'], affectedCount: 1, note: 'حساسية شديدة من الفول السوداني' },
+  4: { answered: true, needs: ['dairy'], affectedCount: 1, note: 'لولوة — حساسية حليب' },
+  5: { answered: true, needs: ['vegetarian'], affectedCount: 1 },
+  7: { answered: true, needs: ['gluten'] },
+  9: { answered: true, needs: [] }, 10: { answered: true, needs: ['seafood'], affectedCount: 1 }, 13: { answered: true, needs: [] },
+};
+const allocation = (m: [number, number, number, number]): MealAllocation[] =>
+  (['meal_meat', 'meal_chicken', 'meal_fish', 'meal_veg'] as const).map((optionId, i) => ({ optionId, count: m[i]! })).filter((a) => a.count > 0);
+
 const COMPLETED: Array<[string, number, 'c' | 'd', number, number]> = [
   // name, max, rsvp, count, arrived
   ['عائلة باوزير', 5, 'c', 5, 5], ['عائلة الجفري', 4, 'c', 4, 4], ['سالم بن لادن', 2, 'c', 2, 2], ['عائلة باعشن', 5, 'c', 4, 4],
@@ -103,6 +134,7 @@ export function buildSeed(now: Date, scenario: ScenarioId): DbShape {
     slug: 'noura-faisal',
     settings: { defaultPartySize: 2, revealTableToGuests: true, allowGeneralLink: true },
     checkInPreparedAt: scenario === 'event_day' ? at(now, 60 * 20) : undefined,
+    guestExperience: structuredClone(WEDDING_EXPERIENCE),
     createdAt: at(now, 60 * 24 * 41), updatedAt: at(now, 60 * 24 * 3),
   };
   events.push(e1);
@@ -140,9 +172,12 @@ export function buildSeed(now: Date, scenario: ScenarioId): DbShape {
       checkInStatus: 'not_arrived', checkedInCount: 0, source: 'seed', createdAt: created, updatedAt: created,
     };
     if (s.phone && !p.phone) p.notes = s.notes; // failed number kept out of the phone field
+    if (s.rsvp === 'c' && WEDDING_MEALS[i]) p.meals = allocation(WEDDING_MEALS[i]!);
+    if (s.rsvp === 'c' && WEDDING_DIETARY[i]) p.dietary = structuredClone(WEDDING_DIETARY[i]);
+    if (p.meals || p.dietary) p.experienceRevision = 1;
     parties.push(p);
     if (s.rsvp) {
-      responses.push({ id: `rsp_w${i + 1}`, eventId: e1.id, partyId: id, name: s.name, attending: s.rsvp === 'c', count: s.rsvp === 'c' ? s.count ?? 1 : 0, note: s.guestNote, channel: s.delivery === 'manual' ? 'organizer' : 'guest_link', at: p.respondedAt! });
+      responses.push({ id: `rsp_w${i + 1}`, eventId: e1.id, partyId: id, name: s.name, attending: s.rsvp === 'c', count: s.rsvp === 'c' ? s.count ?? 1 : 0, note: s.guestNote, meals: p.meals, dietary: p.dietary, experienceRevision: p.experienceRevision, channel: s.delivery === 'manual' ? 'organizer' : 'guest_link', at: p.respondedAt! });
       if (opened) act(e1.id, 'invitation_opened', respondedMin + 30, { name: s.name }, 'guest', id);
       act(e1.id, s.rsvp === 'c' ? 'rsvp_confirmed' : 'rsvp_declined', respondedMin, { name: s.name, count: s.count ?? 0 }, s.delivery === 'manual' ? 'organizer' : 'guest', id);
     } else if (opened) act(e1.id, 'invitation_opened', 60 * 24 * (3 + (i % 5)), { name: s.name }, 'guest', id);
@@ -153,7 +188,7 @@ export function buildSeed(now: Date, scenario: ScenarioId): DbShape {
   act(e1.id, 'party_moved', 95, { name: 'منى القحطاني', table: 'طاولة 5' }, 'organizer', 'pty_w04');
   act(e1.id, 'reminder_sent', 60 * 20, { count: 9 });
   // two replies through the general link that need matching
-  responses.push({ id: 'rsp_g1', eventId: e1.id, name: 'ياسر الدوسري', attending: true, count: 2, channel: 'general_link', at: at(now, 60 * 5) });
+  responses.push({ id: 'rsp_g1', eventId: e1.id, name: 'ياسر الدوسري', attending: true, count: 2, meals: [{ optionId: 'meal_meat', count: 1 }, { optionId: 'meal_fish', count: 1 }], dietary: { answered: true, needs: [] }, experienceRevision: 1, channel: 'general_link', at: at(now, 60 * 5) });
   responses.push({ id: 'rsp_g2', eventId: e1.id, name: 'أم سلمان العتيبي', attending: true, count: 3, note: 'وصلتني الدعوة من أم سعد', channel: 'general_link', at: at(now, 60 * 26) });
   act(e1.id, 'rsvp_unmatched', 60 * 5, { name: 'ياسر الدوسري' }, 'guest');
   act(e1.id, 'rsvp_unmatched', 60 * 26, { name: 'أم سلمان العتيبي' }, 'guest');

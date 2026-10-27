@@ -183,7 +183,8 @@ export function OccasionPoster({ type, active }: { type: EventType; active?: boo
     <span className={`sig-poster tone-${toneOf(type)}${active ? ' is-active' : ''}`}>
       <span className="sig-poster-head"><strong>{info.label}</strong><small>{info.line}</small></span>
       <span className="sig-poster-card" aria-hidden="true"><CardThumb event={ev} content={content} width={phone ? 128 : 150} /></span>
-      <span className="sig-poster-glyph" aria-hidden="true"><OccasionGlyph type={type} /></span>
+      {/* the occasion's own object (shipped artwork that the deck used to replace with an icon) */}
+      <img className="sig-poster-object" src={`assets/occasions/${type}-object.webp`} alt="" width="320" height="320" loading="lazy" decoding="async" aria-hidden="true" />
     </span>
   );
 }

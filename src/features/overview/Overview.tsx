@@ -54,7 +54,8 @@ function EditorialOverview({ event }: { event: Event }) {
     </section>}
     <nav className="journey" aria-label="مراحل المناسبة"><ol>{journey.map((s,n)=><li key={s.to} className={n<index?'is-done':n===index?'is-current':''}><Link to={s.to} aria-current={n===index?'step':undefined}><span className="journey-number">{n<index?<Icon name="check" size="sm"/>:n+1}</span><span>{s.label}</span></Link></li>)}</ol></nav>
     <p className="optional-journey-note"><Icon name="table" size="sm"/>الطاولات اختيارية.<Link to={paths.seating(event.id)}>أضف توزيعًا لو تحتاجه</Link></p>
-    <dl className="event-facts">{facts.map(f=><div key={f.label}><dt>{f.label}</dt><dd className={`tone-text-${f.tone}`}><strong className="num">{f.value}</strong><span>{f.unit}</span></dd></div>)}</dl>
+    {/* each count opens exactly the list it counts (F037) */}
+    <dl className="event-facts is-linked">{facts.map(f=><div key={f.label}><dt>{f.label}</dt><dd className={`tone-text-${f.tone}`}><Link to={`${paths.guests(event.id)}${f.filter==='all'?'':`?filter=${f.filter}`}`} className="fact-link" aria-label={`${f.label}: ${f.value} ${f.unit} — اعرض القائمة`}><strong className="num">{f.value}</strong><span>{f.unit}</span><Icon name="forward" size="sm" /></Link></dd></div>)}</dl>
     <JourneyBanner title="فرحتك مرتّبة، خطوة بخطوة." line="ابدأ بالدعوة، ثم الضيوف والردود، واترك يوم المناسبة للترحيب." />
     <div className="overview-columns">
       <div className="stack gap-6">
