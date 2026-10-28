@@ -1,0 +1,376 @@
+{
+ "source": "قوالب pdf.pdf (Canva export, author metadata: Kareem Khaled), supplied by the owner 2026-10-28",
+ "rights": "Owner states the PDF is theirs and approved use in the prototype (2026-10-28). Not independently verified. Review before any commercial launch.",
+ "excluded": [
+  "p13 #79: stock photo with real people"
+ ],
+ "layers": [
+  {
+   "file": "layers/gazebo-garden.webp",
+   "from": "p01_000",
+   "page": 1,
+   "size": [
+    1158,
+    1155
+   ],
+   "bytes": 153982,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/drapes-ivory.webp",
+   "from": "p01_002",
+   "page": 1,
+   "size": [
+    1026,
+    1229
+   ],
+   "bytes": 115698,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/gazebo-ivy.webp",
+   "from": "p01_004",
+   "page": 1,
+   "size": [
+    795,
+    776
+   ],
+   "bytes": 97338,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/column-floral.webp",
+   "from": "p01_006",
+   "page": 1,
+   "size": [
+    558,
+    600
+   ],
+   "bytes": 69276,
+   "alpha": true,
+   "also": [
+    "p01_008"
+   ]
+  },
+  {
+   "file": "layers/bouquet-white-roses.webp",
+   "from": "p01_010",
+   "page": 1,
+   "size": [
+    804,
+    696
+   ],
+   "bytes": 161496,
+   "alpha": true,
+   "also": [
+    "p01_012"
+   ]
+  },
+  {
+   "file": "layers/bouquet-white-roses-b.webp",
+   "from": "p01_014",
+   "page": 1,
+   "size": [
+    804,
+    696
+   ],
+   "bytes": 162932,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/garland-white-roses.webp",
+   "from": "p02_016",
+   "page": 2,
+   "size": [
+    848,
+    404
+   ],
+   "bytes": 81674,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/paper-blue-grey.webp",
+   "from": "p03_018",
+   "page": 3,
+   "size": [
+    1229,
+    1229
+   ],
+   "bytes": 1312808,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/satin-light-grey.webp",
+   "from": "p03_020",
+   "page": 3,
+   "size": [
+    1017,
+    900
+   ],
+   "bytes": 36888,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/dahlias-magenta.webp",
+   "from": "p03_022",
+   "page": 3,
+   "size": [
+    524,
+    409
+   ],
+   "bytes": 50852,
+   "alpha": true,
+   "also": [
+    "p03_024",
+    "p03_026",
+    "p03_028",
+    "p03_030",
+    "p03_032"
+   ]
+  },
+  {
+   "file": "layers/paper-ivory-a.webp",
+   "from": "p04_034",
+   "page": 4,
+   "size": [
+    800,
+    1200
+   ],
+   "bytes": 36194,
+   "alpha": false,
+   "also": []
+  },
+  {
+   "file": "layers/cornflowers-stem.webp",
+   "from": "p04_035",
+   "page": 4,
+   "size": [
+    383,
+    845
+   ],
+   "bytes": 85348,
+   "alpha": true,
+   "also": [
+    "p04_037",
+    "p04_039",
+    "p04_041"
+   ]
+  },
+  {
+   "file": "layers/paper-torn-white.webp",
+   "from": "p05_043",
+   "page": 5,
+   "size": [
+    920,
+    1167
+   ],
+   "bytes": 111568,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/bouquet-blush-roses.webp",
+   "from": "p05_045",
+   "page": 5,
+   "size": [
+    684,
+    547
+   ],
+   "bytes": 89802,
+   "alpha": true,
+   "also": [
+    "p05_047",
+    "p05_055"
+   ]
+  },
+  {
+   "file": "layers/bouquet-rose-bow.webp",
+   "from": "p05_049",
+   "page": 5,
+   "size": [
+    657,
+    653
+   ],
+   "bytes": 74524,
+   "alpha": true,
+   "also": [
+    "p05_051"
+   ]
+  },
+  {
+   "file": "layers/rings-gold-rose.webp",
+   "from": "p05_053",
+   "page": 5,
+   "size": [
+    707,
+    570
+   ],
+   "bytes": 81274,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/paper-cream.webp",
+   "from": "p06_057",
+   "page": 6,
+   "size": [
+    1400,
+    841
+   ],
+   "bytes": 43478,
+   "alpha": false,
+   "also": [
+    "p15_084"
+   ]
+  },
+  {
+   "file": "layers/parchment-damask.webp",
+   "from": "p07_058",
+   "page": 7,
+   "size": [
+    1400,
+    893
+   ],
+   "bytes": 212400,
+   "alpha": false,
+   "also": []
+  },
+  {
+   "file": "layers/satin-white.webp",
+   "from": "p08_059",
+   "page": 8,
+   "size": [
+    1200,
+    900
+   ],
+   "bytes": 6546,
+   "alpha": false,
+   "also": []
+  },
+  {
+   "file": "layers/confetti-gold-a.webp",
+   "from": "p08_060",
+   "page": 8,
+   "size": [
+    1176,
+    976
+   ],
+   "bytes": 48092,
+   "alpha": true,
+   "also": [
+    "p08_062",
+    "p08_066"
+   ]
+  },
+  {
+   "file": "layers/ribbon-gold-blur.webp",
+   "from": "p08_064",
+   "page": 8,
+   "size": [
+    951,
+    815
+   ],
+   "bytes": 65826,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/silk-white-folds.webp",
+   "from": "p09_068",
+   "page": 9,
+   "size": [
+    788,
+    984
+   ],
+   "bytes": 6424,
+   "alpha": false,
+   "also": []
+  },
+  {
+   "file": "layers/confetti-gold-b.webp",
+   "from": "p09_069",
+   "page": 9,
+   "size": [
+    1400,
+    1189
+   ],
+   "bytes": 62752,
+   "alpha": true,
+   "also": [
+    "p09_071"
+   ]
+  },
+  {
+   "file": "layers/balloons-black-gold.webp",
+   "from": "p09_073",
+   "page": 9,
+   "size": [
+    343,
+    1000
+   ],
+   "bytes": 54424,
+   "alpha": true,
+   "also": [
+    "p09_075"
+   ]
+  },
+  {
+   "file": "layers/baby-clothesline.webp",
+   "from": "p10_077",
+   "page": 10,
+   "size": [
+    1400,
+    555
+   ],
+   "bytes": 150290,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/couple-illustration.webp",
+   "from": "p14_080",
+   "page": 14,
+   "size": [
+    356,
+    792
+   ],
+   "bytes": 73782,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/garland-red-roses.webp",
+   "from": "p14_082",
+   "page": 14,
+   "size": [
+    814,
+    287
+   ],
+   "bytes": 92382,
+   "alpha": true,
+   "also": []
+  },
+  {
+   "file": "layers/ornament-henna-green.webp",
+   "from": "p15_085",
+   "page": 15,
+   "size": [
+    749,
+    718
+   ],
+   "bytes": 152178,
+   "alpha": true,
+   "also": [
+    "p15_087",
+    "p15_089"
+   ]
+  }
+ ]
+}
