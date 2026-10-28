@@ -5,8 +5,6 @@
  */
 import { DietBadge } from '../guests/FoodReport';
 import { useMemo, useRef, useState, type DragEvent } from 'react';
-import { useReviewSettings } from '../../app/review';
-import { OrbitTableAtlas } from '../orbit/OrbitWorkLenses';
 import type { Event, InvitationParty } from '../../domain/types';
 import { checkAssign, nextTableName, occupancy, seatingWarnings, totalCapacity, validateTable, type TableOccupancy } from '../../domain/seating';
 import { countParties, searchParties, seatsFor } from '../../domain/parties';
@@ -22,7 +20,6 @@ import { HallMap, SeatDock, useLiftDrag } from './HallMap';
 import { useLocation } from '../../app/router';
 
 export function SeatingPage({ event }: { event: Event }) {
-  const {theme}=useReviewSettings();
   const loc=useLocation();
   const [tableFocus,setTableFocus]=useState(loc.search.get('table')??'');
   const parties = useParties(event.id);
@@ -73,12 +70,11 @@ export function SeatingPage({ event }: { event: Event }) {
     endDrag();
     if (party && party.tableId !== t.table.id) tryAssign(party, t);
   };
-  const signature = theme === 'signature';
-  const startMove = (p: InvitationParty) => { if (signature) setMoving(p); else setAssigning(p); };
+  const startMove = (p: InvitationParty) => setMoving(p);
   dropTo.current = (id) => { const t = occ.find((o) => o.table.id === id); const p = moving; if (t && p && p.tableId !== t.table.id) tryAssign(p, t); else if (!t) setMoving(null); };
   const cap = totalCapacity(tables.data ?? []);
   const focus=q||tableFocus==='all'?'all':occ.some(o=>o.table.id===tableFocus)?tableFocus:occ[0]?.table.id??'';
-  const shown=(theme==='orbit'||theme==='signature')&&focus!=='all'?occ.filter(o=>o.table.id===focus):occ;
+  const shown=focus!=='all'?occ.filter(o=>o.table.id===focus):occ;
 
   return (
     <>
@@ -88,7 +84,7 @@ export function SeatingPage({ event }: { event: Event }) {
 
       {occ.length === 0 ? <QuickSetup event={event} confirmedPeople={c.confirmedPeople} /> : (
         <div className="stack gap-5">
-          {signature&&<HallMap tables={occ} focus={focus} onFocus={setTableFocus} onDropParty={onDrop} dragOver={dragTarget} onDragOverTable={(id)=>{if(dragId)setDragTarget(id);}} />}
+          {<HallMap tables={occ} focus={focus} onFocus={setTableFocus} onDropParty={onDrop} dragOver={dragTarget} onDragOverTable={(id)=>{if(dragId)setDragTarget(id);}} />}
           {(warn.overCapacity.length > 0 || warn.declinedAssigned.length > 0 || cap < c.confirmedPeople) && (
             <div className="stack gap-2">
               {warn.overCapacity.map((o) => <Banner key={o.table.id} tone="danger" compact title={`${o.table.name} فوق السعة`}>عليها {people(o.used)} والسعة {o.table.capacity}. انقل دعوة إلى طاولة أخرى أو زِد السعة.</Banner>)}
@@ -100,7 +96,6 @@ export function SeatingPage({ event }: { event: Event }) {
             </div>
           )}
 
-          {theme==='orbit'&&<OrbitTableAtlas tables={occ} value={focus} onChange={setTableFocus}/>}
           <div className="seating">
             <Panel className="seat-pool" title={`من ينتظر مكانًا؟ (${warn.unassigned.length})`} subtitle={warn.unassigned.length ? `${people(warn.unassigned.reduce((n, p) => n + seatsFor(p), 0))} مؤكدون بانتظار مكان` : 'كل المؤكدين لهم طاولات'}>
               <div className="stack gap-3">
@@ -110,7 +105,7 @@ export function SeatingPage({ event }: { event: Event }) {
                 ) : (
                   <ul className="pool-list">
                     {unassigned.map((p) => (
-                      <li key={p.id} className={`pool-item${dragId === p.id || moving?.id === p.id ? ' is-drag-source' : ''}`} {...(signature ? lift.bind(p) : {})} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', p.id); setDragId(p.id); }} onDragEnd={endDrag}>
+                      <li key={p.id} className={`pool-item${dragId === p.id || moving?.id === p.id ? ' is-drag-source' : ''}`} {...lift.bind(p)} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', p.id); setDragId(p.id); }} onDragEnd={endDrag}>
                         <span className="grow"><span className="t-bold">{p.primaryGuestName}</span><span className="faint t-xs"> · {p.side ?? ''}</span><DietBadge p={p} /></span>
                         <Badge tone="success">{people(seatsFor(p))}</Badge>
                         <Button size="sm" onClick={() => startMove(p)}>اختر طاولة</Button>
@@ -142,7 +137,7 @@ export function SeatingPage({ event }: { event: Event }) {
                   {o.parties.length === 0 ? <p className="faint t-sm table-empty">طاولة فارغة</p> : (
                     <ul className="table-parties">
                       {o.parties.map((p) => (
-                        <li key={p.id} className={`table-party${p.rsvpStatus === 'declined' ? ' is-declined' : ''}${match?.has(p.id) ? ' is-match' : ''}${moving?.id === p.id ? ' is-drag-source' : ''}`} {...(signature ? lift.bind(p) : {})} draggable={p.rsvpStatus === 'confirmed'}
+                        <li key={p.id} className={`table-party${p.rsvpStatus === 'declined' ? ' is-declined' : ''}${match?.has(p.id) ? ' is-match' : ''}${moving?.id === p.id ? ' is-drag-source' : ''}`} {...lift.bind(p)} draggable={p.rsvpStatus === 'confirmed'}
                           onDragStart={(e) => { e.dataTransfer.setData('text/plain', p.id); setDragId(p.id); }} onDragEnd={endDrag}>
                           <span className="grow truncate">{p.primaryGuestName}<DietBadge p={p} /></span>
                           {p.rsvpStatus === 'declined' ? <Badge tone="warning">اعتذر</Badge> : <span className="num faint t-sm">{seatsFor(p)}</span>}

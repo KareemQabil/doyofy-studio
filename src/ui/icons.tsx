@@ -66,6 +66,7 @@ const P: Record<string, string> = {
   volume: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4v-5zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11',
   mute: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4v-5zM16 9.5l5 5M21 9.5l-5 5',
   expand: 'M14 4h6v6M10 20H4v-6M20 4l-6.5 6.5M4 20l6.5-6.5',
+  sun: '', moon: '', device: '',
 };
 
 export type IconName = keyof typeof P;

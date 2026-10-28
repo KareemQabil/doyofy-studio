@@ -1,7 +1,6 @@
 import { JourneyArtwork } from '../../ui/primitives/JourneyArtwork';
 /** Event closure, with useful outcomes and an honest, editable thank-you. */
 import { useState } from 'react';
-import { useReviewSettings } from '../../app/review';
 import type { Event } from '../../domain/types';
 import { countParties } from '../../domain/parties';
 import { eventPhase } from '../../domain/event';
@@ -15,7 +14,6 @@ import { copyText } from '../shared/CopyField';
 import { errorMessage } from '../../services/errors';
 
 export function SummaryPage({ event }: { event: Event }) {
-  const { theme } = useReviewSettings();
   const parties=useParties(event.id), now=useNow(), navigate=useNavigate();
   const [thanked,setThanked]=useState(false), [archiving,setArchiving]=useState(false), [copied,setCopied]=useState(false), [copyFailed,setCopyFailed]=useState(false);
   const [message,setMessage]=useState(`شكرًا لأنكم كنتم جزءًا من فرحتنا في ${event.title}. حضوركم جعلها أجمل، وذكراها تبقى معنا. بكل المحبة.`);
@@ -30,8 +28,8 @@ export function SummaryPage({ event }: { event: Event }) {
   return <>
     <PageHeader title="ملخص المناسبة" subtitle={`${event.title} · ${formatEventDate(event.date)}`}/>
     {!completed&&<Banner tone="info">المناسبة لم تنتهِ بعد. هذه أرقام اللحظة، ويكتمل الملخص بعد الاستقبال.</Banner>}
-    <section className={`summary-closure${theme === 'signature' ? ' has-editorial' : ''}`}>
-      {theme === 'signature' && <picture className="summary-photo" aria-hidden="true"><source srcSet="assets/editorial/celebration-table.avif" type="image/avif" /><img src="assets/editorial/celebration-table.webp" alt="" width="1536" height="1024" loading="lazy" decoding="async" /></picture>}
+    <section className="summary-closure has-editorial">
+      {<picture className="summary-photo" aria-hidden="true"><source srcSet="assets/editorial/celebration-table.avif" type="image/avif" /><img src="assets/editorial/celebration-table.webp" alt="" width="1536" height="1024" loading="lazy" decoding="async" /></picture>}
       <div className="summary-closure-copy"><JourneyArtwork kind="celebrate"/><p className="eyebrow">{completed?'وتبقى المحبة':'لحظات تتشكّل'}</p><h2>{completed?'كل حضور، صنع ذكرى.':'فرحتك تكتمل بضيوفك.'}</h2><p>{c.checkedInPeople?<>شارككم <strong>{c.checkedInPeople}</strong> شخصًا بحسب سجل الاستقبال.</>:'لم تُسجّل عمليات وصول لهذه المناسبة.'}</p></div>
     </section>
     <div className="summary-layout">

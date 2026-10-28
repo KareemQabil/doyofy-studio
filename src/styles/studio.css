@@ -68,10 +68,7 @@ body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
 .host.replaying * { transition: none !important; }
 
 /* ---------------- reduced motion: same states and timings, no travelling motion ---------------- */
-.host.rm .st-bob, .host.rm .st-glint, .host.rm .st-hint-inner,
-.host.rm .fx-float, .host.rm .fx-float2, .host.rm .fx-twinkle, .host.rm .fx-flicker, .host.rm .fx-bokeh, .host.rm .fx-firefly,
-.host.rm .fx-fall, .host.rm .fx-sway, .host.rm .fx-drape, .host.rm .fx-beam, .host.rm .fx-shoot, .host.rm .fx-wave,
-.host.rm .fx-shimmer, .host.rm .fx-glide, .host.rm .fx-spin, .host.rm .fx-sun, .host.rm .fx-cloud, .host.rm .fx-pulse, .host.rm .fx-foil { animation: none !important; }
+.host.rm .st-bob, .host.rm .st-glint, .host.rm .st-hint-inner, .host.rm .fx-float, .host.rm .fx-float2, .host.rm .fx-twinkle, .host.rm .fx-flicker, .host.rm .fx-bokeh, .host.rm .fx-firefly, .host.rm .fx-fall, .host.rm .fx-sway, .host.rm .fx-drape, .host.rm .fx-beam, .host.rm .fx-shoot, .host.rm .fx-wave, .host.rm .fx-shimmer, .host.rm .fx-glide, .host.rm .fx-spin, .host.rm .fx-sun, .host.rm .fx-cloud, .host.rm .fx-pulse, .host.rm .fx-foil { animation: none !important; }
 .host.rm .fx-rise, .host.rm .st-dl { animation: rmFade .5s ease forwards !important; }
 .host.rm .fx-draw { animation: none; stroke-dashoffset: 0; }
 @keyframes rmFade { from { opacity: 0; } to { opacity: 1; } }

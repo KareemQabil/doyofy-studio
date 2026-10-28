@@ -5,18 +5,18 @@
 .journey-banner .btn { margin-top: 15px; }
 .journey-banner picture { min-height: 180px; }
 .journey-banner img { width: 100%; height: 100%; display: block; object-fit: cover; }
-.ed-copy-paper { display: flex; flex-direction: column; align-items: center; width: 300px; height: 420px; padding: 24px 27px 20px; color: var(--brand-charcoal); background: #FFFDF8; border: 1px solid var(--brand-beige); border-radius: 3px; box-shadow: 0 22px 36px -18px rgba(38,38,38,.42); direction: rtl; }
+.ed-copy-paper { display: flex; flex-direction: column; align-items: center; width: 300px; height: 420px; padding: 24px 27px 20px; color: var(--c-text); background: var(--c-surface); border: 1px solid var(--brand-beige); border-radius: 3px; box-shadow: 0 22px 36px -18px rgba(38,38,38,.42); direction: rtl; }
 .ed-copy-paper .logo-mark { color: var(--brand-red); flex: none; }
-.ed-copy-names { margin-top: 13px; font-size: 10px; color: #5F594F; overflow-wrap: anywhere; text-align: center; }
+.ed-copy-names { margin-top: 13px; font-size: 10px; color: var(--c-text-3); overflow-wrap: anywhere; text-align: center; }
 .ed-copy-paper h2 { font: 600 21px/1.5 var(--font-display); margin-block: 15px; text-align: center; }
 .ed-copy-body { flex: 1; min-height: 0; overflow-y: auto; width: 100%; scrollbar-width: thin; padding-bottom: 12px; }
 .ed-copy-message { font-size: 13px; line-height: 2; white-space: pre-line; text-align: center; overflow-wrap: anywhere; }
-.ed-copy-english { font-size: 10px; line-height: 1.7; text-align: center; margin-top: 18px; color: #5F594F; }
+.ed-copy-english { font-size: 10px; line-height: 1.7; text-align: center; margin-top: 18px; color: var(--c-text-3); }
 .ed-copy-program { list-style: none; display: grid; gap: 14px; }
 .ed-copy-program li { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 12px; border-bottom: 1px solid var(--brand-beige); padding-bottom: 12px; font-size: 12px; line-height: 1.6; }
 .ed-copy-program bdi { color: #96393B; font-size: 10px; }
-.ed-copy-program small { display: block; font-size: 9px; line-height: 1.5; color: #5F594F; margin-top: 3px; }
-.ed-copy-foot { flex: none; width: 100%; text-align: center; padding-top: 10px; border-top: 1px solid var(--brand-beige); font-size: 9px; color: #5F594F; overflow-wrap: anywhere; }
+.ed-copy-program small { display: block; font-size: 9px; line-height: 1.5; color: var(--c-text-3); margin-top: 3px; }
+.ed-copy-foot { flex: none; width: 100%; text-align: center; padding-top: 10px; border-top: 1px solid var(--brand-beige); font-size: 9px; color: var(--c-text-3); overflow-wrap: anywhere; }
 .ed-canvas-tabs { min-height: 40px; }
 .ed-canvas-tabs .seg-btn { min-height: 38px; font-size: 12px; }
 :root[data-theme='signature'] .ed-workbench { height: min(590px, calc(100dvh - 294px)); }
@@ -53,8 +53,7 @@
   .page-head-row { gap: 14px; } .page-actions { flex-wrap: wrap; gap: 8px; }
   .page-actions .btn { min-height: 44px; } .page-head-text { min-width: 0; }
   .page-title { overflow-wrap: anywhere; } .panel { min-width: 0; }
-  .focus-right { gap: 5px; } .focus-right .theme-trigger { display: none; }
-  .sig-header-tools > .theme-trigger { display: none; }
+  .focus-right { gap: 5px; }
   .sig-header-nav .sig-header-new { min-width: 44px; padding-inline: 10px; font-size: 12px; }
   .journey-banner { grid-template-columns: minmax(0, 1.6fr) minmax(100px, 1fr); margin-bottom: 20px; }
   .journey-banner > div { padding: 18px; } .journey-banner h2 { font-size: 22px; }

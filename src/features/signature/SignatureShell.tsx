@@ -11,7 +11,6 @@ import { haptic } from '../../ui/motion/motion';
 import { useScrolled } from '../../ui/hooks/useTouchGestures';
 import { Link } from '../../app/router';
 import { paths } from '../../app/paths';
-import { ThemePicker } from '../../ui/primitives/ThemePicker';
 import { Logo } from '../../ui/brand';
 import { Icon } from '../../ui/icons';
 import type { NavItem } from '../../ui/layouts/Layouts';
@@ -30,7 +29,7 @@ export function SignatureShell({ children, right, mobileContext }: { children: R
           <Link to={paths.events}>مناسباتي</Link>
           <Link to={paths.newEvent} className="sig-header-new"><Icon name="plus" size="sm" />مناسبة جديدة</Link>
         </nav>
-        <span className="sig-header-tools"><ThemePicker compact />{right ?? <AccountMenu />}</span>
+        <span className="sig-header-tools">{right ?? <AccountMenu />}</span>
       </header>
       {children}
     </div>

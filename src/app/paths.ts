@@ -11,7 +11,6 @@ export const paths = {
   home: '/app',
   events: '/app/events',
   newEvent: '/app/events/new',
-  designReview: '/prototype/design-review',
   event: ev,
   overview: (id: string) => `${ev(id)}/overview`,
   invitation: (id: string) => `${ev(id)}/invitation`,

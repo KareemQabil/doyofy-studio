@@ -9,25 +9,25 @@
 .account-appearance { margin-top: 24px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--c-hairline); padding-top: 18px; color: var(--c-text-2); }
 .auth-page { min-height: 100dvh; display: flex; flex-direction: column; background: var(--brand-ivory); color: var(--brand-charcoal); }
 .auth-header { height: 90px; padding-inline: clamp(20px, 4vw, 64px); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--brand-beige); }
-.auth-header > a { color: var(--brand-charcoal); min-height: 44px; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.auth-header > a { color: var(--c-text); min-height: 44px; display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .auth-main { flex: 1; display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); max-width: 1600px; width: 100%; margin: auto; }
 .auth-copy { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: clamp(32px, 5vw, 80px); }
 .auth-kicker { font-size: 12px; color: #96393B; letter-spacing: .03em; margin-bottom: 22px; display: flex; align-items: center; gap: 8px; }
 .auth-kicker::before { content: ''; width: 8px; height: 8px; background: var(--brand-red); border-radius: 50%; }
 .auth-copy h1 { font: 700 clamp(36px, 4.5vw, 64px)/1.25 var(--font-display); max-width: 8.8em; text-wrap: balance; margin-bottom: 22px; }
-.auth-line { max-width: 31em; font-size: 16px; line-height: 1.9; color: #5F594F; margin-bottom: 28px; }
+.auth-line { max-width: 31em; font-size: 16px; line-height: 1.9; color: var(--c-text-3); margin-bottom: 28px; }
 .auth-form { width: min(100%, 430px); display: grid; gap: 20px; }
-.auth-form .input { background: #FFFDF8; color: var(--brand-charcoal); border-color: #B9A990; min-height: 54px; border-radius: 8px; }
-.auth-form .field-label { color: var(--brand-charcoal); }
+.auth-form .input { background: var(--c-surface); color: var(--c-text); border-color: #B9A990; min-height: 54px; border-radius: 8px; }
+.auth-form .field-label { color: var(--c-text); }
 .auth-page .btn-primary { background: var(--brand-red); color: #FFFDF8; border-color: var(--brand-red); }
-.auth-page .btn-secondary { color: var(--brand-charcoal); border-color: var(--brand-charcoal); background: transparent; }
+.auth-page .btn-secondary { color: var(--c-text); border-color: var(--brand-charcoal); background: transparent; }
 .auth-demo-note { display: flex; align-items: start; gap: 8px; font-size: 11px; line-height: 1.9; color: var(--c-text-2); }
-.auth-page .auth-demo-note { color: #5F594F; }
+.auth-page .auth-demo-note { color: var(--c-text-3); }
 .auth-demo-note .icon { flex: none; margin-top: 3px; }
-.auth-switch { display: block; margin-top: 24px; font-size: 13px; color: #5F594F; }
+.auth-switch { display: block; margin-top: 24px; font-size: 13px; color: var(--c-text-3); }
 .auth-switch a { color: #96393B; text-decoration: underline; text-underline-offset: 4px; margin-inline-start: 6px; }
 .auth-welcome-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.auth-demo-link { margin-top: 20px; border: 0; background: none; color: #5F594F; font: inherit; font-size: 12px; min-height: 44px; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 5px; }
+.auth-demo-link { margin-top: 20px; border: 0; background: none; color: var(--c-text-3); font: inherit; font-size: 12px; min-height: 44px; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 5px; }
 .auth-journey { list-style: none; width: 100%; margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--brand-beige); display: flex; gap: 22px; }
 .auth-journey li { display: flex; flex-direction: column; gap: 10px; flex: 1; font-size: 12px; }
 .auth-journey b { font: 500 20px/1 var(--font-display); color: #96393B; direction: ltr; text-align: start; }
@@ -37,11 +37,10 @@
 .auth-art-caption { position: absolute; inset-inline: 28px; bottom: 28px; padding: 24px; background: var(--brand-ivory); border: 1px solid var(--brand-beige); color: var(--brand-charcoal); max-width: 310px; }
 .auth-art-index { font-size: 10px; }
 .auth-art-caption p { font: 600 33px/1.35 var(--font-display); margin-block: 12px; }
-.auth-art-caption > span:last-child { font-size: 11px; color: #5F594F; }
-.auth-footer { display: flex; justify-content: space-between; gap: 14px; padding: 20px clamp(20px, 4vw, 64px); border-top: 1px solid var(--brand-beige); font-size: 11px; color: #5F594F; }
+.auth-art-caption > span:last-child { font-size: 11px; color: var(--c-text-3); }
+.auth-footer { display: flex; justify-content: space-between; gap: 14px; padding: 20px clamp(20px, 4vw, 64px); border-top: 1px solid var(--brand-beige); font-size: 11px; color: var(--c-text-3); }
 .account-page { width: min(1100px, 100%); padding: 44px 32px 80px; margin-inline: auto; }
 .account-page-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px; }
-.account-theme-picker { margin-top: 18px; }
 .account-saved { color: var(--c-success); font-size: 13px; }
 .help-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-bottom: 28px; }
 .help-grid h2 { font: 600 24px/1.4 var(--font-display); margin-block: 14px; }

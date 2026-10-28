@@ -44,7 +44,7 @@
 .g2-bulk-all { min-height: 40px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: var(--brand-ivory, #F2EAD9); font: 500 13px/1 var(--font-display); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 .g2-bulk-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .g2-bulk .btn { color: #fff; border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.06); }
-.g2-bulk .btn-primary { background: #fff; color: var(--brand-charcoal, #262626); border-color: #fff; }
+.g2-bulk .btn-primary { background: var(--c-surface); color: var(--brand-charcoal, #262626); border-color: #fff; }
 .g2-bulk .btn:disabled { opacity: .45; }
 .g2-bulk .menu-trigger { color: #fff; }
 @keyframes g2-rise { from { opacity: 0; transform: translateY(14px) scale(.98); } }

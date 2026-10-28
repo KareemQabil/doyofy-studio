@@ -14,13 +14,6 @@
 @import '../features/prototype/review.css';
 @import '../ui/styles/appearance.css';
 @import '../ui/styles/interaction.css';
-@import '../features/prototype/directions.css';
-
-@import '../features/orbit/orbit.css';
-
-@import '../features/bahja/bahja.css';
-
-@import '../features/horizon/horizon.css';
 @import '../features/signature/signature.css';
 @import '../features/signature/signature-pages.css';
 @import '../features/signature/signature-polish.css';
@@ -37,3 +30,4 @@
 @import '../features/settings/guest-experience.css';
 @import '../features/guests/food.css';
 @import '../ui/styles/v2-craft.css';
+@import '../ui/styles/dark.css';

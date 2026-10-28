@@ -74,11 +74,13 @@ function audit({ phone, budget }) {
   // 4 · contrast — background resolves through ancestors and their ::before/::after plates; unknown (image/gradient) is skipped
   const parse = (c) => { const m = c && c.match(/rgba?\(([^)]+)\)/); if (!m) return null; const [r, g, b, a = 1] = m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return [r, g, b, a]; };
   const lum = ([r, g, b]) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
-  const plate = (e) => { for (const p of ['::before', '::after']) { const cs = getComputedStyle(e, p); if (cs.content === 'none' || cs.position !== 'absolute') continue; if (cs.backgroundImage !== 'none') return 'unknown'; const c = parse(cs.backgroundColor); if (c && c[3] > 0.9 && parseFloat(cs.width || '0') >= e.clientWidth * 0.8) return c; } return null; };
+  const plate = (e) => { for (const p of ['::before', '::after']) { const cs = getComputedStyle(e, p); if (cs.content === 'none' || cs.position !== 'absolute') continue; if (cs.backgroundImage !== 'none') return 'unknown'; const c = parse(cs.backgroundColor); if (c && c[3] > 0.9 && parseFloat(cs.width || '0') >= e.clientWidth * 0.8 && parseFloat(cs.height || '0') >= e.clientHeight * 0.8) return c; } return null; };
   const bgOf = (el) => { let e = el; while (e && e !== document.documentElement) { const cs = getComputedStyle(e); if (cs.backgroundImage !== 'none') return null; const c = parse(cs.backgroundColor); if (c && c[3] > 0.9) return c; const p = plate(e); if (p === 'unknown') return null; if (p) return p; e = e.parentElement; } return parse(getComputedStyle(document.body).backgroundColor) || [255, 255, 255, 1]; };
   // what is actually painted under the text: the hit-test stack at the text's centre (covers sliding indicators and pseudo plates)
   const under = (el) => {
-    const b = el.getBoundingClientRect(); const x = b.left + b.width / 2, y = b.top + b.height / 2;
+    let b = el.getBoundingClientRect();
+    if (b.top < 0 || b.bottom > innerHeight) { el.scrollIntoView({ block: 'center', behavior: 'instant' }); b = el.getBoundingClientRect(); }
+    const x = b.left + b.width / 2, y = b.top + b.height / 2;
     if (y < 0 || y > innerHeight || x < 0 || x > innerWidth) return bgOf(el);
     for (const e of document.elementsFromPoint(x, y)) {
       if (el.contains(e) && e !== el) continue;
@@ -88,6 +90,8 @@ function audit({ phone, budget }) {
     }
     return bgOf(el);
   };
+  // hit-test everything while measuring: decorative indicators are usually pointer-events:none
+  const probe = document.createElement('style'); probe.textContent = '*{pointer-events:auto!important}'; document.head.append(probe);
   const low = new Set();
   for (const el of document.querySelectorAll('body *')) {
     if (skip(el) || el.closest('svg, [aria-hidden="true"]') || !vis(el)) continue;
@@ -103,6 +107,7 @@ function audit({ phone, budget }) {
     const bg = a, ratio = rat(a);
     if (ratio < need) low.add(`${ratio.toFixed(2)}<${need} «${el.textContent.trim().slice(0, 16)}» ${cs.color} on rgb(${bg.slice(0, 3).join(',')})`);
   }
+  probe.remove();
   if (low.size) issues.push(`contrast: ${[...low].slice(0, 4).join(' | ')}`);
   return issues;
 }
@@ -121,7 +126,7 @@ async function focusObscured(page) {
       for (const b of bars) {
         const q = b.getBoundingClientRect();
         if (q.height === 0 || getComputedStyle(b).visibility === 'hidden') continue;
-        if (r.top >= q.top && r.bottom <= q.bottom && r.left >= q.left && r.right <= q.right) { hidden.push(`${el.tagName.toLowerCase()} «${(el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 18)}» under ${String(b.className).split(' ')[0]}`); break; }
+        if (r.top >= q.top && r.bottom <= q.bottom && r.left >= q.left && r.right <= q.right && !el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2))) { hidden.push(`${el.tagName.toLowerCase()} «${(el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 18)}» under ${String(b.className).split(' ')[0]}`); break; }
       }
     }
     return hidden;

@@ -14,7 +14,6 @@ import { useLocation } from '../../app/router';
 import { loadEngine } from '../invitation/engine';
 import { GuestHub } from './GuestHub';
 import { SealCover } from '../signature/SealCover';
-import { useReviewSettings } from '../../app/review';
 import { asksAfterAttending } from '../../domain/guest-experience';
 import { ExtrasSheet, extrasPayload, type ExtrasValue } from './GuestExtras';
 
@@ -29,7 +28,6 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
   const [view, setView] = useState<GuestView | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [mode, setMode] = useState<'loading' | 'cover' | 'invitation' | 'hub'>('loading');
-  const { theme } = useReviewSettings();
   const [submission, setSubmission] = useState<Submission>(null);
 
   const load = useCallback(async () => {
@@ -40,7 +38,7 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
       const play = loc.search.get('play') != null;
       if (v.phase === 'after') setMode('hub');
       else if (play) setMode('invitation');
-      else setMode(v.party && v.party.rsvpStatus !== 'pending' ? 'hub' : theme === 'signature' ? 'cover' : 'invitation');
+      else setMode(v.party && v.party.rsvpStatus !== 'pending' ? 'hub' : 'cover');
     } catch (e) { setError(e); }
   }, [services, slug, code]); // eslint-disable-line react-hooks/exhaustive-deps
 

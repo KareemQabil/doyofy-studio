@@ -1,12 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { lockAxis, swipeStep, sheetSnap, shouldDismiss } from '../../src/domain/gestures';
-import { THEMES, isTheme } from '../../src/domain/themes';
+import { isAppearance } from '../../src/domain/appearance';
 
-test('all eight appearances are recognized, unknown URLs cannot introduce a theme',()=>{
-  assert.equal(THEMES.length,9);assert.equal(new Set(THEMES.map(t=>t.id)).size,9);assert.ok(isTheme("signature"));
-  for(const t of THEMES)assert.ok(isTheme(t.id));
-  for(const t of ['unknown','WARM',null,undefined,{}])assert.equal(isTheme(t),false);
+test('appearance values are recognized; unknown URLs cannot set one',()=>{
+  for(const a of ['light','dark','system'])assert.ok(isAppearance(a));
+  for(const t of ['unknown','DARK','signature',null,undefined,{}])assert.equal(isAppearance(t),false);
 });
 test('horizontal browsing gives vertical scrolling priority and ignores tap jitter',()=>{
   assert.equal(lockAxis(4,6,'x'),'pending');assert.equal(lockAxis(22,60,'x'),'rejected');

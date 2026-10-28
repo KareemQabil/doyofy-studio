@@ -11,7 +11,7 @@ import { Link, useLocation, useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
 import { useParties } from '../shared/queries';
-import { CHOOSER_LABEL, THEME_LABEL, useReviewSettings, type ChooserVariant, type ThemeId } from '../../app/review';
+import { APPEARANCE_LABEL, useAppearance, type Appearance } from '../../app/review';
 
 let toolsOff = (() => { try { return sessionStorage.getItem('doyofy:tools') !== 'on'; } catch { return true; } })();
 
@@ -45,7 +45,7 @@ function ToolsDrawer({ onClose }: { onClose: () => void }) {
   const [, force] = useState(0);
   const [confirm, setConfirm] = useState<null | 'before' | 'event_day'>(null);
   const s = proto.settings();
-  const review = useReviewSettings();
+  const { appearance } = useAppearance();
   const upd = (p: Parameters<typeof proto.update>[0]) => { proto.update(p); force((n) => n + 1); };
   const pick = (f: (p: NonNullable<typeof parties.data>[number]) => boolean) => parties.data?.find(f);
   const links = [
@@ -58,12 +58,9 @@ function ToolsDrawer({ onClose }: { onClose: () => void }) {
       <Dialog open variant="drawer" onClose={onClose} title="أدوات النموذج" description="لمن يدير جلسات الاختبار — ليست جزءًا من المنتج.">
         {!proto.persistent() && <Banner tone="warning" compact>المتصفح يمنع التخزين: ستضيع التغييرات عند تحديث الصفحة.</Banner>}
         <section className="stack gap-3">
-          <h3 className="drawer-h">مراجعة التصميم</h3>
-          <ChoiceGroup label="الثيم" columns={2} value={review.theme} onChange={(v: ThemeId) => upd({ theme: v })}
-            options={(Object.keys(THEME_LABEL) as ThemeId[]).map((t) => ({ value: t, label: <span>{THEME_LABEL[t]}</span> }))} />
-          <ChoiceGroup label="اختيار نوع المناسبة" columns={2} value={review.chooser} onChange={(v: ChooserVariant) => upd({ occasionChooser: v })}
-            options={(Object.keys(CHOOSER_LABEL) as ChooserVariant[]).map((t) => ({ value: t, label: <span>{CHOOSER_LABEL[t]}</span> }))} />
-          <Link to={paths.designReview} className="t-sm" onClick={onClose}>افتح صفحة مراجعة التصميم</Link>
+          <h3 className="drawer-h">المظهر</h3>
+          <ChoiceGroup label="مظهر المنصة" columns={3} value={appearance} onChange={(v: Appearance) => upd({ appearance: v })}
+            options={(Object.keys(APPEARANCE_LABEL) as Appearance[]).map((t) => ({ value: t, label: <span>{APPEARANCE_LABEL[t]}</span> }))} />
         </section>
         <section className="stack gap-3">
           <h3 className="drawer-h">السيناريو</h3>

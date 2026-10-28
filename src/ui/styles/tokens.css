@@ -11,7 +11,7 @@
  * red #BC4749 · turquoise #2EB7B7 · charcoal #262626. Gold is decorative (logo, art, details) —
  * never text or the only signal of a state. Red/turquoise appear darkened as danger/info text.
  */
-:root, :root[data-theme='warm'] {
+:root {
   /* ---- brand constants (decorative use) */
   --brand-gold: #C7A661;
   --brand-ivory: #F2EAD9;
@@ -26,6 +26,7 @@
   --c-surface-hover: #F3EDE3;
   --c-hairline: #E7E2D8;
   --c-hairline-strong: #D3C8B5;
+  --c-field-border: #8C8273;      /* control boundaries ≥ 3:1 (WCAG 1.4.11) */
 
   /* ---- text (all ≥ 4.7:1 on every surface above) */
   --c-text: #262626;
@@ -73,49 +74,6 @@
   --shadow-2: 0 10px 28px -16px rgba(48, 36, 20, 0.22), 0 1px 2px rgba(48, 36, 20, 0.04);
   --shadow-pop: 0 28px 64px -24px rgba(48, 36, 20, 0.34), 0 2px 8px rgba(48, 36, 20, 0.06);
   --shadow-art: 0 22px 44px -22px rgba(60, 40, 18, 0.45);
-}
-
-:root[data-theme='sage'] {
-  --c-canvas: #F3F4EF;
-  --c-surface: #FBFBF8;
-  --c-surface-elevated: #FFFFFF;
-  --c-surface-subtle: #E7EBE3;
-  --c-surface-hover: #EEF1EA;
-  --c-hairline: #DEE3D8;
-  --c-hairline-strong: #C7CFC1;
-
-  --c-text: #262626;
-  --c-text-2: #525A52;
-  --c-text-3: #5F685F;
-  --c-text-inverse: #F6F8F3;
-
-  --c-primary: #46584A;           /* deep sage */
-  --c-primary-hover: #3A4A3E;
-  --c-primary-pressed: #2F3D33;
-  --c-primary-soft: #E2E9DF;
-  --c-primary-text: #3E5042;
-  --c-on-primary: #F6F8F3;
-
-  --c-accent: #8DA088;            /* muted sage (decorative) */
-  --c-accent-strong: #566A52;
-  --c-accent-soft: #E6ECE3;
-
-  --c-selected: #5B6E57;
-  --c-selected-soft: #E8EEE5;
-  --c-on-selected: #FBFBF8;
-  --c-focus: #262626;
-  --c-logo: #3E4A40;
-
-  --art-1: #DCE3D6; --art-2: #E4E2DA; --art-3: #D5DDD5; --art-4: #E6E1D6; --art-5: #DEE2D2; --art-6: #D8DDDC;
-  --art-ink: #4F6450;
-
-  --c-neutral: #525A52; --c-neutral-soft: #E7EBE3;
-  --c-backdrop: rgba(30, 38, 32, 0.36);
-
-  --shadow-1: 0 1px 2px rgba(30, 40, 32, 0.05);
-  --shadow-2: 0 10px 28px -16px rgba(30, 40, 32, 0.22), 0 1px 2px rgba(30, 40, 32, 0.04);
-  --shadow-pop: 0 28px 64px -24px rgba(30, 40, 32, 0.32), 0 2px 8px rgba(30, 40, 32, 0.06);
-  --shadow-art: 0 22px 44px -22px rgba(28, 40, 30, 0.42);
 }
 
 :root {

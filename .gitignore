@@ -18,3 +18,4 @@ tests/.dom-build.mjs
 WhatsApp*
 feedback-media/
 qa/gate/
+review/screenshots-or-captures/journey/*.png

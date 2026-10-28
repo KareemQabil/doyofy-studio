@@ -28,14 +28,13 @@ export interface PrototypeSettings {
   offline: boolean;
   clockOffsetMs: number;
   role: 'organizer' | 'coordinator';
-  /** design review (prototype only): visual theme and occasion-chooser variant under test */
-  theme: import('../../domain/themes').ThemeId;
-  occasionChooser: 'curated' | 'coverflow' | 'rail';
+  /** organizer appearance: light · dark · follow the device (the invitation keeps its own palette) */
+  appearance: import('../../domain/appearance').Appearance;
 }
 
 const DB_KEY = 'doyofy:db:v1';
 const SETTINGS_KEY = 'doyofy:prototype:v1';
-export const DEFAULT_SETTINGS: PrototypeSettings = { latencyMs: 180, offline: false, clockOffsetMs: 0, role: 'organizer', theme: 'signature', occasionChooser: 'curated' };
+export const DEFAULT_SETTINGS: PrototypeSettings = { latencyMs: 180, offline: false, clockOffsetMs: 0, role: 'organizer', appearance: 'light' };
 
 function safeStorage(): Storage | null {
   try {
@@ -53,7 +52,9 @@ export class MockStore {
   settings: PrototypeSettings;
 
   constructor(private seed: (now: Date, scenario: ScenarioId) => DbShape) {
-    this.settings = { ...DEFAULT_SETTINGS, ...this.readJSON<Partial<PrototypeSettings>>(SETTINGS_KEY) };
+    // older builds stored a visual theme and a chooser variant; one identity remains, so those keys are dropped
+    const { theme: _t, occasionChooser: _c, ...saved } = this.readJSON<Partial<PrototypeSettings> & { theme?: unknown; occasionChooser?: unknown }>(SETTINGS_KEY) ?? {};
+    this.settings = { ...DEFAULT_SETTINGS, ...saved };
     const stored = this.readJSON<DbShape>(DB_KEY);
     if (stored && stored.version === 1) this.db = stored;
     else this.reset('before');

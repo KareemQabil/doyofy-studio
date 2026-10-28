@@ -31,7 +31,7 @@
 .seg,.seg-ind,.seg-btn { border-radius:var(--r-md); }
 .seg-btn { min-height:44px; }
 .btn,.choice,.chip,.catalogue-option { touch-action:manipulation; }
-.input,.textarea,.select { min-height:48px; border-color:var(--c-line-strong); }
+.input,.textarea,.select { min-height:48px; border-color:var(--c-field-border); }
 .btn-primary { box-shadow:0 2px 0 color-mix(in srgb,var(--c-primary) 18%,transparent); }
 .btn-primary:active { box-shadow:none; }
 .catalogue-option .occ-card { border:1px solid var(--c-line); transition:border-color var(--dur),background var(--dur),transform var(--dur); }
@@ -101,8 +101,6 @@
   .catalogue-option .occ-art-frame { height:126px; }
   .tg-grid { gap:24px 16px; }
   .tg-name { font-size:16px; }
-  .theme-trigger:not(.is-compact)>span:not(.theme-trigger-dot) { display:none; }
-  .theme-trigger:not(.is-compact) { width:44px; padding:0; }
   .ed-status { gap:8px; }
 }
 @media(prefers-reduced-motion:no-preference) { .ws-main>*,.events-intro,.occasion-event.is-featured { animation:page-arrive 300ms var(--ease-out) both; } }

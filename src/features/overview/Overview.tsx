@@ -1,7 +1,5 @@
 import { JourneyBanner } from '../shared/JourneyBanner';
 /** One next step, then actionable exceptions. The event lifecycle shapes the composition. */
-import { useReviewSettings } from '../../app/review';
-import { OrbitBoard } from '../orbit/OrbitBoard';
 import { useState } from 'react';
 import type { Event } from '../../domain/types';
 import { eventPhase, PHASE_LABEL, todayFor } from '../../domain/event';
@@ -19,11 +17,8 @@ import { DateSeal, Stage } from '../signature/SignatureArt';
 import { CardThumb } from '../invitation/CardThumb';
 import { defaultDesign } from '../../domain/invitation';
 
-export function Overview({event}:{event:Event}){const {theme}=useReviewSettings();return theme==='orbit'?<OrbitBoard key={event.id} event={event}/>:<EditorialOverview event={event}/>;}
-
-function EditorialOverview({ event }: { event: Event }) {
+export function Overview({ event }: { event: Event }) {
   const now = useNow();
-  const { theme } = useReviewSettings();
   const parties = useParties(event.id), design = useDesign(event.id), tables = useTables(event.id), responses = useResponses(event.id), checkIns = useCheckIns(event.id), activity = useActivity(event.id, 6);
   const [allAttention, setAllAttention] = useState(false);
   const loading = parties.loading || design.loading || tables.loading || responses.loading || checkIns.loading;
@@ -43,15 +38,11 @@ function EditorialOverview({ event }: { event: Event }) {
         <p className="overview-location"><Icon name="pin" size="sm" />{event.venue.name}، {event.venue.city}</p></div>
       <LinkButton to={paths.settings(event.id)} variant="ghost" icon="edit" size="sm">تفاصيل المناسبة</LinkButton>
     </header>
-    {theme==='signature' ? <Stage size="md" tone="charcoal" pattern="knot" className="sig-moment" aria-label="الخطوة التالية">
+    <Stage size="md" tone="charcoal" pattern="knot" className="sig-moment" aria-label="الخطوة التالية">
       <DateSeal day={day!} month={month.join(' ')} time={formatTime(event.time)} />
       <div className="moment-copy"><p className="sig-moment-eyebrow">{countdownLabel(event.date,todayFor(event,now))}</p><h2>{stage==='welcome'?'اليوم نفرح بوصولهم.':stage==='remember'?'لحظات مرّت… وذكريات تبقى.':stage==='prepare'?'حكايتكم تبدأ بدعوة.':stage==='arrange'?'نرتّب التفاصيل، ونطمئن.':'الفرحة تكتمل بضيوفكم.'}</h2><p>{action.reason}</p><LinkButton to={targetPath(event.id,action.target)} variant="primary" iconEnd="forward">{action.label}</LinkButton></div>
       <Link to={paths.invitation(event.id)} className="sig-moment-card" aria-label="الدعوة كما يراها الضيوف"><CardThumb event={event} content={design.data?.draft ?? defaultDesign(event)} width={150} /></Link>
-    </Stage> : <section className="event-moment" aria-label="الخطوة التالية">
-      <div className="moment-calendar"><span className="moment-day num">{day}</span><span>{month.join(' ')}</span><span className="moment-time">{formatTime(event.time)}</span></div>
-      <div className="moment-copy"><p className="eyebrow">{countdownLabel(event.date,todayFor(event,now))}</p><h2>{stage==='welcome'?'اليوم نفرح بوصولهم.':stage==='remember'?'لحظات مرّت… وذكريات تبقى.':stage==='prepare'?'حكايتكم تبدأ بدعوة.':stage==='arrange'?'نرتّب التفاصيل، ونطمئن.':'الفرحة تكتمل بضيوفكم.'}</h2><p>{action.reason}</p><LinkButton to={targetPath(event.id,action.target)} variant="primary" iconEnd="forward">{action.label}</LinkButton></div>
-      <div className="moment-flourish" aria-hidden="true"><span /><span /><Icon name={stage==='welcome'?'door':stage==='remember'?'heart':'envelope'} /></div>
-    </section>}
+    </Stage>
     <nav className="journey" aria-label="مراحل المناسبة"><ol>{journey.map((s,n)=><li key={s.to} className={n<index?'is-done':n===index?'is-current':''}><Link to={s.to} aria-current={n===index?'step':undefined}><span className="journey-number">{n<index?<Icon name="check" size="sm"/>:n+1}</span><span>{s.label}</span></Link></li>)}</ol></nav>
     <p className="optional-journey-note"><Icon name="table" size="sm"/>الطاولات اختيارية.<Link to={paths.seating(event.id)}>أضف توزيعًا لو تحتاجه</Link></p>
     {/* each count opens exactly the list it counts (F037) */}
