@@ -281,8 +281,9 @@ What "saved" means on the deployed prototype follows **Q1**.
    - a slim, dismissible «نسخة تجريبية — البيانات على جهازك فقط» bar on organizer screens;
    - a "reset demo" item in the account menu (`prototype.reset('before')` already exists).
 6. **Errors:** a top-level error boundary with a calm Arabic message and a "back home" link; a real 404 route.
-7. **Access:** a Vercel preview with Deployment Protection, or public with noindex. See Q4.
-8. **Analytics (optional):** Vercel Web Analytics, no cookies, to see which screens reviewers reach.
+7. **Access:** public with `noindex` (Q4). `robots.txt` set to `Disallow: /`.
+8. **Cross-device links (Q1):** the payload links described in §5. Their test is part of the gate: open a payload link in a fresh browser context with empty storage → the card renders → the RSVP ends on the demo message.
+9. **Analytics (optional):** Vercel Web Analytics, no cookies, to see which screens reviewers reach.
 
 ### Batch G/H — Leftovers (after the deploy is acceptable)
 
@@ -303,21 +304,21 @@ What "saved" means on the deployed prototype follows **Q1**.
 
 ---
 
-## 5. Decisions needed from the owner
+## 5. Owner decisions (answered 2026-10-28)
 
-| # | Question | Default if no answer |
+| # | Decision | What it changes |
 | --- | --- | --- |
-| Q1 | On Vercel, what happens when a guest opens a link on another device? (a) seeded demo events only, with a clear demo bar; (b) self-contained links that carry the invitation in the URL, where the RSVP is shown as "demo, not sent"; (c) switch on Supabase for invitations + RSVP only | (b) |
-| Q2 | GSAP for invitation motion? Free for commercial use, but Webflow's licence prohibits embedding it in **no-code visual animation builders** that compete with Webflow ([license](https://gsap.com/community/standard-license/)). Fixed preset timelines are almost certainly fine; a user-facing animation editor would not be. Alternative: Web Animations API (zero KB, more code) | GSAP, preset timelines only, no animation editor |
-| Q3 | Assets: (a) are the 5 AI-generated DYG images approved (FX-08)? (b) The Canva PDF stays reference-only unless you have written permission | Keep the 5 AI images; Canva = reference only |
-| Q4 | Deploy audience: protected preview for reviewers, or a public noindex link? | Protected preview |
-| — | Still open from the handoff: market (Egypt / KSA), baby shower, apology copy (F066) | KSA copy, no baby shower |
+| Q1 | **The link carries the invitation.** | **Batch V:** `/i/:slug/:code?d=<compressed payload>`, with the invitation, card, palette and the guest's name. The payload is deflate + base64url and must stay under 2KB, so the link fits in WhatsApp (the engine already has `encodeConfig` in `wizard/config.js`; move it out before G deletes the wizard). `GuestInvite` reads local storage first and the payload second. The RSVP on a device that doesn't own the event ends on «هذه نسخة تجريبية — لم يُرسل ردّك للمنظّم», never «تم الرد». The share sheet in the organizer screens builds these links. |
+| Q2 | **GSAP, preset timelines only.** | Batch M as written. No animation editor and no keyframe UI, ever. Only replay in the editor. |
+| Q3 | **The owner says they have permission to use the Canva PDF artwork.** | **Before importing any PDF artwork, the permission must be in hand:** the document or email, saved privately (not in the public repo), with a one-line reference in `ASSET_PROVENANCE.md`. It must cover use **outside Canva, in a product that offers templates to end users**. Canva's standard content licence doesn't, so the permission has to say so. Stock elements inside those pages (photos, the bride illustration, the business-meeting photo) may belong to third-party contributors and need to be named in it. Until it's received, the PDF stays reference-only. Afterwards it becomes a source for Batch B/E faces: vector-traced or WebP layers with live text on top, never flattened text. The 5 AI images are implicitly allowed (FX-08 closed). |
+| Q4 | **Public, not indexed.** | **Batch V:** no Deployment Protection; `X-Robots-Tag: noindex, nofollow` and `robots.txt` set to disallow; the demo bar becomes mandatory; the share preview matters (absolute `og:*`); and since strangers can open it, a "reset demo" item and an error boundary are required, not optional. |
+| — | Still open from the handoff: market (Egypt / KSA), baby shower, apology copy (F066). | Defaults: KSA copy, no baby shower. |
 
 ---
 
 ## 6. What you do now (owner)
 
 1. Open and merge the PR for `feat/card-collection`: https://github.com/KareemQabil/doyofy-studio/compare/main...feat/card-collection
-2. Answer Q1–Q4 (I'm asking them in chat now).
+2. Send the written Canva permission (Q3) privately. It's not needed before Batch B.
 3. Copy the Designer Kit ZIP and the two ZIPs from the earlier session somewhere permanent. Batches B and E need `templates/` and `elements/` in this session; upload the Designer Kit ZIP or a trimmed `elements/` + `templates/` folder.
 4. Approve Batch 0, then A. Each batch comes back with before/after screenshots from the gate.
