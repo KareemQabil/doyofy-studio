@@ -13,6 +13,7 @@ export const CARD_NAMES: Record<string, string> = {
   'wedding-vow': 'وعد على ورق', 'engagement-rings': 'مداران للفرح', 'katb-seal': 'ميثاق وختم', 'henna-lattice': 'نقش الحنّة', 'family-table': 'على مائدة واحدة', 'iftar-arch': 'نور اللقاء', 'opening-door': 'الباب الأول', 'corporate-edition': 'العدد القادم', 'celebration-shapes': 'شكل للفرح',
   'grad-editorial': 'تخرج بأفق جديد', 'grad-campus': 'ختم الإنجاز', 'grad-constellation': 'نجمة التخرج', 'birthday-confetti': 'عيد من الألوان', 'newborn-moon': 'أهلًا بالقمر', 'forum-grid': 'ملتقى الأفكار',
   'sig-diploma': 'توقيع التخرّج', 'sig-ribbon': 'حروف الفرح', 'sig-ticket': 'تذكرة الفرح',
+  'kit-rose-garden': 'حديقة الورد', 'kit-two-rings': 'خاتمان', 'kit-seal-arch': 'ميثاق وقوس', 'kit-henna-rosette': 'وردة الحنّة', 'kit-balloons': 'بالونات', 'kit-cap-diamond': 'قبعة في ماسة', 'kit-moon-cloud': 'قمر وغيمة', 'kit-dallah-olive': 'دلّة وزيتون', 'kit-lantern-night': 'فوانيس الليل', 'kit-forum-stars': 'منبر النجوم', 'kit-satin-ribbon': 'شريط الافتتاح', 'kit-laurel-gala': 'وردة الحفل', 'kit-eucalyptus': 'غصن الأوكالبتوس',
   lace: 'دانتيل عاجي', wine: 'نبيذي وذهبي', emerald: 'زمرّد آرت ديكو', sage: 'أغصان المريمية', blush: 'ألوان مائية وردية',
   midnight: 'نجوم منتصف الليل', arabesque: 'أرابيسك', minimal: 'بسيط عصري', terracotta: 'شمس التراكوتا', clay: 'صلصال باستيل',
 };

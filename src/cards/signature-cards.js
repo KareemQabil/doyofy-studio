@@ -16,9 +16,9 @@ import { OCCASION_GLYPHS_THIN } from '../ui/vendor-icons/phosphor';
 /** a Phosphor Thin glyph (MIT) as inline SVG paths, placed at (x,y) with a given size and colour */
 const glyph = (type, x, y, size, color) => `<g transform="translate(${x - size / 2} ${y - size / 2}) scale(${size / 256})" fill="${color}">${(OCCASION_GLYPHS_THIN[type] || []).map((n) => `<path d="${n.attr.d}"/>`).join('')}</g>`;
 
-const TYPE_WORDS = [['GRADUAT', 'graduation'], ['ENGAGE', 'engagement'], ['KATB', 'katb_kitab'], ['HENNA', 'henna'], ['BIRTH', 'birthday'], ['NEWBORN', 'newborn'], ['BABY', 'newborn'], ['IFTAR', 'iftar'], ['RAMADAN', 'iftar'], ['FAMILY', 'family'], ['CONFER', 'conference'], ['OPENING', 'opening'], ['LAUNCH', 'opening'], ['CORPORATE', 'corporate'], ['COMPANY', 'corporate'], ['WEDDING', 'wedding']];
+const TYPE_WORDS = [['GRADUAT', 'graduation'], ['ENGAGE', 'engagement'], ['KATB', 'katb_kitab'], ['MARRIAGE', 'katb_kitab'], ['HENNA', 'henna'], ['BIRTH', 'birthday'], ['NEWBORN', 'newborn'], ['BABY', 'newborn'], ['IFTAR', 'iftar'], ['RAMADAN', 'iftar'], ['FAMILY', 'family'], ['CONFER', 'conference'], ['OPENING', 'opening'], ['LAUNCH', 'opening'], ['CORPORATE', 'corporate'], ['COMPANY', 'corporate'], ['TEAM', 'corporate'], ['WEDDING', 'wedding']];
 /** The occasion behind the derived label (cards receive content, not the event type). */
-const typeOf = (c) => { const l = String(c.eventLabelEnU || ''); return (TYPE_WORDS.find(([w]) => l.includes(w)) || [null, 'other'])[1]; };
+export const typeOf = (c) => { const l = String(c.eventLabelEnU || ''); return (TYPE_WORDS.find(([w]) => l.includes(w)) || [null, 'other'])[1]; };
 const KF = "'Reem Kufi', 'Amiri', sans-serif";
 const RQ = "'Aref Ruqaa', 'Amiri', serif";
 const EN = "'Cormorant Garamond', Georgia, serif";
