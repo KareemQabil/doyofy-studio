@@ -8,6 +8,7 @@ import { CHECKIN_STATUS, INVITATION_STATUS, RSVP_STATUS, SOURCE_LABEL, duplicate
 import { formatPhone, people, relativeTime } from '../../domain/format';
 import { Badge, Banner, Button, ConfirmDialog, Dialog, Icon, KeyValue, Menu, Status } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
+import { useGuestLink } from '../shared/share-link';
 import { useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
@@ -22,12 +23,13 @@ export function PartyDrawer({ event, party, all, tables, publish, onClose }: {
 }) {
   const now = useNow();
   const toast = useToast();
+  const guestLink = useGuestLink(event);
   const { absolute, navigate } = useRouter();
   const [editing, setEditing] = useState(false);
   const [recording, setRecording] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [copiedAsk, setCopiedAsk] = useState(false);
-  const link = absolute(paths.guestLink(event.slug, party.code));
+  const link = guestLink(party);
   const published = publish === 'published' || publish === 'changed';
   const inv = invitationStatus(party, publish);
   const table = tables.find((t) => t.id === party.tableId);

@@ -13,7 +13,7 @@ const legacy = params.get('view') === 'invite' || params.has('i');
 if (legacy) {
   void import('../main.js');
 } else {
-  const mode: RouterMode = (window as unknown as { __DOYOFY_ROUTER__?: RouterMode }).__DOYOFY_ROUTER__ === 'history' ? 'history' : 'hash';
+  const mode: RouterMode = document.documentElement.dataset.router === 'history' ? 'history' : 'hash';
   if (mode === 'history' && location.pathname === '/' && !location.hash) history.replaceState(null, '', '/app/events');
   if (mode === 'hash' && !location.hash) history.replaceState(null, '', `${location.pathname}${location.search}#/app/events`);
   document.documentElement.lang = 'ar';

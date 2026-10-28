@@ -2,6 +2,7 @@
  * Invitation section (spec §10): the current design, its state (draft / published / unpublished
  * changes), what guests will see, and the actions: edit design · preview as guest · publish · share.
  */
+import { useGuestLink } from '../shared/share-link';
 import type { Event } from '../../domain/types';
 import { CARD_NAMES, PUBLISH_LABEL, SCENE_NAMES, publishState, resolvedNames } from '../../domain/invitation';
 import { relativeTime } from '../../domain/format';
@@ -27,6 +28,7 @@ export function InvitationSummary({ event }: { event: Event }) {
     onSuccess: () => toast({ tone: 'success', text: 'تم نشر الدعوة. الضيوف يرون الآن هذه النسخة.' }),
   });
 
+  const guestLink = useGuestLink(event);
   if (design.loading) return <Skeleton lines={6} block />;
   if (design.error) return <ErrorState error={design.error} onRetry={design.refetch} />;
   const d = design.data ?? null;
@@ -50,7 +52,7 @@ export function InvitationSummary({ event }: { event: Event }) {
   const names = resolvedNames(event, content);
   if (!isCoupleEvent(event.type)) names.b = '';
   const xLabel = `${content.experience.dimension === '3d' ? 'ثلاثية الأبعاد' : 'ثنائية الأبعاد'} · ${content.experience.motion === 'animated' ? 'متحركة' : 'ثابتة'}`;
-  const generalLink = absolute(paths.guestLink(event.slug));
+  const generalLink = guestLink();
   const primary = ps === 'draft' ? (
     <Button variant="primary" size="lg" icon="send" loading={publish.pending} onClick={() => publish.run()}>انشر الدعوة</Button>
   ) : ps === 'changed' ? (

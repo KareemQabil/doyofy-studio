@@ -2,15 +2,20 @@
 
 Arabic-first RTL invitation studio and event guest management prototype.
 
-## Product and design plan
+## Start here
 
-[Start with the October 25 feedback plan](docs/plan/README.md): product journeys, design and assets, data contracts, 22 proposed decisions, 12 delivery batches, 43 acceptance scenarios, and traceability for all 73 feedback items. These are implementation specifications, not features already shipped. Private review recordings and raw transcripts are not published in this repository.
+- [V2 final status and deploy guide](docs/handoff/V2_FINAL_STATUS_2026-10-28.md) — what ships, how to put it on Vercel, what is left.
+- [Final-phase plan](docs/handoff/FINAL_PHASE_PLAN_2026-10-28.md) — the batches, the owner's decisions (Q1–Q4) and the acceptance numbers.
+- Older round documents live in `docs/archive/` and are superseded by the two above.
 
-## Current snapshot
+## Current snapshot (V2 final, 28 October 2026)
 
-Exported 25 October 2026 from Sites v9, source commit `a83069f2fb2c21a1957a78110c7d479b9eac39e7`. Includes 13 occasions, 28 native card faces, 86 template presets, nine organizer appearances, invitation editor, public/personal RSVP, guest lists, optional seating, reception and summary.
+One identity («توقيع») with light, dark and follow-the-device appearance; 30 invitation faces (at least two per occasion,
+13 occasions) that animate with preset GSAP timelines; guest lists, replies, food and wishes, optional seating, reception and summary.
 
-**Current runtime is a local demo:** accounts and event data are stored in this browser. Remote adapters exist but are not selected. Cross-device sharing, authenticated production accounts, real outbound messaging and live camera scanning are not enabled. Do not describe this snapshot as a complete production service.
+**This is a local demo:** accounts and event data are stored in this browser. Remote adapters exist but are not selected.
+Shared guest links carry the invitation itself, so they open on any phone — a reply made from such a link is clearly marked
+as a demo and is not sent to the organizer. No real outbound messaging and no live camera scanning.
 
 ## Run
 
@@ -22,12 +27,13 @@ npm start
 ## Validate and build
 
 ```bash
-npm run typecheck
-npm run test:unit
-npm run test:dom
-npm run build
-npm run assets:shipped:check
+npm test            # typecheck · unit · DOM · release gate (5 viewports × light/dark) · Signature journey
+npm run build       # dist/ — content-hashed entries, lazy chunks for the engine, GSAP and three.js
+npm run validate    # the fast subset plus token contrast and shipped-asset checks
 ```
+
+The release gate (`tests/gate.mjs`) needs Chromium: it uses `/opt/pw-browsers/chromium` when present, otherwise run
+`npx playwright install chromium` once.
 
 Browser/device tests require a supported browser test environment. DOM tests are not evidence of real touch or visual QA.
 
@@ -44,6 +50,10 @@ Browser/device tests require a supported browser test environment. DOM tests are
 
 ## Deployment
 
-`npm run build` emits static `dist/`; `vercel.json` provides SPA routing. Do not commit credentials or local `.env` values. `.env.example` contains names only. `public/assets/fonts/brand/README.txt` documents font restrictions; retaining an asset does not grant additional redistribution rights.
+`npm run build` emits static `dist/`. `vercel.json` provides SPA routing, `noindex`, a Content-Security-Policy (no inline
+scripts), immutable caching for hashed entries and chunks, and a week for `assets/`. Set `SITE_URL` (or rely on Vercel's
+`VERCEL_PROJECT_PRODUCTION_URL`) so share previews use absolute URLs. Step-by-step: [deploy guide](docs/handoff/V2_FINAL_STATUS_2026-10-28.md#deploy-to-vercel).
 
-The live site is unchanged by this export. See `GITHUB_EXPORT_NOTES.md` for export scope. Original README is preserved in `docs/LEGACY_README.md` as historical documentation.
+Do not commit credentials or local `.env` values. `.env.example` contains names only. `public/assets/fonts/brand/README.txt`
+documents font restrictions; retaining an asset does not grant additional redistribution rights. The original README is
+preserved in `docs/archive/LEGACY_README.md`.

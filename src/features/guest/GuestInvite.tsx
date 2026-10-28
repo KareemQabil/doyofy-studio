@@ -42,8 +42,13 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
     } catch (e) { setError(e); }
   }, [services, slug, code]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { document.body.classList.add('dy-guest'); void load(); return () => document.body.classList.remove('dy-guest'); }, [load]);
+  // a shared link carries the invitation itself (?d=). There is no server behind this prototype, so a reply made from it
+  // can never reach the organizer: open the carried copy, whose reply screen says plainly that it is a demo (Q1).
+  const carried = loc.search.get('d');
+  useEffect(() => { if (carried) location.replace(`${new URL('./', document.baseURI).href}?i=${encodeURIComponent(carried)}`); }, [carried]);
+  useEffect(() => { if (carried) return; document.body.classList.add('dy-guest'); void load(); return () => document.body.classList.remove('dy-guest'); }, [load, carried]);
 
+  if (carried) return <main className="guest-page theme-guest guest-center"><Spinner label="جارٍ فتح الدعوة" /></main>;
   if (error) {
     const notPublished = isAppError(error) && error.code === 'not_published';
     return (

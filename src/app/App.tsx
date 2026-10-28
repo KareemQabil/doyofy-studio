@@ -24,6 +24,8 @@ import { MorePage } from '../features/workspace/MorePage';
 import { GuestInvite } from '../features/guest/GuestInvite';
 import { NotFound } from '../features/workspace/NotFound';
 import { PrototypeTools } from '../features/prototype/PrototypeTools';
+import { DemoBar } from '../features/prototype/DemoBar';
+import { AppErrorBoundary } from './AppErrorBoundary';
 import { ScreenReview } from '../features/prototype/ScreenReview';
 import { paths } from './paths';
 import { ThemeSync, applyReviewLink } from './review';
@@ -84,7 +86,8 @@ export function App({ mode }: { mode: RouterMode }) {
       <RouterProvider mode={mode}>
         <ToastProvider>
           <ThemeSync />
-          <OrganizerSessionGate><Routes routes={routes} fallback={<NotFound />} /></OrganizerSessionGate>
+          <DemoBar />
+          <AppErrorBoundary><OrganizerSessionGate><Routes routes={routes} fallback={<NotFound />} /></OrganizerSessionGate></AppErrorBoundary>
           <PendingNavigation />
           <PrototypeTools />
         </ToastProvider>

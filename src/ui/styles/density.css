@@ -152,3 +152,14 @@ html:has(.focus-foot) { scroll-padding-bottom: calc(72px + env(safe-area-inset-b
 }
 :root[data-theme] .tg-head h1, :root[data-theme] .tg-title { font-size: clamp(24px, 1.2vw + 15px, 32px); }
 @media (max-width: 760px) { :root[data-theme] .sig-library-banner h3 { font-size: 19px; } :root[data-theme] .sig-library-banner p:last-child { font-size: 11.5px; } }
+
+/* public prototype: a quiet demo note at the very top of organizer screens (dismissible) */
+.demo-bar { position: relative; z-index: 50; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 44px; background: var(--c-surface-subtle); color: var(--c-text-2); font-size: 12.5px; line-height: 1.5; text-align: center; border-bottom: 1px solid var(--c-hairline); }
+.demo-bar strong { color: var(--c-text); font-weight: 600; }
+.demo-bar-close { position: absolute; inset-inline-end: 6px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 999px; background: none; color: var(--c-text-2); cursor: pointer; }
+.demo-bar-close:hover { background: var(--c-surface-hover); }
+.app-crash { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 24px; text-align: center; background: var(--c-canvas); color: var(--c-text); }
+.app-crash h1 { font: 700 24px/1.4 var(--font-display); margin: 0; }
+.app-crash p { margin: 0 0 8px; color: var(--c-text-2); }
+.account-reset { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; margin-top: 8px; padding: 0 12px; border: 1px solid var(--c-hairline); border-radius: 12px; background: none; color: var(--c-text-2); font: 500 14px/1 var(--font-ui); cursor: pointer; }
+.account-reset:hover { background: var(--c-surface-hover); color: var(--c-text); }

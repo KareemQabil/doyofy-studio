@@ -1,4 +1,5 @@
 // dev: render individual card faces to PNG (for direction boards). node tests/dev/face-pngs.mjs outdir id:type:a[:b] ...
+import { distEntries } from '../../tools/dist-entries.mjs';
 import fs from 'node:fs'; import path from 'node:path'; import os from 'node:os';
 import { need, chromiumPath, ROOT } from '../../tools/lib.mjs';
 import { startServer } from '../../tools/serve.mjs';
@@ -14,7 +15,7 @@ const browser = await chromium.launch({ executablePath: chromiumPath() });
 const page = await browser.newPage({ viewport: { width: 300, height: 420 }, deviceScaleFactor: 2 });
 for (const s of specs) {
   const [id, type, a, b] = s.split(':');
-  fs.writeFileSync(path.join(ROOT, 'dist', '_face.html'), `<!doctype html><html dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/styles.css"><style>body{margin:0}</style></head><body>${face(id, type, a, b)}</body></html>`);
+  fs.writeFileSync(path.join(ROOT, 'dist', '_face.html'), `<!doctype html><html dir="rtl"><head><meta charset="utf-8"><link rel="stylesheet" href="/${distEntries().styles}"><style>body{margin:0}</style></head><body>${face(id, type, a, b)}</body></html>`);
   await page.goto('http://localhost:5394/_face.html'); await page.waitForTimeout(700);
   await page.screenshot({ path: path.join(out, `${id}.png`), clip: { x: 0, y: 0, width: 300, height: 420 } });
 }

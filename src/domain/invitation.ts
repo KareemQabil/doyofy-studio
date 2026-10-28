@@ -75,6 +75,11 @@ const first = (s: string) => [...s.trim()][0] ?? '';
  * Event + design → the Invitation Studio's `InvitationData` (see src/data/invitation.js).
  * `maxGuests` is the party's allowance when a party opens its own link.
  */
+/** everything a self-contained guest link carries (?d=…): the design, the event as the card shows it, the guest */
+export function inviteConfig(ev: InvitationEvent, c: InvitationDesignContent, maxGuests = 2, guestName?: string) {
+  return { experience: { ...c.experience }, card: c.cardId, scene: c.sceneId, invitation: toInvitationData(ev, c, maxGuests), ...(guestName ? { guest: { name: guestName, maxGuests } } : {}) };
+}
+
 export function toInvitationData(ev: InvitationEvent, c: InvitationDesignContent, maxGuests = 2) {
   const n = resolvedNames(ev, c);
   const couple = isCoupleEvent(ev.type);

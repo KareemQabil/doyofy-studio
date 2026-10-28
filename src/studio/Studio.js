@@ -455,7 +455,9 @@ export class Studio {
     const th = declined ? T.thanks.no : T.thanks.yes;
     const q = (s) => this.el.done.querySelector(s);
     q('.done-ar').textContent = th.ar; q('.done-ar').style.fontFamily = this.theme.fAr;
-    q('.done-en').textContent = th.en;
+    const demo = !!r.receipt?.demo;   // never claim a reply reached the organizer when it did not
+    q('.done-en').textContent = demo ? 'A demo copy — your reply was not sent to the host.' : th.en;
+    q('.done-demo').hidden = !demo;
     const name = r.name.trim().toUpperCase();
     q('.done-who').textContent = name ? (declined ? name : `${name} · ${r.guests} ${r.guests === 1 ? 'GUEST' : 'GUESTS'}`) : `${[c.enAU, c.arB ? c.enBU : ''].filter(Boolean).join(' & ') || c.arA} · ${c.dateShort}`;
   }

@@ -8,6 +8,7 @@ import path from 'node:path';
 import { chromium } from 'playwright';
 import { startServer } from '../tools/serve.mjs';
 import { chromiumPath, ROOT } from '../tools/lib.mjs';
+import { distEntries } from '../tools/dist-entries.mjs';
 
 const arg = (k) => process.argv.find((a) => a.startsWith(`--${k}`))?.split('=')[1] ?? (process.argv.includes(`--${k}`) ? true : undefined);
 const SHOTS = !!arg('shots');
@@ -39,7 +40,7 @@ const ROUTES = [
 
 // bundle budget: the first-load script never carries the animation library or three.js (both load on demand)
 {
-  const app = fs.readFileSync(path.join(ROOT, 'dist', 'app.js'), 'utf8');
+  const app = fs.readFileSync(path.join(ROOT, 'dist', distEntries().app), 'utf8');
   for (const [name, mark] of [['GSAP', 'GreenSock'], ['three.js', 'WebGLRenderer']]) if (app.includes(mark)) { console.log(`FAIL  bundle: ${name} is inside dist/app.js`); process.exitCode = 1; }
 }
 const server = await startServer(5411);
@@ -181,6 +182,38 @@ for (const appearance of APPEARANCES) {
     }
     await ctx.close();
   }
+}
+
+// Q1 — a shared link opens on another device (empty storage) from the copy it carries, and its reply never claims to be sent
+{
+  const org = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await org.newPage();
+  await page.goto(`${BASE}/app/events`); await page.waitForFunction(() => window.__doyofy);
+  await page.evaluate(() => { window.__doyofy.prototype.update({ latencyMs: 0 }); window.__doyofy.prototype.reset('before'); });
+  await page.goto(`${BASE}/app/events/evt_wedding/guests`); await page.waitForTimeout(900);
+  await page.locator('.g2-name').first().click(); await page.waitForTimeout(600);
+  const link = await page.evaluate(() => [...document.querySelectorAll('input, a')].map((e) => e.value || e.href || '').find((v) => /\/i\/[^/]+\/[A-Z0-9]+\?d=/.test(v)));
+  await org.close();
+  const fresh = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const guest = await fresh.newPage();
+  let issue = '';
+  if (!link) issue = 'no self-contained link in the guest drawer';
+  else if (link.length > 2600) issue = `link is ${link.length} chars`;
+  else {
+    await guest.goto(link.replace(/^https?:\/\/[^/]+/, BASE));
+    const ok = await guest.waitForFunction(() => window.__studio, null, { timeout: 15000 }).then(() => true).catch(() => false);
+    if (!ok || !guest.url().includes('?i=')) issue = 'did not open the carried copy';
+    else {
+      await guest.waitForFunction(() => window.__studio.sm.state === 'card', null, { timeout: 15000 }).catch(() => {});
+      await guest.evaluate(() => window.__studio.sm.send('open'));
+      await guest.waitForFunction(() => window.__studio.sm.state === 'pages', null, { timeout: 15000 }).catch(() => {});
+      const receipt = await guest.evaluate(async () => { const s = window.__studio; s.rsvp.name = 'ضيف'; s.rsvp.attending = 'yes'; await s.submit(); return s.rsvp.receipt; });
+      if (!receipt?.demo) issue = 'reply from a carried copy was not marked as a demo';
+    }
+  }
+  checked++;
+  if (issue) { failures.push(['Q1 shared link', [issue]]); console.log(`FAIL  Q1 shared link — ${issue}`); } else console.log(`ok    Q1 shared link (${link.length} chars) opens on a fresh device; reply is a demo`);
+  await fresh.close();
 }
 
 await browser.close();

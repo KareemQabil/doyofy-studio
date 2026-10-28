@@ -1,4 +1,5 @@
 // Validate the deliverable rather than optional asset packs that are not shipped.
+import { distEntries } from './dist-entries.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 const root=path.resolve('dist');const required=new Set();
@@ -7,7 +8,8 @@ for(const file of fs.readdirSync('src', { recursive: true }).filter(f => /\.(?:t
  if(!fs.existsSync(file))continue;
  for(const m of fs.readFileSync(file,'utf8').matchAll(/['"](assets\/[^'"]+\.(?:png|webp|svg|avif))['"]/g))required.add(m[1]);
 }
-for(const file of ['styles.css','ui.css','index.html']){
+const built=distEntries();
+for(const file of [built.styles,built.ui,'index.html']){
  const s=fs.readFileSync(path.join(root,file),'utf8');
  for(const m of s.matchAll(/(?:url\(["']?|(?:src|href)=["'])(assets\/[^"')\s>]+)/g))required.add(m[1]);
 }
