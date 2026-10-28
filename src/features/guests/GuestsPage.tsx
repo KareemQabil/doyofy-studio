@@ -156,8 +156,8 @@ export function GuestsPage({ event }: { event: Event }) {
                 {tableList.length > 0 && <button type="button" aria-pressed={grouped} onClick={() => setParam('view', 'tables')}><Icon name="table" size="sm" />الطاولات</button>}
                 {foodOn && <button type="button" aria-pressed={food} onClick={() => { haptic('tick'); setParam('view', 'food'); }}><Icon name="sparkle" size="sm" />الطعام</button>}
               </div>}
-              {!food && <Button variant="ghost" size="sm" icon="sliders" aria-expanded={moreFilters} onClick={() => setMoreFilters((v) => !v)}>{moreFilters ? 'فلاتر أقل' : 'فلاتر'}</Button>}
-              {!food && !selecting && visible.length > 0 && <Button variant="ghost" size="sm" icon="check" onClick={() => { haptic('tick'); setSelectMode(true); }}>تحديد</Button>}
+              {!food && <Button variant="ghost" size="sm" icon="sliders" className="g2-tool" aria-label={moreFilters ? 'فلاتر أقل' : 'فلاتر'} aria-expanded={moreFilters} onClick={() => setMoreFilters((v) => !v)}><span className="g2-tool-label">{moreFilters ? 'فلاتر أقل' : 'فلاتر'}</span></Button>}
+              {!food && !selecting && visible.length > 0 && <Button variant="ghost" size="sm" icon="check" className="g2-tool" aria-label="تحديد" onClick={() => { haptic('tick'); setSelectMode(true); }}><span className="g2-tool-label">تحديد</span></Button>}
             </div>
             {!food && moreFilters && <div className="g2-chips" role="group" aria-label="تصفية الضيوف">
               {PARTY_FILTERS.map((f) => <button key={f.id} type="button" className="chip v2-press" aria-pressed={filter === f.id} onClick={() => { clearSelection(); setParam('filter', f.id === 'all' ? null : f.id); }}>{f.label}<span className="num">{counts[f.id]}</span></button>)}

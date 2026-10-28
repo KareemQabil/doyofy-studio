@@ -4,6 +4,7 @@
  *   useSwipeReveal  drag a row sideways to uncover its actions; a long swipe commits the primary one
  *   useLongPress    press and hold (touch/pen) — e.g. enter selection mode; mouse uses the checkbox
  *   useScrolled     true once the page has scrolled past a threshold (compact sticky headers)
+ *   useScrollHide   true while the reader scrolls down past a threshold (a phone app bar steps aside; scrolling up brings it back)
  *   mergeHandlers   combine event props of several hooks on one element
  */
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type SyntheticEvent } from 'react';
@@ -137,4 +138,22 @@ export function useScrolled(threshold = 24): boolean {
     return () => { window.removeEventListener('scroll', on); cancelAnimationFrame(raf); };
   }, [threshold]);
   return scrolled;
+}
+
+export function useScrollHide(threshold = 56, slack = 6): boolean {
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    let raf = 0, last = window.scrollY;
+    const read = () => {
+      raf = 0;
+      const y = window.scrollY, d = y - last;
+      if (Math.abs(d) < slack) return;
+      setHidden(y > threshold && d > 0);
+      last = y;
+    };
+    const on = () => { if (!raf) raf = requestAnimationFrame(read); };
+    window.addEventListener('scroll', on, { passive: true });
+    return () => { window.removeEventListener('scroll', on); cancelAnimationFrame(raf); };
+  }, [threshold, slack]);
+  return hidden;
 }

@@ -44,7 +44,7 @@ const failures = [];
 let checked = 0;
 
 /** in-page audit; returns a list of issue strings */
-function audit({ phone, budget }) {
+async function audit({ phone, budget }) {
   const issues = [];
   const vis = (el) => { const b = el.getBoundingClientRect(); const cs = getComputedStyle(el); return b.width > 0 && b.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && Number(cs.opacity) > 0.05; };
   const label = (el) => `${el.tagName.toLowerCase()}${el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : ''} «${(el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 18)}»`;
@@ -61,6 +61,8 @@ function audit({ phone, budget }) {
     if (!vis(el) || skip(el) || el.dataset.hit === 'expanded') continue;
     const b = el.getBoundingClientRect();
     if (b.width >= budget.minTarget && b.height >= budget.minTarget) continue;
+    // a checkbox/radio wrapped in its label: the label is the target
+    const lab = el.matches('input') && el.closest('label'); if (lab) { const lb = lab.getBoundingClientRect(); if (lb.width >= budget.minTarget && lb.height >= budget.minTarget) continue; }
     if (el.tagName === 'A' && getComputedStyle(el).display === 'inline' && el.parentElement && el.parentElement.textContent.trim().length > el.textContent.trim().length + 10) continue;
     if (b.bottom < 0 || b.top > innerHeight * 4) continue;
     small.push(`${label(el)} ${Math.round(b.width)}×${Math.round(b.height)}`);
@@ -79,7 +81,7 @@ function audit({ phone, budget }) {
   // what is actually painted under the text: the hit-test stack at the text's centre (covers sliding indicators and pseudo plates)
   const under = (el) => {
     let b = el.getBoundingClientRect();
-    if (b.top < 0 || b.bottom > innerHeight) { el.scrollIntoView({ block: 'center', behavior: 'instant' }); b = el.getBoundingClientRect(); }
+    if (b.top < 0 || b.bottom > innerHeight) { el.scrollIntoView({ block: 'center', behavior: 'instant' }); return 'scroll'; }
     const x = b.left + b.width / 2, y = b.top + b.height / 2;
     if (y < 0 || y > innerHeight || x < 0 || x > innerWidth) return bgOf(el);
     for (const e of document.elementsFromPoint(x, y)) {
@@ -103,7 +105,10 @@ function audit({ phone, budget }) {
     const rat = (bg) => { const L1 = lum(fg), L2 = lum(bg); return (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05); };
     // a failure must hold for both readings of the background: the ancestor chain and the painted stack
     const a = bgOf(el); if (!a || rat(a) >= need) continue;
-    const b2 = under(el); if (!b2 || rat(b2) >= need) continue;
+    let b2 = under(el);
+    // brought into view: let sticky layout, observers and indicator transitions settle, then read the painted stack
+    if (b2 === 'scroll') { await new Promise((r) => setTimeout(r, 320)); b2 = under(el); if (b2 === 'scroll') b2 = null; }
+    if (!b2 || rat(b2) >= need) continue;
     const bg = a, ratio = rat(a);
     if (ratio < need) low.add(`${ratio.toFixed(2)}<${need} «${el.textContent.trim().slice(0, 16)}» ${cs.color} on rgb(${bg.slice(0, 3).join(',')})`);
   }
@@ -152,7 +157,8 @@ for (const appearance of APPEARANCES) {
       if (ONLY && !route.includes(ONLY)) continue;
       errors.length = 0;
       await page.goto(BASE + route);
-      await page.waitForTimeout(900);
+      await page.waitForTimeout(700);
+      await page.evaluate(() => document.fonts.ready.then(() => new Promise((r) => setTimeout(r, 350))));
       const issues = await page.evaluate(audit, { phone: !!vp.phone, budget: BUDGET });
       if (vpName === 'p375' || vpName === 'd1366') issues.push(...(await focusObscured(page)).slice(0, 3).map((h) => `focus hidden: ${h}`));
       const errs = errors.filter((e) => !/favicon|ERR_ABORTED|fonts\.g/.test(e));

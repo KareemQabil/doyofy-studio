@@ -1,4 +1,3 @@
-import { JourneyBanner } from '../shared/JourneyBanner';
 import { JourneyArtwork } from '../../ui/primitives/JourneyArtwork';
 /**
  * Organizer's check-in page: before the day — prepare the gate (link for staff, try it);
@@ -38,7 +37,6 @@ export function CheckInSetup({ event }: { event: Event }) {
       <PageHeader title="الاستقبال" status={phase === 'event_day' ? <Badge tone="accent" dot>اليوم</Badge> : undefined}
         subtitle={phase === 'event_day' ? 'تابع الوصول لحظة بلحظة' : phase === 'completed' ? 'انتهت المناسبة' : `المناسبة ${countdownLabel(event.date, todayFor(event, now))} — جهّز فريق الاستقبال`}
         actions={<LinkButton to={paths.gate(event.id)} variant="primary" icon="scan" onClick={() => void prepare.run()}>افتح الاستقبال</LinkButton>} />
-      <JourneyBanner title="استقبال يليق بضيوفك." line="جهّز فريقك وجرّب شاشة البوابة. لكل ضيف دعوته، ولكل وصول ترحيبه." />
 
       <div className="stack gap-6">
         {(phase === 'event_day' || phase === 'completed' || c.checkedInPeople > 0) && <div className="counts">
@@ -52,7 +50,7 @@ export function CheckInSetup({ event }: { event: Event }) {
         </div>}
 
         {phase !== 'event_day' && phase !== 'completed' && (
-          <Panel title="استقبال يليق بضيوفك" className="reception-prep">
+          <Panel title="جهّز الفريق، ثم افتح الاستقبال" subtitle="خطوة واحدة: أرسل الرابط لفريقك وجرّبه مرة." className="reception-prep">
             <JourneyArtwork kind="reception" className="reception-art"/><div className="stack gap-4"><ol className="reception-steps"><li><strong>١</strong><span>ابحث عن الضيف أو أدخل رمز دعوته</span></li><li><strong>٢</strong><span>تأكد من العدد، والطاولة إن أضفتها</span></li><li><strong>٣</strong><span>سجّل الوصول، ويمكنك التراجع</span></li></ol>
               <p className="muted">شاشة الاستقبال شاشة بسيطة لفريق الاستقبال: مسح رمز QR من دعوة الضيف، أو البحث بالاسم، ثم تسجيل الوصول كاملًا أو جزئيًا. لا يحتاج الفريق إلى صفحة المنظم.</p>
               <CopyField label="رابط شاشة الاستقبال لفريق الاستقبال" value={absolute(paths.gate(event.id))} hint="في النسخة الحقيقية يحتاج الرابط رمز دخول للفريق." onCopied={() => void prepare.run()} />

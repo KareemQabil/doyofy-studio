@@ -8,7 +8,7 @@
 import { AccountMenu } from '../account/AccountMenu';
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { haptic } from '../../ui/motion/motion';
-import { useScrolled } from '../../ui/hooks/useTouchGestures';
+import { useScrollHide, useScrolled } from '../../ui/hooks/useTouchGestures';
 import { Link } from '../../app/router';
 import { paths } from '../../app/paths';
 import { Logo } from '../../ui/brand';
@@ -17,11 +17,12 @@ import type { NavItem } from '../../ui/layouts/Layouts';
 
 export function SignatureShell({ children, right, mobileContext }: { children: ReactNode; right?: ReactNode; mobileContext?: ReactNode }) {
   const scrolled = useScrolled(8);
+  const hidden = useScrollHide(56) && !!mobileContext;
   return (
     <div className={`sig-shell${mobileContext ? ' has-appbar' : ''}`}>
       <a href="#main" className="skip-link">تخطَّ إلى المحتوى</a>
       {/* phones inside an event: one compact bar (back · event · account) instead of brand + banner + title */}
-      {mobileContext && <header className={`sig-appbar${scrolled ? ' is-scrolled' : ''}`}><div className="sig-appbar-context">{mobileContext}</div><span className="sig-appbar-tools">{right ?? <AccountMenu />}</span></header>}
+      {mobileContext && <header className={`sig-appbar${scrolled ? ' is-scrolled' : ''}${hidden ? ' is-hidden' : ''}`} onFocusCapture={(e) => e.currentTarget.classList.remove('is-hidden')}><div className="sig-appbar-context">{mobileContext}</div><span className="sig-appbar-tools">{right ?? <AccountMenu />}</span></header>}
       <header className="sig-header">
         <Link to={paths.events} className="sig-brand" aria-label="ضيوفي — مناسباتي"><Logo height={30} /></Link>
         <span className="sig-edition" aria-hidden="true">توقيع</span>
