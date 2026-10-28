@@ -163,3 +163,16 @@ html:has(.focus-foot) { scroll-padding-bottom: calc(72px + env(safe-area-inset-b
 .app-crash p { margin: 0 0 8px; color: var(--c-text-2); }
 .account-reset { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; margin-top: 8px; padding: 0 12px; border: 1px solid var(--c-hairline); border-radius: 12px; background: none; color: var(--c-text-2); font: 500 14px/1 var(--font-ui); cursor: pointer; }
 .account-reset:hover { background: var(--c-surface-hover); color: var(--c-text); }
+
+/* phones: a list row keeps avatar + text on one line however long the meta; actions sit below, aligned to the end */
+@media (max-width: 640px) {
+  .plain-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--s-3); row-gap: var(--s-2); }
+  .plain-row > .row-actions { grid-column: 1 / -1; width: auto; }
+  .plain-row .row-sub { flex-wrap: wrap; }
+}
+
+/* phones: the first-time swipe hint floats over the foot of the deck instead of pushing the page under the sticky action bar */
+@media (max-width: 640px) {
+  .deck { position: relative; }
+  .deck-hint { position: absolute; z-index: 6; inset-inline: 0; margin-inline: auto; width: max-content; bottom: 64px; box-shadow: 0 6px 18px rgb(0 0 0 / .18); }
+}

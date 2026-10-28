@@ -106,7 +106,7 @@ function HeroFan({ looks }: { looks: Look[] }) {
         <p className="sig-fan-label" aria-live="polite">{looks[visibleFront]?.label}</p>
         <button type="button" className="sig-fan-arrow" onClick={() => cycle(1)} aria-label="الشكل التالي"><Icon name="forward" /></button>
       </div>
-      <p className="sig-fan-hint">اسحب لتكتشف شكلًا آخر <span aria-hidden="true">←</span></p>
+      <p className="sig-fan-hint">اسحب لتكتشف شكلًا آخر <span aria-hidden="true">→</span></p>
     </div>
   );
 }
@@ -208,7 +208,7 @@ function OccasionDeckSection() {
           <LinkButton to={`${paths.newEvent}?type=${active.id}`} variant="primary" size="lg" iconEnd="forward">ابدأ {active.label}</LinkButton>
         </div>
         <TactileDeck items={items} index={index} onIndexChange={setIndex} getKey={(t) => t.id} window={2}
-          label="المناسبات — اسحب يسارًا للتالي أو استخدم الأسهم" itemLabel={(t) => t.label} activateHint="اضغط للبدء"
+          label="المناسبات — اسحب يمينًا للتالي أو استخدم الأسهم" itemLabel={(t) => t.label} activateHint="اضغط للبدء"
           onActivate={(t) => navigate(`${paths.newEvent}?type=${t.id}`)}
           renderCard={(t, s) => <OccasionPoster type={t.id} active={s.active} />} className="sig-occasion-deck" />
       </div>

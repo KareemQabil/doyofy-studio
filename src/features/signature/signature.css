@@ -236,7 +236,8 @@
 .deck-rail > span { display: block; height: 100%; background: var(--brand-red); transition: width var(--dur-layout) var(--ease-out); }
 .deck-hint { justify-self: center; display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 999px; background: var(--brand-charcoal); color: #fff; font: 500 13px/1 var(--font-display); pointer-events: none; white-space: nowrap; }
 .deck-hint-hand { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--brand-gold); animation: deck-nudge 1.6s var(--ease-in-out) infinite; }
-@keyframes deck-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-12px); } }
+/* RTL: the hand nudges right, the way the next card is reached */
+@keyframes deck-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(12px); } }
 /* occasion posters: colour tile + a real invitation + a Phosphor glyph */
 .sig-poster { position: relative; display: grid; grid-template-rows: auto 1fr; width: 100%; aspect-ratio: 5 / 7; border-radius: 6px; overflow: hidden; padding: 20px 20px 0; }
 .sig-poster-head { display: grid; gap: 2px; text-align: start; position: relative; z-index: 2; }

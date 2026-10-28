@@ -17,8 +17,9 @@
 | **B · One card family** | «الطقم» has 30 faces, at least two per occasion:<br>• 13 Designer Kit faces<br>• 6 flat motion faces after the GSAP reference<br>• 9 built from the owner's PDF layers<br>• 2 typographic faces<br>The 28 legacy faces and the dead wizard are deleted. Templates come from one catalogue. Saved designs that use a retired face open on their occasion's face. |
 | **M · Motion** | Preset GSAP timelines for every face, played when the card is revealed and in the editor (with «شغّل حركة البطاقة»). GSAP loads on demand: 68KB, about 27KB gzipped. Reduced motion shows the face at rest. |
 | **E/F · Guest invitation** | The desktop backdrop is centred (it was pinned right in RTL). A decline folds the guest counter away (FX-13). |
-| **V · Deploy** | • Self-contained guest links (`?d=`, Q1) that open on any phone; their reply screen says it is a demo and nothing was sent.<br>• Content-hashed entry files.<br>• Strict CSP with no inline scripts (verified against the 3D scene, the editor and the guest view).<br>• `noindex`, `robots.txt` and absolute share previews.<br>• Cache headers.<br>• Demo notice bar, "reset demo" option and crash screen.<br>• Birdsong ambience re-encoded from 6.3MB to 0.5MB. |
+| **V · Deploy** | • Self-contained guest links (`?d=`, Q1) that open on any phone; their reply screen says it is a demo and nothing was sent.<br>• Content-hashed entry files.<br>• Strict CSP with no inline scripts (verified against the editor, the Lottie player and the guest view).<br>• `noindex`, `robots.txt` and absolute share previews.<br>• Cache headers.<br>• Demo notice bar, "reset demo" option and crash screen.<br>• Birdsong ambience re-encoded from 6.3MB to 0.5MB. |
 | **H · Docs** | Old round documents are moved to `docs/archive/`. |
+| **R2 · Owner feedback (same day)** | • **Flat settings:** the drapes, pedestals and the 3D candlelit hall are gone. Each setting is one colour field plus one flat motif filling the whole window (`src/scenes/flat.js`). three.js and 18MB of models are removed, and the editor no longer offers 2D/3D.<br>• **Lottie:** a logomark draw-on loader, a success seal and an envelope (`tools/gen-lottie.mjs`), played by lottie-web's light build (no eval, lazy). They appear on page loads, the guest invitation, success toasts, the publish milestone and reception's "arrived" screen. A CSS mark draws before JavaScript arrives.<br>• **Gestures:** invitation pages, the template preview and the editor's pages follow the finger. Phones swipe between workspace sections; tab changes slide in the reading direction. Three screen-reader labels and two hint animations pointed the wrong way and are fixed.<br>• **Dark mode:** a one-tap toggle in the header and app bar. |
 
 ### Numbers on the final build
 
@@ -26,7 +27,7 @@
 | --- | --- | --- |
 | `app.js` | 1.1MB · 258KB gzip | 884KB · 224KB gzip |
 | `ui.css` | 382KB · 71KB gzip | 284KB · 54KB gzip |
-| `dist/` | 39MB | 32MB (the 3D library loads only when that scene is chosen) |
+| `dist/` | 39MB | 11MB (no 3D library or models) |
 | Faces / templates | 41 / 129 | 30 / 90 (each face × 3 settings) |
 | Fixed chrome on a phone | 126px | 104px |
 | Release gate | — | 231/231 screens clean (5 viewports × light/dark, plus the Q1 link check) |
@@ -64,7 +65,7 @@ The repository is ready for a static deploy. No server or database is needed.
   - the shared link shows the preview image;
   - a 1.7KB guest link opens fully.
 - **Screen readers:** VoiceOver and TalkBack on the guest invitation and the editor.
-- **3D candlelit scene:** test on a mid-range Android.
+- **Section swipe and page turns:** on a real phone, check that a sideways swipe on a guest row still opens its actions and does not change section.
 
 ---
 

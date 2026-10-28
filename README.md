@@ -28,7 +28,7 @@ npm start
 
 ```bash
 npm test            # typecheck · unit · DOM · release gate (5 viewports × light/dark) · Signature journey
-npm run build       # dist/ — content-hashed entries, lazy chunks for the engine, GSAP and three.js
+npm run build       # dist/ — content-hashed entries, lazy chunks for the engine, GSAP and the Lottie player
 npm run validate    # the fast subset plus token contrast and shipped-asset checks
 ```
 

@@ -40,7 +40,7 @@ export function SignatureOccasions({ value, onChange, onConfirm }: { value: Even
       )}
       {view === 'deck' ? (
         <TactileDeck items={OCCASIONS_ORDERED} index={at} onIndexChange={(i) => onChange(OCCASIONS_ORDERED[i]!.id)} getKey={(t) => t.id}
-          label="اختر نوع المناسبة — اسحب يسارًا للتالي" itemLabel={(t) => `${t.label}، ${t.line}`} activateHint="اضغط للمتابعة"
+          label="اختر نوع المناسبة — اسحب يمينًا للتالي" itemLabel={(t) => `${t.label}، ${t.line}`} activateHint="اضغط للمتابعة"
           onActivate={(t) => onConfirm(t.id)} renderCard={(t, s) => <OccasionPoster type={t.id} active={s.active} />} className="sig-create-deck" />
       ) : <CuratedChooser value={value} onChange={onChange} />}
     </div>
