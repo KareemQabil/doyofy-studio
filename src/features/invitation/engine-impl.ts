@@ -5,18 +5,17 @@ import '../../pages/index.js';
 import '../../audio/index.js';
 import '../../modules.js';
 import { CardRegistry, SceneRegistry } from '../../engine/registries.js';
-import { CARD_DEFS } from '../../cards/index.js';
 import { deriveContent } from '../../data/derive.js';
 import { SCENES, SCENE_DEFS, SCENE_ROOT } from '../../scenes/css/generated.js';
 import { SCENE_VALS } from '../../scenes/css/vals.js';
 
 export { Studio } from '../../studio/Studio.js';
-export { Wizard } from '../../wizard/Wizard.js';
+import { FALLBACK_CARD } from '../../cards/index.js';
 
 /** static card face markup (300×420) with the given invitation content */
 export function cardFaceHtml(cardId: string, invitation: unknown): string {
   ensureCardDefs();
-  const card = CardRegistry.has(cardId) ? CardRegistry.get(cardId) : CardRegistry.get('wine');
+  const card = CardRegistry.has(cardId) ? CardRegistry.get(cardId) : CardRegistry.get(FALLBACK_CARD);
   return card.render(deriveContent(invitation).c);
 }
 
@@ -35,7 +34,7 @@ function syncDefs() {
     h.id = 'dy-card-defs';
     h.setAttribute('aria-hidden', 'true');
     h.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
-    h.innerHTML = CARD_DEFS + SCENE_DEFS;
+    h.innerHTML = SCENE_DEFS;
     document.body.appendChild(h);
   }
 }

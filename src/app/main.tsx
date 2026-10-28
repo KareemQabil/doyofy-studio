@@ -1,7 +1,6 @@
 /**
  * Entry. Legacy Invitation Studio routes keep working unchanged:
- *   ?view=invite[&i=…] / ?i=…   the standalone invitation (QA + old links)
- *   ?view=wizard                the standalone customer wizard
+ *   ?view=invite[&i=…] / ?i=…   the standalone invitation (self-contained guest links, QA)
  * Everything else is the Doyofy app.
  */
 import { createRoot } from 'react-dom/client';
@@ -9,7 +8,7 @@ import { App } from './App';
 import type { RouterMode } from './router';
 
 const params = new URLSearchParams(location.search);
-const legacy = params.get('view') === 'invite' || params.get('view') === 'wizard' || params.has('i');
+const legacy = params.get('view') === 'invite' || params.has('i');
 
 if (legacy) {
   void import('../main.js');

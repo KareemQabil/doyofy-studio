@@ -140,3 +140,15 @@ html:has(.focus-foot) { scroll-padding-bottom: calc(72px + env(safe-area-inset-b
 :root[data-theme] .gxs-preview { top: calc(var(--sig-header-h) + 16px); }
 :root[data-theme] .g2-bulk { top: calc(var(--sig-header-h) + 8px); }
 :root[data-theme] .seat-pool { top: calc(var(--sig-header-h) + 16px); max-height: calc(100dvh - var(--sig-header-h) - 32px); }
+
+/* template gallery: the designs come first — a slim banner and a small prop instead of a poster-sized header */
+:root[data-theme] .sig-library-banner { min-height: 0; grid-template-rows: 132px; }
+:root[data-theme] .sig-library-banner picture { min-height: 0; height: 132px; }
+:root[data-theme] .sig-library-banner > div { padding: 16px 24px; }
+:root[data-theme] .tg-studio-prop { max-width: 150px; height: auto; }
+@media (max-width: 760px) {
+  :root[data-theme] .sig-library-banner { grid-template-rows: 112px; }
+  :root[data-theme] .sig-library-banner picture { height: 112px; }
+}
+:root[data-theme] .tg-head h1, :root[data-theme] .tg-title { font-size: clamp(24px, 1.2vw + 15px, 32px); }
+@media (max-width: 760px) { :root[data-theme] .sig-library-banner h3 { font-size: 19px; } :root[data-theme] .sig-library-banner p:last-child { font-size: 11.5px; } }

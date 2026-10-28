@@ -4,7 +4,6 @@
  * pages, envelope colours, done text, switcher) are filled in by Studio.js.
  */
 import { STRINGS as T } from '../data/strings.js';
-import { CARD_DEFS } from '../cards/index.js';
 import { SCENE_DEFS } from '../scenes/css/generated.js';
 
 const ICON = {
@@ -35,7 +34,6 @@ export const studioMarkup = () => `
       <filter id="st-grain"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"></feTurbulence><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 .9  0 0 0 0 .8  0 0 0 .06 0"></feColorMatrix></filter>
     </defs>
   </svg>
-  ${CARD_DEFS}
   ${SCENE_DEFS}
 
   <div class="st-layer" aria-hidden="true"></div>

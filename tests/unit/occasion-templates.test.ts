@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { EVENT_TYPES } from '../../src/domain/event';
 import { OCCASION_STARTERS } from '../../src/domain/occasion-starters';
-import { defaultDesign, toInvitationData } from '../../src/domain/invitation';
+import { defaultDesign, resolveDesign, toInvitationData } from '../../src/domain/invitation';
 import { applyPreset, presetById, presetOf, presetsFor, TEMPLATE_PRESETS } from '../../src/domain/templates';
 import type { Event, EventType } from '../../src/domain/types';
 import { deriveContent } from '../../src/data/derive.js';
@@ -85,14 +85,15 @@ test('couple cards retain both names; calendar fallback uses the actual occasion
   assert.equal(new URL(derived.calHref).searchParams.get('text'), 'Joud & Omar — Engagement');
 });
 
-test('six original occasion faces keep dynamic year, long names, RTL text and safe markup',()=>{
- const ids=['grad-editorial','grad-campus','grad-constellation','birthday-confetti','newborn-moon','forum-grid'];
- for(const id of ids){
-  const type=id.startsWith('grad')?'graduation':id.startsWith('birthday')?'birthday':id.startsWith('newborn')?'newborn':'conference';
-  const ev={...event(type),date:'2031-08-12',names:{a:'عبد الرحمن بن عبد الله المحتفي بإنجازه العظيم',aEn:'Abdulrahman bin Abdullah <script>alert(1)</script>'},venue:{name:'قاعة الاحتفاء والتواصل والمعرفة',city:'الرياض'}};
-  const derived=deriveContent(toInvitationData(ev,defaultDesign(ev))),card=CardRegistry.get(id),html=card.render(derived.c);
-  assert.ok(html.includes(ev.names.a),id);assert.ok(html.includes(derived.c.dateAr!),id);assert.ok(!html.includes('<script>'),id);assert.ok(html.includes('&lt;script&gt;'),id);assert.ok(html.includes('<svg'),id);assert.equal((card as unknown as {reducedMotion:string}).reducedMotion,'static');
-  for(const scene of card.compat.recommended)assert.ok(TEMPLATE_PRESETS.some(p=>p.cardId===id&&p.sceneId===scene),`${id}/${scene}`);
+test('every face keeps long mixed-language names live and escaped, with the real year and date',()=>{
+ for(const card of CardRegistry.list()){
+  const type=(card.tags.find((t:string)=>EVENT_TYPES.some(e=>e.id===t)) ?? 'wedding') as EventType;
+  const couple=!!EVENT_TYPES.find(e=>e.id===type)?.couple;
+  const ev={...event(type),date:'2031-08-12',names:{a:'عبد الرحمن بن عبد الله المحتفي بإنجازه العظيم',aEn:'Abdulrahman <script>alert(1)</script>',...(couple?{b:'جود العبدالله',bEn:'Joud'}:{})}};
+  const derived=deriveContent(toInvitationData(ev,defaultDesign(ev))),html=card.render(derived.c);
+  assert.ok(html.includes(ev.names.a),card.id);if(couple)assert.ok(html.includes('جود العبدالله'),card.id);
+  assert.ok(!html.includes('<script>'),card.id);assert.ok(!/\sid="/.test(html),`${card.id}: no ids`);
+  assert.ok(html.includes(derived.c.dateAr!)||html.includes(derived.c.dayNum!),`${card.id}: date`);
  }
 });
 
@@ -101,9 +102,7 @@ test('all thirteen occasion starters have a distinct native face',()=>{
  assert.equal(new Set(cards).size,13);
 });
 
-test('nine celebration faces escape long mixed-language content and use the actual year',()=>{
- const ids=['wedding-vow','engagement-rings','katb-seal','henna-lattice','family-table','iftar-arch','opening-door','corporate-edition','celebration-shapes'];
- const ev={...event('wedding'),date:'2031-08-12',names:{a:'عبد الرحمن بن عبد الله المحتفي بإنجازه العظيم',aEn:'Abdulrahman <script>alert(1)</script>',b:'جود المحتفية بهذه المناسبة الجميلة',bEn:'Joud & Friends'}};
- const derived=deriveContent(toInvitationData(ev,defaultDesign(ev)));
- for(const id of ids){const card=CardRegistry.get(id),html=card.render(derived.c);assert.ok(html.includes(ev.names.a),id);assert.ok(html.includes(ev.names.b!),id);assert.ok(!html.includes('<script>'),id);assert.ok(html.includes('&lt;script&gt;'),id);assert.ok(html.includes(derived.c.dateAr!),id);if(id==='corporate-edition')assert.ok(html.includes('2031'));}
+test('a design saved with a retired face opens on its occasion\'s face',()=>{
+ for(const t of EVENT_TYPES){const d=resolveDesign({...defaultDesign(event(t.id)),cardId:'wine',sceneId:'candlelit'},t.id);assert.equal(d.cardId,presetById(OCCASION_STARTERS[t.id].presetId)!.cardId);}
+ const kept=defaultDesign(event('wedding'));assert.equal(resolveDesign(kept,'wedding'),kept);
 });

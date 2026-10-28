@@ -41,7 +41,7 @@ const S = (id, name, swatch, tone, tags, extra = {}) => ({
 SceneRegistry.registerMany([
   S('candlelit', 'Candlelit Hall', '#3A1A1F', 'dark', ['night', 'warm', 'luxury', 'candles'], {
     renderers: [threeCandlelit],
-    compat: { recommended: ['wine', 'emerald', 'arabesque'] },
+    compat: { recommended: ['kit-seal-arch', 'kit-henna-rosette', 'kit-lantern-night', 'kit-laurel-gala'] },
     assets: [
       { path: 'p0-derived/models/lantern-chandelier-01/lantern-chandelier-01.gltf.json', kind: 'model' },
       { path: 'p0-derived/models/brass-vase-02/brass-vase-02.gltf.json', kind: 'model' },

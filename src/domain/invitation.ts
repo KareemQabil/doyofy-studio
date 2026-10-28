@@ -6,21 +6,21 @@
 import type { Event, InvitationDesign, InvitationDesignContent, PublishState } from './types';
 import { eventTypeInfo, isCoupleEvent } from './event';
 import { OCCASION_LABELS_EN, OCCASION_STARTERS } from './occasion-starters';
-import { presetById } from './templates';
+import { CARD_NAMES, presetById } from './templates';
+export { CARD_NAMES };
 import { offsetString } from './format';
 
-export const CARD_NAMES: Record<string, string> = {
-  'wedding-vow': 'وعد على ورق', 'engagement-rings': 'مداران للفرح', 'katb-seal': 'ميثاق وختم', 'henna-lattice': 'نقش الحنّة', 'family-table': 'على مائدة واحدة', 'iftar-arch': 'نور اللقاء', 'opening-door': 'الباب الأول', 'corporate-edition': 'العدد القادم', 'celebration-shapes': 'شكل للفرح',
-  'grad-editorial': 'تخرج بأفق جديد', 'grad-campus': 'ختم الإنجاز', 'grad-constellation': 'نجمة التخرج', 'birthday-confetti': 'عيد من الألوان', 'newborn-moon': 'أهلًا بالقمر', 'forum-grid': 'ملتقى الأفكار',
-  'sig-diploma': 'توقيع التخرّج', 'sig-ribbon': 'حروف الفرح', 'sig-ticket': 'تذكرة الفرح',
-  'kit-rose-garden': 'حديقة الورد', 'kit-two-rings': 'خاتمان', 'kit-seal-arch': 'ميثاق وقوس', 'kit-henna-rosette': 'وردة الحنّة', 'kit-balloons': 'بالونات', 'kit-cap-diamond': 'قبعة في ماسة', 'kit-moon-cloud': 'قمر وغيمة', 'kit-dallah-olive': 'دلّة وزيتون', 'kit-lantern-night': 'فوانيس الليل', 'kit-forum-stars': 'منبر النجوم', 'kit-satin-ribbon': 'شريط الافتتاح', 'kit-laurel-gala': 'وردة الحفل', 'kit-eucalyptus': 'غصن الأوكالبتوس',
-  lace: 'دانتيل عاجي', wine: 'نبيذي وذهبي', emerald: 'زمرّد آرت ديكو', sage: 'أغصان المريمية', blush: 'ألوان مائية وردية',
-  midnight: 'نجوم منتصف الليل', arabesque: 'أرابيسك', minimal: 'بسيط عصري', terracotta: 'شمس التراكوتا', clay: 'صلصال باستيل',
-};
 export const SCENE_NAMES: Record<string, string> = {
   candlelit: 'قاعة الشموع', marble: 'صباح رخامي', garden: 'ليلة في الحديقة', desert: 'غروب الصحراء', starry: 'ليلة النجوم',
   silk: 'ستائر الحرير', petals: 'بتلات طائرة', clay: 'مسرح الصلصال', sea: 'بحر مقمر', palace: 'أقواس القصر',
 };
+
+/** A face that no longer exists (designs saved before the single card family) opens as its occasion's own face. */
+export function resolveDesign<T extends Pick<InvitationDesignContent, 'cardId' | 'sceneId'>>(c: T, type: Event['type']): T {
+  if (CARD_NAMES[c.cardId]) return c;
+  const preset = presetById(OCCASION_STARTERS[type].presetId)!;
+  return { ...c, cardId: preset.cardId, sceneId: preset.sceneId };
+}
 
 /** A new invitation starts in its occasion's visual language, with editable relevant copy. */
 export function defaultDesign(ev: Event): InvitationDesignContent {

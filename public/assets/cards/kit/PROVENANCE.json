@@ -1,13 +1,235 @@
 {
-  "source": "Doyofy Claude Designer Kit, 2026-10-28 (owner-supplied; states all elements are original, no Canva elements, cleared for Doyofy use)",
-  "used_by": "src/cards/collection.js",
-  "raster_layers": [
-    { "file": "rose-corner.webp", "kit_id": "DYG_BOTANICAL_001", "origin": "AI-generated watercolour (kit DYG series)", "source_px": [1024, 1536], "px": [436, 640], "processing": "trimmed to alpha, LANCZOS, WebP q78" },
-    { "file": "eucalyptus-sprig.webp", "kit_id": "DYG_BOTANICAL_002", "origin": "AI-generated watercolour (kit DYG series)", "source_px": [1024, 1536], "px": [314, 560], "processing": "trimmed to alpha, LANCZOS, WebP q78" },
-    { "file": "silk-bow.webp", "kit_id": "DYG_WEDDING_001", "origin": "AI-generated (kit DYG series)", "source_px": [1254, 1254], "px": [495, 520], "processing": "trimmed to alpha, LANCZOS, WebP q80" },
-    { "file": "wax-seal.webp", "kit_id": "DYG_WEDDING_002", "origin": "AI-generated, blank seal; initials are live text", "source_px": [1254, 1254], "px": [300, 284], "processing": "trimmed to alpha, LANCZOS, WebP q82" },
-    { "file": "cotton-paper.webp", "kit_id": "DYG_TEXTURES_001", "origin": "AI-generated paper texture (kit DYG series)", "source_px": [1060, 1484], "px": [600, 840], "processing": "cover-cropped to 300x420 @2x, WebP q62" }
-  ],
-  "vector_motifs": "24 kit DYO_* vectors (original code-native), inlined by tools/import-card-kit.mjs into src/cards/kit-art.ts",
-  "not_used": "Canva-sourced PDF templates were studied for layout patterns only; no artwork from them is shipped"
+ "source": "Doyofy Claude Designer Kit, 2026-10-28 (owner-supplied; states all elements are original, no Canva elements, cleared for Doyofy use)",
+ "used_by": "src/cards/collection.js",
+ "raster_layers": [
+  {
+   "file": "rose-corner.webp",
+   "kit_id": "DYG_BOTANICAL_001",
+   "origin": "AI-generated watercolour (kit DYG series)",
+   "source_px": [
+    1024,
+    1536
+   ],
+   "px": [
+    436,
+    640
+   ],
+   "processing": "trimmed to alpha, LANCZOS, WebP q78"
+  },
+  {
+   "file": "eucalyptus-sprig.webp",
+   "kit_id": "DYG_BOTANICAL_002",
+   "origin": "AI-generated watercolour (kit DYG series)",
+   "source_px": [
+    1024,
+    1536
+   ],
+   "px": [
+    314,
+    560
+   ],
+   "processing": "trimmed to alpha, LANCZOS, WebP q78"
+  },
+  {
+   "file": "silk-bow.webp",
+   "kit_id": "DYG_WEDDING_001",
+   "origin": "AI-generated (kit DYG series)",
+   "source_px": [
+    1254,
+    1254
+   ],
+   "px": [
+    495,
+    520
+   ],
+   "processing": "trimmed to alpha, LANCZOS, WebP q80"
+  },
+  {
+   "file": "wax-seal.webp",
+   "kit_id": "DYG_WEDDING_002",
+   "origin": "AI-generated, blank seal; initials are live text",
+   "source_px": [
+    1254,
+    1254
+   ],
+   "px": [
+    300,
+    284
+   ],
+   "processing": "trimmed to alpha, LANCZOS, WebP q82"
+  },
+  {
+   "file": "cotton-paper.webp",
+   "kit_id": "DYG_TEXTURES_001",
+   "origin": "AI-generated paper texture (kit DYG series)",
+   "source_px": [
+    1060,
+    1484
+   ],
+   "px": [
+    600,
+    840
+   ],
+   "processing": "cover-cropped to 300x420 @2x, WebP q62"
+  }
+ ],
+ "vector_motifs": "24 kit DYO_* vectors (original code-native), inlined by tools/import-card-kit.mjs into src/cards/kit-art.ts",
+ "not_used": "Canva-sourced PDF templates were studied for layout patterns only; no artwork from them is shipped",
+ "owner_pdf_layers": [
+  {
+   "file": "pdf-gazebo.webp",
+   "layer": "design-source/owner-pdf-2026-10-28/layers/gazebo-ivy.webp",
+   "origin": "owner's PDF «قوالب pdf» (Canva export, author Kareem Khaled); owner states it is theirs and approved prototype use (2026-10-28)",
+   "source_px": [
+    795,
+    776
+   ],
+   "px": [
+    560,
+    547
+   ],
+   "processing": "LANCZOS, WebP q74"
+  },
+  {
+   "file": "pdf-drapes.webp",
+   "layer": "design-source/owner-pdf-2026-10-28/layers/drapes-ivory.webp",
+   "origin": "owner's PDF «قوالب pdf» (Canva export, author Kareem Khaled); owner states it is theirs and approved prototype use (2026-10-28)",
+   "source_px": [
+    1026,
+    1229
+   ],
+   "px": [
+    600,
+    719
+   ],
+   "processing": "LANCZOS, WebP q74"
+  },
+  {
+   "file": "pdf-white-roses.webp",
+   "layer": "design-source/owner-pdf-2026-10-28/layers/bouquet-white-roses.webp",
+   "origin": "owner's PDF «قوالب pdf» (Canva export, author Kareem Khaled); owner states it is theirs and approved prototype use (2026-10-28)",
+   "source_px": [
+    804,
+    696
+   ],
+   "px": [
+    420,
+    364
+   ],
+   "processing": "LANCZOS, WebP q74"
+  },
+  {
+   "file": "pdf-dahlias.webp",
+   "layer": "design-source/owner-pdf-2026-10-28/layers/dahlias-magenta.webp",
+   "origin": "owner's PDF «قوالب pdf» (Canva export, author Kareem Khaled); owner states it is theirs and approved prototype use (2026-10-28)",
+   "source_px": [
+    524,
+    409
+   ],
+   "px": [
+    480,
+    375
+   ],
+   "processing": "LANCZOS, WebP q74"
+  },
+  {
+   "file": "pdf-blush-roses.webp",
+   "layer": "design-source/owner-pdf-2026-10-28/layers/bouquet-blush-roses.webp",
+   "origin": "owner's PDF «قوالب pdf» (Canva export, author Kareem Khaled); owner states it is theirs and approved prototype use (2026-10-28)",
+   "source_px": [
+    684,
+    547
+   ],
+   "px": [
+    400,
+    320
+   ],
+   "processing": "LANCZOS, WebP q74"
+  },
+  {
+   "file": "pdf-rings-rose.webp",
+   "layer": "design-source/owner-pdf-2026-10-28/layers/rings-gold-rose.webp",
+   "origin": "owner's PDF «قوالب pdf» (Canva export, author Kareem Khaled); owner states it is theirs and approved prototype use (2026-10-28)",
+   "source_px": [
+    707,
+    570
+   ],
+   "px": [
+    400,
+    322
+   ],
+   "processing": "LANCZOS, WebP q74"
+  },
+  {
+   "file": "pdf-henna-ornament.webp",
+   "layer": "design-source/owner-pdf-2026-10-28/layers/ornament-henna-green.webp",
+   "origin": "owner's PDF «قوالب pdf» (Canva export, author Kareem Khaled); owner states it is theirs and approved prototype use (2026-10-28)",
+   "source_px": [
+    749,
+    718
+   ],
+   "px": [
+    520,
+    498
+   ],
+   "processing": "LANCZOS, WebP q74"
+  },
+  {
+   "file": "pdf-balloons.webp",
+   "layer": "design-source/owner-pdf-2026-10-28/layers/balloons-black-gold.webp",
+   "origin": "owner's PDF «قوالب pdf» (Canva export, author Kareem Khaled); owner states it is theirs and approved prototype use (2026-10-28)",
+   "source_px": [
+    343,
+    1000
+   ],
+   "px": [
+    260,
+    758
+   ],
+   "processing": "LANCZOS, WebP q74"
+  },
+  {
+   "file": "pdf-confetti.webp",
+   "layer": "design-source/owner-pdf-2026-10-28/layers/confetti-gold-a.webp",
+   "origin": "owner's PDF «قوالب pdf» (Canva export, author Kareem Khaled); owner states it is theirs and approved prototype use (2026-10-28)",
+   "source_px": [
+    1176,
+    976
+   ],
+   "px": [
+    600,
+    498
+   ],
+   "processing": "LANCZOS, WebP q74"
+  },
+  {
+   "file": "pdf-cornflower.webp",
+   "layer": "design-source/owner-pdf-2026-10-28/layers/cornflowers-stem.webp",
+   "origin": "owner's PDF «قوالب pdf» (Canva export, author Kareem Khaled); owner states it is theirs and approved prototype use (2026-10-28)",
+   "source_px": [
+    383,
+    845
+   ],
+   "px": [
+    220,
+    485
+   ],
+   "processing": "LANCZOS, WebP q74"
+  },
+  {
+   "file": "pdf-parchment.webp",
+   "layer": "design-source/owner-pdf-2026-10-28/layers/parchment-damask.webp",
+   "origin": "owner's PDF «قوالب pdf» (Canva export, author Kareem Khaled); owner states it is theirs and approved prototype use (2026-10-28)",
+   "source_px": [
+    1400,
+    893
+   ],
+   "px": [
+    600,
+    383
+   ],
+   "processing": "LANCZOS, WebP q74"
+  }
+ ],
+ "owner_pdf_note": "Review these rights before any commercial launch (see docs/handoff/FINAL_PHASE_PLAN_2026-10-28.md §5 Q3)."
 }

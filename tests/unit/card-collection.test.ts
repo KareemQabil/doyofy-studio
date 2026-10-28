@@ -21,15 +21,21 @@ const event = (type: EventType, a: string, b?: string): Event => ({
 const render = (id: string, ev: Event) => CardRegistry.get(id).render(deriveContent(toInvitationData(ev, defaultDesign(ev))).c);
 const TITLES: Record<string, string> = { wedding: 'حفل زفاف', katb_kitab: 'عقد قِران', graduation: 'حفل تخرّج', conference: 'دعوة حضور', corporate: 'دعوة خاصة' };
 
-test('the collection has one face per occasion, each the starting look of that occasion', () => {
-  assert.equal(COLLECTION.length, 13);
+test('every occasion starts on its Designer Kit face and offers at least two faces of its own', () => {
+  assert.ok(COLLECTION.length >= 26, `${COLLECTION.length} faces`);
   assert.deepEqual(new Set(COLLECTION.map((d) => d.type)), new Set(EVENT_TYPES.map((t) => t.id)));
+  for (const t of EVENT_TYPES) {
+    const own = COLLECTION.filter((d) => d.type === t.id);
+    assert.ok(own.length >= 2, `${t.id}: ${own.length} faces`);
+    const starter = presetById(OCCASION_STARTERS[t.id].presetId)!;
+    assert.ok(starter.cardId.startsWith('kit-') && own.some((d) => d.id === starter.cardId), `${t.id}: kit face is the starter`);
+    assert.equal(presetsFor(t.id).suited[0]!.cardId, starter.cardId, `${t.id}: shown first`);
+  }
   for (const d of COLLECTION) {
-    assert.equal(presetById(OCCASION_STARTERS[d.type as EventType].presetId)!.cardId, d.id, d.type);
-    assert.equal(presetsFor(d.type as EventType).suited[0]!.cardId, d.id, `${d.type}: shown first`);
     for (const scene of CardRegistry.get(d.id).compat.recommended) assert.ok(TEMPLATE_PRESETS.some((p) => p.cardId === d.id && p.sceneId === scene), `${d.id}/${scene}`);
     assert.ok(CARD_NAMES[d.id], `${d.id}: editor name`);
   }
+  assert.deepEqual(new Set(CardRegistry.list().map((c: { id: string }) => c.id)), new Set(COLLECTION.map((d) => d.id)), 'only the family is registered');
 });
 
 test('collection faces keep every word live, escaped, and true to the event', () => {
@@ -61,7 +67,11 @@ test('collection artwork is light: clean inlined motifs and small shipped layers
   const src = fs.readFileSync('src/cards/collection.js', 'utf8');
   const files = [...new Set([...src.matchAll(/img\('([a-z-]+\.webp)'/g)].map((m) => m[1]!))];
   assert.ok(files.length >= 5);
-  let bytes = 0;
-  for (const f of files) { const p = `public/assets/cards/kit/${f}`; assert.ok(fs.existsSync(p), p); bytes += fs.statSync(p).size; }
-  assert.ok(bytes < 300 * 1024, `raster layers ${bytes} bytes`);
+  for (const f of files) { const p = `public/assets/cards/kit/${f}`; assert.ok(fs.existsSync(p), p); assert.ok(fs.statSync(p).size < 90 * 1024, `${f} under 90KB`); }
+  // a face loads only its own layers: none may need more than ~180KB of raster art
+  for (const block of src.split(/\n  \{\n/).slice(1)) {
+    const own = [...new Set([...block.matchAll(/img\('([a-z-]+\.webp)'/g)].map((m) => m[1]!))];
+    const bytes = own.reduce((n, f) => n + fs.statSync(`public/assets/cards/kit/${f}`).size, 0);
+    assert.ok(bytes < 180 * 1024, `${/id: '([^']+)'/.exec(block)?.[1]}: ${bytes} bytes of layers`);
+  }
 });

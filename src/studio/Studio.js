@@ -46,7 +46,7 @@ export class Studio {
    *               — prefills the RSVP and bounds the guest count by the party's allowance
    *   doneAction  (platform) an extra button on the thank-you screen: { ar, en, onClick }
    */
-  constructor(host, { invitation, card = 'wine', scene = 'candlelit', start = 'intro', assetBase = 'assets/', rsvp, experience = null, embedded = false, showSwitcher = true, muted = false, params = new URLSearchParams(location.search), guest = null, doneAction = null } = {}) {
+  constructor(host, { invitation, card = 'kit-rose-garden', scene = 'silk', start = 'intro', assetBase = 'assets/', rsvp, experience = null, embedded = false, showSwitcher = true, muted = false, params = new URLSearchParams(location.search), guest = null, doneAction = null } = {}) {
     this.host = host;
     this.params = params;
     this.quality = detectQuality(params);

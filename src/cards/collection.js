@@ -1,5 +1,6 @@
 /**
- * «الطقم» collection — thirteen 300×420 faces, one per occasion, composed from the Doyofy Designer Kit.
+ * «الطقم» collection — 300×420 faces, at least two per occasion: the Designer Kit thirteen, six flat motion faces
+ * (motion-art.js, after the owner's GSAP reference), nine composed from the owner's PDF layers and two typographic.
  * Vector motifs are inlined from kit-art.ts (cleaned, id-free, tintable); the five watercolour / satin / wax /
  * paper layers are small WebP files in assets/cards/kit/. Every word stays live text: titles, names, dates.
  * Layout patterns follow common Arabic stationery: a calligraphic occasion title, an ornamental «و» between
@@ -7,10 +8,10 @@
  * The title follows the event's own occasion (typeOf), so a face reused for another occasion never says «زفاف».
  */
 import { CardRegistry } from '../engine/registries.js';
-import { e, names, STYLE } from './occasion-cards.js';
-import { typeOf } from './signature-cards.js';
+import { e, names, STYLE, typeOf } from './kit-helpers.js';
 import { UI_GLYPHS } from '../ui/vendor-icons/phosphor';
 import { KIT } from './kit-art';
+import { MOTION_ART } from './motion-art.js';
 
 const IMG = 'assets/cards/kit/';
 const RQ = "'Aref Ruqaa', 'Amiri', serif";
@@ -56,6 +57,8 @@ const info = (c) => `<div class="kc-info"><div class="kc-row"><div class="kc-cel
 const bigDay = (c) => `<div class="kc-day"><span class="kc-day-side">${e(c.dayAr)}</span><b lang="en" dir="ltr">${e(c.dayNum)}</b><span class="kc-day-side">${e(c.monthAr)} ${e(c.year)}</span></div><div class="kc-when"><span>${e(c.timeAr)}</span> · <span>${e(c.venueAr)}</span>، <span>${e(c.cityAr)}</span></div>`;
 /** right-aligned stack with icons */
 const stack = (c) => `<div class="kc-stack"><div>${icon('calendar')}<span>${e(c.dayAr)} · ${e(c.dateAr)}</span></div><div>${icon('clock')}<span>${e(c.timeAr)}</span></div><div>${icon('pin')}<span>${e(c.venueAr)}<small>${e(c.cityAr)}</small></span></div></div>`;
+/** one compact line under the names: weekday · date · time, then venue · city */
+const when = (c) => `<div class="kc-lines"><div class="kc-date">${e(c.dayAr)} · ${e(c.dateAr)} · ${e(c.timeAr)}</div><div class="kc-place">${e(c.venueAr)}، ${e(c.cityAr)}</div></div>`;
 const latin = (c) => `<div class="kc-latin" lang="en" dir="ltr">${e(c.eventLabelEnU)}</div>`;
 
 const KC_STYLE = `<style>
@@ -143,11 +146,38 @@ const KC_STYLE = `<style>
 .kc-ot .oc-names{align-items:stretch;justify-content:flex-start;padding-top:6px}
 .kc-ot .oc-join{align-self:flex-start;padding-inline-start:4px}
 .kc-ot .oc-latin{text-align:right}
+
+/* motion faces (art in motion-art.js) */
+.kc-mw .oc-inner{padding:112px 58px 96px;gap:4px}.kc-mw .kc-title{font-size:27px}
+.kc-mo .oc-inner{padding:150px 38px 30px;gap:5px}.kc-mo .kc-title{font-size:27px}
+.kc-mc .oc-inner{padding:128px 40px 96px;gap:4px}.kc-mc .kc-title{font:600 25px/1.3 ${KF}}.kc-mc .oc-name{font-family:${RX};font-weight:600}
+.kc-ms .oc-inner{padding:150px 34px 34px;gap:4px}.kc-ms .kc-title{font-size:27px}
+.kc-ml .oc-inner{padding:148px 44px 34px;gap:5px}.kc-ml .kc-title{font-size:29px}
+.kc-mm .oc-inner{padding:132px 40px 82px;gap:4px}.kc-mm .kc-title{font-size:26px}
+/* owner's PDF layers */
+.kc-pg .oc-inner{padding:80px 44px 168px;gap:3px}.kc-pg .kc-title{font-size:25px}.kc-pg .kc-lines{font-size:10.5px}
+.kc-pr .oc-inner{padding:78px 40px 118px;gap:4px}.kc-pr .kc-title{font-size:29px}
+.kc-pa .oc-inner{padding:112px 40px 34px 92px;gap:5px;color:var(--oc-ink)}.kc-pa .kc-title{font-size:26px}
+.kc-arch{position:absolute;z-index:-1;inset:24px 22px 0 80px;border-radius:118px 118px 0 0;background:#617356}
+.kc-mono{flex:none;font:700 44px/1 ${RQ};color:var(--kc-a);letter-spacing:4px}
+.kc-ph .oc-inner{padding:118px 42px 112px;gap:5px}.kc-ph .kc-title{font:600 31px/1.25 ${KF}}.kc-ph .oc-name{font-family:${KF};font-weight:600}
+.kc-pb .oc-inner{padding:64px 70px 40px;gap:5px}.kc-pb .kc-title{font:700 27px/1.3 ${KF}}.kc-pb .oc-name{font-family:${RX};font-weight:600}
+.kc-pc .oc-inner{padding:44px 34px 172px;gap:4px}.kc-pc .kc-title{font-size:24px}.kc-pc .kc-script{font:400 30px/1 'Great Vibes',${EN};color:var(--kc-a);direction:ltr}
+.kc-pp .oc-inner{padding:118px 44px 46px;gap:5px}.kc-pp .kc-title{font-size:29px}
+.kc-po .oc-inner{padding:96px 40px 40px;gap:5px}.kc-po .kc-title{font:600 25px/1.3 ${KF}}.kc-po .oc-name{font-family:${RX};font-weight:600}
+.kc-pd .oc-inner{padding:52px 44px 176px;gap:4px}.kc-pd .kc-title{font-size:30px}
+/* typographic faces */
+.kc-tv .oc-inner{padding:34px 26px 24px 84px;text-align:right;gap:7px}.kc-tv .kc-head{justify-items:start}.kc-tv .kc-title{font:700 24px/1.25 ${RX};color:var(--kc-a)}
+.kc-tv .oc-names{align-items:stretch}.kc-tv .oc-name{font-family:${RX};font-weight:600}.kc-tv .oc-join{align-self:flex-start}.kc-tv .oc-latin{text-align:right}
+.kc-vlabel{position:absolute;top:22px;bottom:22px;left:16px;width:52px;writing-mode:vertical-rl;transform:rotate(180deg);font:800 30px/52px ${RX};letter-spacing:1px;color:var(--kc-a);overflow:hidden;white-space:nowrap;direction:ltr;text-align:start}
+.kc-vrule{position:absolute;top:22px;bottom:22px;left:74px;width:1px;background:var(--oc-accent);opacity:.6}
+.kc-tb .oc-inner{padding:58px 34px 30px;gap:6px}.kc-tb .kc-title{font:700 40px/1.15 ${KF};color:var(--oc-ink)}.kc-tb .kc-greet{color:var(--oc-muted)}.kc-tb .oc-name{font-family:${RX};font-weight:600}
 </style>`;
 
 function face(d, c, inner) {
   const t = d.theme;
-  return `<div class="oc-face kc kc-${d.cls}" dir="rtl" style="--oc-paper:${t.paper};--oc-ink:${t.ink};--oc-muted:${t.muted};--oc-accent:${t.accent};--oc-line:${t.accent}66;--kc-a:${t.aText}">${STYLE}${KC_STYLE}${d.back(c)}<div class="oc-inner">${inner}</div></div>`;
+  const pal = d.palette ? Object.entries(d.palette).map(([k, v]) => `;--${k}:${v}`).join('') : '';
+  return `<div class="oc-face kc kc-${d.cls}" dir="rtl" data-motion="${d.motion || ''}" style="--oc-paper:${t.paper};--oc-ink:${t.ink};--oc-muted:${t.muted};--oc-accent:${t.accent};--oc-line:${t.accent}66;--kc-a:${t.aText}${pal}">${STYLE}${KC_STYLE}${d.back(c)}<div class="oc-inner">${inner}</div></div>`;
 }
 
 const DESIGNS = [
@@ -251,6 +281,133 @@ const DESIGNS = [
     back: () => layer('<path d="M30 30h240" stroke="#7E9384" stroke-width=".8"/><path d="M30 390h240" stroke="#7E9384" stroke-width=".8"/>')
       + img('eucalyptus-sprig.webp', 'left:-12px;bottom:-10px;width:96px'),
     body: (c, n) => `${head(c)}${n}${stack(c)}`,
+  },
+
+  // ── motion faces: flat artwork after the owner's GSAP reference; every word stays live text ───────────────
+  {
+    id: 'mo-garden', fit: [-20, 184, 0.36], cls: 'mw', motion: 'wedding', name: 'حديقة الوعد', type: 'wedding', style: 'classic', swatch: '#E7BBAB', tone: 'light', scenes: ['garden', 'silk', 'palace'],
+    palette: { paper: '#FBF3DF', ink: '#304C3E', accent: '#D97B65', soft: '#E7BBAB', leaf: '#92A578' },
+    theme: { paper: '#FBF3DF', ink: '#304C3E', muted: '#55695C', accent: '#D97B65', aText: '#A04B37', env: '#304C3E', fAr: RQ },
+    back: () => MOTION_ART.wedding(),
+    body: (c, n) => `${head(c)}${n}${when(c)}`,
+  },
+  {
+    id: 'mo-orbits', fit: [-12, 220, 0.36], cls: 'mo', motion: 'engagement', name: 'مداران', type: 'engagement', style: 'modern', swatch: '#D5C4EA', tone: 'light', scenes: ['petals', 'starry', 'silk'],
+    palette: { paper: '#F0E9FA', ink: '#46345F', accent: '#E78D76', soft: '#D5C4EA', leaf: '#A895CC' },
+    theme: { paper: '#F0E9FA', ink: '#46345F', muted: '#655580', accent: '#C9785F', aText: '#8E3E5A', env: '#46345F', fAr: RQ },
+    back: () => MOTION_ART.engagement(),
+    body: (c, n) => `${head(c)}${n}${bigDay(c)}`,
+  },
+  {
+    id: 'mo-colour', fit: [-38, 214, 0.4], cls: 'mc', motion: 'birthday', name: 'يوم ملوّن', type: 'birthday', style: 'bold', swatch: '#F4B2C7', tone: 'light', scenes: ['clay', 'petals', 'silk'],
+    palette: { paper: '#FFF1C8', ink: '#48446D', accent: '#EC805D', soft: '#F4B2C7', leaf: '#83B8C9' },
+    theme: { paper: '#FFF1C8', ink: '#48446D', muted: '#625E85', accent: '#D46E4D', aText: '#A3402B', env: '#EC805D', fAr: RX },
+    back: () => MOTION_ART.birthday(),
+    body: (c, n) => `${head(c)}${n}${when(c)}`,
+  },
+  {
+    id: 'mo-sky', fit: [-52, 228, 0.36], cls: 'ms', motion: 'graduation', name: 'نحو السماء', type: 'graduation', style: 'bold', swatch: '#203B47', tone: 'dark', scenes: ['starry', 'sea', 'marble'],
+    palette: { paper: '#203B47', ink: '#FFF1D4', accent: '#E4AC5F', soft: '#587D83', leaf: '#9FAE8D' },
+    theme: { paper: '#203B47', ink: '#FFF1D4', muted: '#DCD4BF', accent: '#E4AC5F', aText: '#EDBE73', env: '#203B47', fAr: RQ },
+    back: () => MOTION_ART.graduation(),
+    body: (c, n) => `${head(c)}<div class="kc-class" lang="ar">دفعة <span lang="en">${e(c.year)}</span></div>${n}${info(c)}`,
+  },
+  {
+    id: 'mo-lanterns', fit: [-40, 212, 0.36], cls: 'ml', motion: 'iftar', name: 'لمّة على نور', type: 'iftar', style: 'classic', swatch: '#244F46', tone: 'dark', scenes: ['candlelit', 'starry', 'desert'],
+    palette: { paper: '#244F46', ink: '#FFF1CF', accent: '#E7B964', soft: '#2F6355', leaf: '#95AC77' },
+    theme: { paper: '#244F46', ink: '#FFF1CF', muted: '#E6DCC0', accent: '#E7B964', aText: '#EEC778', env: '#1A3B34', fAr: RQ },
+    back: () => MOTION_ART.iftar(),
+    body: (c, n) => `${head(c)}${n}${info(c)}`,
+  },
+  {
+    id: 'mo-moon', fit: [-30, 220, 0.36], cls: 'mm', motion: 'newborn', name: 'أصغر فرحة', type: 'newborn', style: 'minimal', swatch: '#BFD5E5', tone: 'light', scenes: ['starry', 'silk', 'petals'],
+    palette: { paper: '#E8F0F7', ink: '#3F5B79', accent: '#E9BA66', soft: '#BFD5E5', leaf: '#A4B9D6' },
+    theme: { paper: '#E8F0F7', ink: '#33506E', muted: '#4F6782', accent: '#C9A15A', aText: '#3F5B79', env: '#3F5B79', fAr: RQ },
+    back: () => MOTION_ART.newborn(),
+    body: (c, n) => `${head(c)}${n}${when(c)}`,
+  },
+  // ── the owner's PDF layers (art only — the text is live, set in the PDF's compositions) ──────────────────
+  {
+    id: 'pf-gazebo', fit: [-30, 220, 0.36], cls: 'pg', name: 'شرفة الحديقة', type: 'wedding', style: 'classic', swatch: '#EDE6D6', tone: 'light', scenes: ['garden', 'marble', 'silk'],
+    theme: { paper: '#F8F5EE', ink: '#3E4A39', muted: '#5F6A57', accent: '#8A9A7A', aText: '#5C6E4D', env: '#5C6E4D', fAr: RQ },
+    back: () => img('cotton-paper.webp', 'inset:0;width:100%;height:100%;object-fit:cover;opacity:.7')
+      + img('pdf-drapes.webp', 'left:0;top:-14px;width:300px;opacity:.55') + img('pdf-gazebo.webp', 'left:50%;bottom:-6px;width:178px;margin-left:-89px')
+      + img('pdf-white-roses.webp', 'left:-30px;top:-34px;width:118px') + img('pdf-white-roses.webp', 'right:-30px;top:-34px;width:118px;transform:scaleX(-1)'),
+    body: (c, n) => `${head(c)}${n}${when(c)}`,
+  },
+  {
+    id: 'pf-rings', fit: [-10, 220, 0.36], cls: 'pr', name: 'وعد الذهب', type: 'engagement', style: 'classic', swatch: '#F3D9D3', tone: 'light', scenes: ['petals', 'silk', 'marble'],
+    theme: { paper: '#FCF7F2', ink: '#5A3A3C', muted: '#76585A', accent: '#C4917E', aText: '#9A4F56', env: '#B9858A', fAr: RQ },
+    back: () => img('cotton-paper.webp', 'inset:0;width:100%;height:100%;object-fit:cover;opacity:.6')
+      + img('pdf-blush-roses.webp', 'left:-40px;top:-36px;width:150px;transform:rotate(-8deg)') + img('pdf-blush-roses.webp', 'right:-44px;top:-30px;width:150px;transform:scaleX(-1) rotate(-8deg)')
+      + img('pdf-rings-rose.webp', 'left:50%;bottom:-6px;width:150px;margin-left:-75px'),
+    body: (c, n) => `${head(c)}${n}${lines(c)}`,
+  },
+  {
+    id: 'pf-white-arch', fit: [-40, 160, 0.36], cls: 'pa', name: 'قوس الياسمين', type: 'katb_kitab', style: 'minimal', swatch: '#617356', tone: 'light', scenes: ['garden', 'palace', 'marble'],
+    theme: { paper: '#F2F1EA', ink: '#FBF8F0', muted: '#E3E8DA', accent: '#E9E3CF', aText: '#F6F1E1', env: '#617356', fAr: RQ },
+    back: () => '<div class="kc-arch"></div>' + layer('<path d="M28 400V140" stroke="#617356" stroke-width=".8" stroke-opacity=".5"/>')
+      + img('pdf-white-roses.webp', 'left:10px;top:-8px;width:150px'),
+    body: (c, n) => `<div class="kc-mono" aria-hidden="true">${e(initial(c.arA))}${c.arB ? ` ${e(initial(c.arB))}` : ''}</div>${head(c)}${n}${lines(c)}`,
+  },
+  {
+    id: 'pf-henna', fit: [-30, 216, 0.4], cls: 'ph', name: 'نقش الحنّة', type: 'henna', style: 'classic', swatch: '#5E6E45', tone: 'light', scenes: ['palace', 'desert', 'garden'],
+    theme: { paper: '#F1ECDF', ink: '#3F4D2E', muted: '#5D6A4A', accent: '#6E7D52', aText: '#4D5E35', env: '#4D5E35', fAr: KF },
+    back: () => img('cotton-paper.webp', 'inset:0;width:100%;height:100%;object-fit:cover;opacity:.8')
+      + img('pdf-henna-ornament.webp', 'left:50%;top:-118px;width:236px;margin-left:-118px') + img('pdf-henna-ornament.webp', 'left:50%;bottom:-118px;width:236px;margin-left:-118px'),
+    body: (c, n) => `${head(c)}${n}${when(c)}`,
+  },
+  {
+    id: 'pf-gold-balloons', fit: [-10, 160, 0.4], cls: 'pb', name: 'بالونات الذهب', type: 'graduation', style: 'bold', swatch: '#1E1E1E', tone: 'light', scenes: ['marble', 'starry', 'palace'],
+    theme: { paper: '#FFFFFF', ink: '#262626', muted: '#555048', accent: '#C29A48', aText: '#87652A', env: '#1E1E1E', fAr: KF },
+    back: () => layer('<path d="M0 0H120C70 40 30 90 0 160Z" fill="#1E1E1E"/><path d="M0 160C30 90 70 40 120 0H132C82 42 40 94 0 172Z" fill="#C29A48"/>'
+      + '<path d="M300 420H180C230 380 270 330 300 260Z" fill="#1E1E1E"/><path d="M300 260C270 330 230 380 180 420H168C218 378 260 326 300 248Z" fill="#C29A48"/>')
+      + img('pdf-confetti.webp', 'left:0;top:0;width:300px;opacity:.9')
+      + img('pdf-balloons.webp', 'left:-22px;top:110px;width:72px') + img('pdf-balloons.webp', 'right:-20px;top:40px;width:72px;transform:scaleX(-1)'),
+    body: (c, n) => `${head(c)}<div class="kc-class" lang="ar">دفعة <span lang="en">${e(c.year)}</span></div>${n}${bigDay(c)}`,
+  },
+  {
+    id: 'pf-cornflower', fit: [-6, 228, 0.4], cls: 'pc', name: 'أزهار الترمس', type: 'newborn', style: 'minimal', swatch: '#3F5AA8', tone: 'light', scenes: ['garden', 'silk', 'marble'],
+    theme: { paper: '#F6F4EE', ink: '#2E3F6B', muted: '#4D5C80', accent: '#5A72B8', aText: '#2E3F6B', env: '#3F5AA8', fAr: RQ },
+    back: () => img('cotton-paper.webp', 'inset:0;width:100%;height:100%;object-fit:cover;opacity:.7')
+      + [[-14, 150, 0], [44, 130, 1], [104, 160, 0], [164, 128, 1], [222, 152, 0]].map(([x, w, f]) => img('pdf-cornflower.webp', `left:${x}px;bottom:-22px;width:${w * 0.52}px${f ? ';transform:scaleX(-1)' : ''}`)).join(''),
+    body: (c, n) => `<div class="kc-script" lang="en">Welcome baby</div>${head(c)}${n}${when(c)}`,
+  },
+  {
+    id: 'pf-parchment', fit: [-20, 212, 0.36], cls: 'pp', name: 'ورق الأيام', type: 'family', style: 'classic', swatch: '#C9AE80', tone: 'light', scenes: ['desert', 'garden', 'candlelit'],
+    theme: { paper: '#EFE3CC', ink: '#4A3520', muted: '#6B5236', accent: '#9C7A44', aText: '#7A5626', env: '#7A5626', fAr: RQ },
+    back: () => img('pdf-parchment.webp', 'inset:0;width:100%;height:100%;object-fit:cover;opacity:.55')
+      + layer(motif('squareFrame', 14, 14, 272, 392, { fit: 'none', color: '#9C7A44', opacity: 0.75 }) + motif('dallah', 128, 34, 44, 58) + motif('olive', 30, 40, 70, 100, { rotate: -24 }) + motif('olive', 200, 40, 70, 100, { rotate: 24, flip: 'x' })),
+    body: (c, n) => `${head(c)}${n}${info(c)}`,
+  },
+  {
+    id: 'pf-confetti', fit: [-24, 220, 0.4], cls: 'po', name: 'شرائط الذهب', type: 'opening', style: 'bold', swatch: '#C7A661', tone: 'light', scenes: ['palace', 'marble', 'starry'],
+    theme: { paper: '#FCFAF5', ink: '#262626', muted: '#57514A', accent: '#C29A48', aText: '#86672D', env: '#262626', fAr: RX },
+    back: () => img('pdf-confetti.webp', 'left:0;top:0;width:300px') + img('pdf-confetti.webp', 'left:0;bottom:-60px;width:300px;transform:rotate(180deg);opacity:.7')
+      + layer('<rect x="14" y="14" width="272" height="392" fill="none" stroke="#C29A48" stroke-width=".9"/><rect x="19" y="19" width="262" height="382" fill="none" stroke="#C29A48" stroke-opacity=".5" stroke-width=".5"/>'),
+    body: (c, n) => `${head(c)}${n}${info(c)}`,
+  },
+  {
+    id: 'pf-dahlia', fit: [-30, 220, 0.36], cls: 'pd', name: 'أضاليا الفرح', type: 'other', style: 'bold', swatch: '#C9356B', tone: 'light', scenes: ['petals', 'silk', 'palace'],
+    theme: { paper: '#F7F3EF', ink: '#3A2630', muted: '#5D4852', accent: '#C9A15A', aText: '#9A2952', env: '#9A2952', fAr: RQ },
+    back: () => img('cotton-paper.webp', 'inset:0;width:100%;height:100%;object-fit:cover;opacity:.8')
+      + layer(motif('archFrame', 22, 18, 256, 380, { fit: 'none', color: '#C9A15A', opacity: 0.8 }))
+      + img('pdf-dahlias.webp', 'left:50%;bottom:-40px;width:300px;margin-left:-150px'),
+    body: (c, n) => `${head(c)}${n}${info(c)}`,
+  },
+  // ── typographic faces ─────────────────────────────────────────────────────────────────────────────────
+  {
+    id: 'ty-vertical', fit: [70, 182, 0.4], cls: 'tv', name: 'عنوان عمودي', type: 'conference', style: 'modern', swatch: '#4B2A8C', tone: 'light', scenes: ['marble', 'sea', 'palace'],
+    theme: { paper: '#FFFFFF', ink: '#2A1F45', muted: '#564C6E', accent: '#7A5AC8', aText: '#4B2A8C', env: '#2A1F45', fAr: RX },
+    back: (c) => `<div class="kc-vlabel" aria-hidden="true">${e(c.eventLabelEnU)}</div><div class="kc-vrule"></div>`,
+    body: (c, n) => `${head(c)}${n}${stack(c)}`,
+  },
+  {
+    id: 'ty-blue', fit: [-38, 230, 0.4], cls: 'tb', name: 'أزرق الدعوة', type: 'corporate', style: 'modern', swatch: '#1F5FAD', tone: 'dark', scenes: ['sea', 'marble', 'starry'],
+    theme: { paper: '#1F5FAD', ink: '#FFFFFF', muted: '#DCE6F4', accent: '#9CC0EC', aText: '#FFFFFF', env: '#123E75', fAr: RX },
+    back: () => layer('<circle cx="250" cy="352" r="120" fill="none" stroke="#FFFFFF" stroke-opacity=".08" stroke-width="18"/><circle cx="40" cy="40" r="70" fill="none" stroke="#FFFFFF" stroke-opacity=".08" stroke-width="10"/>'
+      ),
+    body: (c, n) => `${head(c)}${n}${bigDay(c)}`,
   },
 ];
 

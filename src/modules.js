@@ -47,5 +47,5 @@ FinaleRegistry.register({
 
 PresetRegistry.register({
   id: 'canonical-default', name: 'Wine & Gold · Candlelit Hall',
-  config: { card: 'wine', scene: 'candlelit', reveal: 'depth-arrival', finale: 'envelope', audio: 'studio' },
+  config: { card: 'kit-rose-garden', scene: 'silk', reveal: 'depth-arrival', finale: 'envelope', audio: 'studio' },
 });
