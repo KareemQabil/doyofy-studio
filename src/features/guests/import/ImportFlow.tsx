@@ -8,7 +8,7 @@ import { useMemo, useRef, useState } from 'react';
 import type { Event } from '../../../domain/types';
 import { FIELD_LABEL, SAMPLE_IMPORT_CSV, guessMapping, mappingProblems, parseDelimited, reviewImport, rowsToPartyInputs, summarise, toRawTable, type ImportField, type ImportRow, type Mapping, type RawTable, type RowDecision, type RowEdit } from '../../../domain/import';
 import { formatPhone, people, peopleOf, plural, pluralOf, P } from '../../../domain/format';
-import { Badge, Banner, Button, ErrorState, Field, FilterChips, FocusLayout, Icon, Input, LinkButton, Select, Skeleton, Textarea } from '../../../ui';
+import { Badge, Banner, Button, ErrorState, Field, FilterChips, FocusLayout, Icon, Input, LinkButton, Select, Textarea, PageLoader } from '../../../ui';
 import { useMutation } from '../../../app/data';
 import { useBlocker, useNavigate } from '../../../app/router';
 import { paths } from '../../../app/paths';
@@ -22,7 +22,7 @@ export function ImportFlow({ eventId }: { eventId: string }) {
   const ev = useEvent(eventId);
   const parties = useParties(eventId);
   if (ev.error || parties.error) return <FocusLayout title="استيراد الضيوف" back={{ to: paths.guests(eventId), label: 'إلغاء' }}><ErrorState error={ev.error || parties.error} onRetry={() => { ev.refetch(); parties.refetch(); }} /></FocusLayout>;
-  if (!ev.data || !parties.data) return <FocusLayout title="استيراد الضيوف" back={{ to: paths.guests(eventId), label: 'إلغاء' }}><Skeleton lines={5} /></FocusLayout>;
+  if (!ev.data || !parties.data) return <FocusLayout title="استيراد الضيوف" back={{ to: paths.guests(eventId), label: 'إلغاء' }}><PageLoader /></FocusLayout>;
   return <Flow event={ev.data} existing={parties.data} />;
 }
 

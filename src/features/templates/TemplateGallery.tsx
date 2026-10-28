@@ -13,7 +13,7 @@ import type { Event, InvitationDesign } from '../../domain/types';
 import { eventTypeInfo, namesLine } from '../../domain/event';
 import { defaultDesign, toInvitationData } from '../../domain/invitation';
 import { TEMPLATE_STYLES, applyPreset, presetOf, presetsFor, type TemplatePreset, type TemplateStyle } from '../../domain/templates';
-import { Banner, Button, ErrorState, FocusLayout, Icon, LinkButton, Skeleton } from '../../ui';
+import { Banner, Button, ErrorState, FocusLayout, Icon, LinkButton, PageLoader } from '../../ui';
 import { useMutation } from '../../app/data';
 import { useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -30,7 +30,7 @@ export function TemplateGallery({ eventId }: { eventId: string }) {
   const first = loc.search.get('first') === '1';
   const back = first ? { to: paths.overview(eventId), label: 'لاحقًا' } : { to: paths.design(eventId), label: 'رجوع للتصميم' };
   if (ev.error || design.error) return <FocusLayout title="قوالب الدعوة" back={back}><ErrorState error={ev.error || design.error} onRetry={() => { ev.refetch(); design.refetch(); }} /></FocusLayout>;
-  if (ev.loading || design.loading || !ev.data) return <FocusLayout title="قوالب الدعوة" back={back} width="wide"><Skeleton lines={6} block /></FocusLayout>;
+  if (ev.loading || design.loading || !ev.data) return <FocusLayout title="قوالب الدعوة" back={back} width="wide"><PageLoader /></FocusLayout>;
   return <Gallery event={ev.data} design={design.data ?? null} first={first} back={back} />;
 }
 

@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toInvitationData } from '../../domain/invitation';
 import type { GuestView } from '../../services/contracts';
 import { errorMessage, isAppError } from '../../services/errors';
-import { Button, EmptyState, Spinner } from '../../ui';
+import { Button, EmptyState, PageLoader } from '../../ui';
 import { useServices } from '../../app/data';
 import { useLocation } from '../../app/router';
 import { loadEngine } from '../invitation/engine';
@@ -48,7 +48,7 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
   useEffect(() => { if (carried) location.replace(`${new URL('./', document.baseURI).href}?i=${encodeURIComponent(carried)}`); }, [carried]);
   useEffect(() => { if (carried) return; document.body.classList.add('dy-guest'); void load(); return () => document.body.classList.remove('dy-guest'); }, [load, carried]);
 
-  if (carried) return <main className="guest-page theme-guest guest-center"><Spinner label="جارٍ فتح الدعوة" /></main>;
+  if (carried) return <main className="guest-page theme-guest guest-center"><PageLoader name="envelope" label="جارٍ فتح الدعوة" size={96} /></main>;
   if (error) {
     const notPublished = isAppError(error) && error.code === 'not_published';
     return (
@@ -60,7 +60,7 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
       </main>
     );
   }
-  if (!view || mode === 'loading') return <main className="guest-page theme-guest guest-center"><Spinner label="جارٍ فتح الدعوة" /></main>;
+  if (!view || mode === 'loading') return <main className="guest-page theme-guest guest-center"><PageLoader name="envelope" label="جارٍ فتح الدعوة" size={96} /></main>;
   if (mode === 'cover') return <SealCover view={view} onOpen={() => setMode('invitation')} onDetails={() => setMode('hub')} />;
   if (mode === 'hub') return <GuestHub view={view} code={code ?? null} submission={submission} onView={setView} onReplay={() => setMode('invitation')} />;
   return (

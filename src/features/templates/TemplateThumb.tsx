@@ -21,7 +21,6 @@ export function TemplateThumb({ preset, invitation, className = '' }: { preset: 
     return () => observer.disconnect();
   }, []);
   const invKey = JSON.stringify(invitation);
-  const three = preset.experience.dimension === '3d';
 
   useEffect(() => {
     if (!visible) return;
@@ -52,7 +51,7 @@ export function TemplateThumb({ preset, invitation, className = '' }: { preset: 
   }, []);
 
   return (
-    <span ref={frame} className={`tpl-thumb${three ? ' is-3d' : ''} ${className}`} aria-hidden="true">
+    <span ref={frame} className={`tpl-thumb ${className}`} aria-hidden="true">
       {failed ? <span className="tpl-fallback">افتح لمعاينة القالب</span> : !art ? <span className="tpl-skel" /> : (
         <span className="tpl-media">
           <span className="tpl-stage" dangerouslySetInnerHTML={{ __html: art.scene }} />

@@ -13,7 +13,7 @@ import { CardRegistry, SceneRegistry, PageRegistry, FinaleRegistry, RevealRegist
 import { playCardMotion } from '../cards/card-motion.js';
 import { StateMachine } from '../engine/StateMachine.js';
 import { AudioEngine } from '../engine/AudioEngine.js';
-import { detectQuality, tierAtLeast } from '../engine/Quality.js';
+import { detectQuality } from '../engine/Quality.js';
 import { deriveContent, countdown } from '../data/derive.js';
 import { STRINGS as T } from '../data/strings.js';
 import { PAGE_ORDER } from '../pages/index.js';
@@ -37,7 +37,7 @@ export class Studio {
    * @param {object} opts
    *   invitation  InvitationData (data/invitation.js shape)
    *   card, scene ids; start = intro|card|pages|rsvp|done
-   *   experience  { dimension: '3d' | '2d', motion: 'animated' | 'static' } — what the customer chose in the wizard.
+   *   experience  { dimension: '2d', motion: 'animated' | 'static' } — the organizer's motion choice (dimension is legacy).
    *               3d = best renderer per scene (Three.js where a scene has one), 2d = canonical illustrated renderers;
    *               static = no intro, no idle motion, frozen WebGL frame, fades instead of travel.
    *   embedded    render inside a sized container (wizard preview) instead of the full viewport
@@ -51,11 +51,10 @@ export class Studio {
     this.host = host;
     this.params = params;
     this.quality = detectQuality(params);
-    this.experience = experience || { dimension: this.quality.renderer === 'dom' ? '2d' : '3d', motion: this.quality.reducedMotion ? 'static' : 'animated' };
-    if (experience) {
-      if (experience.dimension === '2d') this.quality.renderer = 'dom';
-      if (experience.motion === 'static') this.quality.reducedMotion = true;
-    }
+    // settings are flat (no 3D): `dimension` is kept in the data for old links and always reads 2d
+    this.experience = { dimension: '2d', motion: experience?.motion ?? (this.quality.reducedMotion ? 'static' : 'animated') };
+    this.quality.renderer = 'dom';
+    if (this.experience.motion === 'static') this.quality.reducedMotion = true;
     this.quality.static = this.experience.motion === 'static';
     this.embedded = embedded; this.showSwitcher = showSwitcher; this.startMuted = muted;
     this.guest = guest;
@@ -282,87 +281,31 @@ export class Studio {
     this.scene?.setCard?.(CardRegistry.get(id));
   }
 
-  // ---------------------------------------------------------------- scene (renderer selection + fallback)
-  /**
-   * Progressive mount: the canonical DOM renderer goes up immediately (the stage is never blank),
-   * then heavier renderers are tried best-first; the first that loads within its timeout crossfades
-   * in over the DOM scene. Any failure leaves the DOM scene in place.
-   */
+  // ---------------------------------------------------------------- scene (flat backdrop)
+  /** The setting fills the whole window behind a transparent stage; a change crossfades old → new. */
   async _mountScene() {
     const token = (this._sceneToken = (this._sceneToken || 0) + 1);
-    const stale = () => token !== this._sceneToken;
-    const def = SceneRegistry.get(this.sceneId, 'candlelit');
-    const ok = (r) => {
-      if (r.mode === 'dom') return true;
-      if (r.requires?.includes('webgl') && !this.quality.webgl) return false;
-      if (this.quality.renderer === 'dom') return false;
-      if (this.quality.renderer !== 'auto' && this.quality.renderer !== r.mode) return false;
-      return tierAtLeast(this.quality.tier, r.minQuality);
-    };
-    const ctx = {
-      quality: this.quality, assetBase: this.assetBase, stageRect: () => this.stageRect,
-      state: () => this.sm?.state, card: () => CardRegistry.get(this.cardId), reducedMotion: this.quality.reducedMotion,
-      introStart: () => this.introT0 ?? null,
-    };
-    const dom = def.renderers.find((r) => r.mode === 'dom');
-    const heavy = def.renderers.filter((r) => r.mode !== 'dom' && ok(r));
-    if (heavy.length && !this.quality.webgl && heavy.every((r) => r.requires?.includes('webgl'))) this.debug.sceneErrors.push(`${def.id}: WebGL unavailable → DOM`);
-
-    const domInst = await dom.mount(this.el.layer, ctx);
-    if (stale()) return domInst.destroy();
-    this._swapScene(domInst, def);
-
-    for (const r of heavy) {
-      this.host.dataset.loading = r.mode;
-      try {
-        const inst = await withTimeout(r.mount(this.el.hostScene, ctx), r.timeoutMs || 20000, `${def.id}/${r.mode}`);
-        if (stale()) return inst.destroy();
-        this._swapScene(inst, def);
-        delete this.host.dataset.loading;
-        return;
-      } catch (err) {
-        console.warn(`[scene] ${def.id} ${r.mode} renderer failed — keeping the DOM renderer`, err);
-        this.debug.sceneErrors.push(`${def.id}/${r.mode}: ${err?.message || err}`);
-      }
-    }
-    delete this.host.dataset.loading;
+    const def = SceneRegistry.get(this.sceneId, 'marble');
+    const inst = await def.renderers[0].mount(this.el.hostScene, { quality: this.quality, reducedMotion: this.quality.reducedMotion });
+    if (token !== this._sceneToken) return inst.destroy();
+    this._swapScene(inst, def);
   }
 
   _swapScene(inst, def) {
     const old = this.scene;
-    const fullBleed = inst.mode !== 'dom';
     this.scene = inst;
     this.host.dataset.renderer = inst.mode;
     this.host.dataset.scene = def.id;
+    this.host.dataset.tone = def.tone;
+    this.host.classList.add('full-bleed');
     this.debug.sceneRenderer = `${def.id}:${inst.mode}`;
-    inst.resize?.(this.stageRect);
-    inst.setStage?.(this.sm?.state);
     inst.setPointer?.(this.nx, this.ny);
-    if (fullBleed) {
-      // crossfade: canvas fades in, the DOM scene + ambient echo fade out, then are destroyed
-      this.host.classList.add('full-bleed');
+    if (old) {
       inst.el.classList.add('scene-in');
-      const amb = this.ambient; this.ambient = null;
-      if (old) old.el.classList.add('scene-out');
-      amb?.classList.add('scene-out');
-      setTimeout(() => { old?.destroy(); amb?.remove(); }, 1000);
-    } else {
-      this.host.classList.remove('full-bleed');
-      old?.destroy();
-      this._mountAmbient(inst);
+      old.el.classList.add('scene-out');
+      setTimeout(() => old.destroy(), 700);
     }
     this.audio.setAmbience(SCENE_AMBIENCE[def.id] || null);
-  }
-
-  /** DOM scenes are composed for 390×844: beyond the stage (desktop/ultrawide) show a soft, darkened
-   *  cover-scaled echo of the same scene instead of flat bars. */
-  _mountAmbient(inst) {
-    this.ambient?.remove();
-    this.el.hostScene.querySelectorAll('.scene-ambient').forEach((n) => n.remove());
-    const amb = inst.el.cloneNode(true);
-    amb.classList.add('scene-ambient');
-    this.el.hostScene.prepend(amb);
-    this.ambient = amb;
   }
 
   setScene(id) {
@@ -549,9 +492,8 @@ export class Studio {
   _setPointer(nx, ny) {
     this.nx = nx; this.ny = ny;
     const r1 = (v) => Math.round(v * 10) / 10;
-    this.el.tilt.style.transform = `rotateX(${r1(-ny * 16)}deg) rotateY(${r1(nx * 20)}deg)`;
+    this.el.tilt.style.transform = `rotateX(${r1(-ny * 6)}deg) rotateY(${r1(nx * 8)}deg)`;
     this.scene?.setPointer?.(r1(nx), r1(ny));
-    if (this.ambient) for (const [k, v] of Object.entries(this.scene?.el?.style ? { '--pf': this.scene.el.style.getPropertyValue('--pf'), '--pm': this.scene.el.style.getPropertyValue('--pm'), '--pn': this.scene.el.style.getPropertyValue('--pn') } : {})) this.ambient.style.setProperty(k, v);
   }
 
   openCard() {

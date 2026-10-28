@@ -8,7 +8,7 @@ import { eventPhase, PHASE_LABEL } from '../../domain/event';
 import { countdownLabel, formatEventDate } from '../../domain/format';
 import { countParties } from '../../domain/parties';
 import { todayFor } from '../../domain/event';
-import { AppShell, Badge, ErrorState, Icon, LinkButton, Skeleton, WorkspaceLayout, type NavItem } from '../../ui';
+import { AppShell, Badge, ErrorState, Icon, LinkButton, Skeleton, WorkspaceLayout, type NavItem, PageLoader } from '../../ui';
 import { Link } from '../../app/router';
 import { useNow } from '../../app/data';
 import { paths } from '../../app/paths';
@@ -78,7 +78,7 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
         mobileNav={mobile}
         footer={<><p className="ws-footer-note">تفاصيل مرتّبة.<br />وفرحة على راحتك.</p>{(phase === 'event_day' || section === 'checkin') && <LinkButton to={paths.gate(id)} variant="primary" icon="scan" block>افتح الاستقبال</LinkButton>}</>}
       >
-        {ev.loading ? <Skeleton lines={6} block /> : ev.error ? <ErrorState error={ev.error} onRetry={ev.refetch} /> : e ? children(e) : null}
+        {ev.loading ? <PageLoader /> : ev.error ? <ErrorState error={ev.error} onRetry={ev.refetch} /> : e ? children(e) : null}
       </WorkspaceLayout>
     </AppShell>
   );

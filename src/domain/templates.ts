@@ -34,8 +34,8 @@ const A = { dimension: '2d', motion: 'animated' } as const;
 
 /** short setting names used in preset titles («حديقة الورد · حرير») */
 export const SCENE_SHORT: Record<string, string> = {
-  silk: 'حرير', palace: 'الأقواس', marble: 'ورق مضيء', petals: 'البتلات', candlelit: 'ضوء الشموع',
-  desert: 'الصحراء', clay: 'مرح', starry: 'النجوم', garden: 'الحديقة', sea: 'البحر',
+  silk: 'حرير', palace: 'الأقواس', marble: 'ورق مضيء', petals: 'البتلات', candlelit: 'ضوء دافئ',
+  desert: 'الغروب', clay: 'مرح', starry: 'النجوم', garden: 'الحديقة', sea: 'البحر',
 };
 
 export interface CardEntry {

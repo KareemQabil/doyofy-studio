@@ -1,4 +1,5 @@
 /** Status & feedback: badges, banners, empty/error/loading states, toasts. Tones map to tokens in CSS. */
+import { Lottie } from './Lottie';
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 import type { Tone } from '../../domain/types';
 import { Icon, type IconName } from '../icons';
@@ -62,20 +63,24 @@ export function Skeleton({ lines = 3, block }: { lines?: number; block?: boolean
   );
 }
 
-export function Spinner({ label = 'جارٍ التحميل' }: { label?: string }) {
-  return <span className="spinner spinner-lg" role="status" aria-label={label} />;
+/** a standalone loading mark (the brand Lottie); buttons keep their own small inline spinner */
+export function Spinner({ label = 'جارٍ التحميل', size = 56 }: { label?: string; size?: number }) {
+  return <span className="spinner-lottie" role="status" aria-label={label}><Lottie name="loader" size={size} /></span>;
 }
 
 // ------------------------------------------------------------------ toasts
-interface Toast { id: number; tone: Tone; text: ReactNode; action?: { label: string; run: () => void } }
+/** `celebrate`: a milestone (publish, first guest in): the success seal also plays large in the middle of the screen */
+interface Toast { id: number; tone: Tone; text: ReactNode; action?: { label: string; run: () => void }; celebrate?: boolean }
 const ToastCtx = createContext<(t: Omit<Toast, 'id'>) => void>(() => {});
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [burst, setBurst] = useState<number | null>(null);
   const n = useRef(0);
   const push = useCallback((t: Omit<Toast, 'id'>) => {
     const id = ++n.current;
     setToasts((x) => [...x.slice(-2), { ...t, id }]);
+    if (t.celebrate) setBurst(id);
     setTimeout(() => setToasts((x) => x.filter((y) => y.id !== id)), t.action ? 7000 : 4200);
   }, []);
   return (
@@ -84,12 +89,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div className="toasts" aria-live="polite" aria-atomic="false">
         {toasts.map((t) => (
           <div key={t.id} className={`toast tone-${t.tone}`} role="status">
-            <Icon name={TONE_ICON[t.tone]} size="sm" />
+            {t.tone === 'success' ? <Lottie name="success" size={28} className="toast-seal" /> : <Icon name={TONE_ICON[t.tone]} size="sm" />}
             <span className="grow">{t.text}</span>
             {t.action && <button type="button" className="toast-action" onClick={() => { t.action!.run(); setToasts((x) => x.filter((y) => y.id !== t.id)); }}>{t.action.label}</button>}
           </div>
         ))}
       </div>
+      {burst !== null && <div key={burst} className="celebrate-burst" aria-hidden="true"><Lottie name="success" size={168} onDone={() => setBurst(null)} /></div>}
     </ToastCtx.Provider>
   );
 }

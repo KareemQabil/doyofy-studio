@@ -38,10 +38,10 @@ const ROUTES = [
   'GUEST', // the seeded guest hub link (code is generated per seed)
 ];
 
-// bundle budget: the first-load script never carries the animation library or three.js (both load on demand)
+// bundle budget: the first-load script never carries GSAP, the Lottie player or three.js (all load on demand)
 {
   const app = fs.readFileSync(path.join(ROOT, 'dist', distEntries().app), 'utf8');
-  for (const [name, mark] of [['GSAP', 'GreenSock'], ['three.js', 'WebGLRenderer']]) if (app.includes(mark)) { console.log(`FAIL  bundle: ${name} is inside dist/app.js`); process.exitCode = 1; }
+  for (const [name, mark] of [['GSAP', 'GreenSock'], ['three.js', 'WebGLRenderer'], ['Lottie', 'bodymovin']]) if (app.includes(mark)) { console.log(`FAIL  bundle: ${name} is inside dist/app.js`); process.exitCode = 1; }
 }
 const server = await startServer(5411);
 const BASE = `http://localhost:${server.address().port}`;

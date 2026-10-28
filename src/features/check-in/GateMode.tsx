@@ -10,7 +10,7 @@ import { assessCheckIn, BLOCKING, codeFromScan, EXCEPTION_TEXT } from '../../dom
 import { countParties, searchParties } from '../../domain/parties';
 import { eventPhase, todayFor } from '../../domain/event';
 import { countdownLabel, people, peopleOf } from '../../domain/format';
-import { Button, Checkbox, Dialog, ErrorState, Icon, Input, Skeleton, Stepper, Textarea } from '../../ui';
+import { Button, Checkbox, Dialog, ErrorState, Icon, Input, Stepper, Textarea, PageLoader, Lottie } from '../../ui';
 import { useMutation, useNow, useServices } from '../../app/data';
 import { Link, useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -24,7 +24,7 @@ export function GateMode({ eventId }: { eventId: string }) {
   const parties = useParties(eventId);
   const tables = useTables(eventId);
   if (ev.error || parties.error || tables.error) return <div className="gate theme-gate"><ErrorState error={ev.error || parties.error || tables.error} onRetry={() => { ev.refetch(); parties.refetch(); tables.refetch(); }} /></div>;
-  if (!ev.data || !parties.data || !tables.data) return <div className="gate theme-gate"><Skeleton lines={4} /></div>;
+  if (!ev.data || !parties.data || !tables.data) return <div className="gate theme-gate"><PageLoader /></div>;
   return <Gate seatingEnabled={tables.data.length>0} event={ev.data} parties={parties.data} tableName={(id) => tables.data!.find((t) => t.id === id)?.name} />;
 }
 
@@ -197,7 +197,9 @@ function DoneCard({ record, party, table, onNext, onUndone, seatingEnabled }: { 
   const partial = party.checkedInCount < expected;
   return (
     <div className={`gate-card gate-done${record.exceptions.some((e) => BLOCKING.has(e)) ? ' is-exception' : ''}`} role="status">
-      <span className="gate-done-mark" aria-hidden="true"><Icon name="check" size="lg" /></span>
+      {record.exceptions.some((e) => BLOCKING.has(e))
+        ? <span className="gate-done-mark" aria-hidden="true"><Icon name="check" size="lg" /></span>
+        : <Lottie name="success" size={96} className="gate-done-seal" />}
       <h2 className="gate-h">{partial ? `دخل ${people(record.count)}` : 'أهلًا وسهلًا'}</h2>
       <p className="gate-done-line">{party.primaryGuestName} · وصل <strong className="num">{party.checkedInCount}</strong> من <span className="num">{expected}</span>{partial ? ' — الباقون لاحقًا' : ''}</p>
       {table && <p className="gate-table"><Icon name="table" />{table}</p>}

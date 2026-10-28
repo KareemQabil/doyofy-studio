@@ -8,7 +8,7 @@ import { checklist, needsAttention, nextAction, type OverviewInput } from '../..
 import { journeyStage, overviewFacts, rankAttention } from '../../domain/experience';
 import { publishState } from '../../domain/invitation';
 import { activityText, activityTone } from '../../domain/activity';
-import { Button, ErrorState, Icon, LinkButton, ProgressBar, Skeleton, Status } from '../../ui';
+import { Button, ErrorState, Icon, LinkButton, ProgressBar, Skeleton, Status, PageLoader } from '../../ui';
 import { Link } from '../../app/router';
 import { useNow } from '../../app/data';
 import { paths, targetPath } from '../../app/paths';
@@ -24,7 +24,7 @@ export function Overview({ event }: { event: Event }) {
   const loading = parties.loading || design.loading || tables.loading || responses.loading || checkIns.loading;
   const error = parties.error || design.error || tables.error || responses.error || checkIns.error;
   if (error) return <ErrorState error={error} onRetry={()=>{parties.refetch();design.refetch();tables.refetch();responses.refetch();checkIns.refetch();}} />;
-  if (loading) return <Skeleton lines={8} block />;
+  if (loading) return <PageLoader />;
   const input: OverviewInput = { event, publish:publishState(design.data), parties:parties.data!, tables:tables.data!, responses:responses.data!, checkIns:checkIns.data!, now };
   const phase = eventPhase(event,now), stage=journeyStage(event,input.publish,input.parties,now);
   const action=nextAction(input), attention=rankAttention(needsAttention(input),input), steps=checklist(input), facts=overviewFacts(input);

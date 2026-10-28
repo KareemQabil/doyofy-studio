@@ -8,7 +8,7 @@ import { CARD_NAMES, PUBLISH_LABEL, SCENE_NAMES, publishState, resolvedNames } f
 import { relativeTime } from '../../domain/format';
 import { countParties } from '../../domain/parties';
 import { isCoupleEvent } from '../../domain/event';
-import { Badge, Banner, Button, EmptyState, ErrorState, Icon, KeyValue, LinkButton, PageHeader, Panel, Skeleton } from '../../ui';
+import { Badge, Banner, Button, EmptyState, ErrorState, Icon, KeyValue, LinkButton, PageHeader, Panel, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
 import { useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -25,11 +25,11 @@ export function InvitationSummary({ event }: { event: Event }) {
   const toast = useToast();
   const { absolute } = useRouter();
   const publish = useMutation((s) => s.invitations.publish(event.id), {
-    onSuccess: () => toast({ tone: 'success', text: 'تم نشر الدعوة. الضيوف يرون الآن هذه النسخة.' }),
+    onSuccess: () => toast({ tone: 'success', text: 'تم نشر الدعوة. الضيوف يرون الآن هذه النسخة.', celebrate: true }),
   });
 
   const guestLink = useGuestLink(event);
-  if (design.loading) return <Skeleton lines={6} block />;
+  if (design.loading) return <PageLoader />;
   if (design.error) return <ErrorState error={design.error} onRetry={design.refetch} />;
   const d = design.data ?? null;
   const ps = publishState(d);
@@ -51,7 +51,7 @@ export function InvitationSummary({ event }: { event: Event }) {
   const content = d.draft;
   const names = resolvedNames(event, content);
   if (!isCoupleEvent(event.type)) names.b = '';
-  const xLabel = `${content.experience.dimension === '3d' ? 'ثلاثية الأبعاد' : 'ثنائية الأبعاد'} · ${content.experience.motion === 'animated' ? 'متحركة' : 'ثابتة'}`;
+  const xLabel = content.experience.motion === 'animated' ? 'متحركة' : 'ثابتة';
   const generalLink = guestLink();
   const primary = ps === 'draft' ? (
     <Button variant="primary" size="lg" icon="send" loading={publish.pending} onClick={() => publish.run()}>انشر الدعوة</Button>
@@ -82,9 +82,9 @@ export function InvitationSummary({ event }: { event: Event }) {
         <div className="stack gap-6">
           <Panel title="ما تحتاج معرفته">
             <KeyValue items={[
-              { k: 'التجربة', v: xLabel, icon: 'sparkle' },
+              { k: 'الحركة', v: xLabel, icon: 'sparkle' },
               { k: 'البطاقة', v: CARD_NAMES[content.cardId] ?? content.cardId },
-              { k: 'المكان في الدعوة', v: SCENE_NAMES[content.sceneId] ?? content.sceneId },
+              { k: 'الخلفية', v: SCENE_NAMES[content.sceneId] ?? content.sceneId },
               { k: 'الأسماء على البطاقة', v: <>{names.a}{names.b ? ` و${names.b}` : ''} {names.fromEvent ? <Badge tone="neutral">من بيانات المناسبة</Badge> : <Badge tone="info">خاصة بالدعوة</Badge>}</> },
               { k: 'آخر حفظ', v: relativeTime(d.draftSavedAt, now), icon: 'clock' },
             ]} />

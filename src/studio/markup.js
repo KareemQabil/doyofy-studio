@@ -4,7 +4,6 @@
  * pages, envelope colours, done text, switcher) are filled in by Studio.js.
  */
 import { STRINGS as T } from '../data/strings.js';
-import { SCENE_DEFS } from '../scenes/css/generated.js';
 
 const ICON = {
   close: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>',
@@ -34,7 +33,6 @@ export const studioMarkup = () => `
       <filter id="st-grain"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"></feTurbulence><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 .9  0 0 0 0 .8  0 0 0 .06 0"></feColorMatrix></filter>
     </defs>
   </svg>
-  ${SCENE_DEFS}
 
   <div class="st-layer" aria-hidden="true"></div>
   <div class="st-dim"></div>

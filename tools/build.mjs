@@ -1,7 +1,7 @@
 // npm run build  →  dist/
 //   dist/index.html      full standalone document (local dev, tests, any static host)
 //   dist/artifact.html   head+body fragment for hosts that provide their own skeleton
-//   dist/app-[hash].js + chunks ESM bundle, code-split: three.js, GSAP and the WebGL scene load only when used
+//   dist/app-[hash].js + chunks ESM bundle, code-split: the invitation engine and GSAP load only when used
 //                        (production entry names carry a content hash, so a new deploy is never served from a stale cache)
 //   dist/assets/         public/assets minus the P0 library, plus ONLY the P0 files src references
 // Flags: --watch (rebuild on change), --serve (also start the static server; works on Windows too)

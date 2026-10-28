@@ -8,7 +8,7 @@ import { countParties } from '../../domain/parties';
 import { eventPhase, todayFor } from '../../domain/event';
 import { EXCEPTION_TEXT } from '../../domain/checkin';
 import { clockTime, countdownLabel, people, peopleOf, plural, P, relativeTime } from '../../domain/format';
-import { Badge, Banner, EmptyState, ErrorState, LinkButton, PageHeader, Panel, ProgressBar, Skeleton, Stat } from '../../ui';
+import { Badge, Banner, EmptyState, ErrorState, LinkButton, PageHeader, Panel, ProgressBar, Stat, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
 import { Link, useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -23,7 +23,7 @@ export function CheckInSetup({ event }: { event: Event }) {
   const prepare = useMutation((s) => s.events.markCheckInPrepared(event.id));
   const phase = eventPhase(event, now);
   if (parties.error || records.error) return <ErrorState error={parties.error || records.error} onRetry={() => { parties.refetch(); records.refetch(); }} />;
-  if (parties.loading || records.loading) return <Skeleton lines={6} />;
+  if (parties.loading || records.loading) return <PageLoader />;
   const all = parties.data!;
   const c = countParties(all);
   const live = records.data!.filter((r) => !r.undone);

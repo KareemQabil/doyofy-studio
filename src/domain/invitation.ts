@@ -10,9 +10,10 @@ import { CARD_NAMES, presetById } from './templates';
 export { CARD_NAMES };
 import { offsetString } from './format';
 
+/** the flat backdrops behind the card (src/scenes/flat.js keeps the same ids) */
 export const SCENE_NAMES: Record<string, string> = {
-  candlelit: 'قاعة الشموع', marble: 'صباح رخامي', garden: 'ليلة في الحديقة', desert: 'غروب الصحراء', starry: 'ليلة النجوم',
-  silk: 'ستائر الحرير', petals: 'بتلات طائرة', clay: 'مسرح الصلصال', sea: 'بحر مقمر', palace: 'أقواس القصر',
+  silk: 'وردي حريري', marble: 'عاجي', petals: 'بتلات', clay: 'نقاط ملوّنة', palace: 'أقواس ذهبية',
+  desert: 'غروب', candlelit: 'عنّابي دافئ', garden: 'أخضر الليل', starry: 'كحلي ونجوم', sea: 'أزرق البحر',
 };
 
 /** A face that no longer exists (designs saved before the single card family) opens as its occasion's own face. */

@@ -29,9 +29,9 @@
   },
   "dependencies": {
     "gsap": "3.13.0",
+    "lottie-web": "5.13.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "three": "0.170.0"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@fontsource/amiri": "^5.2.0",

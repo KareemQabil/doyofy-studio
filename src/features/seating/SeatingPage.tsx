@@ -9,7 +9,7 @@ import type { Event, InvitationParty } from '../../domain/types';
 import { checkAssign, nextTableName, occupancy, seatingWarnings, totalCapacity, validateTable, type TableOccupancy } from '../../domain/seating';
 import { countParties, searchParties, seatsFor } from '../../domain/parties';
 import { people, plural, pluralOf, P } from '../../domain/format';
-import { Badge, Banner, Button, ConfirmDialog, Dialog, EmptyState, ErrorState, Field, Icon, Input, Menu, PageHeader, Panel, ProgressBar, SearchInput, Skeleton, Stepper } from '../../ui';
+import { Badge, Banner, Button, ConfirmDialog, Dialog, EmptyState, ErrorState, Field, Icon, Input, Menu, PageHeader, Panel, ProgressBar, SearchInput, Stepper, PageLoader } from '../../ui';
 import { useMutation } from '../../app/data';
 import { Link } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -54,7 +54,7 @@ export function SeatingPage({ event }: { event: Event }) {
   const lift = useLiftDrag({ onLift: (p) => setMoving(p), onHover: setDockHover, onDrop: (id) => dropTo.current(id), onCancel: () => setMoving(null) });
 
   if (parties.error || tables.error) return <ErrorState error={parties.error || tables.error} onRetry={() => { parties.refetch(); tables.refetch(); }} />;
-  if (parties.loading || tables.loading) return <Skeleton lines={8} block />;
+  if (parties.loading || tables.loading) return <PageLoader />;
 
   const tryAssign = (party: InvitationParty, t: TableOccupancy) => {
     const ok = checkAssign(party, t);

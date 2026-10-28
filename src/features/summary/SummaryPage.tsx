@@ -5,7 +5,7 @@ import type { Event } from '../../domain/types';
 import { countParties } from '../../domain/parties';
 import { eventPhase } from '../../domain/event';
 import { formatEventDate, plural, P } from '../../domain/format';
-import { Banner, Button, ConfirmDialog, ErrorState, Icon, PageHeader, Panel, Skeleton, Textarea, Field } from '../../ui';
+import { Banner, Button, ConfirmDialog, ErrorState, Icon, PageHeader, Panel, Textarea, Field, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
 import { useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -19,7 +19,7 @@ export function SummaryPage({ event }: { event: Event }) {
   const [message,setMessage]=useState(`شكرًا لأنكم كنتم جزءًا من فرحتنا في ${event.title}. حضوركم جعلها أجمل، وذكراها تبقى معنا. بكل المحبة.`);
   const archive=useMutation(s=>s.events.archive(event.id),{onSuccess:()=>navigate(paths.events,{force:true})});
   if(parties.error)return <ErrorState error={parties.error} onRetry={parties.refetch}/>;
-  if(parties.loading)return <Skeleton lines={6}/>;
+  if(parties.loading)return <PageLoader />;
   const all=parties.data!,c=countParties(all),phase=eventPhase(event,now), completed=phase==='completed'||phase==='archived';
   const confirmedArrivals=all.reduce((n,p)=>n+(p.rsvpStatus==='confirmed'?Math.min(p.checkedInCount,p.confirmedPartySize??0):0),0);
   const remaining=Math.max(0,c.confirmedPeople-confirmedArrivals);

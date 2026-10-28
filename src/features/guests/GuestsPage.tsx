@@ -14,7 +14,7 @@ import type { Event, InvitationParty, PublishState, Table } from '../../domain/t
 import { CHECKIN_STATUS, PARTY_FILTERS, RSVP_STATUS, countParties, duplicatePhoneIds, invitationStatus, matchesFilter, partyNeedsAttention, searchParties, type PartyFilter } from '../../domain/parties';
 import { publishState } from '../../domain/invitation';
 import { formatPhone, plural, pluralOf, P } from '../../domain/format';
-import { Avatar, Banner, Button, EmptyState, ErrorState, Icon, LinkButton, Menu, PageHeader, SearchInput, Skeleton } from '../../ui';
+import { Avatar, Banner, Button, EmptyState, ErrorState, Icon, LinkButton, Menu, PageHeader, SearchInput, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
 import { Link, useLocation, useNavigate, useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -132,7 +132,7 @@ export function GuestsPage({ event }: { event: Event }) {
         </>} />
 
       <GuestViews eventId={event.id} active="list" />
-      {parties.loading ? <Skeleton lines={8} /> : all.length === 0 ? (
+      {parties.loading ? <PageLoader /> : all.length === 0 ? (
         <EmptyState icon="users" title="لا ضيوف بعد" action={<><Button variant="primary" icon="plus" onClick={() => setAdding(true)}>أضف ضيفًا</Button><LinkButton to={paths.importGuests(event.id)} icon="upload">استيراد من ملف</LinkButton></>}>
           كل دعوة يمكن أن تشمل شخصًا أو عائلة. تحدد العدد المسموح، والضيف يرد بالعدد الفعلي.
         </EmptyState>

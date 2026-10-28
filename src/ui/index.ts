@@ -9,3 +9,4 @@ export * from './layouts/Layouts';
 export { Icon, type IconName } from './icons';
 export { Logo, LogoMark } from './brand';
 export { Status } from './primitives/Status';
+export { Lottie, PageLoader, type LottieName } from './primitives/Lottie';

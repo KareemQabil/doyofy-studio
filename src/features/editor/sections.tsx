@@ -77,10 +77,9 @@ export function ContentSection({ event, content, update }: { event: Event; conte
 // ------------------------------------------------------------------ التصميم
 export function DesignSection({ event, content, invitation, update, onChangeTemplate }: { event: Event; content: InvitationDesignContent; invitation: unknown; update: Update; onChangeTemplate: () => void }) {
   const preset = presetOf(content);
-  const three = content.experience.dimension === '3d';
-  const scenes = three ? ['candlelit'] : Object.keys(SCENE_NAMES);
+  const scenes = Object.keys(SCENE_NAMES);
   const cards = [...new Set([content.cardId, ...presetsFor(event.type).suited.map(p => p.cardId)])].slice(0,6);
-  const recommendedScenes = three ? ['candlelit'] : [...new Set([content.sceneId, ...TEMPLATE_PRESETS.filter(p=>p.cardId===content.cardId).map(p=>p.sceneId)])].slice(0,3);
+  const recommendedScenes = [...new Set([content.sceneId, ...TEMPLATE_PRESETS.filter(p=>p.cardId===content.cardId).map(p=>p.sceneId)])].slice(0,3);
   return (
     <div className="ed-sec">
       <section className="ed-group ed-template">
@@ -93,8 +92,8 @@ export function DesignSection({ event, content, invitation, update, onChangeTemp
       </section>
 
       <section className="ed-group"><SecHead title="مختارة لمناسبتك" hint="يتغيّر شكل البطاقة فقط. النص والأسماء تبقى كما كتبتها." /><div className="ed-picks ed-cards" role="radiogroup" aria-label="بطاقات مختارة">{cards.map(id => <button key={id} type="button" role="radio" aria-checked={content.cardId===id} className={`ed-pick${content.cardId===id?' is-on':''}`} onClick={()=>update({cardId:id})}><CardThumb event={event} content={{...content,cardId:id}} width={84} /><span className="ed-pick-name">{CARD_NAMES[id]}</span></button>)}</div></section>
-      <section className="ed-group ed-scene-selection"><SecHead title="أجواء الدعوة" hint="اختر المكان الذي تُفتح فيه البطاقة. يظهر في التجربة الكاملة." /><div className="ed-picks ed-scenes" role="radiogroup" aria-label="أجواء مختارة">{recommendedScenes.map(id => <button key={id} type="button" role="radio" aria-checked={content.sceneId===id} className={`ed-pick${content.sceneId===id?' is-on':''}`} onClick={()=>update({sceneId:id})}><TemplateThumb preset={{id,name:'',line:'',styles:[],occasionTags:[],cardId:content.cardId,sceneId:id,experience:content.experience}} invitation={invitation} /><span className="ed-pick-name">{SCENE_NAMES[id]}</span></button>)}</div></section>
-      <details className="ed-advanced"><summary>كل البطاقات والأجواء <span>اختياري</span><Icon name="chevron-down" size="sm"/></summary>
+      <section className="ed-group ed-scene-selection"><SecHead title="الخلفية" hint="لون الخلفية ونقشها خلف البطاقة. يظهر للضيف عند فتح الدعوة." /><div className="ed-picks ed-scenes" role="radiogroup" aria-label="خلفيات مختارة">{recommendedScenes.map(id => <button key={id} type="button" role="radio" aria-checked={content.sceneId===id} className={`ed-pick${content.sceneId===id?' is-on':''}`} onClick={()=>update({sceneId:id})}><TemplateThumb preset={{id,name:'',line:'',styles:[],occasionTags:[],cardId:content.cardId,sceneId:id,experience:content.experience}} invitation={invitation} /><span className="ed-pick-name">{SCENE_NAMES[id]}</span></button>)}</div></section>
+      <details className="ed-advanced"><summary>كل البطاقات والخلفيات <span>اختياري</span><Icon name="chevron-down" size="sm"/></summary>
       <section className="ed-group">
         <SecHead title="البطاقة" />
         <div className="ed-picks ed-cards" role="radiogroup" aria-label="البطاقة">
@@ -108,10 +107,8 @@ export function DesignSection({ event, content, invitation, update, onChangeTemp
       </section>
 
       <section className="ed-group">
-        <SecHead title="المكان" hint={three ? 'التجربة المجسّمة متاحة الآن في قاعة الشموع.' : undefined}>
-          {three && <Button variant="ghost" size="sm" onClick={() => update({ experience: { ...content.experience, dimension: '2d' } })}>عشرة أماكن مرسومة</Button>}
-        </SecHead>
-        <div className="ed-picks ed-scenes" role="radiogroup" aria-label="المكان">
+        <SecHead title="الخلفية" />
+        <div className="ed-picks ed-scenes" role="radiogroup" aria-label="الخلفية">
           {scenes.map((id) => (
             <button key={id} type="button" role="radio" aria-checked={content.sceneId === id} className={`ed-pick${content.sceneId === id ? ' is-on' : ''}`} onClick={() => update({ sceneId: id })}>
               <TemplateThumb preset={{ id, name: '', line: '', styles: [], occasionTags: [], cardId: content.cardId, sceneId: id, experience: content.experience }} invitation={invitation} />
@@ -138,26 +135,9 @@ function Option({ on, title, text, onClick, art }: { on: boolean; title: string;
 
 export function MotionSection({ content, invitation, update, sound, onSound }: { content: InvitationDesignContent; invitation: unknown; update: Update; sound: boolean; onSound: (v: boolean) => void }) {
   const x = content.experience;
-  const poster = (dimension: '2d' | '3d') => (
-    <span className="ed-option-art" aria-hidden="true">
-      <TemplateThumb preset={{ id: dimension, name: '', line: '', styles: [], occasionTags: [], cardId: content.cardId, sceneId: dimension === '3d' ? 'candlelit' : content.sceneId, experience: { dimension, motion: 'animated' } }} invitation={invitation} />
-    </span>
-  );
-  const setX = (patch: Partial<InvitationDesignContent['experience']>) => {
-    const experience = { ...x, ...patch };
-    update({ experience, ...(experience.dimension === '3d' ? { sceneId: 'candlelit' } : {}) });
-  };
+  const setX = (patch: Partial<InvitationDesignContent['experience']>) => update({ experience: { ...x, ...patch, dimension: '2d' } });
   return (
     <div className="ed-sec">
-      <section className="ed-group">
-        <SecHead title="الشكل" />
-        <div className="ed-options" role="radiogroup" aria-label="الشكل">
-          <Option on={x.dimension === '3d'} title="مجسّم" text="قاعة شموع ثلاثية الأبعاد تتحرك مع حركة الهاتف. أثقل على الأجهزة القديمة." onClick={() => setX({ dimension: '3d' })}
-            art={poster('3d')} />
-          <Option on={x.dimension === '2d'} title="رسوم مسطّحة" text="عشرة أماكن مرسومة بعناية، خفيفة على أي هاتف." onClick={() => setX({ dimension: '2d' })}
-            art={poster('2d')} />
-        </div>
-      </section>
       <section className="ed-group">
         <SecHead title="الحركة" />
         <div className="ed-options is-text" role="radiogroup" aria-label="الحركة">
@@ -166,7 +146,7 @@ export function MotionSection({ content, invitation, update, sound, onSound }: {
         </div>
       </section>
       <section className="ed-group">
-        <SecHead title="الصوت" hint="لكل مكان أجواؤه الهادئة، وموسيقى خفيفة عند فتح الصفحات. لا يبدأ الصوت إلا بعد أول لمسة من الضيف، ويستطيع إيقافه." />
+        <SecHead title="الصوت" hint="أصوات هادئة في الخلفية، وموسيقى خفيفة عند فتح الصفحات. لا يبدأ الصوت إلا بعد أول لمسة من الضيف، ويستطيع إيقافه." />
         <Switch label="شغّل الصوت في المعاينة" hint="هنا فقط، لتسمعه كما سيسمعه الضيف. لا يغيّر الدعوة." checked={sound} onChange={onSound} />
       </section>
     </div>

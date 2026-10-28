@@ -8,7 +8,7 @@ import { INVITATION_STATUS, countParties, invitationStatus, normaliseForSearch, 
 import { publishState } from '../../domain/invitation';
 import { people, plural, pluralOf, P, relativeTime } from '../../domain/format';
 import { GuestViews } from '../shared/GuestViews';
-import { Avatar, Badge, Banner, Button, Dialog, EmptyState, ErrorState, FilterChips, Icon, PageHeader, Panel, ProgressBar, SearchInput, Skeleton, Stat } from '../../ui';
+import { Avatar, Badge, Banner, Button, Dialog, EmptyState, ErrorState, FilterChips, Icon, PageHeader, Panel, ProgressBar, SearchInput, Stat, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
 import { Link, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -50,7 +50,7 @@ export function RsvpPage({ event }: { event: Event }) {
   const replied = c.parties - c.pendingParties;
 
   if (parties.error || responses.error) return <ErrorState error={parties.error || responses.error} onRetry={() => { parties.refetch(); responses.refetch(); }} />;
-  if (parties.loading || responses.loading) return <Skeleton lines={8} />;
+  if (parties.loading || responses.loading) return <PageLoader />;
 
   return (
     <>

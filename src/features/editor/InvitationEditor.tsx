@@ -25,7 +25,7 @@ import { haptic } from '../../ui/motion/motion';
 import { SealStamp } from '../signature/SealStamp';
 import { DraftQueue } from '../../domain/draft-queue';
 import { defaultDesign, publishState, toInvitationData } from '../../domain/invitation';
-import { Banner, Button, ErrorState, Icon, IconButton, Segmented, Skeleton } from '../../ui';
+import { Banner, Button, ErrorState, Icon, IconButton, Segmented, PageLoader } from '../../ui';
 import { useServices } from '../../app/data';
 import { Link, useBlocker, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -55,7 +55,7 @@ export function InvitationEditor({ eventId }: { eventId: string }) {
   const ev = useEvent(eventId);
   const design = useDesign(eventId);
   if (ev.error || design.error) return <div className="ed-state"><ErrorState error={ev.error || design.error} onRetry={() => { ev.refetch(); design.refetch(); }} /></div>;
-  if (ev.loading || design.loading || !ev.data) return <div className="ed-state"><Skeleton lines={6} block /></div>;
+  if (ev.loading || design.loading || !ev.data) return <div className="ed-state"><PageLoader /></div>;
   return <Editor event={ev.data} saved={design.data ?? null} />;
 }
 
