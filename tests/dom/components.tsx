@@ -26,6 +26,7 @@ import { TemplatePreview } from '../../src/features/templates/TemplatePreview';
 import { TEMPLATE_PRESETS } from '../../src/domain/templates';
 import { presetOf } from '../../src/domain/templates';
 import { Field, Input } from '../../src/ui/primitives/Form';
+import { TactileDeck } from '../../src/ui/primitives/TactileDeck';
 import { GuestsPage } from '../../src/features/guests/GuestsPage';
 import { SeatingPage } from '../../src/features/seating/SeatingPage';
 import { usePointerGesture } from '../../src/ui/hooks/usePointerGesture';
@@ -150,6 +151,17 @@ export async function run(){
   await pointer(surface,'pointerup',50,0,200);
   assert.equal(ends.length,1);assert.equal(ends[0]!.cancelled,false);assert.equal(ends[0]!.moved,true);
  });
+ await check('deck cards follow the finger in RTL: a right drag moves them right and brings the next card (FX-01, FX-02)',async()=>{
+  try{localStorage.setItem('doyofy:deck-hint','1');}catch{}
+  let at=0;function Deck(){const[i,setI]=useState(2);at=i;return <TactileDeck items={['a','b','c','d','e']} index={i} onIndexChange={setI} getKey={x=>x} renderCard={x=><span>{x}</span>} itemLabel={x=>x} label="deck"/>;}
+  await render(<Deck/>);
+  const card=(n:number)=>document.querySelectorAll<HTMLElement>('.deck-card')[n]!;const x=(el:HTMLElement)=>Number(/translate3d\((-?[\d.]+)px/.exec(el.style.transform)?.[1]??NaN);
+  const surface=document.querySelector('.deck-stage')!;const before=x(card(2)),nextBefore=x(card(3));assert.ok(nextBefore<before,'the next card waits on the left');
+  await pointer(surface,'pointerdown',200,100,1000);await pointer(surface,'pointermove',260,102,1060);
+  assert.ok(x(card(2))>before,'the active card moved right with the finger');assert.ok(x(card(3))>nextBefore,'the next card moved right too');
+  await pointer(surface,'pointermove',300,102,1400);await pointer(surface,'pointerup',300,102,1600);await settle();
+  assert.equal(at,3,'a right swipe lands on the next card');
+ });
  await check('a pointer that leaves the surface before locking still completes, and a lost release never blocks the next gesture',async()=>{
   const ends:Array<{cancelled:boolean;moved:boolean;dy:number}>=[];
   function Surface(){const gesture=usePointerGesture({axis:'y',onEnd:g=>ends.push(g)});return <div><div id="surface" {...gesture}>ختم</div><div id="elsewhere">خارج</div></div>;}
@@ -177,8 +189,8 @@ export async function run(){
   const stage=document.querySelector('.tp-stage')!;
   await pointer(stage,'pointerdown',100,100,0);await pointer(stage,'pointermove',80,200,100);await pointer(stage,'pointerup',80,200,200);assert.equal(navigated,'');
   await pointer(stage,'pointerdown',100,100,300);await pointer(stage,'pointermove',0,102,400);await pointer(stage,'pointercancel',0,102,500);assert.equal(navigated,'');
-  await pointer(stage,'pointerdown',100,100,600);await pointer(stage,'pointermove',0,102,700);await pointer(stage,'pointerup',0,102,800);assert.equal(navigated,NEXT);
-  navigated='';await pointer(stage,'pointerdown',100,100,900);await pointer(stage,'pointermove',190,102,1000);await pointer(stage,'pointerup',190,102,1100);assert.equal(navigated,PREV);
+  await pointer(stage,'pointerdown',100,100,600);await pointer(stage,'pointermove',0,102,700);await pointer(stage,'pointerup',0,102,800);assert.equal(navigated,PREV,'a swipe left goes back (the page follows the finger)');
+  navigated='';await pointer(stage,'pointerdown',100,100,900);await pointer(stage,'pointermove',190,102,1000);await pointer(stage,'pointerup',190,102,1100);assert.equal(navigated,NEXT,'a swipe right brings the next template');
   navigated='';await key(stage,'ArrowLeft');assert.equal(navigated,NEXT);navigated='';await key(document.querySelector('.tp-rail-item')!,'ArrowLeft');assert.equal(navigated,'');await click(document.querySelector('[aria-label="القالب التالي"]')!);assert.equal(navigated,NEXT);
   navigated='';await render(wrap(<TemplatePreview event={event} base={design.draft} presets={TEMPLATE_PRESETS} preset={mid} isCurrent={false} pending onNavigate={p=>{navigated=p.id;}} onClose={()=>{}} onUse={()=>{}}/>));
   await pointer(stage,'pointerdown',100,100,1200);await pointer(stage,'pointermove',0,102,1300);await pointer(stage,'pointerup',0,102,1400);assert.equal(navigated,'');

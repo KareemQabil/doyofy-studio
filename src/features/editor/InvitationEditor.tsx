@@ -84,7 +84,7 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   const [section, setSection] = useState<EditorSection>(SECTIONS.some((s) => s.value === initial) ? initial! : 'content');
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [page, setPage] = useState<WorkbenchPage>('card');
-  // phones: swipe the workbench sideways to turn the invitation's pages (RTL: left = next); the tabs remain
+  // phones: swipe the workbench sideways to turn the invitation's pages (RTL: the page follows the finger, right = next); the tabs remain
   const PAGES: WorkbenchPage[] = ['card', 'message', 'program'];
   const pageSwipe = usePointerGesture({ axis: 'x', onEnd: (g) => {
     if (!g.moved || g.cancelled) return;

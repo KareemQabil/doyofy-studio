@@ -58,13 +58,14 @@ async function run(vp) {
 
   await step(vp, '03 occasion deck: swipe (pointer drag) moves to the next card', async () => {
     const box = await page.locator('.deck-stage').boundingBox();
-    const y = box.y + box.height * 0.5, x = box.x + box.width * 0.6;
+    const y = box.y + box.height * 0.5, x = box.x + box.width * 0.4;
     await page.mouse.move(x, y); await page.mouse.down();
-    for (let i = 1; i <= 8; i++) { await page.mouse.move(x - i * 12, y); await page.waitForTimeout(16); }
+    // RTL: the card follows the finger — a drag to the right pulls the next card in from the left
+    for (let i = 1; i <= 8; i++) { await page.mouse.move(x + i * 12, y); await page.waitForTimeout(16); }
     await page.mouse.up(); await page.waitForTimeout(700);
     const n = await page.locator('.deck-count b').innerText();
     if (n !== '02') throw new Error(`after swipe ${n}`);
-    return 'swipe left → 02';
+    return 'swipe right → 02';
   });
 
   await step(vp, '04 graduation details + live card preview', async () => {

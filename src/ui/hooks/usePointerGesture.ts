@@ -1,5 +1,5 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { lockAxis, type GestureAxis } from '../../domain/gestures';
+import { lockAxis, startsAtScreenEdge, type GestureAxis } from '../../domain/gestures';
 export interface GestureEnd { delta: number; dx: number; dy: number; velocity: number; duration: number; moved: boolean; cancelled: boolean }
 type PointerLike = { pointerId: number; clientX: number; clientY: number; timeStamp: number };
 /** Bind only to an intentional gesture surface; never globally intercept scrolling.
@@ -37,6 +37,8 @@ export function usePointerGesture({ axis, enabled = true, onMove, onEnd, onStart
       const stale=state.current;
       if (stale && e.isPrimary!==false) { state.current=null; detach.current(); onEnd({dx:0,dy:0,delta:0,velocity:0,duration:16,moved:stale.locked,cancelled:true}); }
       if (!enabled || state.current || e.isPrimary===false || e.button!==0 || (control && !control.hasAttribute('data-gesture-surface'))) return;
+      // the screen edges belong to the system back/forward swipe on phones
+      if (e.pointerType==='touch' && axis==='x' && startsAtScreenEdge(e.clientX, window.innerWidth)) return;
       const surface=e.currentTarget;
       suppress.current=false;state.current={id:e.pointerId,x:e.clientX,y:e.clientY,t:e.timeStamp,locked:false,target:surface};onStart?.();
       // until the axis locks (and capture is taken) a fast mouse can leave the surface; follow it on the

@@ -112,8 +112,8 @@ export function TactileDeck<T>({ items, index, onIndexChange, onActivate, getKey
       learned();
       const { target } = deckRelease(pos.current, g.velocity, step, count, index);
       if (target !== index) haptic('snap');
-      // dx < 0 advances in RTL: px/ms → cards/s
-      animateTo(target, () => { if (target !== index) onIndexChange(target); }, (-g.velocity * 1000) / Math.max(1, step));
+      // dx > 0 advances in RTL (the card follows the finger): px/ms → cards/s
+      animateTo(target, () => { if (target !== index) onIndexChange(target); }, (g.velocity * 1000) / Math.max(1, step));
     },
   });
 
@@ -128,8 +128,8 @@ export function TactileDeck<T>({ items, index, onIndexChange, onActivate, getKey
       if (performance.now() < wheelLock.current) return;
       wheelAcc.current += dx;
       if (Math.abs(wheelAcc.current) > 60) {
-        // physical scroll right (dx>0) moves content left, i.e. toward the next card in RTL
-        const n = index + (wheelAcc.current > 0 ? 1 : -1); wheelAcc.current = 0; wheelLock.current = performance.now() + 380; go(n);
+        // a trackpad swipe moves the content with the fingers: deltaX > 0 slides the deck left, back toward the previous card
+        const n = index + (wheelAcc.current > 0 ? -1 : 1); wheelAcc.current = 0; wheelLock.current = performance.now() + 380; go(n);
       }
     };
     el.addEventListener('wheel', onWheel, { passive: false });

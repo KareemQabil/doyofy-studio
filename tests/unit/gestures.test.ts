@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { lockAxis, swipeStep, sheetSnap, shouldDismiss } from '../../src/domain/gestures';
+import { lockAxis, swipeStep, sheetSnap, shouldDismiss, startsAtScreenEdge } from '../../src/domain/gestures';
 import { isAppearance } from '../../src/domain/appearance';
 
 test('appearance values are recognized; unknown URLs cannot set one',()=>{
@@ -12,9 +12,13 @@ test('horizontal browsing gives vertical scrolling priority and ignores tap jitt
   assert.equal(lockAxis(30,28,'x'),'pending');assert.equal(lockAxis(35,5,'x'),'locked');
   assert.equal(swipeStep(-100,130,80),0);assert.equal(swipeStep(-6,0,10),0);
 });
-test('RTL preview advances left, reverses right and accepts an intentional short flick',()=>{
-  assert.equal(swipeStep(-80,2,600),1);assert.equal(swipeStep(80,2,600),-1);
-  assert.equal(swipeStep(-32,2,40),1);assert.equal(swipeStep(-32,2,600),0);
+test('RTL: the page follows the finger — a swipe right is next, left is back; an intentional short flick counts',()=>{
+  assert.equal(swipeStep(80,2,600),1);assert.equal(swipeStep(-80,2,600),-1);
+  assert.equal(swipeStep(32,2,40),1);assert.equal(swipeStep(32,2,600),0);
+});
+test('touches starting in the 24px screen edges are left to the system back gesture (FX-09)',()=>{
+  assert.equal(startsAtScreenEdge(10,390),true);assert.equal(startsAtScreenEdge(380,390),true);
+  assert.equal(startsAtScreenEdge(24,390),false);assert.equal(startsAtScreenEdge(200,390),false);
 });
 test('editor panel snaps with deliberate motion and small adjustments retain its state',()=>{
   assert.equal(sheetSnap(-70,-.2,'half'),'full');assert.equal(sheetSnap(80,.2,'full'),'half');
@@ -27,19 +31,26 @@ test('drawer dismisses only with deliberate downward drag or flick',()=>{
 });
 
 import { deckDragPosition, deckRelease, deckPose, sheetSnapPoint, sheetSnapHeight, sealOpens } from '../../src/domain/gestures';
-test('deck: leftward drag advances in RTL, with resistance past the ends', () => {
-  assert.equal(deckDragPosition(2, -100, 100, 13), 3);
-  assert.equal(deckDragPosition(2, 100, 100, 13), 1);
-  assert.ok(deckDragPosition(0, 200, 100, 13) > -1 && deckDragPosition(0, 200, 100, 13) < 0, 'first card rubber-bands');
-  assert.ok(deckDragPosition(12, -200, 100, 13) < 13, 'last card rubber-bands');
+test('deck: the card follows the finger — dragging right pulls the next card in (RTL), with resistance past the ends', () => {
+  assert.equal(deckDragPosition(2, 100, 100, 13), 3);
+  assert.equal(deckDragPosition(2, -100, 100, 13), 1);
+  assert.ok(deckDragPosition(0, -200, 100, 13) > -1 && deckDragPosition(0, -200, 100, 13) < 0, 'first card rubber-bands');
+  assert.ok(deckDragPosition(12, 200, 100, 13) < 13, 'last card rubber-bands');
+  // the next card sits on the left (negative x); after a right drag of one step it reaches the centre
+  const start = 2, step = 100, next = 3;
+  assert.ok(Math.abs(deckPose(next - deckDragPosition(start, step, step, 13), 200).x) < 1e-9);
+  // and every card moves the same way the finger does
+  assert.ok(deckPose(next - deckDragPosition(start, 30, step, 13), 200).x > deckPose(next - start, 200).x);
 });
-test('deck: release snaps, small deliberate drag steps, flings are bounded and cancelled drags return', () => {
+test('deck: release snaps; a normal swipe moves one card, only a fast fling moves two (FX-05)', () => {
   assert.equal(deckRelease(3.1, 0, 100, 13, 3).target, 3, 'tiny drift settles back');
   assert.equal(deckRelease(3.3, 0, 100, 13, 3).target, 4, '30% of a card is a step');
   assert.equal(deckRelease(2.7, 0, 100, 13, 3).target, 2);
-  assert.equal(deckRelease(3.2, -3, 100, 13, 3).target, 6, 'fast leftward fling is capped at 3 cards');
-  assert.equal(deckRelease(0.1, 2, 100, 13, 0).target, 0, 'never before the first card');
-  assert.equal(deckRelease(12.2, -2, 100, 13, 12).target, 12, 'never after the last card');
+  assert.equal(deckRelease(3.4, 1, 100, 13, 3).target, 4, 'a medium swipe is exactly one card');
+  assert.equal(deckRelease(3.2, 3, 100, 13, 3).target, 5, 'a fast rightward fling is capped at 2 cards');
+  assert.equal(deckRelease(2.8, -3, 100, 13, 3).target, 1, 'and leftward too');
+  assert.equal(deckRelease(0.1, -2, 100, 13, 0).target, 0, 'never before the first card');
+  assert.equal(deckRelease(12.2, 2, 100, 13, 12).target, 12, 'never after the last card');
 });
 test('deck: poses put next cards on the left and fade far ones', () => {
   assert.ok(deckPose(1, 200).x < 0 && deckPose(-1, 200).x > 0);
