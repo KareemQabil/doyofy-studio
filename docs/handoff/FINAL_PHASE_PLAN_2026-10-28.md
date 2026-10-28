@@ -214,6 +214,19 @@ These are already named in `collection.js`; the new faces reuse them with kit ar
 - old seeded invitations open on their occasion's card;
 - the engine chunk shrinks by ≥ 60KB.
 
+**PDF layers available to B, M and E** (`design-source/owner-pdf-2026-10-28/layers/`):
+
+| Use | Layers |
+| --- | --- |
+| Wedding / engagement | gazebo-garden, gazebo-ivy, drapes-ivory, column-floral, bouquet-white-roses (+b), garland-white-roses, bouquet-blush-roses, bouquet-rose-bow, rings-gold-rose, dahlias-magenta, garland-red-roses |
+| Henna / katb | ornament-henna-green, couple-illustration, garland-red-roses |
+| Newborn | baby-clothesline, cornflowers-stem |
+| Graduation / birthday | balloons-black-gold, confetti-gold-a/b, ribbon-gold-blur |
+| Paper / scenes | paper-cream (+b), paper-ivory-a, paper-blue-grey, paper-torn-white, parchment-damask, satin-white, satin-light-grey, silk-white-folds |
+
+Each layer is a separate element, so Batch M can animate it: drapes part, gazebo rises, bouquets bloom in, balloons float up, confetti falls.
+Faces built from these get published sizes (≤ 1080w, AVIF + WebP) at import time; the source files stay in `design-source/`.
+
 ### Batch M — Motion: invitations that move (≈ 1.5 sessions) · `feat/card-motion`
 
 **Take from the reference:**
@@ -310,7 +323,7 @@ What "saved" means on the deployed prototype follows **Q1**.
 | --- | --- | --- |
 | Q1 | **The link carries the invitation.** | **Batch V:** `/i/:slug/:code?d=<compressed payload>`, with the invitation, card, palette and the guest's name. The payload is deflate + base64url and must stay under 2KB, so the link fits in WhatsApp (the engine already has `encodeConfig` in `wizard/config.js`; move it out before G deletes the wizard). `GuestInvite` reads local storage first and the payload second. The RSVP on a device that doesn't own the event ends on «هذه نسخة تجريبية — لم يُرسل ردّك للمنظّم», never «تم الرد». The share sheet in the organizer screens builds these links. |
 | Q2 | **GSAP, preset timelines only.** | Batch M as written. No animation editor and no keyframe UI, ever. Only replay in the editor. |
-| Q3 | **No permission for the Canva PDF.** The owner's Canva account is **Canva for Education**: its content is licensed for educational, non-commercial use only. Even a paid Pro account doesn't allow taking elements out of Canva templates and redistributing them inside a product that offers templates to users. And the PDF pages are Canva marketplace templates (placeholders like «123 Anywhere St.»), not the owner's own designs. | The PDF stays **a layout reference only** (as the handoff said). Its look is rebuilt as original art: Designer Kit vectors + the 5 AI images (FX-08 closed: allowed). For more watercolour-style art: commission an illustrator, or generate new images and record each in `PROVENANCE.json`. Do not use the Education account to make the product's assets. |
+| Q3 | **The owner says the PDF is theirs (author metadata: Kareem Khaled) and approved using it in the prototype.** The 5 AI images are also allowed (FX-08 closed). | The PDF becomes a **real source for Batches B and E**. 28 unique transparent layers are saved in `design-source/owner-pdf-2026-10-28/` (WebP, 3.5MB; `manifest.json` records where each came from), plus 15 page previews for layout. One stock photo with real people (p13) is excluded. Rules: art layers only, live text on top, never flattened text. `manifest.json` notes that the rights are the owner's statement and should be reviewed before any commercial launch. |
 | Q4 | **Public, not indexed.** | **Batch V:** no Deployment Protection; `X-Robots-Tag: noindex, nofollow` and `robots.txt` set to disallow; the demo bar becomes mandatory; the share preview matters (absolute `og:*`); and since strangers can open it, a "reset demo" item and an error boundary are required, not optional. |
 | — | Still open from the handoff: market (Egypt / KSA), baby shower, apology copy (F066). | Defaults: KSA copy, no baby shower. |
 
@@ -319,6 +332,6 @@ What "saved" means on the deployed prototype follows **Q1**.
 ## 6. What you do now (owner)
 
 1. Open and merge the PR for `feat/card-collection`: https://github.com/KareemQabil/doyofy-studio/compare/main...feat/card-collection
-2. Nothing to send for Canva (Q3): the PDF stays reference-only.
+2. Nothing to send: the PDF layers are already saved in the repo (Q3).
 3. Copy the Designer Kit ZIP and the two ZIPs from the earlier session somewhere permanent. Batches B and E need `templates/` and `elements/` in this session; upload the Designer Kit ZIP or a trimmed `elements/` + `templates/` folder.
 4. Approve Batch 0, then A. Each batch comes back with before/after screenshots from the gate.
