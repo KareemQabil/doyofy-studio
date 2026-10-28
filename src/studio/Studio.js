@@ -418,6 +418,8 @@ export class Studio {
       b.style.background = on ? t.ink : 'transparent';
       b.style.color = on ? t.paper : t.ink;
     });
+    // FX-13: a decline asks no headcount — the counter folds away and returns with its last value on «سأحضر»
+    const row = root.querySelector('.rsvp-guests-row'); if (row) row.hidden = r.attending === 'no';
     const out = root.querySelector('.rsvp-guests'); if (out) out.textContent = r.guests;
     const [dn, up] = root.querySelectorAll('[data-guests]');
     if (dn) dn.disabled = r.guests <= this.data.rsvp.minGuests;

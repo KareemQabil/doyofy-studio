@@ -29,9 +29,11 @@ body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
 
 /* DOM scenes: soft cover-scaled echo outside the 390×844 composition */
 .scene-ambient { position: absolute; left: 50%; top: 50%; width: 390px; height: 844px; margin: -422px 0 0 -195px;
-  transform: scale(calc(var(--cover) * 1.08)); filter: blur(22px) brightness(.62) saturate(1.05); }
+  transform: scale(calc(var(--cover) * 1.08)); filter: blur(22px) brightness(.72) saturate(1.05); }
 .scene-ambient * { animation-play-state: paused !important; }
 .scene-dom { position: absolute; inset: 0; }
+/* the echo is a clone of .scene-dom: undo its inset so it centres in any direction (RTL used to pin it to the right edge) */
+.scene-dom.scene-ambient { inset: auto; left: 50%; top: 50%; direction: ltr; }
 
 /* full-bleed (WebGL) scenes render behind a transparent stage */
 .host.full-bleed .st { background: transparent; }
@@ -96,3 +98,4 @@ body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
   background: radial-gradient(120% 75% at 50% 46%, rgba(0,0,0,0) 55%, rgba(6,2,3,.55) 100%); }
 /* the stage's own scene layer is empty in full-bleed mode; keep the canonical CSS contact shadow subtle
    because the WebGL table receives a real shadow from the card proxy */
+.rsvp-guests-row[hidden] { display: none !important; }
