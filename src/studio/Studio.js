@@ -348,6 +348,7 @@ export class Studio {
       this.leaving = false;
       this.page = n;
       this.el.page.classList.remove('leaving');
+      delete this.el.page.dataset.exit;
       this._renderPage();
     }, this.sm.timing.pageLeave);
   }
@@ -449,23 +450,44 @@ export class Studio {
     on(host, 'input', (ev) => { if (ev.target.id === 'st-name') { this.rsvp.name = ev.target.value; if (this.rsvp.tried) this._syncRsvp(); } });
     on(host, 'submit', (ev) => { ev.preventDefault(); this.submit(); });
 
-    // sheet gestures: vertical swipe (50 px), wheel (900 ms debounce) — canonical thresholds
+    // sheet gestures: the page follows the finger, then turns on release (50 px or a quick flick).
+    // Vertical: up = next. Sideways (RTL): right = next. At the first/last page the drag resists.
     const sheet = this.el.sheet;
+    const settle = () => { const pg = this.el.page; pg.classList.remove('dragging'); pg.style.removeProperty('transform'); pg.style.removeProperty('opacity'); };
     on(sheet, 'pointerdown', (ev) => {
       if (ev.isPrimary === false || ev.button !== 0) { this._down = null; return; }
       if (ev.target.closest?.('button, a, input, textarea, select, [contenteditable], [data-gesture-ignore]')) { this._down = null; return; }
-      this._down = { id: ev.pointerId, x: ev.clientX, y: ev.clientY };
+      this._down = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, t: performance.now(), axis: null };
+      try { sheet.setPointerCapture(ev.pointerId); } catch { /* synthetic events */ }
+    });
+    on(sheet, 'pointermove', (ev) => {
+      const d = this._down;
+      if (!d || ev.pointerId !== d.id || this.sm.state !== 'pages' || this.leaving) return;
+      const s = this.stageRect.scale;
+      const dx = (ev.clientX - d.x) / s, dy = (ev.clientY - d.y) / s;
+      if (!d.axis) { if (Math.hypot(dx, dy) < 8) return; d.axis = Math.abs(dy) >= Math.abs(dx) ? 'y' : 'x'; this.el.page.classList.add('dragging'); }
+      const v = d.axis === 'y' ? dy : dx;
+      const dir = d.axis === 'y' ? (v < 0 ? 1 : -1) : (v > 0 ? 1 : -1);
+      const t = (this.page + dir < 0 || this.page + dir > 4) ? v * 0.16 : v * 0.6;
+      this.el.page.style.transform = d.axis === 'y' ? `translateY(${t.toFixed(1)}px)` : `translateX(${t.toFixed(1)}px)`;
+      this.el.page.style.opacity = String(1 - Math.min(0.55, Math.abs(t) / 300));
     });
     on(sheet, 'pointerup', (ev) => {
       if (!this._down || ev.pointerId !== this._down.id) return;
       const down = this._down;
       this._down = null;
-      if (this.sm.state !== 'pages') return;
+      if (this.sm.state !== 'pages') return settle();
       const s = this.stageRect.scale;
       const dx = (ev.clientX - down.x) / s, dy = (ev.clientY - down.y) / s;
-      if (Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx)) this.go(this.page + (dy < 0 ? 1 : -1));
+      const axis = down.axis || (Math.abs(dy) >= Math.abs(dx) ? 'y' : 'x');
+      const v = axis === 'y' ? dy : dx;
+      const fast = Math.abs(v) > 24 && Math.abs(v) / Math.max(1, performance.now() - down.t) > 0.5;
+      const dir = axis === 'y' ? (v < 0 ? 1 : -1) : (v > 0 ? 1 : -1);
+      const n = this.page + dir;
+      if ((Math.abs(v) > 50 || fast) && n >= 0 && n <= 4) { this.el.page.dataset.exit = `${axis}${v < 0 ? '-' : '+'}`; settle(); this.go(n); return; }
+      settle();
     });
-    on(sheet, 'pointercancel', (ev) => { if (this._down?.id === ev.pointerId) this._down = null; });
+    on(sheet, 'pointercancel', (ev) => { if (this._down?.id === ev.pointerId) { this._down = null; settle(); } });
     on(sheet, 'wheel', (ev) => {
       if (this.sm.state !== 'pages' || Math.abs(ev.deltaY) < 24) return;
       if (ev.target.closest?.('button, a, input, textarea, select, [contenteditable], [data-gesture-ignore]')) return;

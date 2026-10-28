@@ -8,6 +8,11 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 export type RouterMode = 'history' | 'hash';
 
+/** the next page transition's direction when it is not a depth change: moving between sibling sections
+ *  (tab bar, section swipe). RTL: the next section enters from the left, as the tab bar reads. */
+let navIntent: 'next' | 'prev' | null = null;
+export const setNavIntent = (dir: 'next' | 'prev') => { navIntent = dir; };
+
 function currentPath(mode: RouterMode): string {
   if (mode === 'hash') {
     const h = location.hash.replace(/^#/, '');
@@ -81,9 +86,10 @@ export function RouterProvider({ mode, children }: { mode: RouterMode; children:
     const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
     const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (from !== next && typeof doc.startViewTransition === 'function' && !still) {
-      document.documentElement.dataset.nav = next.split('/').length >= from.split('/').length ? 'forward' : 'back';
+      document.documentElement.dataset.nav = navIntent ?? (next.split('/').length >= from.split('/').length ? 'forward' : 'back');
       doc.startViewTransition(() => flushSync(commit));
     } else commit();
+    navIntent = null;
   }, [mode]);
 
   const blocking = () => [...blockers.current].find((b) => b.when());

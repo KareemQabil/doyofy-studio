@@ -3,8 +3,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { Event, InvitationDesignContent } from '../../domain/types';
 import { toInvitationData } from '../../domain/invitation';
 import { applyPreset, type TemplatePreset } from '../../domain/templates';
-import { swipeStep } from '../../domain/gestures';
-import { usePointerGesture } from '../../ui/hooks/usePointerGesture';
+import { useSwipePager } from '../../ui/hooks/useSwipePager';
 import { Button, Dialog, Icon, IconButton } from '../../ui';
 import { LivePreview } from '../invitation/LivePreview';
 import { TemplateThumb } from './TemplateThumb';
@@ -23,15 +22,13 @@ export function TemplatePreview({ presets, preset, event, base, isCurrent, pendi
   const surface=useRef<HTMLDivElement>(null),rail=useRef<HTMLDivElement>(null);
   useEffect(()=>{setReplay(0);setPlayingId(null);rail.current?.querySelector<HTMLElement>('[aria-pressed="true"]')?.scrollIntoView?.({block:'nearest',inline:'center',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'});},[preset.id]);
   const step=(d:number)=>{if(!d)return;const n=railPresets[i+d];if(n&&!pending)onNavigate(n);};
-  const gesture=usePointerGesture({axis:'x',enabled:!playing&&!pending,
-    onMove:d=>surface.current?.style.setProperty('--browse-drag',`${Math.max(-90,Math.min(90,d*.35))}px`),
-    onEnd:g=>{surface.current?.style.removeProperty('--browse-drag');if(g.moved&&!g.cancelled)step(swipeStep(g.dx,g.dy,g.duration));}
-  });
+  const pager=useSwipePager<HTMLDivElement>({enabled:!playing&&!pending,canStep:d=>!!railPresets[i+d],onStep:d=>step(d)});
+  const gesture=pager.gesture;
   const onKey=(e:KeyboardEvent)=>{if(e.target!==e.currentTarget||playing)return;if(e.key==='ArrowLeft'){e.preventDefault();step(1);}if(e.key==='ArrowRight'){e.preventDefault();step(-1);}};
   return <Dialog open size="xl" className="tp" gestureDismiss dismissible={!pending} onClose={onClose} title={preset.name} description={`${i+1} من ${railPresets.length} · معروض باسم مناسبتك`} footer={<><Button variant="ghost" onClick={onClose} disabled={pending}>رجوع</Button><Button variant="primary" size="lg" loading={pending} onClick={()=>onUse(preset)} data-autofocus>{isCurrent?'متابعة بهذا القالب':'استخدم هذا القالب'}</Button></>}>
     <div className="tp-body">
       <div className={`tp-stage${playing?' is-playing':''}`} ref={surface} {...gesture} tabIndex={0} onKeyDown={onKey} aria-label="معاينة القالب؛ اسحب أفقيًا أو استخدم السهمين للتنقل">
-        {playing?<LivePreview key={preset.id} start="card" className="tp-screen" invitation={invitation} content={content} muted={false} replayToken={replay} label={`معاينة قالب ${preset.name}`}/>:<><div className="tp-poster tp-stationery"><EditorWorkbench event={event} content={content} caption={preset.name} /></div><span className="tp-swipe-hint"><Icon name="back" size="sm"/>اسحب لتكتشف<Icon name="forward" size="sm"/></span></>}
+        {playing?<LivePreview key={preset.id} start="card" className="tp-screen" invitation={invitation} content={content} muted={false} replayToken={replay} label={`معاينة قالب ${preset.name}`}/>:<><div className="tp-poster tp-stationery" key={preset.id} ref={pager.ref} data-pager="" data-enter={pager.enter}><EditorWorkbench event={event} content={content} caption={preset.name} /></div><span className="tp-swipe-hint"><Icon name="back" size="sm"/>اسحب لتكتشف<Icon name="forward" size="sm"/></span></>}
       </div>
       <div className="tp-info"><p className="eyebrow">لمسة تليق بفرحتكم</p><h3 className="tp-line">{preset.name}</h3><p className="tp-description">{preset.line}</p><p className="tp-note">شكل الدعوة يتغيّر. أسماؤكم وكلماتكم تبقى كما هي.</p>
         {playing?<div className="row wrap gap-2"><Button variant="secondary" size="sm" icon="play" onClick={()=>setReplay(n=>n+1)}>أعد العرض</Button><Button variant="ghost" size="sm" onClick={()=>setPlayingId(null)}>إلى الصورة</Button></div>:<Button variant="secondary" icon="play" onClick={()=>setPlayingId(preset.id)}>شاهد التجربة</Button>}

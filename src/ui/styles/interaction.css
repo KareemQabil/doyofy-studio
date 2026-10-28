@@ -2,7 +2,7 @@
 .sheet-grip { display:none; }
 .dialog-panel { transform:translateY(var(--sheet-drag,0px)); transition:transform var(--dur-slow) var(--ease-out); }
 .dialog-panel[data-dragging],.ed-panel[data-dragging] { transition:none; animation:none; }
-.tp-poster { height:100%; width:auto; max-width:100%; aspect-ratio:360 / 664; border-radius:0; transform:translateX(var(--browse-drag,0px)); transition:transform var(--dur-slow) var(--ease-out); }
+.tp-poster { height:100%; width:auto; max-width:100%; aspect-ratio:360 / 664; border-radius:0; }
 .tp-stage:not(.is-playing) { display:grid; place-items:center; touch-action:pan-y; cursor:grab; }
 .tp-stage:not(.is-playing):active { cursor:grabbing; }
 .tp-swipe-hint { position:absolute; z-index:2; bottom:14px; inset-inline:0; display:flex; align-items:center; justify-content:center; gap:16px; margin:auto; width:max-content; max-width:90%; background:var(--c-surface-elevated); color:var(--c-text-2); border:1px solid var(--c-line); border-radius:var(--r-pill); padding:8px 14px; font-size:11px; pointer-events:none; box-shadow:var(--shadow-2); }
@@ -106,3 +106,12 @@
 @media(prefers-reduced-motion:no-preference) { .ws-main>*,.events-intro,.occasion-event.is-featured { animation:page-arrive 300ms var(--ease-out) both; } }
 @keyframes page-arrive { from { opacity:0; transform:translateY(7px); } }
 @media(prefers-reduced-motion:reduce) { .tpl-skel { animation:none; } .event-poster,.tp-poster { transition:none; } }
+
+/* useSwipePager: follows the finger, thrown off on release, the next one slides in from the other side */
+[data-pager] { transform: translateX(var(--pager-x, 0px)); transition: transform 170ms cubic-bezier(.4,0,.6,1), opacity 170ms ease; will-change: transform; }
+[data-pager][data-dragging] { transition: none; }
+[data-pager][data-enter="from-left"] { animation: pager-in-left 320ms cubic-bezier(.2,.8,.2,1) both; }
+[data-pager][data-enter="from-right"] { animation: pager-in-right 320ms cubic-bezier(.2,.8,.2,1) both; }
+@keyframes pager-in-left { from { transform: translateX(-38%); opacity: 0; } }
+@keyframes pager-in-right { from { transform: translateX(38%); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { [data-pager] { transition: none; } [data-pager][data-enter] { animation: none; } }

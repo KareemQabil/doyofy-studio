@@ -104,3 +104,11 @@ body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
 .scene-out { opacity: 0 !important; transition: opacity .6s ease; }
 @keyframes sceneIn { from { opacity: 0; } to { opacity: 1; } }
 .rsvp-guests-row[hidden] { display: none !important; }
+
+/* a page under the finger moves with it; released, it leaves the way it was thrown */
+.st-page.dragging { transition: none !important; }
+.st-page.leaving[data-exit="y-"] { transform: translateY(-60px); }
+.st-page.leaving[data-exit="y+"] { transform: translateY(60px); }
+.st-page.leaving[data-exit="x+"] { transform: translateX(80px); }
+.st-page.leaving[data-exit="x-"] { transform: translateX(-80px); }
+.host.rm .st-page.leaving[data-exit] { transform: none; }
