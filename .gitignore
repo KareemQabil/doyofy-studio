@@ -17,3 +17,4 @@ tests/.dom-build.mjs
 # Private client review media is not repository source
 WhatsApp*
 feedback-media/
+qa/gate/
