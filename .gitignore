@@ -1,7 +1,7 @@
 node_modules/
 dist/
 canonical/runtime/
-qa/screenshots/look/
+qa/screenshots/
 tests/.dom-build.mjs
 
 # local secrets (see .env.example)
