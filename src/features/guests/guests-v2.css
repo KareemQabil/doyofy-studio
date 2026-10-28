@@ -8,7 +8,7 @@
 
 /* ---------------------------------------------------------------- counters = filters */
 .g2-counters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.g2-counter { position: relative; display: grid; align-content: start; gap: 2px; min-height: 96px; padding: 14px 16px 12px; text-align: start; border: 1px solid var(--c-hairline); border-radius: var(--g2-r); background: var(--c-surface); color: var(--c-text); cursor: pointer; overflow: hidden; transition: border-color 180ms, box-shadow 220ms, transform 140ms var(--v2-press, ease), background-color 180ms; }
+.g2-counter { position: relative; display: grid; align-content: start; gap: 2px; min-height: 76px; padding: 12px 14px 10px; text-align: start; border: 1px solid var(--c-hairline); border-radius: var(--g2-r); background: var(--c-surface); color: var(--c-text); cursor: pointer; overflow: hidden; transition: border-color 180ms, box-shadow 220ms, transform 140ms var(--v2-press, ease), background-color 180ms; }
 .g2-counter::after { content: ''; position: absolute; inset-inline: 16px; top: 0; height: 3px; border-radius: 0 0 3px 3px; background: var(--g2-tone, var(--c-text)); opacity: .9; transition: inset-inline 260ms var(--v2-out, ease); }
 .g2-counter.tone-success { --g2-tone: var(--c-success); }
 .g2-counter.tone-warning { --g2-tone: var(--brand-gold, var(--c-warning)); }
@@ -44,7 +44,7 @@
 .g2-bulk-all { min-height: 40px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: var(--brand-ivory, #F2EAD9); font: 500 13px/1 var(--font-display); text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 .g2-bulk-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .g2-bulk .btn { color: #fff; border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.06); }
-.g2-bulk .btn-primary { background: #fff; color: var(--brand-charcoal, #262626); border-color: #fff; }
+.g2-bulk .btn-primary { background: var(--c-surface); color: var(--brand-charcoal, #262626); border-color: #fff; }
 .g2-bulk .btn:disabled { opacity: .45; }
 .g2-bulk .menu-trigger { color: #fff; }
 @keyframes g2-rise { from { opacity: 0; transform: translateY(14px) scale(.98); } }
@@ -61,7 +61,7 @@
 .g2-check input { width: 20px; height: 20px; accent-color: var(--brand-charcoal, var(--c-primary)); }
 .g2-card > .avatar { grid-column: 2; width: 40px; height: 40px; font-size: 16px; }
 .g2-main { grid-column: 3; display: grid; gap: 4px; min-width: 0; }
-.g2-name { justify-self: start; max-width: 100%; padding: 0; border: 0; background: none; color: var(--c-text); font: 700 16px/1.45 var(--font-display); text-align: start; cursor: pointer; overflow-wrap: anywhere; }
+.g2-name { justify-self: start; max-width: 100%; min-height: 32px; padding: 2px 0; border: 0; background: none; color: var(--c-text); font: 700 16px/1.45 var(--font-display); text-align: start; cursor: pointer; overflow-wrap: anywhere; }
 .g2-name:hover { text-decoration: underline; text-decoration-color: var(--c-hairline-strong); text-underline-offset: 5px; }
 .g2-meta { display: flex; flex-wrap: wrap; gap: 2px 10px; color: var(--c-text-3); font-size: 12.5px; }
 .g2-phone { color: var(--c-text-3); }
@@ -144,15 +144,22 @@
 
 /* ---------------------------------------------------------------- phone */
 @media (max-width: 760px) {
-  .g2-counters { display: flex; gap: 8px; margin-inline: -16px; padding: 2px 16px 4px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: 16px; scrollbar-width: none; overscroll-behavior-x: contain; }
+  /* FX-17: the four counts become one row of compact chips (count + label); tapping one filters the list */
+  .g2-counters { display: flex; gap: 6px; max-width: 100%; padding: 2px 0 4px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; overscroll-behavior-x: contain; }
   .g2-counters::-webkit-scrollbar { display: none; }
-  .g2-counter { flex: 0 0 auto; min-width: 128px; min-height: 84px; padding: 12px 14px 10px; scroll-snap-align: start; }
-  .g2-counter strong { font-size: 26px; }
+  .g2-counter { flex: 0 0 auto; display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; min-height: 40px; padding: 8px 12px; border-radius: 999px; scroll-snap-align: start; }
+  .g2-counter::after { display: none; }
+  .g2-counter strong { order: -1; font-size: 17px; line-height: 1; }
+  .g2-counter-label { font-size: 12.5px; white-space: nowrap; }
+  .g2-counter-unit { display: none; }
   .g2 .page-head { margin-bottom: 12px; }
   .g2 .page-actions { gap: 8px; }
-  .g2-toolbar-row { flex-wrap: nowrap; gap: 4px; }
-  .g2-toolbar-row .btn-sm { padding-inline: 10px; }
-  .g2-switch button { padding: 0 12px; }
+  /* FX-06: the toolbar never forces the page wider than the screen — the view switch takes the room, tools are icon buttons */
+  .g2-toolbar-row { flex-wrap: wrap; gap: 6px; }
+  .g2-switch { flex: 1 1 auto; min-width: 0; }
+  .g2-switch button { flex: 1 1 0; min-width: 0; padding: 0 8px; font-size: 13px; }
+  .g2-toolbar-row .g2-tool { width: 44px; min-height: 44px; padding: 0; justify-content: center; }
+  .g2-tool-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .g2-bulk { position: fixed; top: auto; bottom: calc(88px + env(safe-area-inset-bottom)); inset-inline: 10px; }
   .g2-bulk-actions .btn { flex: 1; justify-content: center; }
   .g2-card { padding: 14px 12px 12px; gap: 4px 10px; }

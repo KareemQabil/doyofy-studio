@@ -1,8 +1,7 @@
 /**
- * Entry. Two views:
- *   (default)                 the customer wizard — choose 3D/2D · animated/static, card, setting, details, share
- *   ?view=invite[&i=<config>] the invitation itself (what guests open). Without `i` it shows the canonical
- *                             default (Wine & Gold + Candlelit Hall); with `i` it shows the encoded design.
+ * The standalone invitation (what a self-contained guest link opens):
+ *   ?i=<config>                 the encoded design (src/data/invite-link.js); the RSVP is a demo on this device
+ *   ?view=invite                the sample invitation (QA)
  * Invitation-view URL options (QA / authoring): ?card= &scene= &start=intro|card|pages|rsvp|done
  *   &quality=high|balanced|low &renderer=auto|three|dom &motion=reduced|full &author=1
  */
@@ -13,17 +12,13 @@ import './audio/index.js';
 import './modules.js';
 import { sampleInvitation } from './data/invitation.js';
 import { Studio } from './studio/Studio.js';
-import { Wizard } from './wizard/Wizard.js';
-import { decodeConfig } from './wizard/config.js';
+import { decodeConfig } from './data/invite-link.js';
+import { DemoRSVPAdapter } from './engine/rsvp.js';
 
 const params = new URLSearchParams(location.search);
 const app = document.getElementById('app');
-
-if (params.get('view') === 'invite' || params.has('i')) {
-  const cfg = params.has('i') ? decodeConfig(params.get('i')) : null;
-  window.__studio = new Studio(app, cfg
-    ? { invitation: cfg.invitation, card: cfg.card, scene: cfg.scene, experience: cfg.experience, showSwitcher: params.has('author'), params }
-    : { invitation: sampleInvitation, card: 'wine', scene: 'candlelit', params });
-} else {
-  window.__wizard = new Wizard(app, { assetBase: 'assets/' });
-}
+const cfg = params.has('i') ? decodeConfig(params.get('i')) : null;
+window.__studio = new Studio(app, cfg
+  // a self-contained link has no organizer data behind it on this device: the reply is a demo, and the done screen says so
+  ? { invitation: cfg.invitation, card: cfg.card, scene: cfg.scene, experience: cfg.experience, showSwitcher: params.has('author'), params, rsvp: new DemoRSVPAdapter(), guest: cfg.guest ?? null }
+  : { invitation: sampleInvitation, card: 'kit-rose-garden', scene: 'silk', params });

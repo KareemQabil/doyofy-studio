@@ -3,14 +3,12 @@
  * silent first), the latest replies, and general-link replies that must be matched to a party.
  */
 import { useMemo, useState } from 'react';
-import { useReviewSettings } from '../../app/review';
-import { OrbitResponseLenses } from '../orbit/OrbitWorkLenses';
 import type { Event, InvitationParty, RSVPResponse } from '../../domain/types';
 import { INVITATION_STATUS, countParties, invitationStatus, normaliseForSearch, searchParties } from '../../domain/parties';
 import { publishState } from '../../domain/invitation';
 import { people, plural, pluralOf, P, relativeTime } from '../../domain/format';
 import { GuestViews } from '../shared/GuestViews';
-import { Avatar, Badge, Banner, Button, Dialog, EmptyState, ErrorState, FilterChips, Icon, PageHeader, Panel, ProgressBar, SearchInput, Skeleton, Stat } from '../../ui';
+import { Avatar, Badge, Banner, Button, Dialog, EmptyState, ErrorState, FilterChips, Icon, PageHeader, Panel, ProgressBar, SearchInput, Stat, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
 import { Link, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -23,7 +21,6 @@ type Tab = 'pending' | 'recent' | 'unmatched';
 const CHANNEL: Record<RSVPResponse['channel'], string> = { guest_link: 'من رابطه الشخصي', general_link: 'من الرابط العام', organizer: 'سجّلتَه يدويًا' };
 
 export function RsvpPage({ event }: { event: Event }) {
-  const {theme}=useReviewSettings();
   const parties = useParties(event.id);
   const responses = useResponses(event.id);
   const design = useDesign(event.id);
@@ -53,7 +50,7 @@ export function RsvpPage({ event }: { event: Event }) {
   const replied = c.parties - c.pendingParties;
 
   if (parties.error || responses.error) return <ErrorState error={parties.error || responses.error} onRetry={() => { parties.refetch(); responses.refetch(); }} />;
-  if (parties.loading || responses.loading) return <Skeleton lines={8} />;
+  if (parties.loading || responses.loading) return <PageLoader />;
 
   return (
     <>
@@ -75,11 +72,11 @@ export function RsvpPage({ event }: { event: Event }) {
             </div>
           </div>}
 
-          {theme==='orbit'?<OrbitResponseLenses value={tab} onChange={t=>navigate(paths.rsvp(event.id,t==='pending'?undefined:t),{replace:true})} pending={c.pendingParties} recent={(responses.data??[]).filter(r=>r.partyId).length} unmatched={unmatched.length}/>:<FilterChips label="عرض" value={tab} onChange={(t) => navigate(paths.rsvp(event.id, t === 'pending' ? undefined : t), { replace: true })} options={[
+          <FilterChips label="عرض" value={tab} onChange={(t) => navigate(paths.rsvp(event.id, t === 'pending' ? undefined : t), { replace: true })} options={[
             { id: 'pending', label: 'بانتظار الرد', count: c.pendingParties },
             { id: 'recent', label: 'آخر الردود', count: (responses.data ?? []).filter((r) => r.partyId).length },
             { id: 'unmatched', label: 'تحتاج مطابقة', count: unmatched.length },
-          ]} />}
+          ]} />
 
           {tab === 'pending' && (
             pending.length === 0 ? <EmptyState compact icon="check-circle" title="الجميع ردّوا">لا أحد بانتظار الرد.</EmptyState> : (

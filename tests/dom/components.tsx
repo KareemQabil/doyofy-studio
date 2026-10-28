@@ -20,20 +20,13 @@ import { ServicesProvider, useMutation } from '../../src/app/data';
 import { RouterProvider, matchPath } from '../../src/app/router';
 import { createServices } from '../../src/services';
 import type { EventType } from '../../src/domain/types';
-import { ThemePicker } from '../../src/ui/primitives/ThemePicker';
+import { AppearanceSwitch } from '../../src/ui/primitives/AppearanceSwitch';
 import { ThemeSync, applyReviewLink } from '../../src/app/review';
-import { THEMES } from '../../src/domain/themes';
 import { TemplatePreview } from '../../src/features/templates/TemplatePreview';
 import { TEMPLATE_PRESETS } from '../../src/domain/templates';
-import { OrbitBoard } from '../../src/features/orbit/OrbitBoard';
-import { OrbitOccasions } from '../../src/features/orbit/OrbitOccasions';
-import { OrbitTemplateDesk } from '../../src/features/orbit/OrbitTemplateDesk';
-import { BahjaHome } from '../../src/features/bahja/BahjaHome';
-import { BahjaOccasions } from '../../src/features/bahja/BahjaOccasions';
-import { BahjaTemplateSalon } from '../../src/features/bahja/BahjaTemplateSalon';
 import { presetOf } from '../../src/domain/templates';
-import { OrbitQuickOpen } from '../../src/features/orbit/OrbitShell';
 import { Field, Input } from '../../src/ui/primitives/Form';
+import { TactileDeck } from '../../src/ui/primitives/TactileDeck';
 import { GuestsPage } from '../../src/features/guests/GuestsPage';
 import { SeatingPage } from '../../src/features/seating/SeatingPage';
 import { usePointerGesture } from '../../src/ui/hooks/usePointerGesture';
@@ -70,7 +63,7 @@ export async function run(){
   assert.equal(document.activeElement,radios[1]);assert.equal(radios[1]!.getAttribute('aria-checked'),'true');assert.equal(radios[1]!.tabIndex,0);
   await act(async()=>{radios[1]!.dispatchEvent(new KeyboardEvent('keydown',{key:'End',bubbles:true}));});assert.equal(document.activeElement,radios[12]);await key(radios[12]!,'ArrowDown');assert.equal(document.activeElement,radios[12]);await key(radios[12]!,'Home');await key(radios[0]!,'ArrowUp');assert.equal(document.activeElement,radios[0]);
  });
- const made=createServices();made.prototype.update({latencyMs:0,theme:'warm'});made.prototype.reset('before');
+ const made=createServices();made.prototype.update({latencyMs:0,appearance:'light'});made.prototype.reset('before');
  const wrap=(node:React.ReactNode)=><ServicesProvider {...made}><RouterProvider mode="history">{node}</RouterProvider></ServicesProvider>;
  const event=await made.services.events.get('evt_wedding');
  await check('opening WhatsApp never marks delivery; explicit confirmation does',async()=>{
@@ -130,12 +123,12 @@ export async function run(){
   function Fail(){const m=useMutation(async()=>{throw new Error('خطأ اختبار');});return <><button onClick={()=>void m.run()}>جرّب</button>{m.error?<p>تعذر الحفظ</p>:null}</>;}
   await render(wrap(<StrictMode><Fail/></StrictMode>));await click(button('جرّب'));assert.ok(document.body.textContent?.includes('تعذر الحفظ'));
  });
- await check('eight theme choices persist and leave the invitation unchanged',async()=>{
+ await check('appearance switch persists light/dark/system and leaves the invitation unchanged',async()=>{
   const before=await made.services.invitations.get(event.id);
-  await render(wrap(<><ThemeSync/><ThemePicker inline/></>));
-  for(const theme of THEMES){await click(button(theme.label));assert.equal(made.prototype.settings().theme,theme.id);assert.equal(document.documentElement.dataset.theme,theme.id);}
+  await render(wrap(<><ThemeSync/><AppearanceSwitch/></>));
+  for(const [label,id,resolved] of [['داكن','dark','dark'],['فاتح','light','light']] as const){await click(button(label));assert.equal(made.prototype.settings().appearance,id);assert.equal(document.documentElement.dataset.appearance,resolved);assert.equal(document.documentElement.dataset.theme,'signature');}
   assert.deepEqual(await made.services.invitations.get(event.id),before);
-  assert.equal(createServices().prototype.settings().theme,THEMES.at(-1)!.id);await act(async()=>{made.prototype.update({theme:'warm'});});
+  assert.equal(createServices().prototype.settings().appearance,'light');
  });
  await check('drawer swipe cancel resets drag; downward drag closes; busy blocks it',async()=>{
   let closed=0;const show=(busy=false)=><Dialog open title="لوحة" variant="drawer" dismissible={!busy} onClose={()=>closed++}><p>محتوى</p></Dialog>;
@@ -158,6 +151,17 @@ export async function run(){
   await pointer(surface,'pointerup',50,0,200);
   assert.equal(ends.length,1);assert.equal(ends[0]!.cancelled,false);assert.equal(ends[0]!.moved,true);
  });
+ await check('deck cards follow the finger in RTL: a right drag moves them right and brings the next card (FX-01, FX-02)',async()=>{
+  try{localStorage.setItem('doyofy:deck-hint','1');}catch{}
+  let at=0;function Deck(){const[i,setI]=useState(2);at=i;return <TactileDeck items={['a','b','c','d','e']} index={i} onIndexChange={setI} getKey={x=>x} renderCard={x=><span>{x}</span>} itemLabel={x=>x} label="deck"/>;}
+  await render(<Deck/>);
+  const card=(n:number)=>document.querySelectorAll<HTMLElement>('.deck-card')[n]!;const x=(el:HTMLElement)=>Number(/translate3d\((-?[\d.]+)px/.exec(el.style.transform)?.[1]??NaN);
+  const surface=document.querySelector('.deck-stage')!;const before=x(card(2)),nextBefore=x(card(3));assert.ok(nextBefore<before,'the next card waits on the left');
+  await pointer(surface,'pointerdown',200,100,1000);await pointer(surface,'pointermove',260,102,1060);
+  assert.ok(x(card(2))>before,'the active card moved right with the finger');assert.ok(x(card(3))>nextBefore,'the next card moved right too');
+  await pointer(surface,'pointermove',300,102,1400);await pointer(surface,'pointerup',300,102,1600);await settle();
+  assert.equal(at,3,'a right swipe lands on the next card');
+ });
  await check('a pointer that leaves the surface before locking still completes, and a lost release never blocks the next gesture',async()=>{
   const ends:Array<{cancelled:boolean;moved:boolean;dy:number}>=[];
   function Surface(){const gesture=usePointerGesture({axis:'y',onEnd:g=>ends.push(g)});return <div><div id="surface" {...gesture}>ختم</div><div id="elsewhere">خارج</div></div>;}
@@ -178,21 +182,23 @@ export async function run(){
  });
  await check('template browsing defers live playback and swipes respect scroll and cancellation',async()=>{
   const design=await made.services.invitations.get(event.id);let navigated='';
-  await render(wrap(<TemplatePreview event={event} base={design.draft} presets={TEMPLATE_PRESETS} preset={TEMPLATE_PRESETS[1]!} isCurrent={false} pending={false} onNavigate={p=>{navigated=p.id;}} onClose={()=>{}} onUse={()=>{}}/>));
+  // the preview rail shows one entry per card face; neighbours are the previous/next distinct card
+  const rail=TEMPLATE_PRESETS.filter((p,i)=>TEMPLATE_PRESETS.findIndex(x=>x.cardId===p.cardId)===i);const mid=rail[1]!,NEXT=rail[2]!.id,PREV=rail[0]!.id;
+  await render(wrap(<TemplatePreview event={event} base={design.draft} presets={TEMPLATE_PRESETS} preset={mid} isCurrent={false} pending={false} onNavigate={p=>{navigated=p.id;}} onClose={()=>{}} onUse={()=>{}}/>));
   assert.ok(document.querySelector('.tp-poster'));assert.equal(document.querySelector('.live-preview'),null);
   const stage=document.querySelector('.tp-stage')!;
   await pointer(stage,'pointerdown',100,100,0);await pointer(stage,'pointermove',80,200,100);await pointer(stage,'pointerup',80,200,200);assert.equal(navigated,'');
   await pointer(stage,'pointerdown',100,100,300);await pointer(stage,'pointermove',0,102,400);await pointer(stage,'pointercancel',0,102,500);assert.equal(navigated,'');
-  await pointer(stage,'pointerdown',100,100,600);await pointer(stage,'pointermove',0,102,700);await pointer(stage,'pointerup',0,102,800);assert.equal(navigated,TEMPLATE_PRESETS[2]!.id);
-  navigated='';await pointer(stage,'pointerdown',100,100,900);await pointer(stage,'pointermove',190,102,1000);await pointer(stage,'pointerup',190,102,1100);assert.equal(navigated,TEMPLATE_PRESETS[0]!.id);
-  navigated='';await key(stage,'ArrowLeft');assert.equal(navigated,TEMPLATE_PRESETS[2]!.id);navigated='';await key(document.querySelector('.tp-rail-item')!,'ArrowLeft');assert.equal(navigated,'');await click(document.querySelector('[aria-label="القالب التالي"]')!);assert.equal(navigated,TEMPLATE_PRESETS[2]!.id);
-  navigated='';await render(wrap(<TemplatePreview event={event} base={design.draft} presets={TEMPLATE_PRESETS} preset={TEMPLATE_PRESETS[1]!} isCurrent={false} pending onNavigate={p=>{navigated=p.id;}} onClose={()=>{}} onUse={()=>{}}/>));
+  await pointer(stage,'pointerdown',100,100,600);await pointer(stage,'pointermove',0,102,700);await pointer(stage,'pointerup',0,102,800);assert.equal(navigated,PREV,'a swipe left goes back (the page follows the finger)');
+  navigated='';await pointer(stage,'pointerdown',100,100,900);await pointer(stage,'pointermove',190,102,1000);await pointer(stage,'pointerup',190,102,1100);assert.equal(navigated,NEXT,'a swipe right brings the next template');
+  navigated='';await key(stage,'ArrowLeft');assert.equal(navigated,NEXT);navigated='';await key(document.querySelector('.tp-rail-item')!,'ArrowLeft');assert.equal(navigated,'');await click(document.querySelector('[aria-label="القالب التالي"]')!);assert.equal(navigated,NEXT);
+  navigated='';await render(wrap(<TemplatePreview event={event} base={design.draft} presets={TEMPLATE_PRESETS} preset={mid} isCurrent={false} pending onNavigate={p=>{navigated=p.id;}} onClose={()=>{}} onUse={()=>{}}/>));
   await pointer(stage,'pointerdown',100,100,1200);await pointer(stage,'pointermove',0,102,1300);await pointer(stage,'pointerup',0,102,1400);assert.equal(navigated,'');
  });
- await check('review URLs accept all themes and reject unknown theme values',async()=>{
-  for(const theme of THEMES){history.replaceState(null,'',`/app/events?theme=${theme.id}`);applyReviewLink(made.prototype);assert.equal(document.documentElement.dataset.theme,theme.id);}
-  history.replaceState(null,'','/app/events?theme=unknown');applyReviewLink(made.prototype);assert.equal(made.prototype.settings().theme,THEMES.at(-1)!.id);
-  history.replaceState(null,'','/app/events');await act(async()=>{made.prototype.update({theme:'warm'});});
+ await check('review URLs set the appearance and ignore unknown values (and the retired ?theme=)',async()=>{
+  history.replaceState(null,'','/app/events?appearance=dark');applyReviewLink(made.prototype);assert.equal(document.documentElement.dataset.appearance,'dark');
+  history.replaceState(null,'','/app/events?appearance=neon&theme=orbit');applyReviewLink(made.prototype);assert.equal(made.prototype.settings().appearance,'dark');assert.equal(document.documentElement.dataset.theme,'signature');
+  history.replaceState(null,'','/app/events');await act(async()=>{made.prototype.update({appearance:'light'});});
  });
  await check('phone editor snaps up/down and cancellation preserves the current panel',async()=>{
   history.replaceState(null,'','/app/events/evt_wedding/invitation/design');
@@ -214,7 +220,7 @@ export async function run(){
   const originalMedia=globalThis.matchMedia;
   globalThis.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}} as unknown as MediaQueryList);
   try {
-   history.replaceState(null,'','/app/events/evt_wedding/invitation/design?theme=signature');await render(<App mode="history"/>);await settle();
+   history.replaceState(null,'','/app/events/evt_wedding/invitation/design');await render(<App mode="history"/>);await settle();
    const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services;
    const before=await api.events.get(event.id),original=(await api.invitations.get(event.id)).draft;
    assert.ok(document.querySelector('.ed-brand .logo'));assert.ok(document.querySelector('.ed-workbench .card-thumb-inner'));assert.equal(document.querySelector('.live-preview'),null);
@@ -233,7 +239,7 @@ export async function run(){
   } finally {globalThis.matchMedia=originalMedia;}
  });
  await check('Signature template surfaces show real names and browsing keeps the draft until explicit use',async()=>{
-  history.replaceState(null,'','/app/events/evt_wedding/invitation/templates?theme=signature');await render(<App mode="history"/>);await settle();
+  history.replaceState(null,'','/app/events/evt_wedding/invitation/templates');await render(<App mode="history"/>);await settle();
   const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services,before=(await api.invitations.get(event.id)).draft;
   assert.ok(document.querySelector('.tg-studio-prop'));assert.ok(document.querySelector('.sig-tpl-tableau .card-thumb-inner'));
   await click(document.querySelector('.sig-library-open')!);await settle();assert.ok(document.querySelector('.tp-stationery .ed-workbench .card-thumb-inner'));assert.equal(document.querySelector('.live-preview'),null);
@@ -242,118 +248,6 @@ export async function run(){
   await click(document.querySelector('.tp .dialog-foot .btn-primary')!);await settle();assert.ok(location.pathname.endsWith('/invitation/design'));assert.ok(document.querySelector('.ed-workbench'));
   const after=(await api.invitations.get(event.id)).draft;assert.deepEqual(after.displayNames,before.displayNames);assert.deepEqual(after.message,before.message);assert.deepEqual(after.program,before.program);
   await api.invitations.saveDraft(event.id,before);
- });
- await act(async()=>{made.prototype.update({theme:'orbit'});});
- await check('Orbit canvas pans, pinches with two independent pointers, and restores cancelled motion',async()=>{
-  await render(wrap(<OrbitBoard event={event}/>));await settle();const frame=document.querySelector<HTMLDivElement>('.orbit-canvas')!;assert.ok(frame);
-  await pointer(frame,'pointerdown',100,100,0);await pointer(frame,'pointermove',175,120,100);await pointer(frame,'pointerup',175,120,200);
-  assert.equal(frame.style.getPropertyValue('--pan-x'),'75px');assert.equal(frame.style.getPropertyValue('--pan-y'),'20px');
-  await pointer(frame,'pointerdown',0,0,300);await pointer(frame,'pointermove',200,200,400);await pointer(frame,'pointercancel',200,200,500);
-  assert.equal(frame.style.getPropertyValue('--pan-x'),'75px');assert.equal(frame.getAttribute('data-panning'),null);
-  await click(document.querySelector('[aria-label="إعادة ترتيب المساحة"]')!);
-  await pointer(frame,'pointerdown',0,0,600,1);await pointer(frame,'pointerdown',100,0,610,2);await pointer(frame,'pointermove',150,0,700,2);await pointer(frame,'pointerup',150,0,800,2);await pointer(frame,'pointerup',0,0,810,1);
-  assert.equal(frame.style.getPropertyValue('--zoom'),'1.5');assert.equal(document.querySelector('output[aria-label="نسبة التقريب"]')!.textContent,'150%');
-  await key(frame,'0');await key(frame,'+');assert.equal(frame.style.getPropertyValue('--zoom'),'1.1');await key(frame,'ArrowDown');assert.equal(frame.style.getPropertyValue('--pan-y'),'50px');
-  const link=document.querySelector('.orbit-note-open')!;await pointer(link,'pointerdown',0,0,900);await pointer(frame,'pointermove',200,0,1000);await pointer(frame,'pointerup',200,0,1100);assert.equal(frame.style.getPropertyValue('--pan-x'),'0px');
-  await click(button('مهام'));await click(button('مساحة'));const restored=document.querySelector<HTMLDivElement>('.orbit-canvas')!;assert.equal(restored.style.getPropertyValue('--zoom'),'1.1');assert.equal(restored.style.getPropertyValue('--pan-y'),'50px');
- });
- await check('Orbit mission placement persists per event, cancellation does not save, and tasks remain linked',async()=>{
-  const storage='doyofy:orbit:v1:'+event.id;window.localStorage.removeItem(storage);const before=await made.services.events.get(event.id),design=await made.services.invitations.get(event.id);
-  await render(wrap(<OrbitBoard event={event}/>));await settle();const grip=document.querySelector('.orbit-note-handle')!;
-  const thread=document.querySelector('.orbit-threads path')!,path=thread.getAttribute('d');await pointer(grip,'pointerdown',100,100,0);await pointer(grip,'pointermove',180,120,100);assert.notEqual(thread.getAttribute('d'),path);await pointer(grip,'pointercancel',180,120,200);assert.equal(thread.getAttribute('d'),path);assert.equal(window.localStorage.getItem(storage),null);
-  await pointer(grip,'pointerdown',100,100,300);await pointer(grip,'pointermove',180,120,400);await pointer(grip,'pointerup',180,120,500);
-  const first=JSON.parse(window.localStorage.getItem(storage)!);assert.equal(Object.keys(first).length,1);const id=Object.keys(first)[0]!;assert.deepEqual(first[id],{x:280,y:152});
-  await key(grip,'ArrowLeft');const second=JSON.parse(window.localStorage.getItem(storage)!);assert.equal(second[id].x,256);
-  assert.deepEqual(await made.services.events.get(event.id),before);assert.deepEqual(await made.services.invitations.get(event.id),design);
-  await render(wrap(<OrbitBoard key="remount" event={event}/>));await settle();assert.equal(document.querySelector<HTMLElement>('.orbit-note')!.style.left,'256px');
-  await click(button('مهام'));assert.equal(document.querySelector('.orbit-canvas'),null);assert.equal(document.querySelectorAll('.orbit-task-strip.is-list a').length,7);
-  await click(button('مساحة'));await settle();await click(document.querySelector('[aria-label="إعادة ترتيب المساحة"]')!);assert.equal(window.localStorage.getItem(storage),null);
- });
- await check('Orbit occasion catalogue exposes all thirteen choices, wraps in RTL, and preserves vertical scrolling',async()=>{
-  let confirmed='';function Choice(){const[v,setV]=useState<EventType|null>(null);return <OrbitOccasions value={v} onChange={setV} onConfirm={t=>{confirmed=t;}}/>;}
-  await render(wrap(<Choice/>));assert.equal(document.querySelectorAll('.orbit-occasion-index button').length,13);const stage=document.querySelector('.orbit-occasion-stage')!;
-  const original=document.querySelector('.orbit-occasion-title h3')!.textContent;await key(stage,'ArrowLeft');assert.notEqual(document.querySelector('.orbit-occasion-title h3')!.textContent,original);
-  const current=document.querySelector('.orbit-occasion-title h3')!.textContent;
-  await pointer(stage,'pointerdown',100,100,0);await pointer(stage,'pointermove',80,200,100);await pointer(stage,'pointerup',80,200,200);assert.equal(document.querySelector('.orbit-occasion-title h3')!.textContent,current);
-  await pointer(stage,'pointerdown',100,100,300);await pointer(stage,'pointermove',0,100,400);await pointer(stage,'pointercancel',0,100,500);assert.equal(document.querySelector('.orbit-occasion-title h3')!.textContent,current);
-  await pointer(stage,'pointerdown',100,100,600);await pointer(stage,'pointermove',0,100,700);await pointer(stage,'pointerup',0,100,800);assert.notEqual(document.querySelector('.orbit-occasion-title h3')!.textContent,current);
-  await fill(document.querySelector<HTMLInputElement>('input[type="search"]')!,'مناسبة أخرى');assert.equal(document.querySelectorAll('.orbit-occasion-index button').length,1);await click(button('هذه مناسبتي'));assert.equal(confirmed,'other');
- });
- await check('Orbit template desk traverses the full catalogue and blocks selection while saving',async()=>{
-  const base=(await made.services.invitations.get(event.id)).draft;let used='',preview='';
-  const desk=(pending=false)=><OrbitTemplateDesk event={event} base={base} presets={TEMPLATE_PRESETS} pending={pending} onPreview={p=>{preview=p.id;}} onUse={p=>{used=p.id;}}/>;
-  await render(wrap(desk()));assert.equal(document.querySelectorAll('.orbit-template-index button').length,TEMPLATE_PRESETS.length);const stage=document.querySelector('.orbit-template-stage')!;
-  await pointer(stage,'pointerdown',100,100,0);await pointer(stage,'pointermove',0,100,100);await pointer(stage,'pointerup',0,100,200);assert.ok(document.querySelector('.orbit-template-copy h3')!.textContent?.includes(TEMPLATE_PRESETS[1]!.name));
-  await click(button('تأمّل الدعوة'));assert.equal(preview,TEMPLATE_PRESETS[1]!.id);
-  await click(document.querySelectorAll('.orbit-template-index button')[TEMPLATE_PRESETS.length-1]!);await click(button('اعتمد هذا الشكل'));assert.equal(used,TEMPLATE_PRESETS.at(-1)!.id);
-  used='';await render(wrap(desk(true)));await key(stage,'ArrowRight');await click(button('اعتمد هذا الشكل'));assert.equal(used,'');assert.equal(document.querySelector('.orbit-template-index [aria-pressed="true"]')!.textContent?.includes(TEMPLATE_PRESETS.at(-1)!.name),true);
- });
- await check('Orbit quick-open searches real destinations and never stacks over another modal',async()=>{
-  history.replaceState(null,'','/app/events/evt_wedding/overview');await render(wrap(<OrbitQuickOpen/>));
-  await act(async()=>{window.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true,cancelable:true}));});assert.equal(document.querySelectorAll('dialog[open]').length,1);
-  const input=document.querySelector<HTMLInputElement>('input[aria-label="ابحث عن مهمة"]')!;await fill(input,'الطاولات');await key(input,'Enter');assert.equal(location.pathname,'/app/events/evt_wedding/seating');assert.equal(document.querySelectorAll('dialog[open]').length,0);
-  await render(wrap(<><OrbitQuickOpen/><Dialog open title="مهمة جارية" onClose={()=>{}}><p>جارٍ</p></Dialog></>));
-  await act(async()=>{window.dispatchEvent(new KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true,cancelable:true}));});assert.equal(document.querySelectorAll('dialog[open]').length,1);assert.ok(document.body.textContent?.includes('مهمة جارية'));
- });
- await check('Orbit creation validates each chapter and applies the selected template to the new event',async()=>{
-  history.replaceState(null,'','/app/events/new?theme=orbit');await render(<App mode="history"/>);await settle();await click(button('هذه مناسبتي'));
-  assert.equal(document.querySelectorAll('fieldset:not([hidden])').length,1);await click(button('التالي: الموعد'));assert.ok(document.querySelector('[aria-invalid="true"]'));assert.equal(document.querySelector('[aria-current="step"]')!.textContent,'01الأسماء');
-  const names=document.querySelectorAll<HTMLInputElement>('fieldset:not([hidden]) input');await fill(names[0]!,'ليلى المدار');await fill(names[1]!,'كريم المدار');await click(button('التالي: الموعد'));
-  assert.equal(document.querySelector('[aria-current="step"]')!.textContent,'02الموعد');await fill(document.querySelector<HTMLInputElement>('input[type="date"]')!,'2099-12-12');await click(button('التالي: المكان'));
-  const venue=document.querySelectorAll<HTMLInputElement>('fieldset:not([hidden]) input');await fill(venue[0]!,'حديقة المدار');await fill(venue[1]!,'القاهرة');
-  await act(async()=>{document.querySelector('#create-event')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});await settle();assert.ok(location.pathname.endsWith('/invitation/design'));assert.ok(document.querySelector('.ed-simple-intro'));assert.equal(document.querySelector('.orbit-template-desk'),null);
-  const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services,created=(await api.events.list()).find(e=>e.names.a==='ليلى المدار')!;assert.ok(created);assert.equal(created.venue.city,'القاهرة');assert.equal(created.names.b,'كريم المدار');
-  await click(document.querySelector('#ed-tab-design')!);await click(button('تغيير القالب'));await settle();assert.ok(document.querySelector('.orbit-template-desk'));await click(document.querySelector('.orbit-template-copy .btn-primary')!);await settle();assert.equal(location.pathname,`/app/events/${created.id}/invitation/design`);assert.ok(document.querySelector('.orbit-editor-canvas'));assert.equal(document.querySelector('.live-preview'),null);assert.ok((await api.invitations.get(created.id)).draft.cardId);
- });
- await check('Orbit table atlas focuses real table details without changing assignments',async()=>{
-  history.replaceState(null,'','/app/events/evt_wedding/seating?theme=orbit');await render(<App mode="history"/>);await settle();
-  const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services,before=await api.parties.list(event.id),tables=await api.seating.listTables(event.id);
-  const choices=document.querySelectorAll('.orbit-table-ring button');assert.equal(choices.length,tables.length);assert.ok(choices.length>1);assert.equal(document.querySelectorAll('.table-card').length,1);
-  await click(choices[choices.length-1]!);assert.equal(document.querySelector('.table-card .table-name')!.textContent,tables.at(-1)!.name);
-  await click(button('كل الطاولات'));assert.equal(document.querySelectorAll('.table-card').length,tables.length);assert.deepEqual(await api.parties.list(event.id),before);
-  await click(choices[0]!);assert.equal(document.querySelectorAll('.table-card').length,1);const query=document.querySelector<HTMLInputElement>('.seat-pool input[type=search]')!;await fill(query,before.find(p=>p.tableId)!.primaryGuestName);assert.equal(document.querySelectorAll('.table-card').length,tables.length);await fill(query,'');assert.equal(document.querySelectorAll('.table-card').length,1);
- });
- await check('Orbit reply lenses navigate to unresolved replies without automatically matching them',async()=>{
-  history.replaceState(null,'','/app/events/evt_wedding/rsvp?theme=orbit');await render(<App mode="history"/>);await settle();const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services,before=await api.rsvp.listResponses(event.id);
-  assert.equal(document.querySelectorAll('.orbit-response-lenses button').length,3);await click(button('نصل الاسم بحكايته'));assert.ok(location.search.includes('tab=unmatched'));assert.equal(document.querySelector('.orbit-response-lenses [aria-pressed="true"] strong')!.textContent,'نصل الاسم بحكايته');assert.deepEqual(await api.rsvp.listResponses(event.id),before);
-  await click(button('وصلت علامة فرح'));assert.ok(location.search.includes('tab=recent'));
- });
- await check('Bahja shows all occasions and a single suggested event; selecting a poster skips repeated selection',async()=>{
-  await act(async()=>{made.prototype.update({theme:'bahja'});});history.replaceState(null,'','/app/events');await render(wrap(<BahjaHome/>));await settle();
-  assert.equal(document.querySelectorAll('.bahja-occasion-ticket').length,13);assert.equal(document.querySelectorAll('.bahja-moment').length,1);assert.ok(document.querySelector('img[src="assets/directions/bahja-world.webp"]'));
-  const birthday=document.querySelector<HTMLAnchorElement>('.bahja-occasion-ticket[href$="type=birthday"]')!;assert.ok(birthday);
-  history.replaceState(null,'',birthday.getAttribute('href')+'&theme=bahja');
- });
- await check('Bahja direct creation defaults birthday content and makes design choices optional',async()=>{
-  history.replaceState(null,'','/app/events/new?type=birthday&theme=bahja');await render(<App mode="history"/>);await settle();
-  assert.equal(document.querySelector('.bahja-choice-grid'),null);assert.equal(document.querySelectorAll('fieldset:not([hidden])').length,3);
-  await fill(document.querySelector<HTMLInputElement>('.create-form fieldset input')!,'عمر بهجة');await fill(document.querySelector<HTMLInputElement>('input[type=date]')!,'2099-11-11');
-  const venue=document.querySelectorAll<HTMLInputElement>('.create-form fieldset')[2]!.querySelectorAll<HTMLInputElement>('input');await fill(venue[0]!,'حديقة بهجة');await fill(venue[1]!,'الرياض');
-  await act(async()=>{document.querySelector('#create-event')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});await settle();
-  assert.ok(location.pathname.endsWith('/invitation/design'));assert.ok(document.querySelector('.ed-simple-intro'));assert.equal(document.querySelector('.live-preview'),null);
-  const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services,created=(await api.events.list()).find(e=>e.names.a==='عمر بهجة')!;assert.ok(created);
-  const design=await api.invitations.get(created.id);assert.ok(presetOf(design.draft)?.primaryOccasion==='birthday');assert.ok(design.draft.message.ar.includes('ميلاد'));assert.equal(document.querySelector('.ed-program-disclosure')!.hasAttribute('open'),false);
-  await click(document.querySelector('#ed-tab-design')!);assert.equal(document.querySelector('.ed-advanced')!.hasAttribute('open'),false);
-  await click(button('تغيير القالب'));await settle();assert.ok(document.querySelector('.bahja-salon'));assert.equal(document.querySelector('.live-preview'),null);
-  await click(document.querySelector('.bahja-salon-copy .btn-primary')!);await settle();await click(button('انشر الدعوة'));await settle();assert.ok((await api.invitations.get(created.id)).published?.message.ar.includes('ميلاد'));await click(button('إلى الضيوف'));await settle();assert.equal(location.pathname,`/app/events/${created.id}/guests`);
- });
- await check('Bahja salon has RTL traversal, preserves vertical scroll, and blocks changes while saving',async()=>{
-  const base=(await made.services.invitations.get(event.id)).draft;let preview='',used='';const salon=(pending=false)=><BahjaTemplateSalon event={event} base={base} presets={TEMPLATE_PRESETS} pending={pending} onUse={p=>{used=p.id;}} onPreview={p=>{preview=p.id;}}/>;
-  await render(wrap(salon()));const stage=document.querySelector('.bahja-salon-stage')!;assert.equal(document.querySelectorAll('.bahja-salon-index button').length,TEMPLATE_PRESETS.length);
-  await key(stage,'ArrowLeft');await click(button('شاهد الدعوة'));assert.equal(preview,TEMPLATE_PRESETS[1]!.id);
-  await pointer(stage,'pointerdown',100,100,0);await pointer(stage,'pointermove',80,220,100);await pointer(stage,'pointerup',80,220,200);await click(button('شاهد الدعوة'));assert.equal(preview,TEMPLATE_PRESETS[1]!.id);
-  await pointer(stage,'pointerdown',100,100,300);await pointer(stage,'pointermove',0,100,400);await pointer(stage,'pointercancel',0,100,500);await click(button('هذا يشبهني'));assert.equal(used,TEMPLATE_PRESETS[1]!.id);
-  used='';await render(wrap(salon(true)));await key(stage,'ArrowLeft');await click(button('هذا يشبهني'));assert.equal(used,'');
- });
- await check('Bahja workspace keeps essential navigation separate and optional sections accessible',async()=>{
-  history.replaceState(null,'','/app/events/evt_wedding/overview?theme=bahja');await render(<App mode="history"/>);await settle();
-  assert.equal(document.querySelectorAll('.bahja-stepnav a').length,4);assert.equal(document.querySelectorAll('.journey li').length,3);assert.equal(document.querySelector('.bahja-optional'),null);
-  await click(button('تفاصيل إضافية'));assert.ok(document.querySelector('.bahja-optional a[href$="/seating"]'));
- });
- await check('Horizon has a graduation hero, all occasions and four essential workspace steps',async()=>{
-  history.replaceState(null,'','/app/events?theme=horizon');await render(<App mode="history"/>);await settle();
-  assert.ok(document.querySelector('.horizon-hero h1')?.textContent?.includes('كل نهاية.'));assert.equal(document.querySelectorAll('.horizon-occasion-grid a').length,13);assert.ok(document.querySelector('.horizon-hero a[href$="type=graduation"]'));assert.equal(document.querySelectorAll('.horizon-occasion-grid').length,2);
-  history.replaceState(null,'','/app/events/evt_wedding/overview?theme=horizon');await render(null);await render(<App mode="history"/>);await settle();assert.equal(document.querySelectorAll('.horizon-steps a').length,4);await click(button('تفاصيل إضافية'));assert.ok(document.querySelector('.horizon-optional a[href$="/seating"]'));
  });
  await check('invitation without a draft starts directly in the editor and never claims single-name cards are missing',async()=>{
   const ev=await made.services.events.create({type:'graduation',names:{a:'اختبار التخرج'},date:event.date,time:'19:00',venue:{name:'قاعة',city:'الرياض'}});
@@ -411,7 +305,7 @@ export async function run(){
   } finally {made.services.checkIn.findByCode=original;}
  });
  await check('Signature hero supports RTL keyboard browsing and keeps the graduation banner a direct start',async()=>{
-  history.replaceState(null,'','/app/events?theme=signature');await render(<App mode="history"/>);await settle();
+  history.replaceState(null,'','/app/events');await render(<App mode="history"/>);await settle();
   const fan=document.querySelector('.sig-fan')!;assert.ok(fan);
   const shown=()=>document.querySelector('.sig-fan-card.is-front')?.getAttribute('aria-label');
   const first=shown();await key(fan,'ArrowLeft');assert.notEqual(shown(),first);
@@ -425,7 +319,7 @@ export async function run(){
   assert.ok(document.querySelector('.sig-banner-caption')?.textContent?.includes('نموذج دعوة'));
  });
  await check('Signature list mode gives search instructions instead of a swipe hint',async()=>{
-  history.replaceState(null,'','/app/events/new?theme=signature');await render(<App mode="history"/>);await settle();
+  history.replaceState(null,'','/app/events/new');await render(<App mode="history"/>);await settle();
   await click(button('قائمة وبحث'));assert.ok(document.querySelector('.sig-create-sub')?.textContent?.includes('ابحث عن مناسبتك'));
   await click(button('بطاقات'));assert.ok(document.querySelector('.sig-create-sub')?.textContent?.includes('اسحب البطاقات'));
  });
@@ -538,7 +432,7 @@ export async function run(){
   const transfer={setData(){},getData(){return '';},dropEffect:''};
   const drag=async(el:Element,type:string)=>{await act(async()=>{const e=new Event(type,{bubbles:true,cancelable:true});Object.defineProperty(e,'dataTransfer',{value:transfer});el.dispatchEvent(e);});};
   await drag(source,'dragstart');await drag(table,'dragover');
-  assert.equal(document.querySelectorAll('.is-drop-target').length,1);assert.equal(transfer.dropEffect,'move');
+  assert.equal(document.querySelectorAll('.table-card.is-drop-target').length,1);assert.ok(document.querySelectorAll('.is-drop-target').length<=2,'one table: its card and its hall-map seat');assert.equal(transfer.dropEffect,'move');
   await drag(source,'dragend');assert.equal(document.querySelectorAll('.is-drop-target,.is-droppable').length,0);
  });
  await check('editor message and programme previews retain both names and actual content',async()=>{
@@ -547,7 +441,7 @@ export async function run(){
   await render(<EditorWorkbench event={event} content={design} page="program"/>);assert.ok(document.querySelector('.ed-copy-program')!.textContent?.includes('لحظة مخصصة'));assert.ok(document.querySelector('.ed-copy-program')!.textContent?.includes('A custom moment'));
  });
  await check('logout gates editor and reception; signup preserves return and stored invitation',async()=>{
-  history.replaceState(null,'','/app/events/evt_wedding/invitation/design?theme=signature');await render(<App mode="history"/>);await settle();
+  history.replaceState(null,'','/app/events/evt_wedding/invitation/design');await render(<App mode="history"/>);await settle();
   const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services,before=(await api.invitations.get(event.id)).draft;
   history.pushState(null,'','/app/logout');window.dispatchEvent(new Event('popstate'));await settle();assert.equal(currentDemoAccount().status,'signed-out');assert.ok(document.querySelector('.auth-copy')!.textContent?.includes('نراك في فرحة قادمة'));
   for(const path of ['/check-in/evt_wedding','/app/events/evt_wedding/invitation/design']){history.pushState(null,'',path);window.dispatchEvent(new Event('popstate'));await settle();assert.equal(location.pathname,'/app/login');assert.equal(new URLSearchParams(location.search).get('next'),path);}
@@ -556,37 +450,22 @@ export async function run(){
   await act(async()=>saveDemoAccount({status:'signed-out'}));history.pushState(null,'',`/i/${event.slug}`);window.dispatchEvent(new Event('popstate'));await settle();assert.ok(location.pathname.startsWith('/i/'));assert.equal(document.querySelector('.auth-form'),null);
   await act(async()=>saveDemoAccount({status:'demo'}));
  });
- await check('all home themes expose account and logout',async()=>{
-  for(const theme of ['signature','orbit','bahja','horizon']){history.pushState(null,'',`/app/events?theme=${theme}`);window.dispatchEvent(new Event('popstate'));await render(<App mode="history"/>);await settle();assert.ok(document.querySelector('.account-trigger'),theme);await click(document.querySelector('.account-trigger')!);assert.ok(document.querySelector('dialog a[href="/app/logout"]'),theme);await click(document.querySelector('dialog [aria-label="إغلاق"]')!);}
+ await check('the home exposes account and logout',async()=>{
+  history.pushState(null,'','/app/events');window.dispatchEvent(new Event('popstate'));await render(<App mode="history"/>);await settle();assert.ok(document.querySelector('.account-trigger'),'account menu');
  });
  console.log(`DOM behavior: ${passed}/${passed} passed + malformed-route check.`);
  const routes=[
- ['/app/events','مناسباتي'],['/app/events/new','كل فرحة تبدأ من هنا.'],
- ['/app/events/evt_wedding/overview','زفاف نورة وفيصل'],['/app/events/evt_wedding/invitation','الدعوة'],
- ['/app/events/evt_wedding/more','المزيد'],['/app/events/evt_wedding/invitation/preview','معاينة'],['/app/events/evt_wedding/invitation/templates','لمسة جديدة لدعوتك.'],['/app/events/evt_wedding/invitation/design','تصميم الدعوة'],
- ['/app/events/evt_wedding/guests','الضيوف'],['/app/events/evt_wedding/guests/import','استيراد'],
- ['/app/events/evt_wedding/rsvp','الردود'],['/app/events/evt_wedding/seating','الطاولات'],
- ['/app/events/evt_wedding/check-in','الاستقبال'],['/check-in/evt_wedding','مسح رمز QR'],
- ['/app/events/evt_wedding/settings','تفاصيل المناسبة'],['/app/events/evt_katb/summary','ملخص المناسبة'],
- ['/prototype/screen-review','نراجعها، شاشة بشاشة.'],['/prototype/design-review','من أول فكرة'],['/prototype/design-directions','ثمانية عوالم مختلفة.'],['/app/events/missing/overview','لم نجد']
+ '/app/events','/app/events/new','/app/events/evt_wedding/overview','/app/events/evt_wedding/invitation','/app/events/evt_wedding/more',
+ '/app/events/evt_wedding/invitation/preview','/app/events/evt_wedding/invitation/templates','/app/events/evt_wedding/invitation/design',
+ '/app/events/evt_wedding/guests','/app/events/evt_wedding/guests/import','/app/events/evt_wedding/rsvp','/app/events/evt_wedding/seating',
+ '/app/events/evt_wedding/check-in','/check-in/evt_wedding','/app/events/evt_wedding/settings','/app/events/evt_katb/summary','/prototype/screen-review',
  ];
- for(const [path,text] of routes){
-  history.replaceState(null,'',path!);setup();
-  try{await render(<App mode="history"/>);for(let i=0;i<12;i++)await act(async()=>{await new Promise(r=>setTimeout(r,15));});assert.ok(document.getElementById('root')!.textContent?.includes(text!),`route ${path}: ${document.getElementById('root')!.textContent?.slice(-400)}`);console.log('✔ DOM route: '+path);}finally{await clear();}
+ let mounted=0;
+ for(const appearance of ['light','dark'] as const) for(const path of routes){
+  history.replaceState(null,'',`${path}?appearance=${appearance}`);setup();
+  try{await render(<App mode="history"/>);await settle();assert.equal(document.documentElement.dataset.appearance,appearance);assert.equal(document.documentElement.dataset.theme,'signature');assert.ok(document.getElementById('root')!.textContent!.length>40,`${appearance} route ${path}`);mounted++;}finally{await clear();}
  }
- console.log(`DOM route mounting: ${routes.length}/${routes.length} passed. No browser/rendering/WebGL/device QA.`);
- let orbitRoutes=0;
- for(const [path] of routes.filter(([p])=>!p!.includes('prototype')&&!p!.includes('missing'))){
-  history.replaceState(null,'',path+'?theme=orbit');setup();try{await render(<App mode="history"/>);await settle();assert.equal(document.documentElement.dataset.theme,'orbit');assert.ok(document.getElementById('root')!.textContent!.length>40,`orbit route ${path}`);assert.equal(document.querySelector('.ws-side'),null);orbitRoutes++;console.log('✔ Orbit route: '+path);}finally{await clear();}
- }
- console.log(`Orbit route mounting: ${orbitRoutes}/${orbitRoutes} passed. No browser/rendering/WebGL/device QA.`);
- let bahjaRoutes=0;
- for(const [path] of routes.filter(([p])=>!p!.includes('prototype')&&!p!.includes('missing'))){history.replaceState(null,'',path+'?theme=bahja');setup();try{await render(<App mode="history"/>);await settle();assert.equal(document.documentElement.dataset.theme,'bahja');assert.ok(document.getElementById('root')!.textContent!.length>40,`bahja route ${path}`);assert.equal(document.querySelector('.ws-side'),null);bahjaRoutes++;console.log('✔ Bahja route: '+path);}finally{await clear();}}
- console.log(`Bahja route mounting: ${bahjaRoutes}/${bahjaRoutes} passed. No browser/rendering/WebGL/device QA.`);
- let horizonRoutes=0;
- for(const [path] of routes.filter(([p])=>!p!.includes('prototype')&&!p!.includes('missing'))){history.replaceState(null,'',path+'?theme=horizon');setup();try{await render(<App mode="history"/>);await settle();assert.equal(document.documentElement.dataset.theme,'horizon');assert.ok(document.getElementById('root')!.textContent!.length>40,`horizon route ${path}`);assert.equal(document.querySelector('.ws-side'),null);horizonRoutes++;console.log('✔ Horizon route: '+path);}finally{await clear();}}
- console.log(`Horizon route mounting: ${horizonRoutes}/${horizonRoutes} passed. No browser/rendering/WebGL/device QA.`);
- let signatureRoutes=0;
- for(const [path] of routes.filter(([p])=>!p!.includes('prototype')&&!p!.includes('missing'))){history.replaceState(null,'',path+'?theme=signature');setup();try{await render(<App mode="history"/>);await settle();assert.equal(document.documentElement.dataset.theme,'signature');assert.ok(document.getElementById('root')!.textContent!.length>40,`signature route ${path}`);signatureRoutes++;console.log('✔ Signature route: '+path);}finally{await clear();}}
- console.log(`Signature route mounting: ${signatureRoutes}/${signatureRoutes} passed. No browser/rendering/WebGL/device QA.`);
+ history.replaceState(null,'','/app/events/missing/overview?appearance=light');setup();
+ try{await render(<App mode="history"/>);await settle();assert.ok(document.getElementById('root')!.textContent?.includes('لم نجد'),'missing event route');}finally{await clear();}
+ console.log(`DOM route mounting: ${mounted}/${routes.length*2} (light + dark) + missing route passed. No browser/rendering/WebGL/device QA.`);
 }

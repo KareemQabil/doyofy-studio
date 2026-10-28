@@ -69,3 +69,11 @@ body.dy *, body.dy *::before, body.dy *::after { box-sizing: border-box; }
 .gap-5 { --gap: var(--s-5); }
 .dy :is(input,textarea,select) { scroll-margin-block: 100px; }
 @media (max-width: 640px) { .dy :is(input,textarea,select) { font-size: max(16px, 1rem); } }
+
+/* before JavaScript arrives (src/index.html): the logomark draws itself, the same motion as the Lottie loader */
+.boot-mark { position: fixed; inset: 0; display: grid; place-items: center; background: var(--c-canvas); }
+.boot-mark svg { fill: none; stroke: var(--brand-gold); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+.boot-mark path { stroke-dasharray: 1 1; animation: boot-draw 1.6s cubic-bezier(.33,0,.67,1) infinite; }
+.boot-mark path + path { animation-delay: .1s; }
+@keyframes boot-draw { 0% { stroke-dashoffset: 1; } 46%, 54% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -1; } }
+@media (prefers-reduced-motion: reduce) { .boot-mark path { animation: none; stroke-dashoffset: 0; } }

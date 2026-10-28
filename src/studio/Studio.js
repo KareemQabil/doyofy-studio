@@ -10,9 +10,10 @@
  * only; replay tears the run down (timers, listeners, renderers) and starts clean.
  */
 import { CardRegistry, SceneRegistry, PageRegistry, FinaleRegistry, RevealRegistry, AudioRegistry } from '../engine/registries.js';
+import { playCardMotion } from '../cards/card-motion.js';
 import { StateMachine } from '../engine/StateMachine.js';
 import { AudioEngine } from '../engine/AudioEngine.js';
-import { detectQuality, tierAtLeast } from '../engine/Quality.js';
+import { detectQuality } from '../engine/Quality.js';
 import { deriveContent, countdown } from '../data/derive.js';
 import { STRINGS as T } from '../data/strings.js';
 import { PAGE_ORDER } from '../pages/index.js';
@@ -36,7 +37,7 @@ export class Studio {
    * @param {object} opts
    *   invitation  InvitationData (data/invitation.js shape)
    *   card, scene ids; start = intro|card|pages|rsvp|done
-   *   experience  { dimension: '3d' | '2d', motion: 'animated' | 'static' } — what the customer chose in the wizard.
+   *   experience  { dimension: '2d', motion: 'animated' | 'static' } — the organizer's motion choice (dimension is legacy).
    *               3d = best renderer per scene (Three.js where a scene has one), 2d = canonical illustrated renderers;
    *               static = no intro, no idle motion, frozen WebGL frame, fades instead of travel.
    *   embedded    render inside a sized container (wizard preview) instead of the full viewport
@@ -46,15 +47,14 @@ export class Studio {
    *               — prefills the RSVP and bounds the guest count by the party's allowance
    *   doneAction  (platform) an extra button on the thank-you screen: { ar, en, onClick }
    */
-  constructor(host, { invitation, card = 'wine', scene = 'candlelit', start = 'intro', assetBase = 'assets/', rsvp, experience = null, embedded = false, showSwitcher = true, muted = false, params = new URLSearchParams(location.search), guest = null, doneAction = null } = {}) {
+  constructor(host, { invitation, card = 'kit-rose-garden', scene = 'silk', start = 'intro', assetBase = 'assets/', rsvp, experience = null, embedded = false, showSwitcher = true, muted = false, params = new URLSearchParams(location.search), guest = null, doneAction = null } = {}) {
     this.host = host;
     this.params = params;
     this.quality = detectQuality(params);
-    this.experience = experience || { dimension: this.quality.renderer === 'dom' ? '2d' : '3d', motion: this.quality.reducedMotion ? 'static' : 'animated' };
-    if (experience) {
-      if (experience.dimension === '2d') this.quality.renderer = 'dom';
-      if (experience.motion === 'static') this.quality.reducedMotion = true;
-    }
+    // settings are flat (no 3D): `dimension` is kept in the data for old links and always reads 2d
+    this.experience = { dimension: '2d', motion: experience?.motion ?? (this.quality.reducedMotion ? 'static' : 'animated') };
+    this.quality.renderer = 'dom';
+    if (this.experience.motion === 'static') this.quality.reducedMotion = true;
     this.quality.static = this.experience.motion === 'static';
     this.embedded = embedded; this.showSwitcher = showSwitcher; this.startMuted = muted;
     this.guest = guest;
@@ -184,6 +184,7 @@ export class Studio {
     switch (state) {
       case 'card':
         this.el.cardBtn.disabled = false;
+        if (from !== 'pages') this._playFace();   // the face's entrance plays when the card is revealed, not on the way back
         this.el.sheet.inert = true;
         if (from === 'pages') { this.audio.stopMusic(); requestAnimationFrame(() => this.el.cardBtn.focus({ preventScroll: true })); }
         break;
@@ -221,6 +222,12 @@ export class Studio {
 
   // ---------------------------------------------------------------- card
   get theme() { return CardRegistry.get(this.cardId).theme; }
+
+  /** the face's own entrance (src/cards/card-motion.js); static experiences and reduced motion show it at rest */
+  _playFace() {
+    this.faceMotion?.revert();
+    this.faceMotion = playCardMotion(this.el.face, { reduced: this.quality.reducedMotion || this.quality.static });
+  }
 
   _applyCard() {
     const card = CardRegistry.get(this.cardId);
@@ -269,91 +276,36 @@ export class Studio {
     if (!CardRegistry.has(id) || id === this.cardId) return;
     this.cardId = id;
     this._applyCard();
+    if (this.sm?.state === 'card') this._playFace();
     this._syncSwitcher();
     this.scene?.setCard?.(CardRegistry.get(id));
   }
 
-  // ---------------------------------------------------------------- scene (renderer selection + fallback)
-  /**
-   * Progressive mount: the canonical DOM renderer goes up immediately (the stage is never blank),
-   * then heavier renderers are tried best-first; the first that loads within its timeout crossfades
-   * in over the DOM scene. Any failure leaves the DOM scene in place.
-   */
+  // ---------------------------------------------------------------- scene (flat backdrop)
+  /** The setting fills the whole window behind a transparent stage; a change crossfades old → new. */
   async _mountScene() {
     const token = (this._sceneToken = (this._sceneToken || 0) + 1);
-    const stale = () => token !== this._sceneToken;
-    const def = SceneRegistry.get(this.sceneId, 'candlelit');
-    const ok = (r) => {
-      if (r.mode === 'dom') return true;
-      if (r.requires?.includes('webgl') && !this.quality.webgl) return false;
-      if (this.quality.renderer === 'dom') return false;
-      if (this.quality.renderer !== 'auto' && this.quality.renderer !== r.mode) return false;
-      return tierAtLeast(this.quality.tier, r.minQuality);
-    };
-    const ctx = {
-      quality: this.quality, assetBase: this.assetBase, stageRect: () => this.stageRect,
-      state: () => this.sm?.state, card: () => CardRegistry.get(this.cardId), reducedMotion: this.quality.reducedMotion,
-      introStart: () => this.introT0 ?? null,
-    };
-    const dom = def.renderers.find((r) => r.mode === 'dom');
-    const heavy = def.renderers.filter((r) => r.mode !== 'dom' && ok(r));
-    if (heavy.length && !this.quality.webgl && heavy.every((r) => r.requires?.includes('webgl'))) this.debug.sceneErrors.push(`${def.id}: WebGL unavailable → DOM`);
-
-    const domInst = await dom.mount(this.el.layer, ctx);
-    if (stale()) return domInst.destroy();
-    this._swapScene(domInst, def);
-
-    for (const r of heavy) {
-      this.host.dataset.loading = r.mode;
-      try {
-        const inst = await withTimeout(r.mount(this.el.hostScene, ctx), r.timeoutMs || 20000, `${def.id}/${r.mode}`);
-        if (stale()) return inst.destroy();
-        this._swapScene(inst, def);
-        delete this.host.dataset.loading;
-        return;
-      } catch (err) {
-        console.warn(`[scene] ${def.id} ${r.mode} renderer failed — keeping the DOM renderer`, err);
-        this.debug.sceneErrors.push(`${def.id}/${r.mode}: ${err?.message || err}`);
-      }
-    }
-    delete this.host.dataset.loading;
+    const def = SceneRegistry.get(this.sceneId, 'marble');
+    const inst = await def.renderers[0].mount(this.el.hostScene, { quality: this.quality, reducedMotion: this.quality.reducedMotion });
+    if (token !== this._sceneToken) return inst.destroy();
+    this._swapScene(inst, def);
   }
 
   _swapScene(inst, def) {
     const old = this.scene;
-    const fullBleed = inst.mode !== 'dom';
     this.scene = inst;
     this.host.dataset.renderer = inst.mode;
     this.host.dataset.scene = def.id;
+    this.host.dataset.tone = def.tone;
+    this.host.classList.add('full-bleed');
     this.debug.sceneRenderer = `${def.id}:${inst.mode}`;
-    inst.resize?.(this.stageRect);
-    inst.setStage?.(this.sm?.state);
     inst.setPointer?.(this.nx, this.ny);
-    if (fullBleed) {
-      // crossfade: canvas fades in, the DOM scene + ambient echo fade out, then are destroyed
-      this.host.classList.add('full-bleed');
+    if (old) {
       inst.el.classList.add('scene-in');
-      const amb = this.ambient; this.ambient = null;
-      if (old) old.el.classList.add('scene-out');
-      amb?.classList.add('scene-out');
-      setTimeout(() => { old?.destroy(); amb?.remove(); }, 1000);
-    } else {
-      this.host.classList.remove('full-bleed');
-      old?.destroy();
-      this._mountAmbient(inst);
+      old.el.classList.add('scene-out');
+      setTimeout(() => old.destroy(), 700);
     }
     this.audio.setAmbience(SCENE_AMBIENCE[def.id] || null);
-  }
-
-  /** DOM scenes are composed for 390×844: beyond the stage (desktop/ultrawide) show a soft, darkened
-   *  cover-scaled echo of the same scene instead of flat bars. */
-  _mountAmbient(inst) {
-    this.ambient?.remove();
-    this.el.hostScene.querySelectorAll('.scene-ambient').forEach((n) => n.remove());
-    const amb = inst.el.cloneNode(true);
-    amb.classList.add('scene-ambient');
-    this.el.hostScene.prepend(amb);
-    this.ambient = amb;
   }
 
   setScene(id) {
@@ -396,6 +348,7 @@ export class Studio {
       this.leaving = false;
       this.page = n;
       this.el.page.classList.remove('leaving');
+      delete this.el.page.dataset.exit;
       this._renderPage();
     }, this.sm.timing.pageLeave);
   }
@@ -409,6 +362,8 @@ export class Studio {
       b.style.background = on ? t.ink : 'transparent';
       b.style.color = on ? t.paper : t.ink;
     });
+    // FX-13: a decline asks no headcount — the counter folds away and returns with its last value on «سأحضر»
+    const row = root.querySelector('.rsvp-guests-row'); if (row) row.hidden = r.attending === 'no';
     const out = root.querySelector('.rsvp-guests'); if (out) out.textContent = r.guests;
     const [dn, up] = root.querySelectorAll('[data-guests]');
     if (dn) dn.disabled = r.guests <= this.data.rsvp.minGuests;
@@ -444,7 +399,9 @@ export class Studio {
     const th = declined ? T.thanks.no : T.thanks.yes;
     const q = (s) => this.el.done.querySelector(s);
     q('.done-ar').textContent = th.ar; q('.done-ar').style.fontFamily = this.theme.fAr;
-    q('.done-en').textContent = th.en;
+    const demo = !!r.receipt?.demo;   // never claim a reply reached the organizer when it did not
+    q('.done-en').textContent = demo ? 'A demo copy — your reply was not sent to the host.' : th.en;
+    q('.done-demo').hidden = !demo;
     const name = r.name.trim().toUpperCase();
     q('.done-who').textContent = name ? (declined ? name : `${name} · ${r.guests} ${r.guests === 1 ? 'GUEST' : 'GUESTS'}`) : `${[c.enAU, c.arB ? c.enBU : ''].filter(Boolean).join(' & ') || c.arA} · ${c.dateShort}`;
   }
@@ -493,23 +450,44 @@ export class Studio {
     on(host, 'input', (ev) => { if (ev.target.id === 'st-name') { this.rsvp.name = ev.target.value; if (this.rsvp.tried) this._syncRsvp(); } });
     on(host, 'submit', (ev) => { ev.preventDefault(); this.submit(); });
 
-    // sheet gestures: vertical swipe (50 px), wheel (900 ms debounce) — canonical thresholds
+    // sheet gestures: the page follows the finger, then turns on release (50 px or a quick flick).
+    // Vertical: up = next. Sideways (RTL): right = next. At the first/last page the drag resists.
     const sheet = this.el.sheet;
+    const settle = () => { const pg = this.el.page; pg.classList.remove('dragging'); pg.style.removeProperty('transform'); pg.style.removeProperty('opacity'); };
     on(sheet, 'pointerdown', (ev) => {
       if (ev.isPrimary === false || ev.button !== 0) { this._down = null; return; }
       if (ev.target.closest?.('button, a, input, textarea, select, [contenteditable], [data-gesture-ignore]')) { this._down = null; return; }
-      this._down = { id: ev.pointerId, x: ev.clientX, y: ev.clientY };
+      this._down = { id: ev.pointerId, x: ev.clientX, y: ev.clientY, t: performance.now(), axis: null };
+      try { sheet.setPointerCapture(ev.pointerId); } catch { /* synthetic events */ }
+    });
+    on(sheet, 'pointermove', (ev) => {
+      const d = this._down;
+      if (!d || ev.pointerId !== d.id || this.sm.state !== 'pages' || this.leaving) return;
+      const s = this.stageRect.scale;
+      const dx = (ev.clientX - d.x) / s, dy = (ev.clientY - d.y) / s;
+      if (!d.axis) { if (Math.hypot(dx, dy) < 8) return; d.axis = Math.abs(dy) >= Math.abs(dx) ? 'y' : 'x'; this.el.page.classList.add('dragging'); }
+      const v = d.axis === 'y' ? dy : dx;
+      const dir = d.axis === 'y' ? (v < 0 ? 1 : -1) : (v > 0 ? 1 : -1);
+      const t = (this.page + dir < 0 || this.page + dir > 4) ? v * 0.16 : v * 0.6;
+      this.el.page.style.transform = d.axis === 'y' ? `translateY(${t.toFixed(1)}px)` : `translateX(${t.toFixed(1)}px)`;
+      this.el.page.style.opacity = String(1 - Math.min(0.55, Math.abs(t) / 300));
     });
     on(sheet, 'pointerup', (ev) => {
       if (!this._down || ev.pointerId !== this._down.id) return;
       const down = this._down;
       this._down = null;
-      if (this.sm.state !== 'pages') return;
+      if (this.sm.state !== 'pages') return settle();
       const s = this.stageRect.scale;
       const dx = (ev.clientX - down.x) / s, dy = (ev.clientY - down.y) / s;
-      if (Math.abs(dy) > 50 && Math.abs(dy) > Math.abs(dx)) this.go(this.page + (dy < 0 ? 1 : -1));
+      const axis = down.axis || (Math.abs(dy) >= Math.abs(dx) ? 'y' : 'x');
+      const v = axis === 'y' ? dy : dx;
+      const fast = Math.abs(v) > 24 && Math.abs(v) / Math.max(1, performance.now() - down.t) > 0.5;
+      const dir = axis === 'y' ? (v < 0 ? 1 : -1) : (v > 0 ? 1 : -1);
+      const n = this.page + dir;
+      if ((Math.abs(v) > 50 || fast) && n >= 0 && n <= 4) { this.el.page.dataset.exit = `${axis}${v < 0 ? '-' : '+'}`; settle(); this.go(n); return; }
+      settle();
     });
-    on(sheet, 'pointercancel', (ev) => { if (this._down?.id === ev.pointerId) this._down = null; });
+    on(sheet, 'pointercancel', (ev) => { if (this._down?.id === ev.pointerId) { this._down = null; settle(); } });
     on(sheet, 'wheel', (ev) => {
       if (this.sm.state !== 'pages' || Math.abs(ev.deltaY) < 24) return;
       if (ev.target.closest?.('button, a, input, textarea, select, [contenteditable], [data-gesture-ignore]')) return;
@@ -536,9 +514,8 @@ export class Studio {
   _setPointer(nx, ny) {
     this.nx = nx; this.ny = ny;
     const r1 = (v) => Math.round(v * 10) / 10;
-    this.el.tilt.style.transform = `rotateX(${r1(-ny * 16)}deg) rotateY(${r1(nx * 20)}deg)`;
+    this.el.tilt.style.transform = `rotateX(${r1(-ny * 6)}deg) rotateY(${r1(nx * 8)}deg)`;
     this.scene?.setPointer?.(r1(nx), r1(ny));
-    if (this.ambient) for (const [k, v] of Object.entries(this.scene?.el?.style ? { '--pf': this.scene.el.style.getPropertyValue('--pf'), '--pm': this.scene.el.style.getPropertyValue('--pm'), '--pn': this.scene.el.style.getPropertyValue('--pn') } : {})) this.ambient.style.setProperty(k, v);
   }
 
   openCard() {
@@ -600,6 +577,7 @@ export class Studio {
   _syncSwitcher() { if (this.swOpen) { const sc = [...this.el.swSlot.querySelectorAll('.st-chiprow')].map((r) => r.scrollLeft); this._openSwitcher(); this.el.swSlot.querySelectorAll('.st-chiprow').forEach((r, i) => { r.scrollLeft = sc[i]; }); } }
 
   destroy() {
+    this.faceMotion?.revert();
     this.sm?.destroy(); this.scene?.destroy(); this.audio.destroy();
     clearTimeout(this._leaveTimer); clearTimeout(this.sealTimer); clearTimeout(this._replayTimer); clearInterval(this.clock);
     this.cleanups.forEach((f) => f());

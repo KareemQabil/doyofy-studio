@@ -2,7 +2,7 @@
 .sheet-grip { display:none; }
 .dialog-panel { transform:translateY(var(--sheet-drag,0px)); transition:transform var(--dur-slow) var(--ease-out); }
 .dialog-panel[data-dragging],.ed-panel[data-dragging] { transition:none; animation:none; }
-.tp-poster { height:100%; width:auto; max-width:100%; aspect-ratio:360 / 664; border-radius:0; transform:translateX(var(--browse-drag,0px)); transition:transform var(--dur-slow) var(--ease-out); }
+.tp-poster { height:100%; width:auto; max-width:100%; aspect-ratio:360 / 664; border-radius:0; }
 .tp-stage:not(.is-playing) { display:grid; place-items:center; touch-action:pan-y; cursor:grab; }
 .tp-stage:not(.is-playing):active { cursor:grabbing; }
 .tp-swipe-hint { position:absolute; z-index:2; bottom:14px; inset-inline:0; display:flex; align-items:center; justify-content:center; gap:16px; margin:auto; width:max-content; max-width:90%; background:var(--c-surface-elevated); color:var(--c-text-2); border:1px solid var(--c-line); border-radius:var(--r-pill); padding:8px 14px; font-size:11px; pointer-events:none; box-shadow:var(--shadow-2); }
@@ -31,7 +31,7 @@
 .seg,.seg-ind,.seg-btn { border-radius:var(--r-md); }
 .seg-btn { min-height:44px; }
 .btn,.choice,.chip,.catalogue-option { touch-action:manipulation; }
-.input,.textarea,.select { min-height:48px; border-color:var(--c-line-strong); }
+.input,.textarea,.select { min-height:48px; border-color:var(--c-field-border); }
 .btn-primary { box-shadow:0 2px 0 color-mix(in srgb,var(--c-primary) 18%,transparent); }
 .btn-primary:active { box-shadow:none; }
 .catalogue-option .occ-card { border:1px solid var(--c-line); transition:border-color var(--dur),background var(--dur),transform var(--dur); }
@@ -101,10 +101,17 @@
   .catalogue-option .occ-art-frame { height:126px; }
   .tg-grid { gap:24px 16px; }
   .tg-name { font-size:16px; }
-  .theme-trigger:not(.is-compact)>span:not(.theme-trigger-dot) { display:none; }
-  .theme-trigger:not(.is-compact) { width:44px; padding:0; }
   .ed-status { gap:8px; }
 }
 @media(prefers-reduced-motion:no-preference) { .ws-main>*,.events-intro,.occasion-event.is-featured { animation:page-arrive 300ms var(--ease-out) both; } }
 @keyframes page-arrive { from { opacity:0; transform:translateY(7px); } }
 @media(prefers-reduced-motion:reduce) { .tpl-skel { animation:none; } .event-poster,.tp-poster { transition:none; } }
+
+/* useSwipePager: follows the finger, thrown off on release, the next one slides in from the other side */
+[data-pager] { transform: translateX(var(--pager-x, 0px)); transition: transform 170ms cubic-bezier(.4,0,.6,1), opacity 170ms ease; will-change: transform; }
+[data-pager][data-dragging] { transition: none; }
+[data-pager][data-enter="from-left"] { animation: pager-in-left 320ms cubic-bezier(.2,.8,.2,1) both; }
+[data-pager][data-enter="from-right"] { animation: pager-in-right 320ms cubic-bezier(.2,.8,.2,1) both; }
+@keyframes pager-in-left { from { transform: translateX(-38%); opacity: 0; } }
+@keyframes pager-in-right { from { transform: translateX(38%); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { [data-pager] { transition: none; } [data-pager][data-enter] { animation: none; } }

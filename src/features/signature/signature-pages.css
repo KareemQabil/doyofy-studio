@@ -16,14 +16,14 @@
 :root[data-theme='signature'] .eyebrow { color: var(--c-text-2); font-weight: 600; }
 :root[data-theme='signature'] .page-sub { font-size: 15.5px; color: var(--c-text-2); }
 :root[data-theme='signature'] .page-head::after { content: ''; display: block; width: 64px; height: 4px; margin-top: 16px; background: linear-gradient(90deg, var(--brand-red) 0 50%, var(--brand-gold) 50% 75%, var(--brand-turquoise) 75%); }
-:root[data-theme='signature'] .panel { border-radius: var(--r-md); border: 1px solid var(--c-hairline); background: #fff; box-shadow: none; }
+:root[data-theme='signature'] .panel { border-radius: var(--r-md); border: 1px solid var(--c-hairline); background: var(--c-surface); box-shadow: none; }
 :root[data-theme='signature'] .panel-title,
 :root[data-theme='signature'] .section-title,
 :root[data-theme='signature'] .section-head h2 { font: 600 20px/1.5 var(--font-display); }
 :root[data-theme='signature'] .input,
 :root[data-theme='signature'] .select,
 :root[data-theme='signature'] .textarea,
-:root[data-theme='signature'] .search-input { border-radius: var(--r-sm); border-color: var(--c-hairline-strong); background: var(--c-surface-elevated); }
+:root[data-theme='signature'] .search-input { border-radius: var(--r-sm); border-color: var(--c-field-border); background: var(--c-surface-elevated); }
 :root[data-theme='signature'] .input:focus,
 :root[data-theme='signature'] .textarea:focus,
 :root[data-theme='signature'] .select:focus { border-color: var(--brand-charcoal); box-shadow: 0 0 0 3px var(--c-primary-soft); }
@@ -104,7 +104,6 @@
 :root[data-theme='signature'] .ed-handle span { width: 48px; height: 5px; background: var(--c-hairline-strong); }
 
 /* template gallery & design deck */
-:root[data-theme='signature'] .tg-direction-art { display: none; }
 :root[data-theme='signature'] .tg-chips { background: none; }
 .sig-tpl { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr); align-items: center; gap: clamp(20px, 4vw, 60px); margin-top: 8px; overflow-x: clip; padding-block: 8px 24px; }
 .sig-tpl-deck { --deck-w: clamp(210px, min(21vw, calc((100dvh - 330px) / 1.62)), 290px); --deck-h: calc(var(--deck-w) * 1.62 + 30px); }
@@ -249,7 +248,7 @@
 }
 
 /* ── Spots: licensed Phosphor glyphs in a brand disc (no drawn illustrations in «توقيع») ── */
-:root[data-theme='signature'] .journey-artwork{position:relative;display:grid;place-items:center;width:104px;aspect-ratio:1;border-radius:50%;background:var(--sig-ivory,#F2EAD9);color:#262626;box-shadow:inset 0 0 0 1px #C7A661,inset 0 0 0 6px var(--sig-ivory,#F2EAD9),inset 0 0 0 7px rgba(199,166,97,.55)}
+:root[data-theme='signature'] .journey-artwork{position:relative;display:grid;place-items:center;width:104px;aspect-ratio:1;border-radius:50%;background:var(--sig-ivory,#F2EAD9);color:var(--c-text);box-shadow:inset 0 0 0 1px #C7A661,inset 0 0 0 6px var(--sig-ivory,#F2EAD9),inset 0 0 0 7px rgba(199,166,97,.55)}
 :root[data-theme='signature'] .journey-artwork .journey-ill{display:none}
 :root[data-theme='signature'] .journey-artwork .journey-spot{display:block;width:46%;height:auto}
 :root[data-theme='signature'] .journey-artwork::after{content:'';position:absolute;inset-block-start:4%;inset-inline-end:2%;width:18%;aspect-ratio:1;border-radius:50%;background:#BC4749}
@@ -263,80 +262,7 @@
 
 /* ── Reviewer: /prototype/signature-directions ── */
 .sig-dir { max-width: 1280px; margin: 0 auto; padding: clamp(40px, 6vw, 96px) clamp(20px, 4.4vw, 64px) clamp(64px, 8vw, 120px); overflow-x: clip; }
-.sig-dir-intro { display: grid; gap: 18px; max-width: 760px; margin-bottom: clamp(40px, 6vw, 88px); }
 .sig-dir .sig-kicker { font: 600 14px/1 var(--font-display); color: #A23B3D; letter-spacing: .02em; }
-.sig-dir-intro h1 { font: 700 clamp(44px, 7vw, 104px)/1.08 var(--font-display); letter-spacing: -0.03em; }
-.sig-dir-intro p:last-child { font-size: 18px; line-height: 1.85; color: var(--c-text-2); max-width: 36em; }
-.sig-dir-list { list-style: none; padding: 0; display: grid; gap: clamp(48px, 6vw, 96px); counter-reset: d; }
-.sig-dir-item { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 64px); align-items: center; }
-.sig-dir-item figure { margin: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 40px 60px -40px rgba(38, 38, 38, .55), 0 0 0 1px rgba(38, 38, 38, .08); }
-.sig-dir-item img { display: block; width: 100%; height: auto; }
-.sig-dir-copy { display: grid; gap: 14px; justify-items: start; }
-.sig-dir-letter { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; font: 700 28px/1 var(--font-display); }
-.tone-red .sig-dir-letter { background: #BC4749; color: #fff; }
-.tone-night .sig-dir-letter { background: #262626; color: #C7A661; }
-.tone-ivory .sig-dir-letter { background: #F2EAD9; color: #262626; box-shadow: inset 0 0 0 1px #C7A661; }
-.sig-dir-copy h2 { font: 700 clamp(32px, 3.6vw, 52px)/1.2 var(--font-display); letter-spacing: -0.02em; }
-.sig-dir-copy p { font-size: 16px; line-height: 1.85; color: var(--c-text-2); }
-.sig-dir-copy .sig-dir-where { display: flex; gap: 8px; align-items: flex-start; color: var(--c-text); font-weight: 600; font-size: 15px; }
-.sig-dir-copy .sig-dir-where .icon { margin-top: 5px; flex: none; }
-.sig-dir-section { padding-top: clamp(72px, 8vw, 128px); }
-.sig-dir-section > header { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 18px; align-items: baseline; margin-bottom: clamp(24px, 3vw, 44px); max-width: 920px; }
-.sig-dir-section > header .sig-section-num { grid-row: span 2; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: #262626; color: #C7A661; font: 600 15px/1 var(--font-display); }
-.sig-dir-section > header h2 { font: 700 clamp(28px, 3.4vw, 46px)/1.2 var(--font-display); letter-spacing: -0.02em; }
-.sig-dir-section > header p { font-size: 16px; line-height: 1.85; color: var(--c-text-2); }
-.sig-dir-palette { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 1px rgba(38, 38, 38, .08); }
-.sig-dir-palette > div { display: grid; align-content: end; gap: 4px; min-height: 180px; padding: 18px; }
-.sig-dir-palette b { font: 700 20px/1.2 var(--font-display); }
-.sig-dir-palette span { font: 500 13px/1 ui-monospace, monospace; opacity: .85; }
-.sig-dir-pairs { list-style: none; padding: 0; margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 10px; }
-.sig-dir-pairs li { display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px; align-items: center; padding: 10px 14px 10px 10px; border-radius: 10px; border: 1px solid var(--c-hairline); background: #fff; font-size: 14px; }
-.sig-dir-chip { display: grid; place-items: center; width: 52px; height: 36px; border-radius: 6px; font: 700 15px/1 var(--font-display); box-shadow: inset 0 0 0 1px rgba(38, 38, 38, .08); }
-.sig-dir-pairs .is-ok .icon { color: #1F7A5A; }
-.sig-dir-pairs .is-no { border-style: dashed; color: var(--c-text-2); }
-.sig-dir-pairs .is-no .icon { color: #A23B3D; }
-.sig-dir-type { display: grid; gap: 14px; padding: clamp(24px, 4vw, 52px); border-radius: 10px; background: #fff; border: 1px solid var(--c-hairline); }
-.sig-dir-type .t-display { font: 700 clamp(40px, 6vw, 88px)/1.12 var(--font-display); letter-spacing: -0.03em; }
-.sig-dir-type .t-head { font: 600 clamp(24px, 3vw, 40px)/1.3 var(--font-display); letter-spacing: -0.015em; }
-.sig-dir-type .t-body { font: 400 17px/1.85 var(--font-ui); color: var(--c-text-2); max-width: 38em; }
-.sig-dir-type dl { display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 12px; padding-top: 18px; border-top: 1px solid var(--c-hairline); font-size: 13px; }
-.sig-dir-type dt { color: var(--c-text-2); } .sig-dir-type dd { margin: 2px 0 0; font-weight: 600; direction: ltr; text-align: end; }
-.sig-dir-meshes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.sig-dir-meshes > div { display: grid; align-content: end; gap: 4px; min-height: 240px; padding: 22px; border-radius: 10px; color: #fff; }
-.sig-dir-meshes > div.is-light { color: #262626; box-shadow: inset 0 0 0 1px rgba(38, 38, 38, .08); }
-.sig-dir-meshes b { font: 700 24px/1.2 var(--font-display); } .sig-dir-meshes span { font-size: 13px; opacity: .9; }
-.sig-dir-shapes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
-.sig-dir-shapes figure { margin: 0; display: grid; grid-template-rows: 150px auto; place-items: center; gap: 12px; padding: 18px; border-radius: 10px; background: #fff; border: 1px solid var(--c-hairline); }
-.sig-dir-shapes figcaption { font: 600 14px/1.3 var(--font-display); }
-.sig-dir-ticket { display: block; width: 120px; height: 80px; border-radius: 8px; background: #F2EAD9; position: relative; overflow: hidden; }
-.sig-dir-ticket > * { position: absolute; inset-inline: 0; top: 50%; }
-.sig-dir-motif { display: grid; place-items: center; width: 110px; height: 110px; color: #C7A661; }
-.sig-dir-motif svg { width: 100%; height: auto; }
-.sig-dir-glyphs { display: grid; grid-template-columns: repeat(3, 40px); gap: 8px; }
-.sig-dir-glyphs .occasion-glyph { width: 40px; height: 40px; padding: 5px; border-radius: 50%; background: #F2EAD9; color: #262626; }
-.sig-dir-faces { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.sig-dir-faces figure { margin: 0; display: grid; justify-items: center; gap: 18px; padding: 28px 18px 22px; border-radius: 10px; }
-.sig-dir-faces figure:nth-child(1) { background: #262626; color: #F2EAD9; }
-.sig-dir-faces figure:nth-child(2) { background: #BC4749; color: #fff; }
-.sig-dir-faces figure:nth-child(3) { background: #2EB7B7; color: #262626; }
-.sig-dir-faces .card-thumb { box-shadow: 0 26px 36px -22px rgba(0, 0, 0, .6); border-radius: 4px; }
-.sig-dir-faces figcaption { display: grid; gap: 4px; text-align: center; font-size: 14px; line-height: 1.6; }
-.sig-dir-faces figcaption b { font: 700 20px/1.3 var(--font-display); }
-.sig-dir-table { overflow-x: auto; border-radius: 10px; border: 1px solid var(--c-hairline); background: #fff; }
-.sig-dir-table table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.6; min-width: 720px; }
-.sig-dir-table th, .sig-dir-table td { padding: 14px 16px; text-align: start; vertical-align: top; border-bottom: 1px solid var(--c-hairline); }
-.sig-dir-table thead th { font: 600 13px/1.3 var(--font-display); background: #F2EAD9; }
-.sig-dir-table tbody th { font-weight: 600; }
-.sig-dir-table tr:last-child > * { border-bottom: 0; }
-.sig-dir-rejected ul { display: grid; gap: 12px; padding: 0; list-style: none; max-width: 860px; }
-.sig-dir-rejected li { padding: 16px 20px; border-inline-start: 3px solid #BC4749; background: #fff; border-radius: 0 8px 8px 0; line-height: 1.8; }
-.sig-dir-end { margin-top: clamp(72px, 8vw, 128px); display: grid; gap: 14px; justify-items: center; text-align: center; padding: clamp(48px, 7vw, 96px) 24px; color: #F2EAD9; }
-.sig-dir-end h2 { font: 700 clamp(32px, 4.4vw, 60px)/1.2 var(--font-display); color: #fff; }
-.sig-dir-end > div { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: center; margin-top: 10px; }
-.sig-dir-end .sig-text-link { color: #F2EAD9 !important; }
-@media (max-width: 1100px) { .sig-dir-shapes { grid-template-columns: repeat(3, minmax(0, 1fr)); } .sig-dir-palette { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 860px) { .sig-dir-item { grid-template-columns: 1fr; } .sig-dir-meshes, .sig-dir-faces { grid-template-columns: 1fr; } .sig-dir-meshes > div { min-height: 150px; } }
-@media (max-width: 560px) { .sig-dir-shapes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sig-dir-palette > div { min-height: 120px; } .sig-dir-section > header { grid-template-columns: 1fr; } .sig-dir-section > header .sig-section-num { grid-row: auto; } }
 /* occasion tiles in the list & search chooser (no generated objects in «توقيع») */
 :root[data-theme='signature'] .occ-sig-tile{display:grid;place-items:center;width:100%;height:100%;min-height:84px;border-radius:8px}
 :root[data-theme='signature'] .occ-sig-tile .occasion-glyph{width:46%;max-width:64px;height:auto}

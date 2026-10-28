@@ -7,6 +7,7 @@
  *   useLiftDrag  phones: press and hold a family to lift it, then drag it onto a table in the dock.
  *             Desktop keeps native drag-and-drop; the «نقل» button does the same by tapping.
  */
+import { claimPointer } from '../../ui/hooks/usePointerGesture';
 import { hasAllergy } from '../../domain/guest-experience';
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import type { InvitationParty } from '../../domain/types';
@@ -156,6 +157,7 @@ export function useLiftDrag({ onLift, onHover, onDrop, onCancel }: {
     onPointerDown: (e: ReactPointerEvent<HTMLElement>) => {
       if (e.pointerType === 'mouse' || e.isPrimary === false || party.rsvpStatus !== 'confirmed') return;
       if ((e.target as HTMLElement).closest('button,a,input')) return;
+      claimPointer(e);
       origin.current = { x: e.clientX, y: e.clientY };
       const id = e.pointerId, el = e.currentTarget;
       el.setAttribute('data-pressing', 'true');

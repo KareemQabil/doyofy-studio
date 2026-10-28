@@ -58,13 +58,14 @@ async function run(vp) {
 
   await step(vp, '03 occasion deck: swipe (pointer drag) moves to the next card', async () => {
     const box = await page.locator('.deck-stage').boundingBox();
-    const y = box.y + box.height * 0.5, x = box.x + box.width * 0.6;
+    const y = box.y + box.height * 0.5, x = box.x + box.width * 0.4;
     await page.mouse.move(x, y); await page.mouse.down();
-    for (let i = 1; i <= 8; i++) { await page.mouse.move(x - i * 12, y); await page.waitForTimeout(16); }
+    // RTL: the card follows the finger — a drag to the right pulls the next card in from the left
+    for (let i = 1; i <= 8; i++) { await page.mouse.move(x + i * 12, y); await page.waitForTimeout(16); }
     await page.mouse.up(); await page.waitForTimeout(700);
     const n = await page.locator('.deck-count b').innerText();
     if (n !== '02') throw new Error(`after swipe ${n}`);
-    return 'swipe left → 02';
+    return 'swipe right → 02';
   });
 
   await step(vp, '04 graduation details + live card preview', async () => {
@@ -186,9 +187,49 @@ async function run(vp) {
 
   // couple (seeded)
   const W = '/app/events/evt_wedding';
-  for (const [n, path, sel] of [['20-couple-overview', `${W}/overview`, '.sig-moment'], ['21-couple-invitation', `${W}/invitation`, 'h1'], ['22-couple-guests', `${W}/guests`, 'h1'], ['23-couple-replies', `${W}/rsvp`, 'h1'], ['24-couple-reception', `${W}/check-in`, 'h1'], ['25-couple-summary', `${W}/summary`, '.summary-closure'], ['26-couple-seating', `${W}/seating`, 'h1'], ['27-couple-templates', `${W}/invitation/templates`, '.deck-stage']]) {
+  for (const [n, path, sel] of [['20-couple-overview', `${W}/overview`, '.sig-moment'], ['21-couple-invitation', `${W}/invitation`, 'h1'], ['22-couple-guests', `${W}/guests`, 'h1'], ['23-couple-replies', `${W}/rsvp`, 'h1'], ['24-couple-reception', `${W}/check-in`, 'h1'], ['25-couple-summary', `${W}/summary`, '.summary-closure'], ['26-couple-seating', `${W}/seating`, 'h1'], ['27-couple-templates', `${W}/invitation/templates`, '.sig-library']]) {
     await step(vp, `${n.slice(3)} renders`, async () => { await go(path); await page.locator(sel).first().waitFor(); await page.waitForTimeout(400); await shot(n); return noScroll(); });
   }
+  const drag = async (sel, dx, dy = 0) => {
+    const box = await page.locator(sel).first().boundingBox();
+    const x = box.x + box.width * 0.5, y = box.y + Math.min(box.height * 0.5, 300);
+    await page.mouse.move(x, y); await page.mouse.down();
+    for (let i = 1; i <= 8; i++) { await page.mouse.move(x + (dx * i) / 8, y + (dy * i) / 8); await page.waitForTimeout(16); }
+    await page.mouse.up(); await page.waitForTimeout(900);
+  };
+  if (phone) await step(vp, 'section swipe: right on the overview opens the next tab (invitation)', async () => {
+    await go(`${W}/overview`); await page.locator('.sig-moment').first().waitFor();
+    await drag('.sig-content', 140);
+    const path = await page.evaluate(() => location.pathname);
+    if (!/\/invitation$/.test(path)) throw new Error(`after swipe ${path}`);
+    await drag('.sig-content', -140);
+    const back = await page.evaluate(() => location.pathname);
+    if (!/\/overview$/.test(back)) throw new Error(`after swipe back ${back}`);
+    return 'overview → invitation → overview';
+  });
+  await step(vp, 'appearance toggle in the header flips light ↔ dark', async () => {
+    await go(`${W}/overview`);
+    const btn = page.locator(phone ? '.sig-appbar .appearance-toggle' : '.sig-header .appearance-toggle');
+    const a = await page.evaluate(() => document.documentElement.dataset.appearance);
+    await btn.click(); await page.waitForTimeout(700);
+    const b = await page.evaluate(() => document.documentElement.dataset.appearance);
+    await btn.click(); await page.waitForTimeout(700);
+    const c = await page.evaluate(() => document.documentElement.dataset.appearance);
+    if (!(a === 'light' && b === 'dark' && c === 'light')) throw new Error(`${a} → ${b} → ${c}`);
+    return `${a} → ${b} → ${c}`;
+  });
+  await step(vp, 'invitation pages: a sideways drag to the right turns to the next page', async () => {
+    await page.goto(`${BASE}/?view=invite&start=pages`, { waitUntil: 'domcontentloaded' }); await page.waitForTimeout(1500);
+    const at = () => page.evaluate(() => window.__studio.page);
+    const a = await at();
+    await drag('.st-sheet', 120);
+    const b = await at();
+    await drag('.st-sheet', 0, 120);
+    const c = await at();
+    if (!(a === 0 && b === 1 && c === 0)) throw new Error(`page ${a} → ${b} → ${c}`);
+    return 'right → next, down → previous';
+  });
+
   await step(vp, 'couple guest cover → open → invitation plays', async () => {
     await go('/i/noura-faisal'); await page.locator('.sig-cover').waitFor(); await shot('28-couple-cover');
     await page.getByRole('button', { name: 'افتح الدعوة', exact: true }).click(); await page.waitForTimeout(1600); await shot('29-couple-opened');

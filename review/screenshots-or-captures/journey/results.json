@@ -1,155 +1,5 @@
 [
   {
-    "vp": "phone",
-    "name": "01 home renders (A celebration hero)",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "02 occasion deck: keyboard steps, button steps",
-    "ok": true,
-    "detail": "counter 01→02→01; no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "03 occasion deck: swipe (pointer drag) moves to the next card",
-    "ok": true,
-    "detail": "swipe left → 02"
-  },
-  {
-    "vp": "phone",
-    "name": "04 graduation details + live card preview",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "05 prepared invitation opens in the editor",
-    "ok": true,
-    "detail": "/app/events/evt_gw33ym2vz0/invitation/design?first=1"
-  },
-  {
-    "vp": "phone",
-    "name": "05b editor sheet: keyboard snaps peek/half/full",
-    "ok": true,
-    "detail": "up: full · down: peek"
-  },
-  {
-    "vp": "phone",
-    "name": "06 publish → seal stamp",
-    "ok": true,
-    "detail": "stamp shown"
-  },
-  {
-    "vp": "phone",
-    "name": "07 graduation invitation summary has no wedding copy",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "08 add a guest",
-    "ok": true,
-    "detail": "code JNN7B; no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "09 guest: envelope cover (B night), single-name copy",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "10 guest: skip straight to date + RSVP, confirm attendance",
-    "ok": true,
-    "detail": "confirmed"
-  },
-  {
-    "vp": "phone",
-    "name": "11 organizer sees the reply",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "12 reception gate: find guest → check in",
-    "ok": true,
-    "detail": "checked in"
-  },
-  {
-    "vp": "phone",
-    "name": "13 summary (red closure) counts the arrival",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "couple-overview renders",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "couple-invitation renders",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "couple-guests renders",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "couple-replies renders",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "couple-reception renders",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "couple-summary renders",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "couple-seating renders",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "couple-templates renders",
-    "ok": true,
-    "detail": "no horizontal scroll"
-  },
-  {
-    "vp": "phone",
-    "name": "couple guest cover → open → invitation plays",
-    "ok": true,
-    "detail": "opened"
-  },
-  {
-    "vp": "phone",
-    "name": "reduced motion: cover still opens by button, no seal drag needed",
-    "ok": true,
-    "detail": "ok"
-  },
-  {
-    "vp": "phone",
-    "name": "no page errors",
-    "ok": true,
-    "detail": ""
-  },
-  {
     "vp": "tab",
     "name": "01 home renders (A celebration hero)",
     "ok": true,
@@ -433,6 +283,174 @@
   },
   {
     "vp": "desk",
+    "name": "no page errors",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "vp": "phone",
+    "name": "01 home renders (A celebration hero)",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "02 occasion deck: keyboard steps, button steps",
+    "ok": true,
+    "detail": "counter 01→02→01; no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "03 occasion deck: swipe (pointer drag) moves to the next card",
+    "ok": true,
+    "detail": "swipe right → 02"
+  },
+  {
+    "vp": "phone",
+    "name": "04 graduation details + live card preview",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "05 prepared invitation opens in the editor",
+    "ok": true,
+    "detail": "/app/events/evt_ixetgrfpbl/invitation/design?first=1"
+  },
+  {
+    "vp": "phone",
+    "name": "05b editor sheet: keyboard snaps peek/half/full",
+    "ok": true,
+    "detail": "up: full · down: peek"
+  },
+  {
+    "vp": "phone",
+    "name": "06 publish → seal stamp",
+    "ok": true,
+    "detail": "stamp shown"
+  },
+  {
+    "vp": "phone",
+    "name": "07 graduation invitation summary has no wedding copy",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "08 add a guest",
+    "ok": true,
+    "detail": "code GPFXZ; no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "09 guest: envelope cover (B night), single-name copy",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "10 guest: skip straight to date + RSVP, confirm attendance",
+    "ok": true,
+    "detail": "confirmed"
+  },
+  {
+    "vp": "phone",
+    "name": "11 organizer sees the reply",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "12 reception gate: find guest → check in",
+    "ok": true,
+    "detail": "checked in"
+  },
+  {
+    "vp": "phone",
+    "name": "13 summary (red closure) counts the arrival",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "couple-overview renders",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "couple-invitation renders",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "couple-guests renders",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "couple-replies renders",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "couple-reception renders",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "couple-summary renders",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "couple-seating renders",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "couple-templates renders",
+    "ok": true,
+    "detail": "no horizontal scroll"
+  },
+  {
+    "vp": "phone",
+    "name": "section swipe: right on the overview opens the next tab (invitation)",
+    "ok": true,
+    "detail": "overview → invitation → overview"
+  },
+  {
+    "vp": "phone",
+    "name": "appearance toggle in the header flips light ↔ dark",
+    "ok": true,
+    "detail": "light → dark → light"
+  },
+  {
+    "vp": "phone",
+    "name": "invitation pages: a sideways drag to the right turns to the next page",
+    "ok": true,
+    "detail": "right → next, down → previous"
+  },
+  {
+    "vp": "phone",
+    "name": "couple guest cover → open → invitation plays",
+    "ok": true,
+    "detail": "opened"
+  },
+  {
+    "vp": "phone",
+    "name": "reduced motion: cover still opens by button, no seal drag needed",
+    "ok": true,
+    "detail": "ok"
+  },
+  {
+    "vp": "phone",
     "name": "no page errors",
     "ok": true,
     "detail": ""

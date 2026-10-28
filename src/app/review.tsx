@@ -1,48 +1,50 @@
-/** Organizer appearance and occasion discovery preference, persisted locally and shareable by URL. */
+/** Organizer appearance (light · dark · follow the device), persisted locally and shareable by URL (?appearance=dark).
+ *  One visual identity — «توقيع». The invitation itself never follows the platform's appearance. */
 import { useEffect, useSyncExternalStore } from 'react';
 import { usePrototype } from './data';
 import { useLocation } from './router';
 
-import { isTheme, THEMES, type ThemeId } from '../domain/themes';
-export type { ThemeId } from '../domain/themes';
-export type ChooserVariant = 'curated' | 'coverflow' | 'rail';
+import { isAppearance, type Appearance } from '../domain/appearance';
+export { APPEARANCE_LABEL, isAppearance, type Appearance } from '../domain/appearance';
 
-export const THEME_LABEL = Object.fromEntries(THEMES.map(t=>[t.id,t.label])) as Record<ThemeId,string>;
-export const CHOOSER_LABEL: Record<ChooserVariant, string> = { curated: 'المعرض المباشر', coverflow: 'عرض متتابع', rail: 'شريط المناسبات' };
+const darkQuery = () => (typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null);
+export const resolveAppearance = (a: Appearance): 'light' | 'dark' => (a === 'system' ? (darkQuery()?.matches ? 'dark' : 'light') : a);
 
-export function useReviewSettings(): { theme: ThemeId; chooser: ChooserVariant } {
+function subscribeSystem(cb: () => void) { const q = darkQuery(); q?.addEventListener('change', cb); return () => q?.removeEventListener('change', cb); }
+
+export function useAppearance(): { appearance: Appearance; resolved: 'light' | 'dark' } {
   const proto = usePrototype();
-  const theme = useSyncExternalStore(proto.subscribe, () => proto.settings().theme ?? 'warm');
-  const chooser = useSyncExternalStore(proto.subscribe, () => proto.settings().occasionChooser ?? 'curated');
-  return { theme, chooser };
+  const appearance = useSyncExternalStore(proto.subscribe, () => proto.settings().appearance ?? 'light');
+  const system = useSyncExternalStore(subscribeSystem, () => !!darkQuery()?.matches);
+  return { appearance, resolved: appearance === 'system' ? (system ? 'dark' : 'light') : appearance };
 }
 
-/** review links (?theme=…&chooser=…, in the query or after the #route) — applied before the first render */
-export function applyReviewLink(proto: { update(p: { theme?: ThemeId; occasionChooser?: ChooserVariant }): void; settings(): { theme: ThemeId } }) {
+function paint(resolved: 'light' | 'dark') {
+  const root = document.documentElement;
+  root.dataset.theme = 'signature'; // compatibility hook for the Signature stylesheet
+  root.dataset.appearance = resolved;
+  root.style.colorScheme = resolved;
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute('content', resolved === 'dark' ? '#171615' : '#FFFFFF'));
+}
+
+/** review links (?appearance=…, in the query or after the #route) — applied before the first render */
+export function applyReviewLink(proto: { update(p: { appearance?: Appearance }): void; settings(): { appearance: Appearance } }) {
   const q = new URLSearchParams(location.search);
   const h = new URLSearchParams(location.hash.split('?')[1] ?? '');
-  const t = q.get('theme') ?? h.get('theme');
-  const c = q.get('chooser') ?? h.get('chooser');
-  const patch: { theme?: ThemeId; occasionChooser?: ChooserVariant } = {};
-  if (isTheme(t)) patch.theme = t;
-  if (c === 'curated' || c === 'coverflow' || c === 'rail') patch.occasionChooser = c;
-  if (Object.keys(patch).length) proto.update(patch);
-  document.documentElement.dataset.theme = proto.settings().theme ?? 'warm';
+  const a = q.get('appearance') ?? h.get('appearance');
+  if (isAppearance(a)) proto.update({ appearance: a });
+  paint(resolveAppearance(proto.settings().appearance ?? 'light'));
 }
 
-/** applies the theme to <html> and accepts review links on in-app navigation */
+/** keeps <html data-appearance> in sync with the setting and the device, and accepts review links on navigation */
 export function ThemeSync() {
   const proto = usePrototype();
   const loc = useLocation();
-  const { theme } = useReviewSettings();
+  const { resolved } = useAppearance();
   useEffect(() => {
-    const t = loc.search.get('theme');
-    const c = loc.search.get('chooser');
-    const patch: { theme?: ThemeId; occasionChooser?: ChooserVariant } = {};
-    if (isTheme(t)) patch.theme = t;
-    if (c === 'curated' || c === 'coverflow' || c === 'rail') patch.occasionChooser = c;
-    if (Object.keys(patch).length) proto.update(patch);
+    const a = loc.search.get('appearance');
+    if (isAppearance(a)) proto.update({ appearance: a });
   }, [loc.search, proto]);
-  useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  useEffect(() => { paint(resolved); }, [resolved]);
   return null;
 }

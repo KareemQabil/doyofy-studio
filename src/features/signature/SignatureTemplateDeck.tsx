@@ -22,7 +22,7 @@ export function SignatureTemplateDeck({ presets, event, base, current, pending, 
   return (
     <div className="sig-tpl">
       <TactileDeck items={presets} index={at} onIndexChange={setIndex} getKey={(x) => x.id} window={2} disabled={pending}
-        label="أشكال الدعوة — اسحب يسارًا للشكل التالي" itemLabel={(x) => x.name} activateHint="اضغط لمشاهدة الدعوة"
+        label="أشكال الدعوة — اسحب يمينًا للشكل التالي" itemLabel={(x) => x.name} activateHint="اضغط لمشاهدة الدعوة"
         onActivate={(x) => onPreview(x)} hint="اسحب لترى دعوتك بأشكال مختلفة"
         renderCard={(x, s) => (
           <span className={`sig-tpl-card${s.active ? ' is-active' : ''}`}>

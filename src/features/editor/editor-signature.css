@@ -11,7 +11,7 @@
 :root[data-theme='signature'] .ed-panel { border-inline-end-color: var(--brand-beige); }
 .ed-studio-heading { position: relative; flex: none; padding: 28px 24px 22px; border-bottom: 1px solid var(--c-hairline); background: var(--brand-ivory); overflow: hidden; }
 .ed-studio-heading::after { content: ''; position: absolute; inset-block: -30%; inset-inline-end: -60px; width: 120px; background: url('assets/brand/motif-column.svg') center / contain no-repeat; opacity: .10; pointer-events: none; }
-.ed-studio-kicker { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--brand-charcoal); margin-bottom: 14px; }
+.ed-studio-kicker { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--c-text); margin-bottom: 14px; }
 .ed-studio-kicker > span:first-child { width: 7px; height: 7px; border-radius: 50%; background: var(--brand-red); }
 .ed-studio-occasion { margin-inline-start: auto; border: 1px solid var(--brand-beige); padding: 3px 9px; border-radius: 999px; }
 .ed-studio-heading h2 { font: 700 28px/1.3 var(--font-display); margin-bottom: 10px; }
@@ -55,7 +55,7 @@
 :root[data-theme='signature'] .ed-stage { background: var(--c-canvas); min-width: 0; padding: 28px 32px; gap: 22px; }
 .ed-stage-heading { display: flex; align-items: center; justify-content: space-between; width: min(100%, 850px); gap: 16px; }
 .ed-stage-kicker { font-size: 11px; color: var(--c-text-3); margin-bottom: 5px; }
-:root[data-theme='signature'] .ed-stage .ed-stage-caption { display: block; padding: 0; background: none; border: 0; font: 700 22px/1.4 var(--font-display); text-align: start; color: var(--brand-charcoal); }
+:root[data-theme='signature'] .ed-stage .ed-stage-caption { display: block; padding: 0; background: none; border: 0; font: 700 22px/1.4 var(--font-display); text-align: start; color: var(--c-text); }
 .ed-stage-heading .seg { flex: none; }
 .ed-workbench { --paper-scale: .8; position: relative; isolation: isolate; width: min(100%, 850px); height: min(620px, calc(100dvh - 244px)); min-height: 280px; overflow: hidden; border-radius: 14px; background: var(--brand-ivory); border: 1px solid var(--brand-beige); box-shadow: inset 0 0 0 8px var(--c-surface), 0 16px 32px -28px rgba(38,38,38,.32); }
 .ed-workbench-photo { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
@@ -67,7 +67,7 @@
 .ed-workbench-caption { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 120px); width: max-content; border-radius: 999px; padding: 7px 12px; background: var(--brand-ivory); font-size: 10px; color: var(--brand-charcoal); }
 .ed-studio-safe { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; line-height: 1.7; color: var(--c-text-3); }
 .ed-studio-safe .icon { color: var(--c-success); flex: none; }
-:root[data-theme='signature'] .ed-stage .ed-stage-tools :is(.btn-ghost,.btn-quiet) { color: var(--brand-charcoal); }
+:root[data-theme='signature'] .ed-stage .ed-stage-tools :is(.btn-ghost,.btn-quiet) { color: var(--c-text); }
 :root[data-theme='signature'] .ed.is-preview .ed-screen { border-radius: 14px; box-shadow: 0 0 0 6px var(--brand-charcoal), 0 0 0 7px var(--brand-gold), var(--shadow-art); }
 :root[data-theme='signature'] .ed.is-preview .ed-screen-wrap { height: min(calc(100dvh - var(--bar-h) - 175px), 700px); }
 @media (min-width: 960px) and (max-width: 1199px) {
@@ -79,7 +79,7 @@
 @media (hover: hover) and (pointer: fine) {
   :root[data-theme='signature'] .ed-tabs .seg-btn:hover:not([data-on='true']) { background: var(--c-surface-hover); }
   :root[data-theme='signature'] .ed-pick:hover .card-thumb { transform: translateY(-3px) rotate(-2deg); }
-  :root[data-theme='signature'] .ed-brand:hover { color: var(--brand-charcoal); }
+  :root[data-theme='signature'] .ed-brand:hover { color: var(--c-text); }
 }
 @media (max-width: 959px) {
   :root[data-theme='signature'] .ed { --bar-h: 64px; }
@@ -89,7 +89,6 @@
   :root[data-theme='signature'] .ed-h { font-size: 13px; }
   :root[data-theme='signature'] .ed-sub { max-width: 110px; font-size: 10px; }
   :root[data-theme='signature'] .ed-status { gap: 8px; }
-  :root[data-theme='signature'] .ed-status .theme-trigger { display: none; }
   :root[data-theme='signature'] .ed-stage { padding: 12px; gap: 6px; }
   .ed-stage-heading, .ed-studio-heading, .ed-studio-safe { display: none; }
   .ed-workbench { flex: 1 1 auto; height: 100%; min-height: 0; border-radius: 10px; width: 100%; }
@@ -110,4 +109,13 @@
 @media (prefers-reduced-motion: reduce) {
   .ed-workbench-paper { transition: none; transform: translate(-50%, -50%) scale(var(--paper-scale)); }
   :root[data-theme='signature'] .ed-pick:hover .card-thumb { transform: none; }
+}
+
+/* replay the card's entrance (the face plays once when the editor opens) */
+.ed-page-swipe { position: relative; }
+.ed-motion-replay { position: absolute; inset-inline-start: 16px; bottom: 16px; z-index: 3; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid var(--c-hairline); border-radius: 999px; background: color-mix(in srgb, var(--c-surface) 92%, transparent); color: var(--c-text); font: 600 12.5px/1 var(--font-display); cursor: pointer; backdrop-filter: blur(8px); }
+.ed-motion-replay:hover { border-color: var(--c-hairline-strong); }
+@media (prefers-reduced-motion: reduce) { .ed-motion-replay { display: none; } }
+@media (max-width: 959px) {
+  .ed-motion-replay { inset-inline-start: 10px; top: 10px; bottom: auto; min-height: 32px; padding: 0 10px; font-size: 12px; }
 }

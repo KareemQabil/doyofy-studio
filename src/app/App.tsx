@@ -24,10 +24,9 @@ import { MorePage } from '../features/workspace/MorePage';
 import { GuestInvite } from '../features/guest/GuestInvite';
 import { NotFound } from '../features/workspace/NotFound';
 import { PrototypeTools } from '../features/prototype/PrototypeTools';
-import { DesignDirections } from '../features/prototype/DesignDirections';
+import { DemoBar } from '../features/prototype/DemoBar';
+import { AppErrorBoundary } from './AppErrorBoundary';
 import { ScreenReview } from '../features/prototype/ScreenReview';
-import { DesignReview } from '../features/prototype/DesignReview';
-import { SignatureDirections } from '../features/signature/SignatureDirections';
 import { paths } from './paths';
 import { ThemeSync, applyReviewLink } from './review';
 import { WelcomePage, LoginPage, LogoutPage, AccountPage, HelpPage, OrganizerSessionGate } from '../features/account/AccountPages';
@@ -63,10 +62,7 @@ const routes: RouteDef[] = [
   { path: '/i/:slug', render: (p) => <GuestInvite slug={p.slug!} /> },
   { path: '/i/:slug/:code', render: (p) => <GuestInvite slug={p.slug!} code={p.code!} /> },
   { path: '/check-in/:eventId', render: (p) => <GateMode eventId={p.eventId!} /> },
-  { path: '/prototype/design-directions', render: () => <DesignDirections /> },
   { path: '/prototype/screen-review', render: () => <ScreenReview /> },
-  { path: '/prototype/design-review', render: () => <DesignReview /> },
-  { path: '/prototype/signature-directions', render: () => <SignatureDirections /> },
 ];
 
 function PendingNavigation() {
@@ -90,7 +86,8 @@ export function App({ mode }: { mode: RouterMode }) {
       <RouterProvider mode={mode}>
         <ToastProvider>
           <ThemeSync />
-          <OrganizerSessionGate><Routes routes={routes} fallback={<NotFound />} /></OrganizerSessionGate>
+          <DemoBar />
+          <AppErrorBoundary><OrganizerSessionGate><Routes routes={routes} fallback={<NotFound />} /></OrganizerSessionGate></AppErrorBoundary>
           <PendingNavigation />
           <PrototypeTools />
         </ToastProvider>

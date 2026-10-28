@@ -9,9 +9,9 @@
     "dev": "node tools/build.mjs --watch --serve",
     "build": "node tools/build.mjs",
     "serve": "node tools/serve.mjs",
-    "test": "node tests/unit.mjs && node tests/e2e.mjs && node tests/qa.mjs --quick",
-    "test:quick": "node tests/qa.mjs --quick",
-    "validate": "tsc -p . && tsc -p tests/unit && node tests/unit.mjs && node tools/check_assets.mjs && node tests/qa.mjs --quick",
+    "test": "npm run typecheck && node tests/unit.mjs && node tests/dom.mjs && npm run gate && node tests/signature-journey.mjs phone",
+    "test:quick": "npm run typecheck && node tests/unit.mjs && node tests/dom.mjs",
+    "validate": "npm run typecheck && node tests/unit.mjs && node tests/dom.mjs && node tools/check-theme-contrast.mjs && node tools/check-shipped-assets.mjs",
     "assets:check": "node tools/check_assets.mjs",
     "assets:p0:check": "node tools/check_assets.mjs",
     "assets:p0:install": "node tools/py.mjs tools/install_p0_packs.py",
@@ -20,29 +20,31 @@
     "assets:index": "node tools/index_usage.mjs",
     "assets:derived": "node tools/py.mjs tools/make_derived.py",
     "test:unit": "node tests/unit.mjs",
-    "test:e2e": "node tests/e2e.mjs",
-    "test:studio": "node tests/qa.mjs",
     "typecheck": "tsc -p . && tsc -p tests/unit",
     "test:dom": "node tests/dom.mjs",
-    "assets:shipped:check": "node tools/check-shipped-assets.mjs"
+    "assets:shipped:check": "node tools/check-shipped-assets.mjs",
+    "gate": "node tools/build.mjs && node tests/gate.mjs",
+    "gate:shots": "node tools/build.mjs && node tests/gate.mjs --shots",
+    "journey": "node tools/build.mjs && node tests/signature-journey.mjs"
   },
   "dependencies": {
+    "gsap": "3.13.0",
+    "lottie-web": "5.13.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "three": "0.170.0"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "esbuild": "^0.27.0",
-    "playwright": "^1.56.0",
-    "typescript": ">=5.8.0",
-    "@types/node": "^25.0.0",
     "@fontsource/amiri": "^5.2.0",
     "@fontsource/aref-ruqaa": "^5.2.0",
     "@fontsource/cormorant-garamond": "^5.2.0",
     "@fontsource/great-vibes": "^5.2.0",
     "@fontsource/reem-kufi": "^5.2.0",
-    "jsdom": "^26.1.0"
+    "@types/node": "^25.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "esbuild": "^0.27.0",
+    "jsdom": "^26.1.0",
+    "playwright": "^1.56.0",
+    "typescript": ">=5.8.0"
   }
 }

@@ -16,6 +16,11 @@ export class LocalRSVPAdapter {
   list() { return this._read(); }
 }
 
+/** self-contained links (no backend on this device): the reply is not sent anywhere, and the guest is told so */
+export class DemoRSVPAdapter {
+  async submit() { return { ok: true, id: 'demo-' + Date.now().toString(36), demo: true }; }
+}
+
 export class RestRSVPAdapter {
   constructor({ endpoint, headers = {} }) { this.endpoint = endpoint; this.headers = headers; }
   async submit(response) {

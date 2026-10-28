@@ -7,6 +7,7 @@
  */
 import type { CheckInRecord, Event, EventActivity, InvitationDesign, InvitationParty, RSVPResponse, Table } from '../../domain/types';
 import { AppError } from '../errors';
+import { resolveDesign } from '../../domain/invitation';
 
 export interface DbShape {
   version: 1;
@@ -28,14 +29,13 @@ export interface PrototypeSettings {
   offline: boolean;
   clockOffsetMs: number;
   role: 'organizer' | 'coordinator';
-  /** design review (prototype only): visual theme and occasion-chooser variant under test */
-  theme: import('../../domain/themes').ThemeId;
-  occasionChooser: 'curated' | 'coverflow' | 'rail';
+  /** organizer appearance: light · dark · follow the device (the invitation keeps its own palette) */
+  appearance: import('../../domain/appearance').Appearance;
 }
 
 const DB_KEY = 'doyofy:db:v1';
 const SETTINGS_KEY = 'doyofy:prototype:v1';
-export const DEFAULT_SETTINGS: PrototypeSettings = { latencyMs: 180, offline: false, clockOffsetMs: 0, role: 'organizer', theme: 'signature', occasionChooser: 'curated' };
+export const DEFAULT_SETTINGS: PrototypeSettings = { latencyMs: 180, offline: false, clockOffsetMs: 0, role: 'organizer', appearance: 'light' };
 
 function safeStorage(): Storage | null {
   try {
@@ -53,12 +53,14 @@ export class MockStore {
   settings: PrototypeSettings;
 
   constructor(private seed: (now: Date, scenario: ScenarioId) => DbShape) {
-    this.settings = { ...DEFAULT_SETTINGS, ...this.readJSON<Partial<PrototypeSettings>>(SETTINGS_KEY) };
+    // older builds stored a visual theme and a chooser variant; one identity remains, so those keys are dropped
+    const { theme: _t, occasionChooser: _c, ...saved } = this.readJSON<Partial<PrototypeSettings> & { theme?: unknown; occasionChooser?: unknown }>(SETTINGS_KEY) ?? {};
+    this.settings = { ...DEFAULT_SETTINGS, ...saved };
     const stored = this.readJSON<DbShape>(DB_KEY);
-    if (stored && stored.version === 1) this.db = stored;
+    if (stored && stored.version === 1) this.db = migrateFaces(stored);
     else this.reset('before');
     window.addEventListener('storage', (e) => {
-      if (e.key === DB_KEY) { const d = this.readJSON<DbShape>(DB_KEY); if (d) { this.db = d; this.emit(); } }
+      if (e.key === DB_KEY) { const d = this.readJSON<DbShape>(DB_KEY); if (d) { this.db = migrateFaces(d); this.emit(); } }
       if (e.key === SETTINGS_KEY) { this.settings = { ...DEFAULT_SETTINGS, ...this.readJSON<Partial<PrototypeSettings>>(SETTINGS_KEY) }; this.emit(); }
     });
   }
@@ -116,4 +118,15 @@ export class MockStore {
   private readJSON<T>(key: string): T | null {
     try { const s = this.storage?.getItem(key); return s ? (JSON.parse(s) as T) : null; } catch { return null; }
   }
+}
+
+/** invitations saved before the single card family keep working: a retired face opens as its occasion's face */
+function migrateFaces(db: DbShape): DbShape {
+  for (const d of db.designs) {
+    const type = db.events.find((e) => e.id === d.eventId)?.type;
+    if (!type) continue;
+    d.draft = resolveDesign(d.draft, type);
+    if (d.published) d.published = resolveDesign(d.published, type);
+  }
+  return db;
 }

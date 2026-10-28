@@ -1,7 +1,7 @@
 /** Full-screen "what guests will see" preview of the latest draft. Replies are not recorded. */
 import { useEffect, useRef, useState } from 'react';
 import { defaultDesign, publishState, toInvitationData } from '../../domain/invitation';
-import { ErrorState, Icon, Skeleton } from '../../ui';
+import { ErrorState, Icon, PageLoader } from '../../ui';
 import { Link, useLocation } from '../../app/router';
 import { paths } from '../../app/paths';
 import { useDesign, useEvent } from '../shared/queries';
@@ -43,7 +43,7 @@ export function GuestPreview({ eventId }: { eventId: string }) {
         <span className="preview-bar-text"><Icon name="eye" size="sm" />{publication === 'published' ? 'معاينة الدعوة المنشورة' : 'معاينة المسودة — هذه التعديلات ليست منشورة للضيوف'}. لن يُسجل أي رد.</span>
         <Link to={back} className="preview-close"><Icon name="close" size="sm" />إغلاق المعاينة</Link>
       </div>
-      {(ev.loading || design.loading) && <div className="preview-loading"><Skeleton lines={3} /></div>}
+      {(ev.loading || design.loading) && <div className="preview-loading"><PageLoader name="envelope" label="جارٍ تجهيز المعاينة" /></div>}
       <div ref={host} className="preview-host" />
     </div>
   );

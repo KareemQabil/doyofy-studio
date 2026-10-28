@@ -1,12 +1,11 @@
 import { JourneyArtwork } from '../../ui/primitives/JourneyArtwork';
 /** Event closure, with useful outcomes and an honest, editable thank-you. */
 import { useState } from 'react';
-import { useReviewSettings } from '../../app/review';
 import type { Event } from '../../domain/types';
 import { countParties } from '../../domain/parties';
 import { eventPhase } from '../../domain/event';
 import { formatEventDate, plural, P } from '../../domain/format';
-import { Banner, Button, ConfirmDialog, ErrorState, Icon, PageHeader, Panel, Skeleton, Textarea, Field } from '../../ui';
+import { Banner, Button, ConfirmDialog, ErrorState, Icon, PageHeader, Panel, Textarea, Field, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
 import { useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -15,13 +14,12 @@ import { copyText } from '../shared/CopyField';
 import { errorMessage } from '../../services/errors';
 
 export function SummaryPage({ event }: { event: Event }) {
-  const { theme } = useReviewSettings();
   const parties=useParties(event.id), now=useNow(), navigate=useNavigate();
   const [thanked,setThanked]=useState(false), [archiving,setArchiving]=useState(false), [copied,setCopied]=useState(false), [copyFailed,setCopyFailed]=useState(false);
   const [message,setMessage]=useState(`شكرًا لأنكم كنتم جزءًا من فرحتنا في ${event.title}. حضوركم جعلها أجمل، وذكراها تبقى معنا. بكل المحبة.`);
   const archive=useMutation(s=>s.events.archive(event.id),{onSuccess:()=>navigate(paths.events,{force:true})});
   if(parties.error)return <ErrorState error={parties.error} onRetry={parties.refetch}/>;
-  if(parties.loading)return <Skeleton lines={6}/>;
+  if(parties.loading)return <PageLoader />;
   const all=parties.data!,c=countParties(all),phase=eventPhase(event,now), completed=phase==='completed'||phase==='archived';
   const confirmedArrivals=all.reduce((n,p)=>n+(p.rsvpStatus==='confirmed'?Math.min(p.checkedInCount,p.confirmedPartySize??0):0),0);
   const remaining=Math.max(0,c.confirmedPeople-confirmedArrivals);
@@ -30,8 +28,8 @@ export function SummaryPage({ event }: { event: Event }) {
   return <>
     <PageHeader title="ملخص المناسبة" subtitle={`${event.title} · ${formatEventDate(event.date)}`}/>
     {!completed&&<Banner tone="info">المناسبة لم تنتهِ بعد. هذه أرقام اللحظة، ويكتمل الملخص بعد الاستقبال.</Banner>}
-    <section className={`summary-closure${theme === 'signature' ? ' has-editorial' : ''}`}>
-      {theme === 'signature' && <picture className="summary-photo" aria-hidden="true"><source srcSet="assets/editorial/celebration-table.avif" type="image/avif" /><img src="assets/editorial/celebration-table.webp" alt="" width="1536" height="1024" loading="lazy" decoding="async" /></picture>}
+    <section className="summary-closure has-editorial">
+      {<picture className="summary-photo" aria-hidden="true"><source srcSet="assets/editorial/celebration-table.avif" type="image/avif" /><img src="assets/editorial/celebration-table.webp" alt="" width="1536" height="1024" loading="lazy" decoding="async" /></picture>}
       <div className="summary-closure-copy"><JourneyArtwork kind="celebrate"/><p className="eyebrow">{completed?'وتبقى المحبة':'لحظات تتشكّل'}</p><h2>{completed?'كل حضور، صنع ذكرى.':'فرحتك تكتمل بضيوفك.'}</h2><p>{c.checkedInPeople?<>شارككم <strong>{c.checkedInPeople}</strong> شخصًا بحسب سجل الاستقبال.</>:'لم تُسجّل عمليات وصول لهذه المناسبة.'}</p></div>
     </section>
     <div className="summary-layout">

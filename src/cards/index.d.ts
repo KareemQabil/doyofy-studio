@@ -1,1 +1,1 @@
-export declare const CARD_DEFS: string;
+export declare const FALLBACK_CARD: string;

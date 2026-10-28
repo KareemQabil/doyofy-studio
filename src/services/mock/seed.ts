@@ -235,7 +235,7 @@ export function buildSeed(now: Date, scenario: ScenarioId): DbShape {
     checkInPreparedAt: at(now, 60 * 24 * 21), createdAt: at(now, 60 * 24 * 70), updatedAt: at(now, 60 * 24 * 19),
   };
   events.push(e3);
-  const d3 = { ...defaultDesign(e3), cardId: 'emerald', sceneId: 'palace', experience: { dimension: '2d' as const, motion: 'animated' as const } };
+  const d3 = { ...defaultDesign(e3), cardId: 'kit-seal-arch', sceneId: 'candlelit', experience: { dimension: '2d' as const, motion: 'animated' as const } };
   designs.push({ id: 'dsg_katb', eventId: e3.id, draft: d3, draftSavedAt: at(now, 60 * 24 * 60), published: structuredClone(d3), publishedAt: at(now, 60 * 24 * 60) });
   [10, 10, 10, 12].forEach((cap, i) => tables.push({ id: `tbl_k${i + 1}`, eventId: e3.id, name: `طاولة ${i + 1}`, capacity: cap, order: i + 1 }));
   const start3 = zonedToInstant(e3Date, '19:30', tz);

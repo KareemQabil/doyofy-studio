@@ -17,9 +17,9 @@
 .invite-stationery-surface img { display: block; width: 100%; height: 100%; object-fit: cover; }
 :root[data-theme='signature'] .invite-card-panel .card-thumb { border-radius: 3px; transform: rotate(-2deg); box-shadow: 0 20px 30px -18px rgba(38,38,38,.4), 0 2px 3px rgba(38,38,38,.14); }
 :root[data-theme='signature'] .invite-card-panel .invite-card-actions { padding: 12px; border: 1px solid var(--brand-beige); border-radius: 10px; background: var(--brand-ivory); }
-:root[data-theme='signature'] .invite-card-panel .btn-secondary { color: var(--brand-charcoal); border-color: var(--brand-charcoal); }
+:root[data-theme='signature'] .invite-card-panel .btn-secondary { color: var(--c-text); border-color: var(--brand-charcoal); }
 :root[data-theme='signature'] .invite-card-panel .btn-secondary:hover:not(:disabled) { color: var(--brand-ivory); background: var(--brand-charcoal); }
-:root[data-theme='signature'] .invite-card-panel .btn-ghost, :root[data-theme='signature'] .invite-card-panel a:not(.btn) { color: var(--brand-charcoal); }
+:root[data-theme='signature'] .invite-card-panel .btn-ghost, :root[data-theme='signature'] .invite-card-panel a:not(.btn) { color: var(--c-text); }
 @media (hover: hover) and (pointer: fine) {
   .sig-tpl-deck .deck-card:hover .sig-tpl-tableau > .card-thumb { transform: translateY(-4px) rotate(0); }
 }

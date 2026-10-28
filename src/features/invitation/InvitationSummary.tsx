@@ -2,12 +2,13 @@
  * Invitation section (spec §10): the current design, its state (draft / published / unpublished
  * changes), what guests will see, and the actions: edit design · preview as guest · publish · share.
  */
+import { useGuestLink } from '../shared/share-link';
 import type { Event } from '../../domain/types';
 import { CARD_NAMES, PUBLISH_LABEL, SCENE_NAMES, publishState, resolvedNames } from '../../domain/invitation';
 import { relativeTime } from '../../domain/format';
 import { countParties } from '../../domain/parties';
 import { isCoupleEvent } from '../../domain/event';
-import { Badge, Banner, Button, EmptyState, ErrorState, Icon, KeyValue, LinkButton, PageHeader, Panel, Skeleton } from '../../ui';
+import { Badge, Banner, Button, EmptyState, ErrorState, Icon, KeyValue, LinkButton, PageHeader, Panel, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
 import { useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -16,20 +17,19 @@ import { errorMessage } from '../../services/errors';
 import { useDesign, useParties } from '../shared/queries';
 import { CardThumb } from './CardThumb';
 import { CopyField } from '../shared/CopyField';
-import { useReviewSettings } from '../../app/review';
 
 export function InvitationSummary({ event }: { event: Event }) {
-  const { theme } = useReviewSettings();
   const design = useDesign(event.id);
   const parties = useParties(event.id);
   const now = useNow();
   const toast = useToast();
   const { absolute } = useRouter();
   const publish = useMutation((s) => s.invitations.publish(event.id), {
-    onSuccess: () => toast({ tone: 'success', text: 'تم نشر الدعوة. الضيوف يرون الآن هذه النسخة.' }),
+    onSuccess: () => toast({ tone: 'success', text: 'تم نشر الدعوة. الضيوف يرون الآن هذه النسخة.', celebrate: true }),
   });
 
-  if (design.loading) return <Skeleton lines={6} block />;
+  const guestLink = useGuestLink(event);
+  if (design.loading) return <PageLoader />;
   if (design.error) return <ErrorState error={design.error} onRetry={design.refetch} />;
   const d = design.data ?? null;
   const ps = publishState(d);
@@ -51,8 +51,8 @@ export function InvitationSummary({ event }: { event: Event }) {
   const content = d.draft;
   const names = resolvedNames(event, content);
   if (!isCoupleEvent(event.type)) names.b = '';
-  const xLabel = `${content.experience.dimension === '3d' ? 'ثلاثية الأبعاد' : 'ثنائية الأبعاد'} · ${content.experience.motion === 'animated' ? 'متحركة' : 'ثابتة'}`;
-  const generalLink = absolute(paths.guestLink(event.slug));
+  const xLabel = content.experience.motion === 'animated' ? 'متحركة' : 'ثابتة';
+  const generalLink = guestLink();
   const primary = ps === 'draft' ? (
     <Button variant="primary" size="lg" icon="send" loading={publish.pending} onClick={() => publish.run()}>انشر الدعوة</Button>
   ) : ps === 'changed' ? (
@@ -69,7 +69,7 @@ export function InvitationSummary({ event }: { event: Event }) {
 
       <div className="invite-layout">
         <Panel className="invite-card-panel">
-          {theme === 'signature' && <picture className="invite-stationery-surface" aria-hidden="true"><source srcSet="assets/editorial/studio-workbench.avif" type="image/avif" /><img src="assets/editorial/studio-workbench.webp" alt="" width="1536" height="1024" decoding="async" /></picture>}
+          {<picture className="invite-stationery-surface" aria-hidden="true"><source srcSet="assets/editorial/studio-workbench.avif" type="image/avif" /><img src="assets/editorial/studio-workbench.webp" alt="" width="1536" height="1024" decoding="async" /></picture>}
           <div className="invite-card">
             <CardThumb event={event} content={content} width={240} label={`بطاقة ${CARD_NAMES[content.cardId] ?? ''} باسم ${names.a}${names.b ? ` و${names.b}` : ''}`} />
             <div className="stack gap-2 invite-card-actions">
@@ -82,9 +82,9 @@ export function InvitationSummary({ event }: { event: Event }) {
         <div className="stack gap-6">
           <Panel title="ما تحتاج معرفته">
             <KeyValue items={[
-              { k: 'التجربة', v: xLabel, icon: 'sparkle' },
+              { k: 'الحركة', v: xLabel, icon: 'sparkle' },
               { k: 'البطاقة', v: CARD_NAMES[content.cardId] ?? content.cardId },
-              { k: 'المكان في الدعوة', v: SCENE_NAMES[content.sceneId] ?? content.sceneId },
+              { k: 'الخلفية', v: SCENE_NAMES[content.sceneId] ?? content.sceneId },
               { k: 'الأسماء على البطاقة', v: <>{names.a}{names.b ? ` و${names.b}` : ''} {names.fromEvent ? <Badge tone="neutral">من بيانات المناسبة</Badge> : <Badge tone="info">خاصة بالدعوة</Badge>}</> },
               { k: 'آخر حفظ', v: relativeTime(d.draftSavedAt, now), icon: 'clock' },
             ]} />

@@ -119,7 +119,7 @@ const rsvp = {
         <span class="ar" style="font-size: 15px; line-height: 1.4">${T.decline.ar}</span><span dir="ltr" style="font-size: 13px; font-style: italic">${T.decline.en}</span>
       </button>
     </div>
-    <div class="fx-rise fx-d4" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-top: 1px solid ${t.accent}; border-bottom: 1px solid ${t.accent}">
+    <div class="fx-rise fx-d4 rsvp-guests-row" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-top: 1px solid ${t.accent}; border-bottom: 1px solid ${t.accent}">
       <div style="display: flex; flex-direction: column; align-items: flex-start"><span class="ar" id="st-guests-l" style="font-size: 15px">${T.guests.ar}</span><span dir="ltr" style="font-size: 13px; font-style: italic; color: ${t.muted}">${T.guests.en}</span></div>
       <div dir="ltr" style="display: flex; align-items: center; gap: 4px" role="group" aria-labelledby="st-guests-l">
         <button type="button" class="st-round" data-guests="-1" aria-label="Fewer guests"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button>

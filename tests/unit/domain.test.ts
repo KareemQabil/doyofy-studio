@@ -179,7 +179,7 @@ test('template presets use real engine assets and only valid experiences', () =>
   for (const p of TEMPLATE_PRESETS) {
     assert.ok(p.cardId in CARD_NAMES, `${p.id} card`);
     assert.ok(p.sceneId in SCENE_NAMES, `${p.id} setting`);
-    if (p.experience.dimension === '3d') assert.equal(p.sceneId, 'candlelit', `${p.id}: 3D only exists in the candlelit hall`);
+    assert.equal(p.experience.dimension, '2d', `${p.id}: settings are flat`);
     assert.ok(p.styles.length && p.occasionTags.length);
   }
 });

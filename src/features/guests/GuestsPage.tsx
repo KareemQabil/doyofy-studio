@@ -14,12 +14,13 @@ import type { Event, InvitationParty, PublishState, Table } from '../../domain/t
 import { CHECKIN_STATUS, PARTY_FILTERS, RSVP_STATUS, countParties, duplicatePhoneIds, invitationStatus, matchesFilter, partyNeedsAttention, searchParties, type PartyFilter } from '../../domain/parties';
 import { publishState } from '../../domain/invitation';
 import { formatPhone, plural, pluralOf, P } from '../../domain/format';
-import { Avatar, Banner, Button, EmptyState, ErrorState, Icon, LinkButton, Menu, PageHeader, SearchInput, Skeleton } from '../../ui';
+import { Avatar, Banner, Button, EmptyState, ErrorState, Icon, LinkButton, Menu, PageHeader, SearchInput, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
 import { Link, useLocation, useNavigate, useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
 import { useDesign, useParties, useResponses, useTables } from '../shared/queries';
+import { useGuestLink } from '../shared/share-link';
 import { asksAfterAttending, experienceOf } from '../../domain/guest-experience';
 import { FoodLine, FoodReport } from './FoodReport';
 import { GuestViews } from '../shared/GuestViews';
@@ -93,7 +94,8 @@ export function GuestsPage({ event }: { event: Event }) {
   const allVisibleSelected = visible.length > 0 && visible.every((p) => selected.has(p.id));
   const selecting = selectMode || sel.length > 0;
   const toggle = (id: string) => { haptic('tick'); setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); };
-  const shareUrl = (p: InvitationParty) => published && p.phone ? whatsappUrl(p.phone, inviteMessage(event, p, absolute(paths.guestLink(event.slug, p.code)))) : undefined;
+  const guestLink = useGuestLink(event);
+  const shareUrl = (p: InvitationParty) => published && p.phone ? whatsappUrl(p.phone, inviteMessage(event, p, guestLink(p))) : undefined;
 
   // first visit on a phone: nudge the first card so the swipe is discoverable, once
   const [hintRow, setHintRow] = useState(false);
@@ -130,7 +132,7 @@ export function GuestsPage({ event }: { event: Event }) {
         </>} />
 
       <GuestViews eventId={event.id} active="list" />
-      {parties.loading ? <Skeleton lines={8} /> : all.length === 0 ? (
+      {parties.loading ? <PageLoader /> : all.length === 0 ? (
         <EmptyState icon="users" title="لا ضيوف بعد" action={<><Button variant="primary" icon="plus" onClick={() => setAdding(true)}>أضف ضيفًا</Button><LinkButton to={paths.importGuests(event.id)} icon="upload">استيراد من ملف</LinkButton></>}>
           كل دعوة يمكن أن تشمل شخصًا أو عائلة. تحدد العدد المسموح، والضيف يرد بالعدد الفعلي.
         </EmptyState>
@@ -156,8 +158,8 @@ export function GuestsPage({ event }: { event: Event }) {
                 {tableList.length > 0 && <button type="button" aria-pressed={grouped} onClick={() => setParam('view', 'tables')}><Icon name="table" size="sm" />الطاولات</button>}
                 {foodOn && <button type="button" aria-pressed={food} onClick={() => { haptic('tick'); setParam('view', 'food'); }}><Icon name="sparkle" size="sm" />الطعام</button>}
               </div>}
-              {!food && <Button variant="ghost" size="sm" icon="sliders" aria-expanded={moreFilters} onClick={() => setMoreFilters((v) => !v)}>{moreFilters ? 'فلاتر أقل' : 'فلاتر'}</Button>}
-              {!food && !selecting && visible.length > 0 && <Button variant="ghost" size="sm" icon="check" onClick={() => { haptic('tick'); setSelectMode(true); }}>تحديد</Button>}
+              {!food && <Button variant="ghost" size="sm" icon="sliders" className="g2-tool" aria-label={moreFilters ? 'فلاتر أقل' : 'فلاتر'} aria-expanded={moreFilters} onClick={() => setMoreFilters((v) => !v)}><span className="g2-tool-label">{moreFilters ? 'فلاتر أقل' : 'فلاتر'}</span></Button>}
+              {!food && !selecting && visible.length > 0 && <Button variant="ghost" size="sm" icon="check" className="g2-tool" aria-label="تحديد" onClick={() => { haptic('tick'); setSelectMode(true); }}><span className="g2-tool-label">تحديد</span></Button>}
             </div>
             {!food && moreFilters && <div className="g2-chips" role="group" aria-label="تصفية الضيوف">
               {PARTY_FILTERS.map((f) => <button key={f.id} type="button" className="chip v2-press" aria-pressed={filter === f.id} onClick={() => { clearSelection(); setParam('filter', f.id === 'all' ? null : f.id); }}>{f.label}<span className="num">{counts[f.id]}</span></button>)}

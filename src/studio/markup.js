@@ -4,8 +4,6 @@
  * pages, envelope colours, done text, switcher) are filled in by Studio.js.
  */
 import { STRINGS as T } from '../data/strings.js';
-import { CARD_DEFS } from '../cards/index.js';
-import { SCENE_DEFS } from '../scenes/css/generated.js';
 
 const ICON = {
   close: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>',
@@ -35,8 +33,6 @@ export const studioMarkup = () => `
       <filter id="st-grain"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"></feTurbulence><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 .9  0 0 0 0 .8  0 0 0 .06 0"></feColorMatrix></filter>
     </defs>
   </svg>
-  ${CARD_DEFS}
-  ${SCENE_DEFS}
 
   <div class="st-layer" aria-hidden="true"></div>
   <div class="st-dim"></div>
@@ -101,6 +97,7 @@ export const studioMarkup = () => `
     <svg class="st-dl st-e1" width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="none" stroke="#C9A15F" stroke-width="1"></circle><path d="M21 33 L29 41 L44 24" fill="none" stroke="#F6E2AE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
     <span class="fx-foil st-dl st-e2 done-ar" style="font-size: 60px; line-height: 1.5; margin-top: 10px"></span>
     <span class="st-dl st-e3 done-en" dir="ltr" style="font-size: 20px; font-style: italic; max-width: 290px; line-height: 1.35"></span>
+    <span class="st-dl st-e4 done-demo" hidden style="font: 500 13px/1.6 'IBM Plex Sans Arabic', sans-serif; color: #F2EAD9; background: rgba(0,0,0,.35); padding: 6px 12px; border-radius: 999px; margin-top: 14px; max-width: 300px">هذه نسخة تجريبية — لم يُرسل ردّك للمنظّم.</span>
     <span class="st-dl st-e4 done-who" dir="ltr" style="font-size: 12.5px; letter-spacing: 0.3em; color: #E3C58C; margin-top: 18px"></span>
     <button type="button" class="st-cta st-dl st-e5" data-act="replay" style="margin-top: 32px; border-color: rgba(227,197,140,.6); color: #F4EAE0; background: transparent">
       ${ICON.replay.replace('width="19" height="19"', 'width="16" height="16"')}

@@ -1,521 +1,332 @@
 [
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events",
     "issues": []
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/new?chooser=coverflow",
     "issues": []
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/new?chooser=rail",
     "issues": []
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/prototype/design-review",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"شريط المناسبات\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_engagement/invitation/templates?first=1",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"المجموعة\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/invitation/templates",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"المجموعة\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/invitation/design",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"البطاقة\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"تعديل\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/invitation/design?section=design",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"البطاقة\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"تعديل\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/invitation/design?section=motion",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"البطاقة\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"تعديل\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/invitation/design?section=event",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"البطاقة\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"تعديل\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/overview",
-    "issues": []
+    "issues": [
+      "contrast 1.00<4.5 \"المناسبة\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/invitation",
-    "issues": []
+    "issues": [
+      "contrast 1.00<4.5 \"الدعوة\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/guests",
-    "issues": []
+    "issues": [
+      "contrast 1.00<4.5 \"الضيوف\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/guests?party=pty_w29",
-    "issues": []
+    "issues": [
+      "contrast 1.00<4.5 \"الضيوف\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/guests/import",
     "issues": []
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/rsvp",
-    "issues": []
+    "issues": [
+      "contrast 1.00<4.5 \"الضيوف\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/rsvp?tab=unmatched",
-    "issues": []
+    "issues": [
+      "contrast 1.00<4.5 \"الضيوف\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/seating",
-    "issues": []
+    "issues": [
+      "contrast 1.00<4.5 \"المزيد\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/check-in",
-    "issues": []
+    "issues": [
+      "contrast 1.00<4.5 \"الاستقبال\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/settings",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"مساهمة\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"ورد\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"هدية\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"ضيف سيحضر\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.00<4.5 \"المزيد\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_katb/summary",
-    "issues": []
+    "issues": [
+      "contrast 1.00<4.5 \"المزيد\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_wedding/more",
-    "issues": []
+    "issues": [
+      "contrast 1.00<4.5 \"المزيد\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/check-in/evt_wedding",
     "issues": []
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_engagement/overview",
-    "issues": []
+    "issues": [
+      "contrast 1.00<4.5 \"المناسبة\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/app/events/evt_engagement/invitation",
-    "issues": []
+    "issues": [
+      "contrast 1.00<4.5 \"الدعوة\" rgb(255, 255, 255) on rgb(255,255,255)"
+    ]
   },
   {
-    "vp": "phone/warm",
+    "vp": "phone/signature",
     "route": "/i/noura-faisal/4N3C3",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/new?chooser=coverflow",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/new?chooser=rail",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/prototype/design-review",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"شريط المناسبات\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_engagement/invitation/templates?first=1",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"المجموعة\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/invitation/templates",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"المجموعة\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/invitation/design",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"تعديل\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"البطاقة\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/invitation/design?section=design",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"تعديل\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"البطاقة\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/invitation/design?section=motion",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"تعديل\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"البطاقة\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/invitation/design?section=event",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"تعديل\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"البطاقة\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/overview",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/invitation",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/guests",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/guests?party=pty_w29",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/guests/import",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/rsvp",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/rsvp?tab=unmatched",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/seating",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/check-in",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/settings",
-    "issues": []
+    "issues": [
+      "contrast 1.06<4.5 \"مساهمة\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"ورد\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"هدية\" rgb(242, 234, 217) on rgb(246,241,231)",
+      "contrast 1.06<4.5 \"ضيف سيحضر\" rgb(242, 234, 217) on rgb(246,241,231)"
+    ]
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_katb/summary",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_wedding/more",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/check-in/evt_wedding",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_engagement/overview",
     "issues": []
   },
   {
-    "vp": "desk/warm",
+    "vp": "desk/signature",
     "route": "/app/events/evt_engagement/invitation",
     "issues": []
   },
   {
-    "vp": "desk/warm",
-    "route": "/i/noura-faisal/4N3C3",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/new?chooser=coverflow",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/new?chooser=rail",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/prototype/design-review",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_engagement/invitation/templates?first=1",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/invitation/templates",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/invitation/design",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/invitation/design?section=design",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/invitation/design?section=motion",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/invitation/design?section=event",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/overview",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/invitation",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/guests",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/guests?party=pty_w29",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/guests/import",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/rsvp",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/rsvp?tab=unmatched",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/seating",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/check-in",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/settings",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_katb/summary",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_wedding/more",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/check-in/evt_wedding",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_engagement/overview",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/app/events/evt_engagement/invitation",
-    "issues": []
-  },
-  {
-    "vp": "phone/sage",
-    "route": "/i/noura-faisal/4N3C3",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/new?chooser=coverflow",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/new?chooser=rail",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/prototype/design-review",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_engagement/invitation/templates?first=1",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/invitation/templates",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/invitation/design",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/invitation/design?section=design",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/invitation/design?section=motion",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/invitation/design?section=event",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/overview",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/invitation",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/guests",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/guests?party=pty_w29",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/guests/import",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/rsvp",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/rsvp?tab=unmatched",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/seating",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/check-in",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/settings",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_katb/summary",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_wedding/more",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/check-in/evt_wedding",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_engagement/overview",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
-    "route": "/app/events/evt_engagement/invitation",
-    "issues": []
-  },
-  {
-    "vp": "desk/sage",
+    "vp": "desk/signature",
     "route": "/i/noura-faisal/4N3C3",
     "issues": []
   }

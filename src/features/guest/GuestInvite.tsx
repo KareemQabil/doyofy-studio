@@ -8,13 +8,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toInvitationData } from '../../domain/invitation';
 import type { GuestView } from '../../services/contracts';
 import { errorMessage, isAppError } from '../../services/errors';
-import { Button, EmptyState, Spinner } from '../../ui';
+import { Button, EmptyState, PageLoader } from '../../ui';
 import { useServices } from '../../app/data';
 import { useLocation } from '../../app/router';
 import { loadEngine } from '../invitation/engine';
 import { GuestHub } from './GuestHub';
 import { SealCover } from '../signature/SealCover';
-import { useReviewSettings } from '../../app/review';
 import { asksAfterAttending } from '../../domain/guest-experience';
 import { ExtrasSheet, extrasPayload, type ExtrasValue } from './GuestExtras';
 
@@ -29,7 +28,6 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
   const [view, setView] = useState<GuestView | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [mode, setMode] = useState<'loading' | 'cover' | 'invitation' | 'hub'>('loading');
-  const { theme } = useReviewSettings();
   const [submission, setSubmission] = useState<Submission>(null);
 
   const load = useCallback(async () => {
@@ -40,12 +38,17 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
       const play = loc.search.get('play') != null;
       if (v.phase === 'after') setMode('hub');
       else if (play) setMode('invitation');
-      else setMode(v.party && v.party.rsvpStatus !== 'pending' ? 'hub' : theme === 'signature' ? 'cover' : 'invitation');
+      else setMode(v.party && v.party.rsvpStatus !== 'pending' ? 'hub' : 'cover');
     } catch (e) { setError(e); }
   }, [services, slug, code]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { document.body.classList.add('dy-guest'); void load(); return () => document.body.classList.remove('dy-guest'); }, [load]);
+  // a shared link carries the invitation itself (?d=). There is no server behind this prototype, so a reply made from it
+  // can never reach the organizer: open the carried copy, whose reply screen says plainly that it is a demo (Q1).
+  const carried = loc.search.get('d');
+  useEffect(() => { if (carried) location.replace(`${new URL('./', document.baseURI).href}?i=${encodeURIComponent(carried)}`); }, [carried]);
+  useEffect(() => { if (carried) return; document.body.classList.add('dy-guest'); void load(); return () => document.body.classList.remove('dy-guest'); }, [load, carried]);
 
+  if (carried) return <main className="guest-page theme-guest guest-center"><PageLoader name="envelope" label="جارٍ فتح الدعوة" size={96} /></main>;
   if (error) {
     const notPublished = isAppError(error) && error.code === 'not_published';
     return (
@@ -57,7 +60,7 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
       </main>
     );
   }
-  if (!view || mode === 'loading') return <main className="guest-page theme-guest guest-center"><Spinner label="جارٍ فتح الدعوة" /></main>;
+  if (!view || mode === 'loading') return <main className="guest-page theme-guest guest-center"><PageLoader name="envelope" label="جارٍ فتح الدعوة" size={96} /></main>;
   if (mode === 'cover') return <SealCover view={view} onOpen={() => setMode('invitation')} onDetails={() => setMode('hub')} />;
   if (mode === 'hub') return <GuestHub view={view} code={code ?? null} submission={submission} onView={setView} onReplay={() => setMode('invitation')} />;
   return (

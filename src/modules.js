@@ -22,19 +22,17 @@ MotionRegistry.registerMany([
 ]);
 
 InteractionRegistry.registerMany([
-  { id: 'pointer-tilt', name: 'Pointer tilt + scene parallax', tags: ['canonical'], activeIn: ['intro', 'card'], maxTilt: { x: 16, y: 20 }, reducedMotion: 'static' },
+  { id: 'pointer-tilt', name: 'Pointer tilt + flat motif drift', tags: ['canonical'], activeIn: ['intro', 'card'], maxTilt: { x: 6, y: 8 }, reducedMotion: 'static' },
   { id: 'page-gestures', name: 'Swipe (50 px), wheel (900 ms debounce), dots, chevrons, keys', tags: ['canonical', 'touch'], activeIn: ['pages'] },
 ]);
 
 CameraRegistry.registerMany([
   { id: 'css-perspective', name: 'DOM stage: CSS perspective 1100 px @ 50% 42%', renderMode: 'dom', tags: ['canonical'] },
-  { id: 'stage-locked-dolly', name: 'WebGL: stage-locked framing + intro dolly + pointer parallax', renderMode: 'three', tags: ['three'], source: 'src/camera/framing.js' },
 ]);
 
 FXRegistry.registerMany([
   { id: 'film-grain', name: 'SVG grain (screen 6%)', tags: ['canonical'], css: 'svg[filter=st-grain]' },
   { id: 'letterbox', name: 'Letterbox bars (intro, fly, done)', tags: ['canonical'], css: '.st-bar' },
-  { id: 'candle-flames', name: 'WebGL candle flames + flicker lights', renderMode: 'three', tags: ['three', 'candles'] },
 ]);
 
 FinaleRegistry.register({
@@ -47,5 +45,5 @@ FinaleRegistry.register({
 
 PresetRegistry.register({
   id: 'canonical-default', name: 'Wine & Gold · Candlelit Hall',
-  config: { card: 'wine', scene: 'candlelit', reveal: 'depth-arrival', finale: 'envelope', audio: 'studio' },
+  config: { card: 'kit-rose-garden', scene: 'silk', reveal: 'depth-arrival', finale: 'envelope', audio: 'studio' },
 });

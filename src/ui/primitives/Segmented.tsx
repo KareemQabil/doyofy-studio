@@ -21,9 +21,12 @@ export function Segmented<T extends string>({ label, value, options, onChange, p
       r.style.setProperty('--seg-w', `${on.offsetWidth}px`);
     };
     place();
-    const ro = new ResizeObserver(place);
-    ro.observe(r);
-    return () => ro.disconnect();
+    // the indicator follows the selected button: re-measure when any button resizes (web fonts, labels) as well as the track
+    const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(place) : null;
+    ro?.observe(r);
+    r.querySelectorAll<HTMLElement>('.seg-btn').forEach((b) => ro?.observe(b));
+    document.fonts?.ready.then(place).catch(() => {});
+    return () => ro?.disconnect();
   }, [value, options.length]);
 
   const onKey = (e: KeyboardEvent) => {

@@ -21,7 +21,7 @@
 /* One featured occasion. The rendered card remains editable, with no baked-in event text. */
 .sig-celebration-banner { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; gap: 32px; padding: clamp(28px, 4vw, 56px); margin-top: 80px; background: var(--brand-ivory); border: 1px solid var(--c-hairline-strong); border-radius: 16px; overflow: hidden; }
 .sig-banner-copy { display: grid; justify-items: start; gap: 22px; }
-.sig-banner-copy h2 { font: 700 clamp(34px, 4.2vw, 60px)/1.24 var(--font-display); color: var(--brand-charcoal); }
+.sig-banner-copy h2 { font: 700 clamp(34px, 4.2vw, 60px)/1.24 var(--font-display); color: var(--c-text); }
 .sig-banner-copy > p:not(.sig-index) { max-width: 26em; color: var(--c-text-2); line-height: 1.85; }
 .sig-banner-copy .sig-index .num { width: auto; min-width: 64px; padding-inline: 12px; border-radius: 999px; }
 .sig-banner-stationery { position: relative; display: grid; place-items: center; min-height: 370px; isolation: isolate; }

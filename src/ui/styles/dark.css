@@ -1,0 +1,99 @@
+/*
+ * «توقيع» dark — the same identity after sunset (values from Doyofy_Asset_Kit_V2/01_DIRECTION_AND_RULES.md).
+ * <html data-appearance="dark"> is set before first paint (src/index.html) and kept in sync by ThemeSync.
+ * Only organizer surfaces change: the invitation (engine, card faces, scenes), QR codes and guest pages keep their own palette.
+ * Contrast: text #F2EAD9 on #201E1C ≈ 14:1 · secondary #D2C8B4 ≈ 10:1 · tertiary #B5AB98 ≈ 7:1 · red text #E58C8D ≈ 6.3:1 ·
+ *   white on red button #BC4749 ≈ 5.1:1 (ivory on red would be 4.2 — not used) · field borders #7A736A ≥ 3:1.
+ */
+:root[data-theme][data-appearance='dark'] {
+  color-scheme: dark;
+  --c-canvas: #171615;
+  --c-surface: #201E1C;
+  --c-surface-elevated: #2A2725;
+  --c-surface-subtle: #24211F;
+  --c-surface-hover: #2A2725;
+  --c-hairline: #38342F;
+  --c-hairline-strong: #7A736A;
+  --c-field-border: #7A736A;
+  --c-text: #F2EAD9;
+  --c-text-2: #D2C8B4;
+  --c-text-3: #B5AB98;
+  --c-text-inverse: #171615;
+  --c-primary: #BC4749;
+  --c-primary-hover: #C9585A;
+  --c-primary-pressed: #A63E40;
+  --c-primary-soft: #3A2624;
+  --c-primary-text: #E58C8D;
+  --c-on-primary: #FFFFFF;
+  --c-accent: #BC4749;
+  --c-accent-strong: #E58C8D;
+  --c-accent-soft: #3A2624;
+  --c-selected: #F2EAD9;
+  --c-selected-soft: #2F2B27;
+  --c-on-selected: #171615;
+  --c-focus: #F2EAD9;
+  --c-logo: #C7A661;
+  --art-1: #2C2823; --art-2: #33302A; --art-3: #1C3332; --art-4: #3A2624; --art-5: #332D22; --art-6: #2A2826;
+  --art-ink: #F2EAD9;
+  --c-success: #7FD4BC; --c-success-soft: #173029;
+  --c-warning: #E8B860; --c-warning-soft: #332A17;
+  --c-danger: #E58C8D;  --c-danger-soft: #3A2122;
+  --c-info: #8EC3D6;    --c-info-soft: #18292F;
+  --c-neutral: #D2C8B4; --c-neutral-soft: #2A2725;
+  --c-backdrop: rgba(0, 0, 0, 0.62);
+  --shadow-1: 0 1px 0 rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 18px 36px -24px rgba(0, 0, 0, 0.7);
+  --shadow-pop: 0 30px 60px -28px rgba(0, 0, 0, 0.8);
+  --shadow-art: 0 34px 50px -30px rgba(0, 0, 0, 0.85);
+  --polish-shadow: 0 20px 40px -28px rgba(0, 0, 0, .7);
+  --mesh-ivory: radial-gradient(60% 60% at 90% 10%, rgba(199, 166, 97, 0.16), transparent 70%), radial-gradient(50% 55% at 8% 90%, rgba(46, 183, 183, 0.08), transparent 70%), #1C1A18;
+  --sig-pattern-ivory: url('assets/brand/pattern-grid-gold.svg');
+}
+
+/* the page, focus and selection */
+:root[data-appearance='dark'] body.dy { background: var(--c-canvas); color: var(--c-text); }
+:root[data-appearance='dark'] :where(.dy) :focus-visible,
+:root[data-appearance='dark'] :focus-visible { outline-color: var(--c-focus); }
+:root[data-appearance='dark'] ::selection { background: var(--brand-gold); color: #171615; }
+
+/* the hero's next-event card and its link read on the dark card */
+:root[data-appearance='dark'] .sig-hero-next .sig-text-link { color: var(--c-text) !important; }
+
+/* glass bars keep their blur over a dark page */
+:root[data-appearance='dark'] :is(.sig-tabbar, .sig-appbar, .sig-header, .focus-bar, .focus-foot, .ed-bar, .ed-dock) {
+  background: color-mix(in srgb, var(--c-canvas) 88%, transparent);
+  border-color: var(--c-hairline);
+}
+:root[data-appearance='dark'] .sig-tabbar { box-shadow: 0 18px 40px -22px rgba(0, 0, 0, .8); }
+
+/* charcoal fills that were "ink on white" become raised surfaces; brand colour tiles keep their colours */
+:root[data-appearance='dark'] .panel { background: var(--c-surface); }
+:root[data-appearance='dark'] :is(.input, .select, .textarea, .search-input) { background: var(--c-surface-elevated); color: var(--c-text); border-color: var(--c-field-border); }
+:root[data-appearance='dark'] :is(input:not([type='checkbox']):not([type='radio']), textarea, select):focus { border-color: var(--c-focus); box-shadow: 0 0 0 3px rgba(242, 234, 217, .18); }
+:root[data-appearance='dark'] :is(.input, .textarea)::placeholder { color: var(--c-text-3); }
+:root[data-appearance='dark'] .btn-secondary { border-color: var(--c-hairline-strong); color: var(--c-text); background: transparent; }
+
+/* the invitation and its previews never follow the platform: they sit on their own paper */
+:root[data-appearance='dark'] :is(.card-thumb, .tpl-thumb, .ed-workbench, .live-preview, .tp-stationery) { color-scheme: light; }
+/* QR codes stay black on white so they scan */
+:root[data-appearance='dark'] :is(.qr, .qr-code, .gt-qr) { background: #FFFFFF; color: #111111; }
+
+/* light islands: ivory/paper blocks keep their light reading tokens in dark mode (they read as paper on a dark desk) */
+:root[data-appearance='dark'] :is(.wl, .sig-library-banner, .sig-create-preview, .sig-celebration-banner, .sig-tpl-tableau, .invite-card-panel, .auth-page,
+  .sig-hero-band, .tp-stage:not(.is-playing), .ed-copy-paper, .sig-banner-caption, .auth-art-caption, .wl-fan-caption, .sig-cover-seal-hint, .sig-stamp-label,
+  .tone-ivory, .tone-beige, .tone-gold, .tone-turquoise) {
+  --c-surface: #FFFFFF; --c-surface-elevated: #FFFFFF; --c-surface-subtle: #F6F1E7;
+  --c-hairline: #E8E1D3; --c-hairline-strong: #CABFAA;
+  --c-text: #262626; --c-text-2: #4A4640; --c-text-3: #5F594F;
+  --c-primary: #262626; --c-primary-text: #262626; --c-on-primary: #FFFFFF; --c-focus: #262626;
+  color: var(--c-text);
+  color-scheme: light;
+}
+/* the studio heading in the editor panel is a dark band in dark mode, not a paper island */
+:root[data-appearance='dark'] .ed-studio-heading { background: var(--c-surface); color: var(--c-text); }
+:root[data-appearance='dark'] :is(.ed-studio-kicker, .ed-stage .ed-stage-caption, .ed-stage-heading, .ed-stage-heading h2) { color: var(--c-text); }
+:root[data-appearance='dark'] .ed-tabs .seg-btn[data-on='true'] { color: #171615; background: var(--brand-ivory); }
+
+/* active chips: ivory pill with dark ink (the light theme's charcoal pill, inverted) */
+:root[data-appearance='dark'] :is(.chip.is-on, .chip[aria-pressed='true']) { background: var(--brand-ivory); border-color: var(--brand-ivory); color: #171615; }
+:root[data-appearance='dark'] .chip.is-on .chip-count { background: rgba(23, 22, 21, .12); color: #171615; }

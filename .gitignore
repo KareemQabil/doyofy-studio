@@ -1,7 +1,7 @@
 node_modules/
 dist/
 canonical/runtime/
-qa/screenshots/look/
+qa/screenshots/
 tests/.dom-build.mjs
 
 # local secrets (see .env.example)
@@ -17,3 +17,5 @@ tests/.dom-build.mjs
 # Private client review media is not repository source
 WhatsApp*
 feedback-media/
+qa/gate/
+review/screenshots-or-captures/journey/*.png

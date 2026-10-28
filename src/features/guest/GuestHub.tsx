@@ -27,7 +27,6 @@ function calendarUrl(v: GuestView): string {
 const mapUrl = (v: GuestView) => v.event.venue.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${v.event.venue.nameEn || v.event.venue.name} ${v.event.venue.cityEn || v.event.venue.city}`)}`;
 
 import { SealStamp } from '../signature/SealStamp';
-import { useReviewSettings } from '../../app/review';
 
 export function GuestHub({ view, code, submission, onView, onReplay }: { view: GuestView; code: string | null; submission: Submission; onView: (v: GuestView) => void; onReplay: () => void }) {
   const now = useNow(60000);
@@ -37,13 +36,12 @@ export function GuestHub({ view, code, submission, onView, onReplay }: { view: G
   const today = localDateOf(now, view.event.timeZone);
   const days = daysBetween(today, view.event.date);
   const failed = submission && !submission.ok;
-  const { theme } = useReviewSettings();
   const [generalSubmitted, setGeneralSubmitted] = useState('');
   const [editing, setEditing] = useState<boolean>(!!failed || (!!p && p.rsvpStatus === 'pending'));
 
   return (
     <main className="guest-page theme-guest">
-      {theme === 'signature' && <SealStamp show={!!submission?.ok} label={p?.rsvpStatus === 'declined' ? 'وصل اعتذاركم' : 'وصل ردكم'} tone={p?.rsvpStatus === 'declined' ? 'charcoal' : 'gold'} />}
+      {<SealStamp show={!!submission?.ok} label={p?.rsvpStatus === 'declined' ? 'وصل اعتذاركم' : 'وصل ردكم'} tone={p?.rsvpStatus === 'declined' ? 'charcoal' : 'gold'} />}
       <div className="hub">
         <header className="hub-head">
           <p className="hub-kicker">{view.event.title}</p>

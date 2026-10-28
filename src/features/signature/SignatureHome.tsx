@@ -17,7 +17,7 @@ import { swipeStep } from '../../domain/gestures';
 import { useNow } from '../../app/data';
 import { Link, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
-import { ErrorState, Icon, LinkButton, Skeleton, Status } from '../../ui';
+import { ErrorState, Icon, LinkButton, Skeleton, Status, PageLoader } from '../../ui';
 import { OccasionGlyph } from '../../ui/icons';
 import { usePointerGesture } from '../../ui/hooks/usePointerGesture';
 import { TactileDeck } from '../../ui/primitives/TactileDeck';
@@ -106,7 +106,7 @@ function HeroFan({ looks }: { looks: Look[] }) {
         <p className="sig-fan-label" aria-live="polite">{looks[visibleFront]?.label}</p>
         <button type="button" className="sig-fan-arrow" onClick={() => cycle(1)} aria-label="الشكل التالي"><Icon name="forward" /></button>
       </div>
-      <p className="sig-fan-hint">اسحب لتكتشف شكلًا آخر <span aria-hidden="true">←</span></p>
+      <p className="sig-fan-hint">اسحب لتكتشف شكلًا آخر <span aria-hidden="true">→</span></p>
     </div>
   );
 }
@@ -208,7 +208,7 @@ function OccasionDeckSection() {
           <LinkButton to={`${paths.newEvent}?type=${active.id}`} variant="primary" size="lg" iconEnd="forward">ابدأ {active.label}</LinkButton>
         </div>
         <TactileDeck items={items} index={index} onIndexChange={setIndex} getKey={(t) => t.id} window={2}
-          label="المناسبات — اسحب يسارًا للتالي أو استخدم الأسهم" itemLabel={(t) => t.label} activateHint="اضغط للبدء"
+          label="المناسبات — اسحب يمينًا للتالي أو استخدم الأسهم" itemLabel={(t) => t.label} activateHint="اضغط للبدء"
           onActivate={(t) => navigate(`${paths.newEvent}?type=${t.id}`)}
           renderCard={(t, s) => <OccasionPoster type={t.id} active={s.active} />} className="sig-occasion-deck" />
       </div>
@@ -250,7 +250,7 @@ export function SignatureHome() {
               <div><p className="sig-index"><span className="num">01</span>مناسباتك</p><h2 id="sig-mine">{memories ? 'مناسبات مضت.' : active.length > 1 ? 'مناسبات أخرى قادمة.' : 'مساحة لمناسبة جديدة.'}</h2></div>
               {past.length > 0 && <button type="button" className="sig-chip-toggle" aria-pressed={memories} onClick={() => setMemories((v) => !v)}><Icon name="archive" size="sm" />{memories ? 'المناسبات القادمة' : <>المناسبات السابقة <span className="num">{past.length}</span></>}</button>}
             </header>
-            {events.loading ? <Skeleton lines={4} block /> : events.error ? <ErrorState error={events.error} onRetry={events.refetch} /> : (
+            {events.loading ? <PageLoader /> : events.error ? <ErrorState error={events.error} onRetry={events.refetch} /> : (
               <div className="sig-tickets">
                 {list.map((e) => <EventTicket key={e.id} event={e} />)}
                 {!memories && <Link to={paths.newEvent} className="sig-new-ticket"><span className="sig-new-plus" aria-hidden="true"><Icon name="plus" /></span><span><strong>مناسبة جديدة</strong><small>تبدأ باختيار المناسبة، والدعوة تتجهّز معك.</small></span><Icon name="forward" size="sm" /></Link>}

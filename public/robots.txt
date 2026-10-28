@@ -1,0 +1,3 @@
+# Doyofy prototype — not for search engines
+User-agent: *
+Disallow: /

@@ -1,0 +1,178 @@
+/*
+ * Density — one calm scale for the whole organizer UI (owner: «not big, not tiny»).
+ *   bars: header 56 · rail 232 · phone app bar 48 + tab bar 56 (≤ 104px of fixed chrome on a phone)
+ *   type: page titles 24–32 · hero/display 40–72 (was 56–124) · section titles 17–18 · body 15–16
+ *   controls: 40px on desktop pointers, 44px on touch, primary actions 46–48px
+ * Loaded after the Signature sheets so these values are the ones that ship; dark.css follows.
+ */
+:root[data-theme] {
+  --topbar-h: 56px;
+  --tabbar-h: 56px;
+  --sig-header-h: 56px;
+  --sig-rail-w: 232px;
+  --mobile-nav-h: calc(56px + env(safe-area-inset-bottom));
+  /* FX-16: one radius scale — 8 controls · 12 cards · 16 panels/sheets · pill; square only for full-bleed bands and paper */
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 16px;
+}
+:root[data-theme] :is(.progress, .progress-fill, .summary-track) { border-radius: 999px; }
+:root[data-theme] body.dy:has(.sig-tabbar) { --mobile-nav-h: calc(56px + env(safe-area-inset-bottom)); }
+
+/* ------------------------------------------------------------------ bars */
+:root[data-theme] .sig-header { min-height: var(--sig-header-h); gap: 16px; padding: 6px clamp(16px, 2.4vw, 32px); }
+:root[data-theme] .sig-header .sig-brand svg, :root[data-theme] .sig-header .sig-brand img { height: 26px; width: auto; }
+:root[data-theme] .sig-edition { font-size: 11px; }
+:root[data-theme] .sig-header-nav a { min-height: 38px; padding: 0 12px; font-size: 14px; }
+:root[data-theme] .sig-header-nav .sig-header-new { min-height: 38px; padding: 0 14px; font-size: 13.5px; }
+:root[data-theme] .account-trigger { min-height: 38px; }
+:root[data-theme] .focus-bar { height: 56px; }
+:root[data-theme] .focus-foot { padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); }
+:root[data-theme] .focus-foot .btn-lg { min-height: 46px; }
+:root[data-theme] .ed { --bar-h: 56px; }
+:root[data-theme] .ed-bar { height: 56px; }
+
+/* ------------------------------------------------------------------ workspace rail (desktop) */
+:root[data-theme] .sig-ws { grid-template-columns: var(--sig-rail-w) minmax(0, 1fr); min-height: calc(100dvh - var(--sig-header-h)); }
+:root[data-theme] .sig-rail { top: var(--sig-header-h); height: calc(100dvh - var(--sig-header-h)); gap: 12px; padding: 16px 12px; }
+:root[data-theme] .sig-rail-context .ws-event { padding: 14px; gap: 4px; border-radius: 12px; }
+:root[data-theme] .sig-rail-context .ws-event-title { font-size: 16px; line-height: 1.4; padding-inline-end: 36px; }
+:root[data-theme] .sig-rail-context :is(.ws-event-meta, .ws-allevents) { font-size: 12px; }
+:root[data-theme] .sig-journey-link { min-height: 40px; gap: 10px; padding: 4px 10px; font-size: 14px; }
+:root[data-theme] .sig-step-num { width: 26px; height: 26px; font-size: 11px; }
+:root[data-theme] .sig-more-toggle { min-height: 36px; font-size: 13px; }
+:root[data-theme] .sig-optional a { min-height: 36px; font-size: 13.5px; }
+:root[data-theme] .sig-content { padding: clamp(20px, 2.4vw, 32px) clamp(16px, 2.6vw, 40px) 64px; }
+
+/* ------------------------------------------------------------------ type scale */
+:root[data-theme] .page-title,
+:root[data-theme] .event-overview-head h1 { font-size: clamp(24px, 1.2vw + 15px, 32px); line-height: 1.3; letter-spacing: -0.01em; }
+:root[data-theme] .page-head::after { width: 48px; height: 3px; margin-top: 12px; }
+:root[data-theme] .page-sub { font-size: 14.5px; }
+:root[data-theme] :is(.panel-title, .section-title, .section-head h2) { font-size: 17px; }
+:root[data-theme] .sig-hero h1 { font-size: clamp(40px, 4.6vw, 72px); line-height: 1.12; }
+:root[data-theme] .sig-hero-sub { font-size: clamp(15px, 1vw + 4px, 17px); }
+:root[data-theme] .sig-hero-next-title { font-size: clamp(18px, 1.3vw + 4px, 22px); }
+:root[data-theme] .sig-hero-sticker b { font-size: 32px; }
+:root[data-theme] .sig-section-head h2 { font-size: clamp(26px, 2.6vw, 42px); }
+:root[data-theme] .sig-deck-copy h3 { font-size: clamp(24px, 2.2vw, 34px); }
+:root[data-theme] .sig-steps-num { font-size: clamp(34px, 3vw, 48px); }
+:root[data-theme] .sig-closing-line { font-size: clamp(28px, 3.2vw, 52px); }
+:root[data-theme] .sig-create-head h2 { font-size: clamp(28px, 2.6vw, 40px); }
+:root[data-theme] .create-h { font-size: clamp(22px, 2vw, 30px); }
+:root[data-theme] .sig-banner-copy h2 { font-size: clamp(26px, 2.6vw, 40px); }
+:root[data-theme] .sig-library-banner h3 { font-size: 24px; }
+:root[data-theme] .sig-moment h2 { font-size: clamp(22px, 1.8vw, 30px); }
+:root[data-theme] .sig-date b { font-size: 38px; }
+:root[data-theme] .guest-facts strong { font-size: 28px; }
+:root[data-theme] .sig-tpl-copy h3 { font-size: clamp(20px, 1.6vw, 26px); }
+:root[data-theme] .seat-overview-head h2 { font-size: clamp(20px, 1.8vw, 28px); }
+:root[data-theme] .sig-cover-head h1 { font-size: clamp(28px, 4.4vw, 44px); }
+:root[data-theme] .g2-counter strong { font-size: 24px; }
+:root[data-theme] .wl-hero h1 { font-size: clamp(40px, 4.8vw, 76px); }
+:root[data-theme] .wl-section h2 { font-size: clamp(26px, 2.8vw, 40px); }
+:root[data-theme] .wl-closing-line { font-size: clamp(26px, 3vw, 44px); }
+:root[data-theme] .auth-copy h1 { font-size: clamp(30px, 3vw, 44px); }
+:root[data-theme] .auth-art-caption p { font-size: 26px; }
+
+/* ------------------------------------------------------------------ controls */
+@media (hover: hover) and (pointer: fine) {
+  :root[data-theme] .btn { min-height: 40px; }
+  :root[data-theme] .btn-sm { min-height: 34px; }
+  :root[data-theme] .btn-lg { min-height: 46px; padding-inline: 24px; }
+  :root[data-theme] :is(.input, .select) { min-height: 42px; }
+}
+@media (pointer: coarse) {
+  :root[data-theme] .btn { min-height: 44px; }
+  :root[data-theme] .btn-lg { min-height: 48px; }
+}
+
+/* ------------------------------------------------------------------ occasion deck at /app/events/new:
+   the card sits fully inside its colour poster, and the deck is sized from the space left between the bars */
+:root[data-theme] .sig-create { gap: 16px; padding-top: clamp(14px, 2vw, 28px); }
+:root[data-theme] .sig-create-deck { --deck-w: clamp(176px, min(21vw, calc((100dvh - 56px - 64px - 250px) / 1.4)), 256px); --deck-h: calc(var(--deck-w) * 1.4 + 16px); }
+:root[data-theme] .sig-poster { padding: 16px 16px 14px; }
+:root[data-theme] .sig-poster-head strong { font-size: 22px; }
+:root[data-theme] .sig-poster-card { place-items: center; min-height: 0; }
+:root[data-theme] .sig-poster-card .card-thumb { margin-bottom: 0; transform: rotate(-2deg); max-height: 100%; }
+:root[data-theme] .deck-card.is-active .sig-poster-card .card-thumb { transform: none; }
+@media (hover: hover) and (pointer: fine) {
+  :root[data-theme] .deck-card:hover .sig-poster-card .card-thumb { transform: rotate(0deg); }
+}
+:root[data-theme] .focus-main { scroll-padding-bottom: 96px; }
+
+/* ------------------------------------------------------------------ phones */
+@media (max-width: 760px) {
+  :root[data-theme] .sig-header { min-height: 52px; padding: 4px 12px; gap: 8px; }
+  :root[data-theme] .sig-appbar { box-sizing: border-box; min-height: 48px; height: calc(48px + env(safe-area-inset-top)); padding: 2px 6px 2px 10px; padding-top: max(2px, env(safe-area-inset-top)); transition: transform 240ms var(--ease-out), box-shadow 200ms; }
+  :root[data-theme] .sig-appbar.is-hidden { transform: translateY(-100%); box-shadow: none; }
+  :root[data-theme] .sig-appbar-context .btn-icon { width: 40px; height: 40px; }
+  :root[data-theme] .ws-mobile-title { font-size: 15px; }
+  /* docked tab bar: 56px + safe area, full width, the active tab carries the charcoal pill */
+  :root[data-theme] .sig-tabbar { inset-inline: 0; bottom: 0; height: var(--mobile-nav-h); padding: 4px 6px calc(4px + env(safe-area-inset-bottom)); border: 0; border-top: 1px solid var(--c-hairline); border-radius: 0; box-shadow: none; }
+  :root[data-theme] .sig-tab-indicator { top: 4px; bottom: calc(4px + env(safe-area-inset-bottom)); inset-inline-start: 6px; width: calc((100% - 12px) / var(--tab-n, 5)); border-radius: 14px; }
+  :root[data-theme] .sig-tab { min-height: 48px; gap: 2px; padding: 4px 2px; border-radius: 14px; font-size: 11px; }
+  :root[data-theme] .sig-tab-icon { width: 40px; height: 24px; }
+  :root[data-theme] .sig-ws { padding-bottom: calc(var(--mobile-nav-h) + 16px); }
+  :root[data-theme] .sig-content { padding: 14px 16px 32px; }
+  :root[data-theme] .sig-shell.has-appbar .sig-content { padding-top: 6px; }
+  :root[data-theme] .page-title, :root[data-theme] .event-overview-head h1 { font-size: 24px; }
+  :root[data-theme] .sig-hero h1 { font-size: clamp(36px, 10.4vw, 46px); }
+  :root[data-theme] .sig-section-head h2 { font-size: clamp(24px, 7vw, 30px); }
+  :root[data-theme] .sig-create-head h2 { font-size: 28px; }
+  :root[data-theme] .sig-banner-copy h2 { font-size: clamp(24px, 7vw, 30px); }
+  :root[data-theme] .wl-hero h1 { font-size: clamp(36px, 10.4vw, 46px); }
+  :root[data-theme] .sig-create-deck { --deck-w: min(56vw, 220px); }
+  :root[data-theme] .focus-bar { box-sizing: border-box; height: 48px; }
+  :root[data-theme] .focus-foot { padding: 5px 12px calc(5px + env(safe-area-inset-bottom)); }
+  :root[data-theme] .focus-foot .btn-lg { min-height: 44px; }
+  :root[data-theme] .ed-dock { height: calc(56px + env(safe-area-inset-bottom)); }
+}
+
+/* FX-10 (WCAG 2.4.11): keyboard focus never lands under a sticky bar — the page scrolls it clear of them */
+html:has(.sig-header) { scroll-padding-top: calc(var(--sig-header-h, 56px) + 12px); }
+html:has(.focus-bar) { scroll-padding-top: 68px; }
+html:has(.focus-foot) { scroll-padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+@media (max-width: 760px) {
+  html:has(.sig-appbar) { scroll-padding-top: 60px; }
+  html:has(.sig-tabbar) { scroll-padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
+}
+
+/* sticky panels sit below the sticky header, never under it */
+:root[data-theme] .gxs-preview { top: calc(var(--sig-header-h) + 16px); }
+:root[data-theme] .g2-bulk { top: calc(var(--sig-header-h) + 8px); }
+:root[data-theme] .seat-pool { top: calc(var(--sig-header-h) + 16px); max-height: calc(100dvh - var(--sig-header-h) - 32px); }
+
+/* template gallery: the designs come first — a slim banner and a small prop instead of a poster-sized header */
+:root[data-theme] .sig-library-banner { min-height: 0; grid-template-rows: 132px; }
+:root[data-theme] .sig-library-banner picture { min-height: 0; height: 132px; }
+:root[data-theme] .sig-library-banner > div { padding: 16px 24px; }
+:root[data-theme] .tg-studio-prop { max-width: 150px; height: auto; }
+@media (max-width: 760px) {
+  :root[data-theme] .sig-library-banner { grid-template-rows: 112px; }
+  :root[data-theme] .sig-library-banner picture { height: 112px; }
+}
+:root[data-theme] .tg-head h1, :root[data-theme] .tg-title { font-size: clamp(24px, 1.2vw + 15px, 32px); }
+@media (max-width: 760px) { :root[data-theme] .sig-library-banner h3 { font-size: 19px; } :root[data-theme] .sig-library-banner p:last-child { font-size: 11.5px; } }
+
+/* public prototype: a quiet demo note at the very top of organizer screens (dismissible) */
+.demo-bar { position: relative; z-index: 50; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 44px; background: var(--c-surface-subtle); color: var(--c-text-2); font-size: 12.5px; line-height: 1.5; text-align: center; border-bottom: 1px solid var(--c-hairline); }
+.demo-bar strong { color: var(--c-text); font-weight: 600; }
+.demo-bar-close { position: absolute; inset-inline-end: 6px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 999px; background: none; color: var(--c-text-2); cursor: pointer; }
+.demo-bar-close:hover { background: var(--c-surface-hover); }
+.app-crash { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 24px; text-align: center; background: var(--c-canvas); color: var(--c-text); }
+.app-crash h1 { font: 700 24px/1.4 var(--font-display); margin: 0; }
+.app-crash p { margin: 0 0 8px; color: var(--c-text-2); }
+.account-reset { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; margin-top: 8px; padding: 0 12px; border: 1px solid var(--c-hairline); border-radius: 12px; background: none; color: var(--c-text-2); font: 500 14px/1 var(--font-ui); cursor: pointer; }
+.account-reset:hover { background: var(--c-surface-hover); color: var(--c-text); }
+
+/* phones: a list row keeps avatar + text on one line however long the meta; actions sit below, aligned to the end */
+@media (max-width: 640px) {
+  .plain-row { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--s-3); row-gap: var(--s-2); }
+  .plain-row > .row-actions { grid-column: 1 / -1; width: auto; }
+  .plain-row .row-sub { flex-wrap: wrap; }
+}
+
+/* phones: the first-time swipe hint floats over the foot of the deck instead of pushing the page under the sticky action bar */
+@media (max-width: 640px) {
+  .deck { position: relative; }
+  .deck-hint { position: absolute; z-index: 6; inset-inline: 0; margin-inline: auto; width: max-content; bottom: 64px; box-shadow: 0 6px 18px rgb(0 0 0 / .18); }
+}

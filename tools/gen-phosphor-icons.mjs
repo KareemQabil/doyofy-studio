@@ -20,7 +20,7 @@ const UI = {
   home: 'House', sparkle: 'Sparkle', envelope: 'EnvelopeSimple', eye: 'Eye', edit: 'PencilSimple', trash: 'Trash', more: 'DotsThree', undo: 'ArrowCounterClockwise',
   refresh: 'ArrowClockwise', archive: 'Archive', bell: 'Bell', list: 'ListBullets', external: 'ArrowSquareOut', grid: 'SquaresFour', play: 'Play', minus: 'Minus',
   menu: 'List', flag: 'Flag', move: 'ArrowsOutCardinal', wifi: 'WifiHigh', sliders: 'SlidersHorizontal', type: 'TextT', palette: 'Palette', motion: 'WaveSine',
-  volume: 'SpeakerHigh', mute: 'SpeakerX', expand: 'ArrowsOut',
+  volume: 'SpeakerHigh', mute: 'SpeakerX', expand: 'ArrowsOut', sun: 'Sun', moon: 'Moon', device: 'Desktop',
 };
 // occasion glyphs (light weight: monoline like the Doyofy logomark)
 const OCCASION = {

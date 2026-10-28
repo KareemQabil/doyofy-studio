@@ -1,7 +1,12 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { lockAxis, type GestureAxis } from '../../domain/gestures';
+import { lockAxis, startsAtScreenEdge, type GestureAxis } from '../../domain/gestures';
 export interface GestureEnd { delta: number; dx: number; dy: number; velocity: number; duration: number; moved: boolean; cancelled: boolean }
 type PointerLike = { pointerId: number; clientX: number; clientY: number; timeStamp: number };
+/** Nested gesture surfaces: the innermost one that takes a pointer claims it, and the surfaces around it
+ *  (e.g. the workspace's section swipe around a guest row or the occasion deck) leave that pointer alone. */
+const claimed = new WeakSet<Event>();
+export const claimPointer = (e: { nativeEvent: Event }) => { claimed.add(e.nativeEvent); };
+export const pointerClaimed = (e: { nativeEvent: Event }) => claimed.has(e.nativeEvent);
 /** Bind only to an intentional gesture surface; never globally intercept scrolling.
  *  Controls inside the surface block the gesture unless they opt in with data-gesture-surface
  *  (e.g. deck cards, which are buttons you can also drag). */
@@ -36,8 +41,11 @@ export function usePointerGesture({ axis, enabled = true, onMove, onEnd, onStart
       // before capture). Drop that stale gesture as cancelled instead of blocking this surface forever.
       const stale=state.current;
       if (stale && e.isPrimary!==false) { state.current=null; detach.current(); onEnd({dx:0,dy:0,delta:0,velocity:0,duration:16,moved:stale.locked,cancelled:true}); }
-      if (!enabled || state.current || e.isPrimary===false || e.button!==0 || (control && !control.hasAttribute('data-gesture-surface'))) return;
+      if (!enabled || state.current || e.isPrimary===false || e.button!==0 || (control && !control.hasAttribute('data-gesture-surface')) || pointerClaimed(e)) return;
+      // the screen edges belong to the system back/forward swipe on phones
+      if (e.pointerType==='touch' && axis==='x' && startsAtScreenEdge(e.clientX, window.innerWidth)) return;
       const surface=e.currentTarget;
+      claimPointer(e);
       suppress.current=false;state.current={id:e.pointerId,x:e.clientX,y:e.clientY,t:e.timeStamp,locked:false,target:surface};onStart?.();
       // until the axis locks (and capture is taken) a fast mouse can leave the surface; follow it on the
       // window so the gesture still locks, ends and cleans up. Events inside the surface arrive via React.

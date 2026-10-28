@@ -26,5 +26,5 @@ AudioRegistry.register({
 
 /** optional per-scene ambience (looped quietly under the card and pages) */
 export const SCENE_AMBIENCE = {
-  marble: { file: 'p0/audio/sfx_morning_birds.mp3', gain: 0.07 },
+  marble: { file: 'p0-derived/audio/morning-birds-ambience.mp3', gain: 0.07 }, // 72s mono 56kbps loop derived from p0/audio/sfx_morning_birds.mp3
 };
