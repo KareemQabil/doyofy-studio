@@ -28,22 +28,23 @@
     "journey": "node tools/build.mjs && node tests/signature-journey.mjs"
   },
   "dependencies": {
+    "gsap": "3.13.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "three": "0.170.0"
   },
   "devDependencies": {
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "esbuild": "^0.27.0",
-    "playwright": "^1.56.0",
-    "typescript": ">=5.8.0",
-    "@types/node": "^25.0.0",
     "@fontsource/amiri": "^5.2.0",
     "@fontsource/aref-ruqaa": "^5.2.0",
     "@fontsource/cormorant-garamond": "^5.2.0",
     "@fontsource/great-vibes": "^5.2.0",
     "@fontsource/reem-kufi": "^5.2.0",
-    "jsdom": "^26.1.0"
+    "@types/node": "^25.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "esbuild": "^0.27.0",
+    "jsdom": "^26.1.0",
+    "playwright": "^1.56.0",
+    "typescript": ">=5.8.0"
   }
 }

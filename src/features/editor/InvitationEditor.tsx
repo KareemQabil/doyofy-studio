@@ -84,6 +84,8 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   const [section, setSection] = useState<EditorSection>(SECTIONS.some((s) => s.value === initial) ? initial! : 'content');
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [page, setPage] = useState<WorkbenchPage>('card');
+  // the face's entrance plays when the editor opens and on request; typing never restarts it
+  const [cardMotion, setCardMotion] = useState(1);
   // phones: swipe the workbench sideways to turn the invitation's pages (RTL: the page follows the finger, right = next); the tabs remain
   const PAGES: WorkbenchPage[] = ['card', 'message', 'program'];
   const pageSwipe = usePointerGesture({ axis: 'x', onEnd: (g) => {
@@ -244,7 +246,7 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
         <section className="ed-stage" aria-label="معاينة الدعوة">
           <div className="ed-stage-heading"><div><p className="ed-stage-kicker">{live ? 'التجربة الكاملة' : 'على طاولة التصميم'}</p><p className="ed-stage-caption">{live ? 'شاهد الدعوة كما تُفتح لضيوفك' : 'دعوتك، بكل تفاصيلها'}</p></div><Segmented label="عرض الاستوديو" value={mode} onChange={setMode} options={[{value:'edit',label:'تعديل',icon:'edit'},{value:'preview',label:'معاينة',icon:'play'}]} /></div>
           {!live && <Segmented className="ed-canvas-tabs" label="صفحة الدعوة المعروضة" value={page} onChange={setPage} options={[{value:'card',label:'البطاقة'},{value:'message',label:'الكلمة'},{value:'program',label:'البرنامج'}]} />}
-          {!live ? <div className="ed-page-swipe" {...pageSwipe}><EditorWorkbench event={shown} content={content} page={page} /></div> : <div className="ed-screen-wrap">
+          {!live ? <div className="ed-page-swipe" {...pageSwipe}><EditorWorkbench event={shown} content={content} page={page} motion={cardMotion} />{page === 'card' && <button type="button" className="ed-motion-replay" onClick={() => setCardMotion((n) => n + 1)}><Icon name="play" size="sm" />شغّل حركة البطاقة</button>}</div> : <div className="ed-screen-wrap">
             <div className="ed-screen"><LivePreview start="card" invitation={invitation} content={content} replayToken={replay} muted={!sound} /></div>
           </div>}
           {live && (

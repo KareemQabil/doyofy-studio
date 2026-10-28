@@ -110,3 +110,9 @@
   .ed-workbench-paper { transition: none; transform: translate(-50%, -50%) scale(var(--paper-scale)); }
   :root[data-theme='signature'] .ed-pick:hover .card-thumb { transform: none; }
 }
+
+/* replay the card's entrance (the face plays once when the editor opens) */
+.ed-page-swipe { position: relative; }
+.ed-motion-replay { position: absolute; inset-inline-start: 16px; bottom: 16px; z-index: 3; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 1px solid var(--c-hairline); border-radius: 999px; background: color-mix(in srgb, var(--c-surface) 92%, transparent); color: var(--c-text); font: 600 12.5px/1 var(--font-display); cursor: pointer; backdrop-filter: blur(8px); }
+.ed-motion-replay:hover { border-color: var(--c-hairline-strong); }
+@media (prefers-reduced-motion: reduce) { .ed-motion-replay { display: none; } }

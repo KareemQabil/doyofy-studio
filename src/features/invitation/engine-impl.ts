@@ -10,6 +10,7 @@ import { SCENES, SCENE_DEFS, SCENE_ROOT } from '../../scenes/css/generated.js';
 import { SCENE_VALS } from '../../scenes/css/vals.js';
 
 export { Studio } from '../../studio/Studio.js';
+export { playCardMotion } from '../../cards/card-motion.js';
 import { FALLBACK_CARD } from '../../cards/index.js';
 
 /** static card face markup (300×420) with the given invitation content */

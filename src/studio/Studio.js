@@ -10,6 +10,7 @@
  * only; replay tears the run down (timers, listeners, renderers) and starts clean.
  */
 import { CardRegistry, SceneRegistry, PageRegistry, FinaleRegistry, RevealRegistry, AudioRegistry } from '../engine/registries.js';
+import { playCardMotion } from '../cards/card-motion.js';
 import { StateMachine } from '../engine/StateMachine.js';
 import { AudioEngine } from '../engine/AudioEngine.js';
 import { detectQuality, tierAtLeast } from '../engine/Quality.js';
@@ -184,6 +185,7 @@ export class Studio {
     switch (state) {
       case 'card':
         this.el.cardBtn.disabled = false;
+        if (from !== 'pages') this._playFace();   // the face's entrance plays when the card is revealed, not on the way back
         this.el.sheet.inert = true;
         if (from === 'pages') { this.audio.stopMusic(); requestAnimationFrame(() => this.el.cardBtn.focus({ preventScroll: true })); }
         break;
@@ -221,6 +223,12 @@ export class Studio {
 
   // ---------------------------------------------------------------- card
   get theme() { return CardRegistry.get(this.cardId).theme; }
+
+  /** the face's own entrance (src/cards/card-motion.js); static experiences and reduced motion show it at rest */
+  _playFace() {
+    this.faceMotion?.revert();
+    this.faceMotion = playCardMotion(this.el.face, { reduced: this.quality.reducedMotion || this.quality.static });
+  }
 
   _applyCard() {
     const card = CardRegistry.get(this.cardId);
@@ -269,6 +277,7 @@ export class Studio {
     if (!CardRegistry.has(id) || id === this.cardId) return;
     this.cardId = id;
     this._applyCard();
+    if (this.sm?.state === 'card') this._playFace();
     this._syncSwitcher();
     this.scene?.setCard?.(CardRegistry.get(id));
   }
@@ -600,6 +609,7 @@ export class Studio {
   _syncSwitcher() { if (this.swOpen) { const sc = [...this.el.swSlot.querySelectorAll('.st-chiprow')].map((r) => r.scrollLeft); this._openSwitcher(); this.el.swSlot.querySelectorAll('.st-chiprow').forEach((r, i) => { r.scrollLeft = sc[i]; }); } }
 
   destroy() {
+    this.faceMotion?.revert();
     this.sm?.destroy(); this.scene?.destroy(); this.audio.destroy();
     clearTimeout(this._leaveTimer); clearTimeout(this.sealTimer); clearTimeout(this._replayTimer); clearInterval(this.clock);
     this.cleanups.forEach((f) => f());
