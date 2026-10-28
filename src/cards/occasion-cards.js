@@ -28,8 +28,10 @@ const cap = (x, y, scale, color, detail) => `<g transform="translate(${x} ${y}) 
 const star = (x, y, size, color) => `<path d="M${x} ${y-size}l${size*.25} ${size*.75} ${size*.75} ${size*.25}-${size*.75} ${size*.25}-${size*.25} ${size*.75}-${size*.25}-${size*.75}-${size*.75}-${size*.25} ${size*.75}-${size*.25}Z" fill="${color}"/>`;
 const diploma = `<g transform="translate(179 56) rotate(-17)"><rect x="-27" y="-8" width="48" height="16" rx="5" fill="#FFF8E8" stroke="#A98544" stroke-width="1.4"/><ellipse cx="21" cy="0" rx="3.6" ry="8" fill="#E9D9BA" stroke="#A98544" stroke-width="1.2"/><path d="M-4-8V8M0-8V8" stroke="#B45C42" stroke-width="2"/><path d="m-4 3-3 15 6-4 6 4L0 3" fill="#B45C42"/></g>`;
 
-/** `room` adjusts the name budget for faces whose ornament takes more (negative) or less height */
-export function names(c, room = 0) {
+/** `room` adjusts the name budget for faces whose ornament takes more (negative) or less height;
+ *  `fit` describes a face's own name box: line width (px) and glyph width per character (em) of its name font */
+export function names(c, room = 0, fit = {}) {
+  const lineWidth = fit.width ?? 234, glyph = fit.glyph ?? .57;
   const arA = String(c.arA ?? ''), arB = String(c.arB ?? '');
   const length = arA.length + arB.length;
   // a Latin line only when it adds something (no Arabic echoed as the "Latin" name)
@@ -44,7 +46,7 @@ export function names(c, room = 0) {
   const latinRows = Math.ceil(latinNames.join(' & ').length / (latinSize === 8 ? 58 : 46));
   const budget = Math.max(34, 137 + room - metaReserve - latinRows * latinSize * 1.25 - (arB ? 20 : 6));
   let size = arB ? 22 : 31;
-  const height = (name, font) => Math.ceil(Math.max(1, name.length) * font * .57 / 234) * font * 1.48;
+  const height = (name, font) => Math.ceil(Math.max(1, name.length) * font * glyph / lineWidth) * font * 1.48;
   while (size > 8 && height(arA, size) + (arB ? height(arB, size) : 0) > budget) size--;
   const latin = latinNames.map(e).join(' &amp; ');
   return `<div class="oc-names"><div class="oc-name" style="font-size:${size}px" dir="rtl">${e(arA)}</div>${arB ? `<span class="oc-join" aria-hidden="true">و</span><div class="oc-name" style="font-size:${size}px" dir="rtl">${e(arB)}</div>` : ''}${latin ? `<div class="oc-latin" lang="en" dir="ltr" style="font-size:${latinSize}px">${latin}</div>` : ''}</div>`;

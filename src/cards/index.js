@@ -12,6 +12,7 @@ import { CARD_FACES, CARD_DEFS, CARD_ROOT } from './canon/generated.js';
 import './occasion-cards.js';
 import './signature-cards.js';
 import './celebration-suite.js';
+import './collection.js';
 
 const RQ = "'Aref Ruqaa', 'Amiri', serif", KF = "'Reem Kufi', 'Amiri', sans-serif";
 
