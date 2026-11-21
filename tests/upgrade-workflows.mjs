@@ -51,7 +51,7 @@ async function scenario(name, viewport, run) {
   } finally { await context.close(); }
 }
 try {
-  browser = await chromium.launch({ executablePath: chromiumPath(), timeout: 10000, args: ['--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
+  browser = await chromium.launch({ executablePath: chromiumPath(), timeout: 30000, args: ['--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
 
   await scenario('01-phone-cards', { width: 390, height: 844 }, async page => {
     await go(page, '/app/events');
