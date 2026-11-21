@@ -20,10 +20,10 @@ Uploaded bytes stay in the current browser. Shared links carry a track reference
 ## Validation
 
 - TypeScript check passed during integration.
-- Eight targeted audio tests passed: size/type limits, corrupt storage and deduplication, default/off/reference resolution, failed cue fallback, no-sound suppression, missing upload fallback, looping custom playback with master gain/mute, and mute-before-decode cancellation.
-- Full unit run at this point: 90/91. The single failure is the separately changing guest quota test (`general link replies wait for matching`), reported to the integration owner.
+- Nine targeted audio tests passed: size/type limits, corrupt storage and deduplication, default/off/reference resolution, persisted soundtrack/silence after service reconstruction, failed cue fallback, no-sound suppression, missing upload fallback, looping custom playback with master gain/mute, and mute-before-decode cancellation.
+- Full unit suite: 102/102. TypeScript and browser-runner syntax checks passed.
 - Production build passed.
-- Real browser playback remains a manual/CI acceptance check because local Chromium launch is blocked by this executor. The engine playback lifecycle is tested with a controlled audio context, which is not evidence of hardware playback.
+- CI confirmed valid WAV metadata and preview media playback; its original immediate assertion after reload failed. Service reconstruction and a React editor unmount/remount preserved the selection in focused checks. The acceptance runner now waits for the exact selection in durable browser storage, the service, and the control before reload, then requires the exact restored selection afterward with diagnostics to distinguish save/hydration timing from data loss. The tested commit and latest CI result are recorded in [PR #5](https://github.com/KareemQabil/doyofy-studio/pull/5). The engine playback lifecycle is also tested with a controlled audio context, which is not evidence of hardware speaker output.
 
 ## Browser acceptance path
 

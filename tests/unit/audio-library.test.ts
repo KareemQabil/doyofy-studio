@@ -25,3 +25,24 @@ test('default resolves to account track, off overrides default, missing uploads 
   assert.deepEqual(resolveAudioSelection(undefined, { tracks: [] }), { mode: 'default' });
   assert.deepEqual(resolveAudioSelection({ mode: 'library', trackId: 'deleted', trackName: 'Deleted' }, library), { mode: 'library', trackId: 'deleted', trackName: 'Deleted' });
 });
+
+test('an invitation soundtrack and silence survive reconstructing the browser services', async () => {
+  const memory = new Map<string, string>();
+  const previous = (globalThis as unknown as { window?: unknown }).window;
+  (globalThis as unknown as { window: unknown }).window = {
+    localStorage: { getItem: (key: string) => memory.get(key) ?? null, setItem: (key: string, value: string) => memory.set(key, value), removeItem: (key: string) => memory.delete(key) },
+    addEventListener() {}, dispatchEvent() {},
+  };
+  try {
+    const { createServices } = await import('../../src/services');
+    const first = createServices(); first.prototype.update({ latencyMs: 0 });
+    const original = (await first.services.invitations.get('evt_wedding'))!;
+    const chosen = { mode: 'library' as const, trackId: 'audio_saved', trackName: 'Saved soundtrack' };
+    await first.services.invitations.saveDraft('evt_wedding', { ...original.draft, audio: chosen });
+    const second = createServices(); second.prototype.update({ latencyMs: 0 });
+    assert.deepEqual((await second.services.invitations.get('evt_wedding'))?.draft.audio, chosen);
+    await second.services.invitations.saveDraft('evt_wedding', { ...original.draft, audio: { mode: 'off' } });
+    const third = createServices(); third.prototype.update({ latencyMs: 0 });
+    assert.deepEqual((await third.services.invitations.get('evt_wedding'))?.draft.audio, { mode: 'off' });
+  } finally { (globalThis as unknown as { window?: unknown }).window = previous; }
+});

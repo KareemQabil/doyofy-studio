@@ -118,11 +118,35 @@ try {
     assert.equal(saved.defaultTrackId, track.id);
     await go(page, '/app/events/evt_wedding/invitation/design?section=motion');
     const select = page.getByRole('combobox', { name: 'صوت الدعوة', exact: true }); await select.selectOption(`track:${track.id}`);
-    await page.waitForFunction(async id => (await window.__doyofy.services.invitations.get('evt_wedding'))?.draft.audio?.trackId === id, track.id);
-    await page.reload({ waitUntil: 'domcontentloaded' }); assert.equal(await select.inputValue(), `track:${track.id}`);
+    const waitAudio = async (expected, persisted = false) => {
+      try {
+        await page.waitForFunction(async ({ expected, persisted }) => {
+          const store = JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}');
+          const stored = store.designs?.find(d => d.eventId === 'evt_wedding')?.draft.audio;
+          const saved = window.__doyofy ? (await window.__doyofy.services.invitations.get('evt_wedding'))?.draft.audio : null;
+          const matches = audio => expected === 'off' ? audio?.mode === 'off' : audio?.mode === 'library' && `track:${audio.trackId}` === expected;
+          const control = document.querySelector('#ed-motion select');
+          return matches(stored) && matches(saved) && control?.value === expected && (!persisted || document.querySelector('.save-state')?.classList.contains('is-saved'));
+        }, { expected, persisted }, { timeout: 4500 });
+      } catch (error) {
+        const diagnostic = await page.evaluate(async () => ({
+          persisted: JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}').designs?.find(d => d.eventId === 'evt_wedding')?.draft.audio,
+          service: window.__doyofy ? (await window.__doyofy.services.invitations.get('evt_wedding'))?.draft.audio : null,
+          control: document.querySelector('#ed-motion select')?.value,
+          save: document.querySelector('.save-state')?.textContent,
+        }));
+        throw new Error(`Audio persistence expected ${expected}: ${JSON.stringify(diagnostic)}; ${error.message}`);
+      }
+    };
+    // A repository read can settle before React paints the autosave completion. Wait for durable
+    // storage and the visible saved signal before reloading, then require the exact restored choice.
+    await waitAudio(`track:${track.id}`, true);
+    await page.reload({ waitUntil: 'domcontentloaded' }); await waitAudio(`track:${track.id}`);
+    assert.equal(await select.inputValue(), `track:${track.id}`);
     await select.selectOption('off');
-    await page.waitForFunction(async () => (await window.__doyofy.services.invitations.get('evt_wedding'))?.draft.audio?.mode === 'off');
-    await page.reload({ waitUntil: 'domcontentloaded' }); assert.equal(await select.inputValue(), 'off');
+    await waitAudio('off', true);
+    await page.reload({ waitUntil: 'domcontentloaded' }); await waitAudio('off');
+    assert.equal(await select.inputValue(), 'off');
     return `Egyptian dialect persisted; WAV metadata ${metadata.duration.toFixed(2)}s/playback; default, chosen track and silence survived reload`;
   });
 
