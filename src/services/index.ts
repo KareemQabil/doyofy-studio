@@ -3,6 +3,7 @@
  * app talks to. Swap the mock for an API client here when the NestJS backend exists.
  */
 import { demoProfileName } from '../domain/account';
+import { initializeGuestCapacity } from '../domain/billing';
 import type { Services } from './contracts';
 import { MockStore, type PrototypeSettings, type ScenarioId } from './mock/store';
 import { buildSeed } from './mock/seed';
@@ -20,6 +21,7 @@ export interface PrototypeControls {
 
 export function createServices(): { services: Services; prototype: PrototypeControls } {
   const store = new MockStore(buildSeed);
+  for (const event of store.read().events) initializeGuestCapacity(event.id, store.read().parties.filter(p => p.eventId === event.id));
   const now = () => store.now();
   const ctx = { store, now };
   const services: Services = {
@@ -34,7 +36,9 @@ export function createServices(): { services: Services; prototype: PrototypeCont
     session: {
       currentUser: () => store.settings.role === 'organizer'
         ? { id: 'usr_owner', name: demoProfileName() || 'نورة', role: 'organizer' }
-        : { id: 'usr_coord', name: demoProfileName() || 'منسقة الحفل', role: 'coordinator' },
+        : store.settings.role === 'caterer'
+          ? { id: 'usr_caterer', name: demoProfileName() || 'فريق الضيافة', role: 'caterer' }
+          : { id: 'usr_coord', name: demoProfileName() || 'منسقة الحفل', role: 'coordinator' },
     },
     clock: { now },
     onChange: (fn) => store.subscribe(fn),

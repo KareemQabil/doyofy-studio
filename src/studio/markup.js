@@ -3,7 +3,7 @@
  * z-order, so styles/canon-motion.css drives it unchanged. Dynamic parts (card face, back,
  * pages, envelope colours, done text, switcher) are filled in by Studio.js.
  */
-import { STRINGS as T } from '../data/strings.js';
+import { currentStrings } from '../data/strings.js';
 
 const ICON = {
   close: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>',
@@ -19,7 +19,7 @@ export { ICON };
 
 const SEAL_PATH = 'M32.0 -1.6 Q39.0 1.4 46.4 2.0 Q50.1 9.3 58.7 10.7 Q60.1 18.5 63.9 24.7 Q61.5 32.0 65.8 39.7 Q59.6 45.3 57.4 52.2 Q50.7 55.5 47.1 63.4 Q38.7 61.3 32.0 64.4 Q25.2 61.9 17.0 63.2 Q13.6 55.1 6.4 52.4 Q4.0 45.5 -1.4 39.6 Q2.9 32.0 -0.4 24.6 Q3.7 18.4 5.7 11.0 Q13.9 9.3 17.3 1.5 Q25.0 1.5 32.0 -1.6 Z';
 
-export const studioMarkup = () => `
+export const studioMarkup = () => { const T = currentStrings(); return `
 <div class="host-scene" aria-hidden="true"></div>
 <div class="host-ov host-dim" aria-hidden="true"></div>
 <div class="host-ov host-black" aria-hidden="true"></div>
@@ -46,7 +46,7 @@ export const studioMarkup = () => `
             <div class="st-edge st-el"></div><div class="st-edge st-er"></div><div class="st-edge st-et"></div><div class="st-edge st-eb"></div>
             <div class="st-face st-front"><div class="st-face-slot"></div><div class="st-glint"></div></div>
             <div class="st-face st-back"></div>
-            <button type="button" class="st-cardbtn" aria-label="Open the invitation"></button>
+            <button type="button" class="st-cardbtn" aria-label="افتح الدعوة"></button>
           </div>
         </div>
       </div>
@@ -57,15 +57,15 @@ export const studioMarkup = () => `
     <span class="ar" style="font-size: 14px">${T.tapToOpen.ar}</span><span dir="ltr" style="font-size: 12px; font-style: italic">${T.tapToOpen.en}</span>
   </div></div>
 
-  <section class="st-sheet" aria-label="Invitation" tabindex="-1">
+  <section class="st-sheet" aria-label="الدعوة" tabindex="-1">
     <div class="st-sheet-frame" style="position: absolute; inset: 10px; border: 1px solid; border-radius: 12px; opacity: 0.55; pointer-events: none"></div>
-    <div class="st-close"><button type="button" class="st-round" data-act="close" aria-label="Back to the card">${ICON.close}</button></div>
+    <div class="st-close"><button type="button" class="st-round" data-act="close" aria-label="العودة إلى البطاقة">${ICON.close}</button></div>
     <div style="position: absolute; top: 24px; left: 0; right: 0; text-align: center; pointer-events: none"><span class="st-sheet-mono" style="font-size: 18px"></span></div>
     <div class="st-page" aria-live="polite"></div>
-    <nav class="st-nav" dir="ltr" aria-label="Invitation pages">
-      <button type="button" class="st-round" data-act="prev" aria-label="Previous page">${ICON.up}</button>
+    <nav class="st-nav" dir="ltr" aria-label="صفحات الدعوة">
+      <button type="button" class="st-round" data-act="prev" aria-label="الصفحة السابقة">${ICON.up}</button>
       <div class="st-dots" style="display: flex; align-items: center"></div>
-      <button type="button" class="st-round" data-act="next" aria-label="Next page">${ICON.down}</button>
+      <button type="button" class="st-round" data-act="next" aria-label="الصفحة التالية">${ICON.down}</button>
     </nav>
   </section>
 
@@ -113,13 +113,13 @@ export const studioMarkup = () => `
 
   <div class="st-ctrls" dir="ltr">
     <div style="display: flex; gap: 8px">
-      <button type="button" class="st-icon" data-act="switcher" aria-label="Choose card design and scene" aria-expanded="false">${ICON.palette}</button>
+      <button type="button" class="st-icon" data-act="switcher" aria-label="اختيار التصميم والخلفية" aria-expanded="false">${ICON.palette}</button>
     </div>
     <div style="display: flex; gap: 8px">
-      <button type="button" class="st-icon" data-act="replay" aria-label="Replay from the beginning">${ICON.replay}</button>
-      <button type="button" class="st-icon" data-act="sound" aria-label="Mute music" aria-pressed="true">${ICON.soundOn}</button>
+      <button type="button" class="st-icon" data-act="replay" aria-label="إعادة العرض من البداية">${ICON.replay}</button>
+      <button type="button" class="st-icon" data-act="sound" aria-label="كتم الصوت" aria-pressed="true">${ICON.soundOn}</button>
     </div>
   </div>
   <div class="st-switch-slot"></div>
 </div>
-</div>`;
+</div>`; };

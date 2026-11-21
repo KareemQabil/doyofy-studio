@@ -38,6 +38,10 @@
 .hall-status { font-size: 11px; color: color-mix(in srgb, var(--brand-ivory, #F2EAD9) 78%, transparent); }
 .hall .hall-table.is-over .hall-status { color: #FFC2C3; font-weight: 600; }
 .hall-note { font-size: 11px; color: color-mix(in srgb, var(--brand-ivory, #F2EAD9) 60%, transparent); text-align: center; }
+.hall-order-hint { color: var(--brand-ivory); font-size: 13px; }
+.hall-floor.is-ordering .hall-table { touch-action: none; cursor: grab; border-style: dashed; border-color: var(--brand-gold); }
+.hall-floor.is-ordering .hall-table.is-order-source { opacity: .55; cursor: grabbing; }
+.hall-floor.is-ordering .hall-table:focus-visible { outline: 3px solid var(--brand-ivory); outline-offset: 3px; }
 @keyframes hall-in { from { opacity: 0; transform: translateY(12px) scale(.92); } }
 @keyframes seat-pop { from { r: 0; } }
 
@@ -70,6 +74,8 @@
 .pool-item.is-drag-source, .table-party.is-drag-source { opacity: .5; outline: 2px dashed var(--brand-turquoise, #2EB7B7); outline-offset: 2px; }
 
 @media (max-width: 760px) {
+  .seat-dock { bottom: calc(78px + env(safe-area-inset-bottom)); }
+  html:has(.seat-dock) { scroll-padding-bottom: 280px; }
   .hall { padding: 16px 12px 12px; border-radius: 22px; margin-inline: -4px; }
   .hall-floor { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 4px; }
   .hall .hall-table { padding: 6px 2px 8px; }

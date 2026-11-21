@@ -17,6 +17,8 @@ import { validateTable } from '../../domain/seating';
 import { checkAnswers, cleanAnswers, experienceOf, safeExternalUrl, validatePolicy } from '../../domain/guest-experience';
 import type { GuestExperience, RsvpInput } from '../../domain/types';
 import { AppError } from '../errors';
+import { duplicateDestinationNames } from '../../domain/guest-tools';
+import { assertGuestCapacity } from '../../domain/billing';
 import { findEvent, findParty, log, touch, type Ctx } from './helpers';
 
 const clone = <T>(v: T): T => structuredClone(v);
@@ -177,6 +179,7 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
       if (!clean.primaryGuestName) throw new AppError('validation', 'اكتب اسم الضيف أو العائلة.', 'primaryGuestName');
       return store.write((db) => {
         findEvent(db, eventId);
+        assertGuestCapacity(eventId, db.parties.filter((p) => p.eventId === eventId), clean.maxPartySize);
         const p = newParty(db, eventId, clean, 'manual');
         db.parties.push(p);
         log(db, now(), eventId, 'party_added', { name: p.primaryGuestName }, 'organizer', p.id);
@@ -187,6 +190,7 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
       const clean = cleanPartyInput(input);
       return store.write((db) => {
         const p = findParty(db, id);
+        assertGuestCapacity(p.eventId, db.parties.filter((q) => q.eventId === p.eventId), Math.max(0, (clean.maxPartySize ?? p.maxPartySize) - p.maxPartySize));
         Object.assign(p, clean);
         if ('phone' in clean && !clean.phone) delete p.phone;
         touch(p, now());
@@ -201,6 +205,7 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
     }), 'write'),
     importMany: (eventId, inputs, meta) => store.request(() => store.write((db) => {
       findEvent(db, eventId);
+      assertGuestCapacity(eventId, db.parties.filter((p) => p.eventId === eventId), inputs.reduce((n, p) => n + p.maxPartySize, 0));
       const created = inputs.map((i) => {
         const p = newParty(db, eventId, cleanPartyInput(i) as PartyInput, 'import');
         db.parties.push(p);
@@ -208,6 +213,34 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
       });
       log(db, now(), eventId, 'parties_imported', { count: created.length, skipped: meta.skipped, source: meta.source });
       return clone(created);
+    }), 'write'),
+    transfer: ({ ids, targetEventId, mode }) => store.request(() => store.write((db) => {
+      if (!ids.length || new Set(ids).size !== ids.length) throw new AppError('validation', 'اختر ضيوفًا مختلفين أولًا.');
+      const target = findEvent(db, targetEventId);
+      if (target.archivedAt) throw new AppError('validation', 'اختر مناسبة نشطة لاستقبال الضيوف.');
+      const source = ids.map((id) => findParty(db, id));
+      const sourceEventId = source[0]!.eventId;
+      if (sourceEventId === targetEventId || source.some((p) => p.eventId !== sourceEventId)) throw new AppError('validation', 'اختر ضيوفًا من مناسبة واحدة ومناسبة وجهة مختلفة.');
+      if (mode === 'move' && source.some((p) => p.checkedInCount > 0)) throw new AppError('validation', 'لا يمكن نقل ضيف سُجّل وصوله. يمكنك نسخ بياناته للمناسبة الجديدة.');
+      const existing = db.parties.filter((p) => p.eventId === targetEventId);
+      const duplicates = duplicateDestinationNames(source, existing);
+      if (duplicates.length) throw new AppError('conflict', `موجودون بالفعل أو مكررون ضمن التحديد: ${duplicates.slice(0, 3).join('، ')}. لم يُنقل أي ضيف.`);
+      assertGuestCapacity(targetEventId, existing, source.reduce((n, p) => n + p.maxPartySize, 0));
+      const made = source.map((p) => {
+        const fresh = newParty(db, targetEventId, { primaryGuestName: p.primaryGuestName, phone: p.phone,
+          maxPartySize: p.maxPartySize, companionNames: p.companionNames, side: p.side }, 'manual');
+        db.parties.push(fresh);
+        return fresh;
+      });
+      if (mode === 'move') {
+        const removed = new Set(ids);
+        db.parties = db.parties.filter((p) => !removed.has(p.id));
+        db.responses = db.responses.filter((r) => !r.partyId || !removed.has(r.partyId));
+        db.checkIns = db.checkIns.filter((r) => !removed.has(r.partyId));
+      }
+      log(db, now(), targetEventId, 'parties_imported', { count: made.length, skipped: 0, source: mode === 'move' ? 'نقل من مناسبة' : 'نسخ من مناسبة' });
+      if (mode === 'move') for (const p of source) log(db, now(), sourceEventId, 'party_removed', { name: p.primaryGuestName });
+      return clone(made);
     }), 'write'),
     markShared: (ids, how) => store.request(() => store.write((db) => {
       const t = now().toISOString();
@@ -294,6 +327,7 @@ export function mockRsvp({ store, now }: Ctx): RsvpRepository {
       const r = db.responses.find((x) => x.id === responseId);
       if (!r) throw new AppError('not_found', 'لم نجد هذا الرد.');
       const t = now();
+      assertGuestCapacity(r.eventId, db.parties.filter((p) => p.eventId === r.eventId), Math.max(1, r.count));
       const taken = new Set(db.parties.filter((p) => p.eventId === r.eventId).map((p) => p.code));
       const p: InvitationParty = {
         id: makeId('pty'), eventId: r.eventId, code: makeCode(taken), primaryGuestName: r.name, maxPartySize: Math.max(1, r.count),
@@ -339,6 +373,15 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       Object.assign(t, { name: next.name.trim(), capacity: next.capacity });
       return clone(t);
     }), 'write'),
+    reorderTables: (eventId, ids) => store.request(() => store.write((db) => {
+      findEvent(db, eventId);
+      const tables = db.tables.filter((t) => t.eventId === eventId);
+      if (ids.length !== tables.length || new Set(ids).size !== ids.length || ids.some((id) => !tables.some((t) => t.id === id))) {
+        throw new AppError('conflict', 'تغيّرت قائمة الطاولات. أعد المحاولة من آخر ترتيب.');
+      }
+      ids.forEach((id, order) => { tables.find((t) => t.id === id)!.order = order + 1; });
+      return clone(tables.sort((a, b) => a.order - b.order));
+    }), 'write'),
     deleteTable: (id) => store.request(() => store.write((db) => {
       const t = db.tables.find((x) => x.id === id);
       if (!t) return;
@@ -350,6 +393,7 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       const from = db.tables.find((t) => t.id === p.tableId);
       const to = tableId ? db.tables.find((t) => t.id === tableId) : undefined;
       if (tableId && !to) throw new AppError('not_found', 'لم نجد هذه الطاولة.');
+      if (to && to.eventId !== p.eventId) throw new AppError('validation', 'اختر طاولة من المناسبة نفسها.');
       if (to && p.rsvpStatus !== 'confirmed') throw new AppError('validation', 'يمكن توزيع الدعوات المؤكدة فقط.');
       if (to) p.tableId = to.id; else delete p.tableId;
       touch(p, now());

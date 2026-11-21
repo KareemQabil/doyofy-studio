@@ -42,10 +42,15 @@ export function TableDisc({ o, preview }: { o: TableOccupancy; preview?: number 
   );
 }
 
-export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragOverTable }: {
+export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragOverTable, showFood = false, orderMode = false, onReorder }: {
   tables: TableOccupancy[]; focus: string; onFocus: (id: string) => void;
   onDropParty?: (t: TableOccupancy) => (e: React.DragEvent) => void; dragOver?: string | null; onDragOverTable?: (id: string | null) => void;
+  showFood?: boolean; orderMode?: boolean; onReorder?: (source: string, target: string) => void;
 }) {
+  const [orderSource, setOrderSource] = useState<string | null>(null);
+  const [orderTarget, setOrderTarget] = useState<string | null>(null);
+  const touchOrder = useRef<{ pointerId: number; source: string; target: string } | null>(null);
+  const clearOrder = () => { touchOrder.current = null; setOrderSource(null); setOrderTarget(null); };
   const total = tables.reduce((n, o) => n + o.table.capacity, 0), used = tables.reduce((n, o) => n + o.used, 0);
   return (
     <section className="hall seat-overview" aria-label="خريطة الطاولات وتصفية القائمة">
@@ -57,18 +62,27 @@ export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragO
         <button type="button" className={`hall-all${focus === 'all' ? ' is-on' : ''}`} aria-pressed={focus === 'all'} onClick={() => onFocus('all')}>كل الطاولات</button>
       </header>
       <div className="hall-stage" aria-hidden="true"><span>المنصّة</span></div>
-      <div className="hall-floor" style={{ '--hall-n': tables.length } as CSSProperties}>
+      {orderMode && <p className="hall-order-hint" id="hall-order-help">اسحب طاولة لتغيير ترتيبها. بالكيبورد: استخدم الأسهم على الطاولة.</p>}
+      <div className={`hall-floor${orderMode ? ' is-ordering' : ''}`} style={{ '--hall-n': tables.length } as CSSProperties}>
         {tables.map((o, i) => (
           <button key={o.table.id} type="button" style={{ '--hall-i': i } as CSSProperties}
-            className={`hall-table seat-overview-table${focus === o.table.id ? ' is-active' : ''}${o.over ? ' is-over' : o.remaining === 0 ? ' is-full' : ''}${dragOver === o.table.id ? ' is-drop-target' : ''}`}
+            data-order-table={o.table.id} data-table={orderMode ? undefined : o.table.id} draggable={orderMode} aria-describedby={orderMode ? 'hall-order-help' : undefined}
+            className={`hall-table seat-overview-table${focus === o.table.id ? ' is-active' : ''}${o.over ? ' is-over' : o.remaining === 0 ? ' is-full' : ''}${dragOver === o.table.id || orderTarget === o.table.id ? ' is-drop-target' : ''}${orderSource === o.table.id ? ' is-order-source' : ''}`}
             aria-pressed={focus === o.table.id}
-            aria-label={`${o.table.name}: ${o.used} من ${o.table.capacity}${o.over ? `، زيادة ${-o.remaining}` : ''}${o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) ? '، عليها حساسية طعام' : ''}`}
-            onClick={() => { haptic('tick'); onFocus(o.table.id); }}
-            onDragOver={onDropParty ? (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDragOverTable?.(o.table.id); } : undefined}
+            aria-label={`${o.table.name}: ${o.used} من ${o.table.capacity}${o.over ? `، زيادة ${-o.remaining}` : ''}${showFood && o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) ? '، عليها حساسية طعام' : ''}${orderMode ? `، الترتيب ${i + 1}` : ''}`}
+            onClick={() => { if (!orderMode) { haptic('tick'); onFocus(o.table.id); } }}
+            onDragStart={orderMode ? (e) => { e.dataTransfer.setData('application/x-doyofy-table', o.table.id); setOrderSource(o.table.id); } : undefined}
+            onDragEnd={orderMode ? clearOrder : undefined}
+            onPointerDown={orderMode ? (e) => { if (e.pointerType === 'mouse' || !e.isPrimary) return; claimPointer(e); e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); touchOrder.current = { pointerId: e.pointerId, source: o.table.id, target: o.table.id }; setOrderSource(o.table.id); } : undefined}
+            onPointerMove={orderMode ? (e) => { if (touchOrder.current?.pointerId !== e.pointerId) return; const id = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-order-table]')?.dataset.orderTable; if (id) { touchOrder.current.target = id; setOrderTarget(id); } } : undefined}
+            onPointerUp={orderMode ? (e) => { const drag = touchOrder.current; if (drag?.pointerId !== e.pointerId) return; if (drag.source !== drag.target) onReorder?.(drag.source, drag.target); clearOrder(); } : undefined}
+            onPointerCancel={orderMode ? clearOrder : undefined}
+            onKeyDown={orderMode ? (e) => { const delta = ['ArrowLeft', 'ArrowDown'].includes(e.key) ? 1 : ['ArrowRight', 'ArrowUp'].includes(e.key) ? -1 : 0; if (!delta) return; e.preventDefault(); const destination = tables[i + delta]; if (destination) onReorder?.(o.table.id, destination.table.id); } : undefined}
+            onDragOver={orderMode || onDropParty ? (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (orderMode) setOrderTarget(o.table.id); else onDragOverTable?.(o.table.id); } : undefined}
             onDragLeave={onDropParty ? () => onDragOverTable?.(null) : undefined}
-            onDrop={onDropParty?.(o)}>
+            onDrop={(e) => { const source = e.dataTransfer.getData('application/x-doyofy-table'); if (source) { e.preventDefault(); onReorder?.(source, o.table.id); clearOrder(); } else onDropParty?.(o)(e); }}>
             <span className="hall-table-art"><TableDisc o={o} /><strong className="hall-count num">{o.used}<small>/{o.table.capacity}</small></strong>
-              {o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) && <span className="hall-allergy" aria-hidden="true"><Icon name="alert" size="sm" /></span>}</span>
+              {showFood && o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) && <span className="hall-allergy" aria-hidden="true"><Icon name="alert" size="sm" /></span>}</span>
             <span className="hall-name">{o.table.name}</span>
             <span className="hall-status">{o.over ? `زيادة ${-o.remaining}` : o.remaining === 0 ? 'ممتلئة' : `${o.remaining} متاح`}</span>
           </button>
@@ -88,7 +102,7 @@ export function SeatDock({ party, tables, hover, onPick, onCancel, onList }: {
   // keep the hovered destination in view while dragging along the strip
   useEffect(() => { if (hover) strip.current?.querySelector(`[data-table="${CSS.escape(hover)}"]`)?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' }); }, [hover]);
   return (
-    <div className="seat-dock" role="dialog" aria-label={`اختر طاولة لـ${party.primaryGuestName}`}>
+    <div className="seat-dock" onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onCancel(); } }} role="dialog" aria-label={`اختر طاولة لـ${party.primaryGuestName}`}>
       <div className="seat-dock-head">
         <span className="seat-dock-chip"><b>{party.primaryGuestName}</b> · {people(need)}</span>
         <span className="seat-dock-hint">{hover ? 'أفلِت لتأكيد النقل' : 'اضغط طاولة أو اسحب إليها'}</span>
@@ -138,7 +152,7 @@ export function useLiftDrag({ onLift, onHover, onDrop, onCancel }: {
       const t = target(e.clientX, e.clientY);
       if (t !== hovered.current) { hovered.current = t; if (t) haptic('tick'); onHover(t); }
     };
-    const up = (e: PointerEvent) => { if (live.current?.id !== e.pointerId) return; const t = hovered.current; end(); onDrop(t); };
+    const up = (e: PointerEvent) => { if (live.current?.id !== e.pointerId) return; const t = target(e.clientX, e.clientY); end(); onDrop(t); };
     const cancel = (e: PointerEvent) => { if (live.current?.id !== e.pointerId) return; end(); onCancel(); };
     // once lifted, the finger drags the family — the page must not scroll underneath it
     const block = (e: TouchEvent) => { if (live.current) e.preventDefault(); };

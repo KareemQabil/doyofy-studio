@@ -28,7 +28,7 @@ export interface PrototypeSettings {
   latencyMs: number;
   offline: boolean;
   clockOffsetMs: number;
-  role: 'organizer' | 'coordinator';
+  role: import('../../domain/types').Role;
   /** organizer appearance: light · dark · follow the device (the invitation keeps its own palette) */
   appearance: import('../../domain/appearance').Appearance;
 }

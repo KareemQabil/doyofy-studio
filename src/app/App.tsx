@@ -27,6 +27,7 @@ import { PrototypeTools } from '../features/prototype/PrototypeTools';
 import { DemoBar } from '../features/prototype/DemoBar';
 import { AppErrorBoundary } from './AppErrorBoundary';
 import { ScreenReview } from '../features/prototype/ScreenReview';
+import { UpgradeFlow } from '../features/billing/UpgradeFlow';
 import { paths } from './paths';
 import { ThemeSync, applyReviewLink } from './review';
 import { WelcomePage, LoginPage, LogoutPage, AccountPage, HelpPage, OrganizerSessionGate } from '../features/account/AccountPages';
@@ -90,6 +91,7 @@ export function App({ mode }: { mode: RouterMode }) {
           <AppErrorBoundary><OrganizerSessionGate><Routes routes={routes} fallback={<NotFound />} /></OrganizerSessionGate></AppErrorBoundary>
           <PendingNavigation />
           <PrototypeTools />
+          <UpgradeFlow />
         </ToastProvider>
       </RouterProvider>
     </ServicesProvider>

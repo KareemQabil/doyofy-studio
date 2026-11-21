@@ -15,6 +15,7 @@ export class AppError extends Error {
 export const isAppError = (e: unknown): e is AppError => e instanceof AppError;
 
 export function errorMessage(e: unknown): string {
+  if (e instanceof Error && e.name === 'GuestLimitError') return e.message;
   if (isAppError(e)) return e.message;
   return 'تعذر إكمال العملية. تحقق من الاتصال ثم أعد المحاولة.';
 }

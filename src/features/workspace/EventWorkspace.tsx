@@ -10,7 +10,8 @@ import { countParties } from '../../domain/parties';
 import { todayFor } from '../../domain/event';
 import { AppShell, Badge, ErrorState, Icon, LinkButton, Skeleton, WorkspaceLayout, type NavItem, PageLoader } from '../../ui';
 import { Link } from '../../app/router';
-import { useNow } from '../../app/data';
+import { useNow, useServices } from '../../app/data';
+import { canViewFood } from '../../domain/roles';
 import { paths } from '../../app/paths';
 import { useEvent, useParties } from '../shared/queries';
 import { isAppError } from '../../services/errors';
@@ -25,6 +26,7 @@ export function UserChip() {
 }
 
 export function EventWorkspace({ eventId, section, children }: { eventId: string; section: Section; children: (e: Event) => ReactNode }) {
+  const catering = canViewFood(useServices().session.currentUser().role);
   const ev = useEvent(eventId);
   const parties = useParties(eventId);
   const now = useNow();
@@ -49,6 +51,11 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
     nav[4]!,
     { to: `/app/events/${encodeURIComponent(id)}/more`, label: 'المزيد', icon: 'menu', active: ['settings','summary','more','seating'].includes(section) },
   ];
+  const cateringNav: NavItem[] = [
+    { to: `${paths.guests(id)}?view=food`, label: 'الضيافة', icon: 'sparkle', active: section === 'guests', group: 'فريق الضيافة' },
+    { to: paths.seating(id), label: 'الطاولات', icon: 'table', active: section === 'seating', group: 'فريق الضيافة' },
+  ];
+  const cateringAllowed = ['guests', 'seating'].includes(section);
 
   const context = e ? (
     <div className="ws-event">
@@ -74,11 +81,13 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
     <AppShell right={<UserChip />} mobileContext={mobileContext}>
       <WorkspaceLayout
         context={context}
-        nav={nav}
-        mobileNav={mobile}
-        footer={<><p className="ws-footer-note">تفاصيل مرتّبة.<br />وفرحة على راحتك.</p>{(phase === 'event_day' || section === 'checkin') && <LinkButton to={paths.gate(id)} variant="primary" icon="scan" block>افتح الاستقبال</LinkButton>}</>}
+        nav={catering ? cateringNav : nav}
+        mobileNav={catering ? cateringNav : mobile}
+        footer={<><p className="ws-footer-note">{catering ? 'عرض لفريق الضيافة' : <>تفاصيل مرتّبة.<br />وفرحة على راحتك.</>}</p>{!catering && (phase === 'event_day' || section === 'checkin') && <LinkButton to={paths.gate(id)} variant="primary" icon="scan" block>افتح الاستقبال</LinkButton>}</>}
       >
-        {ev.loading ? <PageLoader /> : ev.error ? <ErrorState error={ev.error} onRetry={ev.refetch} /> : e ? children(e) : null}
+        {ev.loading ? <PageLoader /> : ev.error ? <ErrorState error={ev.error} onRetry={ev.refetch} /> : e ? catering && !cateringAllowed
+          ? <section className="stack gap-3"><h1>مساحة الضيافة</h1><p>تابع الوجبات والاحتياجات والطاولات. إدارة الدعوات والضيوف متاحة لفريق التنظيم.</p><LinkButton to={`${paths.guests(id)}?view=food`} variant="primary" icon="sparkle">افتح الضيافة</LinkButton></section>
+          : children(e) : null}
       </WorkspaceLayout>
     </AppShell>
   );

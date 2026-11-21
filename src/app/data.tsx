@@ -6,6 +6,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type { Services } from '../services/contracts';
 import type { PrototypeControls } from '../services';
+import { GuestLimitError } from '../domain/billing';
+import { requestGuestUpgrade } from '../features/billing/UpgradeFlow';
 
 interface Entry { data?: unknown; error?: unknown; promise?: Promise<void>; loadedOnce: boolean; stale: boolean; version: number; fn: (s: Services) => Promise<unknown>; subs: Set<() => void> }
 
@@ -115,8 +117,16 @@ export function useMutation<A extends unknown[], R>(fn: (s: Services, ...args: A
   fnRef.current = fn; // always call the latest closure (it may read current component state)
   const run = useCallback(async (...args: A) => {
     setPending(true); setError(null);
+    const operation = fnRef.current;
     try {
-      const r = await fnRef.current(services, ...args);
+      let r: R;
+      try { r = await operation(services, ...args); }
+      catch (e) {
+        if (!(e instanceof GuestLimitError) || !alive.current || !(await requestGuestUpgrade(e))) throw e;
+        if (!alive.current) return undefined;
+        // Resume the saved operation once; another failure is displayed normally.
+        r = await operation(services, ...args);
+      }
       if (alive.current) setPending(false);
       optsRef.current.onSuccess?.(r);
       return r;

@@ -4,19 +4,18 @@
  * the organizer allows — the table. Uses the guest theme scope (same primitives, different tokens).
  */
 import { useState } from 'react';
-import type { GuestView } from '../../services/contracts';
+import type { GuestApi, GuestView } from '../../services/contracts';
 import { countdownLabel, daysBetween, formatEventDate, formatTime, localDateOf, people, peopleOf } from '../../domain/format';
 import { eventStart, eventEnd, isCoupleEvent } from '../../domain/event';
 import { resolvedNames } from '../../domain/invitation';
 import { validateRsvp, RSVP_ERROR_TEXT } from '../../domain/parties';
 import { Banner, Button, ChoiceGroup, Field, Icon, Input, Stepper, Textarea } from '../../ui';
 import { useNow, useServices } from '../../app/data';
-import { useRouter } from '../../app/router';
-import { paths } from '../../app/paths';
 import { errorMessage, isAppError } from '../../services/errors';
 import { QrFullscreen } from './QrFullscreen';
 import { asksAfterAttending, dietaryLabel, mealSummary, showsAfterDecline, showsWishlist } from '../../domain/guest-experience';
 import { GuestExtrasFields, Wishlist, emptyExtras, extrasError, extrasPayload, fitExtras, type ExtrasValue } from './GuestExtras';
+import { WalletPreview } from './WalletPreview';
 
 type Submission = { ok: true; name?: string } | { ok: false; error: string } | null;
 
@@ -28,9 +27,8 @@ const mapUrl = (v: GuestView) => v.event.venue.mapUrl || `https://www.google.com
 
 import { SealStamp } from '../signature/SealStamp';
 
-export function GuestHub({ view, code, submission, onView, onReplay }: { view: GuestView; code: string | null; submission: Submission; onView: (v: GuestView) => void; onReplay: () => void }) {
+export function GuestHub({ view, code, submission, onView, onReplay, guestApi, demo = false }: { view: GuestView; code: string | null; submission: Submission; onView: (v: GuestView) => void; onReplay: () => void; guestApi?: GuestApi; demo?: boolean }) {
   const now = useNow(60000);
-  const { absolute } = useRouter();
   const p = view.party;
   const names = resolvedNames(view.event, view.design);
   const today = localDateOf(now, view.event.timeZone);
@@ -41,8 +39,9 @@ export function GuestHub({ view, code, submission, onView, onReplay }: { view: G
 
   return (
     <main className="guest-page theme-guest">
-      {<SealStamp show={!!submission?.ok} label={p?.rsvpStatus === 'declined' ? 'وصل اعتذاركم' : 'وصل ردكم'} tone={p?.rsvpStatus === 'declined' ? 'charcoal' : 'gold'} />}
+      {<SealStamp show={!!submission?.ok} label={demo ? 'حُفظ ردكم للتجربة' : p?.rsvpStatus === 'declined' ? 'وصل اعتذاركم' : 'وصل ردكم'} tone={p?.rsvpStatus === 'declined' ? 'charcoal' : 'gold'} />}
       <div className="hub">
+        {demo && <Banner tone="info" title="نسخة تجريبية">هذه نسخة تجريبية — لم يُرسل ردّك للمنظّم. يُحفظ على جهازك فقط، ورمز الدخول للتجربة.</Banner>}
         <header className="hub-head">
           <p className="hub-kicker">{view.event.title}</p>
           <h1 className="hub-names">{names.a}{isCoupleEvent(view.event.type) && names.b ? <> <span className="hub-amp">و</span> {names.b}</> : null}</h1>
@@ -50,18 +49,18 @@ export function GuestHub({ view, code, submission, onView, onReplay }: { view: G
           {view.phase !== 'after' && <p className="hub-count">{days > 0 ? countdownLabel(view.event.date, today) : days === 0 ? 'اليوم!' : ''}</p>}
         </header>
 
-        {failed && <Banner tone="danger" title="لم يصل ردكم">{submission.error} جرّبوا مرة أخرى.</Banner>}
+        {failed && <Banner tone="danger" title={demo ? 'لم يُحفظ ردكم' : 'لم يصل ردكم'}>{submission.error} جرّبوا مرة أخرى.</Banner>}
 
         {/* ---------------- reply status */}
         <section className="hub-card" aria-labelledby="hub-status">
           {!p ? (
             (submission?.ok || generalSubmitted) ? (
               <div className="stack gap-2">
-                <h2 id="hub-status" className="hub-h">شكرًا{submission?.ok && submission.name ? ` ${submission.name}` : generalSubmitted ? ` ${generalSubmitted}` : ''}، وصل ردكم</h2>
-                <p className="muted">سيراجع صاحب المناسبة ردكم ويطابقه مع قائمة الضيوف، ثم يمكنه مشاركة رابطكم الشخصي معكم.</p>
+                <h2 id="hub-status" className="hub-h">شكرًا{submission?.ok && submission.name ? ` ${submission.name}` : generalSubmitted ? ` ${generalSubmitted}` : ''}، {demo ? 'حُفظ ردكم للتجربة' : 'وصل ردكم'}</h2>
+                <p className="muted">{demo ? 'هذا رد تجريبي على جهازكم فقط. في النسخة المرتبطة بالخادم يطابقه صاحب المناسبة مع قائمة الضيوف قبل تخصيص رمز الدخول.' : 'سيراجع صاحب المناسبة ردكم ويطابقه مع قائمة الضيوف، ثم يمكنه مشاركة رابطكم الشخصي معكم.'}</p>
               </div>
             ) : (
-              <div className="stack gap-4"><h2 id="hub-status" className="hub-h">نسعد بحضوركم</h2>{view.canEdit ? <GeneralResponse view={view} onSaved={(v,name)=>{onView(v);setGeneralSubmitted(name);}}/> : <p className="muted">انتهت فترة تأكيد الحضور. تواصلوا مع صاحب المناسبة.</p>}</div>
+              <div className="stack gap-4"><h2 id="hub-status" className="hub-h">نسعد بحضوركم</h2>{view.canEdit ? <GeneralResponse view={view} guestApi={guestApi} onSaved={(v,name)=>{onView(v);setGeneralSubmitted(name);}}/> : <p className="muted">انتهت فترة تأكيد الحضور. تواصلوا مع صاحب المناسبة.</p>}</div>
             )
           ) : p.checkedInCount > 0 ? (
             <div className="hub-status is-in">
@@ -89,7 +88,7 @@ export function GuestHub({ view, code, submission, onView, onReplay }: { view: G
 
           {p && view.canEdit && !editing && <Button variant="secondary" icon="edit" onClick={() => setEditing(true)}>{p.rsvpStatus === 'pending' ? 'ردّوا الآن' : 'تعديل الرد'}</Button>}
           {p && !view.canEdit && view.phase !== 'after' && p.rsvpStatus !== 'pending' && <p className="faint t-sm">بدأت المناسبة — لتعديل الرد تواصلوا مع صاحب الدعوة.</p>}
-          {p && editing && view.canEdit && <RsvpForm view={view} code={code!} onSaved={(v) => { onView(v); setEditing(false); }} onRefresh={onView} onCancel={p.rsvpStatus !== 'pending' ? () => setEditing(false) : undefined} />}
+          {p && editing && view.canEdit && <RsvpForm view={view} code={code!} guestApi={guestApi} onSaved={(v) => { onView(v); setEditing(false); }} onRefresh={onView} onCancel={p.rsvpStatus !== 'pending' ? () => setEditing(false) : undefined} />}
         </section>
 
         {/* ---------------- after a decline: the reply is accepted first, then an optional way to share the joy (F066–F068) */}
@@ -100,8 +99,9 @@ export function GuestHub({ view, code, submission, onView, onReplay }: { view: G
           <section className="hub-card hub-qr" aria-labelledby="hub-qr">
             <h2 id="hub-qr" className="hub-h">رمز الدخول</h2>
             <p className="muted t-sm">اعرضوه على فريق الاستقبال عند الوصول.</p>
-            <QrFullscreen value={absolute(paths.guestLink(view.event.slug, p.code))} code={p.code} name={p.name} title={view.event.title} />
+            <QrFullscreen value={`DOYOFY:${p.code}`} code={p.code} name={p.name} title={view.event.title} />
             <p className="hub-code num" dir="ltr">{p.code}</p>
+            <WalletPreview view={view} value={`DOYOFY:${p.code}`} demo={demo} />
           </section>
         )}
 
@@ -136,7 +136,7 @@ export function GuestHub({ view, code, submission, onView, onReplay }: { view: G
   );
 }
 
-function RsvpForm({ view, code, onSaved, onRefresh, onCancel }: { view: GuestView; code: string; onSaved: (v: GuestView) => void; onRefresh: (v: GuestView) => void; onCancel?: () => void }) {
+function RsvpForm({ view, code, onSaved, onRefresh, onCancel, guestApi }: { view: GuestView; code: string; onSaved: (v: GuestView) => void; onRefresh: (v: GuestView) => void; onCancel?: () => void; guestApi?: GuestApi }) {
   const services = useServices();
   const p = view.party!;
   const [attending, setAttending] = useState<'yes' | 'no' | null>(p.rsvpStatus === 'confirmed' ? 'yes' : p.rsvpStatus === 'declined' ? 'no' : null);
@@ -157,13 +157,13 @@ function RsvpForm({ view, code, onSaved, onRefresh, onCancel }: { view: GuestVie
     if (!attending || err || xErr) return;
     setPending(true); setError(null);
     try {
-      const v = await services.guest.submitRsvp(view.event.slug, code, { attending: attending === 'yes', count: attending === 'yes' ? count : 0, companionNames: companions.slice(0, Math.max(0, count - 1)).filter(Boolean), note: note || undefined, ...(asks ? extrasPayload(x, extras) : {}) });
+      const v = await (guestApi ?? services.guest).submitRsvp(view.event.slug, code, { attending: attending === 'yes', count: attending === 'yes' ? count : 0, companionNames: companions.slice(0, Math.max(0, count - 1)).filter(Boolean), note: note || undefined, ...(asks ? extrasPayload(x, extras) : {}) });
       onSaved(v);
     } catch (e) {
       setError(errorMessage(e));
       // the host changed the menu while this form was open: load it, keep every answer that still exists (T17)
       if (isAppError(e) && e.code === 'conflict' && e.field === 'meals') {
-        try { const fresh = await services.guest.open(view.event.slug, code); onRefresh(fresh); } catch { /* the banner already explains */ }
+        try { const fresh = await (guestApi ?? services.guest).open(view.event.slug, code); onRefresh(fresh); } catch { /* the banner already explains */ }
       }
     } finally { setPending(false); }
   };
@@ -198,7 +198,7 @@ function RsvpForm({ view, code, onSaved, onRefresh, onCancel }: { view: GuestVie
   );
 }
 
-function GeneralResponse({ view, onSaved }: { view: GuestView; onSaved: (v: GuestView, name: string) => void }) {
+function GeneralResponse({ view, onSaved, guestApi }: { view: GuestView; onSaved: (v: GuestView, name: string) => void; guestApi?: GuestApi }) {
   const services=useServices();
   const [name,setName]=useState(''), [answer,setAnswer]=useState<'yes'|'no'|null>(null), [count,setCount]=useState(1), [busy,setBusy]=useState(false), [error,setError]=useState('');
   const [extras,setExtras]=useState<ExtrasValue>(()=>emptyExtras()), [tried,setTried]=useState(false);
@@ -207,7 +207,7 @@ function GeneralResponse({ view, onSaved }: { view: GuestView; onSaved: (v: Gues
     e.preventDefault(); setTried(true); if(!name.trim()||!answer){setError('اكتبوا الاسم واختاروا تأكيد الحضور أو الاعتذار.');return;}
     if(xErr) return;
     setBusy(true);setError('');
-    try { const v=await services.guest.submitRsvp(view.event.slug,null,{name:name.trim(),attending:answer==='yes',count:answer==='yes'?count:0,...(asks?extrasPayload(x,extras):{})});onSaved(v,name.trim()); }
+    try { const v=await (guestApi ?? services.guest).submitRsvp(view.event.slug,null,{name:name.trim(),attending:answer==='yes',count:answer==='yes'?count:0,...(asks?extrasPayload(x,extras):{})});onSaved(v,name.trim()); }
     catch(e){setError(errorMessage(e));}finally{setBusy(false);}
   }}><Field label="الاسم" required><Input value={name} onChange={e=>setName(e.target.value)} autoComplete="name" required/></Field><ChoiceGroup label="هل ستشرفوننا؟" value={answer} onChange={(v:'yes'|'no')=>setAnswer(v)} options={[{value:'yes',label:'بكل سرور، سنحضر'},{value:'no',label:'نعتذر عن الحضور'}]}/>{answer==='yes'&&<Stepper label="العدد شاملًا صاحب الدعوة" value={count} min={1} max={view.maxGuests} onChange={n=>{setCount(n);setExtras(v=>fitExtras(v,n));}}/>}{asks&&<GuestExtrasFields x={x!} count={count} value={extras} onChange={setExtras} error={tried?xErr:null}/>}<p className="field-hint">هذا رابط عام؛ يراجع صاحب المناسبة الرد قبل تخصيص رمز دخول.</p>{error&&<Banner tone="danger">{error}</Banner>}<Button variant="primary" type="submit" loading={busy}>تأكيد الرد</Button></form>;
 }

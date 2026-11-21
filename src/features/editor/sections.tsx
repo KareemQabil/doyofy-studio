@@ -5,11 +5,13 @@ import { eventTypeInfo, isCoupleEvent } from '../../domain/event';
 import { CARD_NAMES, SCENE_NAMES } from '../../domain/invitation';
 import { presetOf, presetsFor, TEMPLATE_PRESETS } from '../../domain/templates';
 import { daysBetween, localDateOf } from '../../domain/format';
-import { Banner, Button, Field, Icon, IconButton, Input, Stepper, Switch, Textarea } from '../../ui';
+import { Banner, Button, Field, Icon, IconButton, Input, Select, Stepper, Switch, Textarea } from '../../ui';
 import { useMutation, useServices } from '../../app/data';
 import { errorMessage } from '../../services/errors';
 import { CardThumb } from '../invitation/CardThumb';
 import { TemplateThumb } from '../templates/TemplateThumb';
+import { useAudioLibrary } from '../account/audio-state';
+import { Link } from '../../app/router';
 
 type Update = (patch: Partial<InvitationDesignContent>) => void;
 
@@ -135,6 +137,9 @@ function Option({ on, title, text, onClick, art }: { on: boolean; title: string;
 
 export function MotionSection({ content, invitation, update, sound, onSound }: { content: InvitationDesignContent; invitation: unknown; update: Update; sound: boolean; onSound: (v: boolean) => void }) {
   const x = content.experience;
+  const library = useAudioLibrary();
+  const audio = content.audio ?? { mode: 'default' as const };
+  const selectedAudio = audio.mode === 'library' ? `track:${audio.trackId}` : audio.mode;
   const setX = (patch: Partial<InvitationDesignContent['experience']>) => update({ experience: { ...x, ...patch, dimension: '2d' } });
   return (
     <div className="ed-sec">
@@ -146,7 +151,18 @@ export function MotionSection({ content, invitation, update, sound, onSound }: {
         </div>
       </section>
       <section className="ed-group">
-        <SecHead title="الصوت" hint="أصوات هادئة في الخلفية، وموسيقى خفيفة عند فتح الصفحات. لا يبدأ الصوت إلا بعد أول لمسة من الضيف، ويستطيع إيقافه." />
+        <SecHead title="الصوت" hint="اختر صوت الدعوة. يبدأ بعد أول تفاعل ويمكن للضيف كتمه." />
+        <Field label="صوت الدعوة"><Select value={selectedAudio} onChange={e => {
+          const value = e.target.value;
+          if (value === 'off' || value === 'default') update({ audio: { mode: value } });
+          else { const track = library.tracks.find(t => t.id === value.slice(6)); if (track) update({ audio: { mode: 'library', trackId: track.id, trackName: track.name } }); }
+        }}>
+          <option value="default">{library.defaultTrackId ? `افتراضي الحساب · ${library.tracks.find(t => t.id === library.defaultTrackId)?.name}` : 'الصوت الأساسي'}</option>
+          {library.tracks.map(track => <option key={track.id} value={`track:${track.id}`}>{track.name}</option>)}
+          {audio.mode === 'library' && !library.tracks.some(t => t.id === audio.trackId) && <option value={selectedAudio}>المقطع غير متاح · سيعمل الصوت الأساسي</option>}
+          <option value="off">بدون صوت</option>
+        </Select></Field>
+        <p className="ed-sec-hint"><Link to="/app/account">إدارة مكتبتي الصوتية</Link> · المقاطع المرفوعة تعمل على هذا المتصفح فقط في التجربة.</p>
         <Switch label="شغّل الصوت في المعاينة" hint="هنا فقط، لتسمعه كما سيسمعه الضيف. لا يغيّر الدعوة." checked={sound} onChange={onSound} />
       </section>
     </div>
@@ -156,6 +172,23 @@ export function MotionSection({ content, invitation, update, sound, onSound }: {
 // ------------------------------------------------------------------ تفاصيل المناسبة (event data — shared)
 export interface EventDraft { date: string; time: string; venue: string; city: string; mapUrl: string; partySize: number }
 export const eventFields = (e: Event): EventDraft => ({ date: e.date, time: e.time, venue: e.venue.name, city: e.venue.city, mapUrl: e.venue.mapUrl ?? '', partySize: e.settings.defaultPartySize });
+export type EventDraftErrors = Partial<Record<keyof EventDraft, string>>;
+/** Shared by the manual save and the one-action publish, so the two paths accept the same values. */
+export function validateEventFields(event: Event, draft: EventDraft, now: Date): EventDraftErrors {
+  const errors: EventDraftErrors = {};
+  const parsed = new Date(`${draft.date}T12:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.date) || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== draft.date) errors.date = 'اختر تاريخًا صحيحًا';
+  else if (draft.date !== event.date && daysBetween(localDateOf(now, event.timeZone), draft.date) < 0) errors.date = 'اختر تاريخًا قادمًا';
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(draft.time)) errors.time = 'اختر وقتًا صحيحًا';
+  if (!draft.venue.trim()) errors.venue = 'اكتب اسم المكان';
+  if (!draft.city.trim()) errors.city = 'اكتب المدينة';
+  if (draft.mapUrl.trim()) {
+    try { const url = new URL(draft.mapUrl); if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) errors.mapUrl = 'أضف رابط خريطة يبدأ بـ https://'; }
+    catch { errors.mapUrl = 'أضف رابط خريطة صحيحًا'; }
+  }
+  if (!Number.isInteger(draft.partySize) || draft.partySize < 1 || draft.partySize > 20) errors.partySize = 'عدد الأشخاص من 1 إلى 20';
+  return errors;
+}
 
 /** the event as the preview should show it: valid unsaved edits appear instantly */
 export function previewEvent(e: Event, d: EventDraft): Event {
@@ -167,7 +200,7 @@ export function previewEvent(e: Event, d: EventDraft): Event {
   };
 }
 
-export function EventSection({ event, draft, onDraft }: { event: Event; draft: EventDraft; onDraft: (d: EventDraft) => void }) {
+export function EventSection({ event, draft, onDraft, validationErrors = {} }: { event: Event; draft: EventDraft; onDraft: (d: EventDraft) => void; validationErrors?: EventDraftErrors }) {
   const services = useServices();
   const [errors, setErrors] = useState<Partial<Record<keyof EventDraft, string>>>({});
   const [savedAt, setSavedAt] = useState(0);
@@ -180,38 +213,34 @@ export function EventSection({ event, draft, onDraft }: { event: Event; draft: E
   }), { onSuccess: () => setSavedAt(Date.now()) });
 
   const submit = () => {
-    const e: typeof errors = {};
-    const today = localDateOf(services.clock.now(), event.timeZone);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.date)) e.date = 'اختر التاريخ';
-    else if (daysBetween(today, draft.date) < 0 && draft.date !== event.date) e.date = 'التاريخ في الماضي — اختر تاريخًا قادمًا';
-    if (!/^\d{2}:\d{2}$/.test(draft.time)) e.time = 'اختر الوقت';
-    if (!draft.venue.trim()) e.venue = 'اكتب اسم المكان';
-    if (!draft.city.trim()) e.city = 'اكتب المدينة';
+    const e = validateEventFields(event, draft, services.clock.now());
     setErrors(e);
     if (!Object.keys(e).length) void save.run(draft);
   };
+  const shownErrors = { ...validationErrors, ...errors };
 
   return (
     <div className="ed-sec">
-      <Banner tone="info" compact title="هذه بيانات المناسبة نفسها">ما تغيّره هنا يتغيّر في الدعوة وفي كل صفحات المناسبة. المعاينة تعرضه فورًا، ويُعتمد بعد الحفظ.</Banner>
+      <Banner tone="info" compact title="بيانات موحّدة للمناسبة">تظهر تعديلاتك في المعاينة فورًا. يمكنك حفظها هنا أو نشر الدعوة ليُحفظ كل شيء معًا.</Banner>
       <section className="ed-group">
         <SecHead title="الموعد" />
         <div className="grid-2">
-          <Field label="التاريخ" required error={errors.date}><Input type="date" value={draft.date} onChange={(e) => set('date', e.target.value)} /></Field>
-          <Field label="الوقت" required error={errors.time}><Input type="time" value={draft.time} onChange={(e) => set('time', e.target.value)} /></Field>
+          <Field label="التاريخ" required error={shownErrors.date}><Input type="date" data-event-field="date" value={draft.date} onChange={(e) => set('date', e.target.value)} /></Field>
+          <Field label="الوقت" required error={shownErrors.time}><Input type="time" data-event-field="time" value={draft.time} onChange={(e) => set('time', e.target.value)} /></Field>
         </div>
       </section>
       <section className="ed-group">
         <SecHead title="المكان" />
         <div className="grid-2">
-          <Field label="اسم القاعة أو المكان" required error={errors.venue}><Input value={draft.venue} onChange={(e) => set('venue', e.target.value)} /></Field>
-          <Field label="المدينة" required error={errors.city}><Input value={draft.city} onChange={(e) => set('city', e.target.value)} /></Field>
+          <Field label="اسم القاعة أو المكان" required error={shownErrors.venue}><Input data-event-field="venue" value={draft.venue} onChange={(e) => set('venue', e.target.value)} /></Field>
+          <Field label="المدينة" required error={shownErrors.city}><Input data-event-field="city" value={draft.city} onChange={(e) => set('city', e.target.value)} /></Field>
         </div>
-        <Field label="رابط الخريطة" optional hint="يفتح للضيف زر «الاتجاهات»."><Input ltr type="url" value={draft.mapUrl} placeholder="https://maps.google.com/…" onChange={(e) => set('mapUrl', e.target.value)} /></Field>
+        <Field label="رابط الخريطة" optional error={shownErrors.mapUrl} hint="يفتح للضيف زر «الاتجاهات»."><Input ltr type="url" data-event-field="mapUrl" value={draft.mapUrl} placeholder="https://maps.google.com/…" onChange={(e) => set('mapUrl', e.target.value)} /></Field>
       </section>
       <section className="ed-group">
         <SecHead title="الضيوف" />
         <Stepper label="عدد الأشخاص لكل دعوة" value={draft.partySize} min={1} max={20} onChange={(v) => set('partySize', v)} />
+        {shownErrors.partySize && <p role="alert" className="text-danger">{shownErrors.partySize}</p>}
         <p className="ed-sec-hint">الحد الافتراضي للضيوف الجدد. يمكن تغييره لكل ضيف من قائمة الضيوف.</p>
       </section>
       {save.error ? <Banner tone="danger" compact>{errorMessage(save.error)}</Banner> : null}

@@ -174,6 +174,7 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
 
     // ---------------------------------------------------------------- parties
     parties: {
+      transfer: async () => { throw new AppError('forbidden', 'نقل الضيوف متاح في التجربة المحلية. يحتاج الخادم إلى عملية نقل آمنة قبل تفعيله.'); },
       list: async (eventId) => (await db.selectAll<PartyRow>('parties', [['select', '*'], ['event_id', eq(requireId(eventId, 'event_not_found'))], ['order', 'created_at.asc,id.asc']])).map(toParty),
       get: async (id) => toParty(await db.selectOne<PartyRow>('parties', [['select', '*'], ['id', eq(requireId(id, 'party_not_found'))]])),
       create: async (eventId, input) => {
@@ -223,6 +224,7 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
 
     // ---------------------------------------------------------------- seating
     seating: {
+      reorderTables: async () => { throw new AppError('forbidden', 'ترتيب الطاولات متاح في التجربة المحلية. لم يُفعّل حفظ الترتيب على الخادم بعد.'); },
       listTables: async (eventId) => (await db.select<TableRow>('seating_tables', [['select', '*'], ['event_id', eq(requireId(eventId, 'event_not_found'))], ['order', 'sort_order.asc']])).map(toTable),
       createTables: async (eventId, tables) => {
         for (const t of tables) { const e = Object.values(validateTable(t))[0]; if (e) throw new AppError('validation', e); }

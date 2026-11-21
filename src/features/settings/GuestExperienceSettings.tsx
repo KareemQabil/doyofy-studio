@@ -9,7 +9,8 @@ import type { Event, GiftItem, GiftKind, InvitationParty, MealOption } from '../
 import { GIFT_KIND, experienceOf, linkHost, safeExternalUrl, validatePolicy, type ExperienceDraft } from '../../domain/guest-experience';
 import { makeId } from '../../domain/ids';
 import { Banner, Button, Field, Icon, IconButton, Input, Panel, Segmented, Switch, Textarea } from '../../ui';
-import { useMutation } from '../../app/data';
+import { useMutation, useServices } from '../../app/data';
+import { canViewFood } from '../../domain/roles';
 import { useBlocker } from '../../app/router';
 import { useToast } from '../../ui/primitives/Feedback';
 import { errorMessage, isAppError } from '../../services/errors';
@@ -21,6 +22,7 @@ const draftOf = (ev: Event): ExperienceDraft => { const { revision: _r, ...d } =
 
 export function GuestExperienceSettings({ event }: { event: Event }) {
   const toast = useToast();
+  const foodAccess = canViewFood(useServices().session.currentUser().role);
   const parties = useParties(event.id);
   const base = useMemo(() => draftOf(event), [event]);
   const revision = experienceOf(event).revision;
@@ -31,7 +33,7 @@ export function GuestExperienceSettings({ event }: { event: Event }) {
   const [seen, setSeen] = useState(revision);
   const dirty = JSON.stringify(d) !== JSON.stringify(base);
   useEffect(() => { if (revision !== seen && !dirty) { setD(base); setSeen(revision); } }, [revision]); // eslint-disable-line react-hooks/exhaustive-deps
-  useBlocker(dirty, 'لم تحفظ إعدادات الطعام والهدايا. هل تريد المغادرة دون حفظها؟');
+  useBlocker(dirty, 'لم تحفظ الإعدادات. هل تريد المغادرة دون حفظها؟');
 
   const answered = useMemo(() => {
     const m = new Map<string, number>();
@@ -56,14 +58,14 @@ export function GuestExperienceSettings({ event }: { event: Event }) {
   const live = d.meals.options.filter((o) => !o.archived);
   const hidden = d.meals.options.filter((o) => o.archived);
   const previewX = { ...d, revision, meals: { ...d.meals, options: live.filter((o) => o.label.trim()) }, gifts: { ...d.gifts, items: d.gifts.items.filter((g) => !g.archived && g.title.trim()) } };
-  const asksAnything = (d.meals.enabled && previewX.meals.options.length > 0) || d.dietary.enabled;
+  const asksAnything = foodAccess && (d.meals.enabled && previewX.meals.options.length > 0) || foodAccess && d.dietary.enabled;
 
   return (
     <Panel title="بعد تأكيد الحضور" subtitle="أسئلة قصيرة وقائمة رغبات — كلها اختيارية، وتظهر للضيف فقط إن فعّلتها." className="gxs" id="guest-experience">
       <div className="gxs-grid">
         <div className="gxs-editor">
           {/* ------------------------------------------------ meals */}
-          <section className="gxs-part" aria-labelledby="gxs-meals">
+          {foodAccess && <section className="gxs-part" aria-labelledby="gxs-meals">
             <h3 id="gxs-meals" className="gxs-h"><span className="gxs-num">١</span>الطعام</h3>
             <Switch label="اسأل عن اختيار الوجبة" hint="يوزّع الضيف الوجبات على عدد الحضور: عائلة من 4 قد تختار 2 لحم و1 سمك و1 نباتي." checked={d.meals.enabled}
               onChange={(v) => setMeals(v && live.length === 0 ? { enabled: true, options: [...d.meals.options, { id: makeId('meal'), label: 'لحم' }, { id: makeId('meal'), label: 'سمك' }] } : { enabled: v })} />
@@ -95,17 +97,17 @@ export function GuestExperienceSettings({ event }: { event: Event }) {
                 <Switch label="الاختيار مطلوب لكل شخص" hint="إن أوقفته يمكن للضيف ترك البعض بلا اختيار، ويظهر عددهم في التقرير." checked={d.meals.required} onChange={(v) => setMeals({ required: v })} />
               </div>
             )}
-          </section>
+          </section>}
 
           {/* ------------------------------------------------ dietary */}
-          <section className="gxs-part" aria-labelledby="gxs-diet">
+          {foodAccess && <section className="gxs-part" aria-labelledby="gxs-diet">
             <h3 id="gxs-diet" className="gxs-h"><span className="gxs-num">٢</span>الحساسية والنظام الغذائي</h3>
             <Switch label="اسأل إن كان لديهم ما نراعيه" hint="اختيارات بسيطة: مكسرات، حليب، جلوتين، بيض، مأكولات بحرية — وحلال، نباتي. تظهر لك في الضيوف والطاولات." checked={d.dietary.enabled} onChange={(v) => setD((x) => ({ ...x, dietary: { enabled: v } }))} />
-          </section>
+          </section>}
 
           {/* ------------------------------------------------ wishlist */}
           <section className="gxs-part" aria-labelledby="gxs-gifts">
-            <h3 id="gxs-gifts" className="gxs-h"><span className="gxs-num">٣</span>قائمة الرغبات</h3>
+            <h3 id="gxs-gifts" className="gxs-h"><span className="gxs-num">{foodAccess ? '٣' : '١'}</span>قائمة الرغبات</h3>
             <Switch label="أظهر قائمة الرغبات في صفحة الضيف" hint="هدية بعينها، مساهمة في هدية أكبر أو نقوط، أو باقة ورد — كلها روابط تختارها أنت." checked={d.gifts.enabled}
               onChange={(v) => { setGifts({ enabled: v }); if (v && !d.gifts.items.some((g) => !g.archived)) addItem(); }} />
             {d.gifts.enabled && (

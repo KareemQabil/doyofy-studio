@@ -180,20 +180,19 @@ export async function run(){
   await pointer(surface,'pointerup',10,100,340);
   assert.equal(ends.length,3);assert.equal(ends[2]!.cancelled,false);assert.equal(ends[2]!.moved,true);
  });
- await check('template browsing defers live playback and swipes respect scroll and cancellation',async()=>{
-  const design=await made.services.invitations.get(event.id);let navigated='';
-  // the preview rail shows one entry per card face; neighbours are the previous/next distinct card
+ await check('vertical template browsing supports scroll and keyboard without applying a design',async()=>{
+  const design=await made.services.invitations.get(event.id);let navigated='',used=0;
   const rail=TEMPLATE_PRESETS.filter((p,i)=>TEMPLATE_PRESETS.findIndex(x=>x.cardId===p.cardId)===i);const mid=rail[1]!,NEXT=rail[2]!.id,PREV=rail[0]!.id;
-  await render(wrap(<TemplatePreview event={event} base={design.draft} presets={TEMPLATE_PRESETS} preset={mid} isCurrent={false} pending={false} onNavigate={p=>{navigated=p.id;}} onClose={()=>{}} onUse={()=>{}}/>));
-  assert.ok(document.querySelector('.tp-poster'));assert.equal(document.querySelector('.live-preview'),null);
-  const stage=document.querySelector('.tp-stage')!;
-  await pointer(stage,'pointerdown',100,100,0);await pointer(stage,'pointermove',80,200,100);await pointer(stage,'pointerup',80,200,200);assert.equal(navigated,'');
-  await pointer(stage,'pointerdown',100,100,300);await pointer(stage,'pointermove',0,102,400);await pointer(stage,'pointercancel',0,102,500);assert.equal(navigated,'');
-  await pointer(stage,'pointerdown',100,100,600);await pointer(stage,'pointermove',0,102,700);await pointer(stage,'pointerup',0,102,800);assert.equal(navigated,PREV,'a swipe left goes back (the page follows the finger)');
-  navigated='';await pointer(stage,'pointerdown',100,100,900);await pointer(stage,'pointermove',190,102,1000);await pointer(stage,'pointerup',190,102,1100);assert.equal(navigated,NEXT,'a swipe right brings the next template');
-  navigated='';await key(stage,'ArrowLeft');assert.equal(navigated,NEXT);navigated='';await key(document.querySelector('.tp-rail-item')!,'ArrowLeft');assert.equal(navigated,'');await click(document.querySelector('[aria-label="القالب التالي"]')!);assert.equal(navigated,NEXT);
-  navigated='';await render(wrap(<TemplatePreview event={event} base={design.draft} presets={TEMPLATE_PRESETS} preset={mid} isCurrent={false} pending onNavigate={p=>{navigated=p.id;}} onClose={()=>{}} onUse={()=>{}}/>));
-  await pointer(stage,'pointerdown',100,100,1200);await pointer(stage,'pointermove',0,102,1300);await pointer(stage,'pointerup',0,102,1400);assert.equal(navigated,'');
+  const show=(pending=false)=>wrap(<TemplatePreview event={event} base={design.draft} presets={TEMPLATE_PRESETS} preset={mid} isCurrent={false} pending={pending} onNavigate={p=>{navigated=p.id;}} onClose={()=>{}} onUse={()=>{used++;}}/>);
+  await render(show());assert.equal(document.querySelector('.live-preview'),null);
+  const stage=document.querySelector<HTMLElement>('.template-feed-scroll')!;assert.ok(stage);
+  await key(stage,'ArrowDown');assert.equal(navigated,NEXT);await key(stage,'ArrowUp');assert.equal(navigated,PREV);
+  navigated='';await key(document.querySelector('.template-feed-nav button')!,'ArrowDown');assert.equal(navigated,'','arrows in a button must not bubble into feed navigation');
+  Object.defineProperty(stage,'clientHeight',{value:400,configurable:true});stage.scrollTop=0;
+  await act(async()=>{stage.dispatchEvent(new Event('scroll',{bubbles:true}));await new Promise(r=>setTimeout(r,130));});
+  assert.equal(navigated,PREV);assert.equal(used,0,'browsing never applies a template');
+  await click(document.querySelector('.tp .dialog-foot .btn-primary')!);assert.equal(used,1);
+  navigated='';await render(show(true));await key(stage,'ArrowDown');assert.equal(navigated,'','busy feed cannot change the design');
  });
  await check('review URLs set the appearance and ignore unknown values (and the retired ?theme=)',async()=>{
   history.replaceState(null,'','/app/events?appearance=dark');applyReviewLink(made.prototype);assert.equal(document.documentElement.dataset.appearance,'dark');
@@ -204,6 +203,7 @@ export async function run(){
   history.replaceState(null,'','/app/events/evt_wedding/invitation/design');
   await render(<App mode="history"/>);for(let i=0;i<12;i++)await act(async()=>{await new Promise(r=>setTimeout(r,15));});
   const handle=document.querySelector('.ed-handle')!;assert.ok(handle);
+  assert.ok(document.querySelector('.ed.sheet-peek'),'editing starts with a large card');await key(handle,'ArrowUp');
   // jsdom has no layout: supply the panel geometry this position-based gesture actually measures.
   const panel=document.querySelector<HTMLElement>('.ed-panel')!;
   const measure=panel.getBoundingClientRect.bind(panel);
@@ -241,10 +241,11 @@ export async function run(){
  await check('Signature template surfaces show real names and browsing keeps the draft until explicit use',async()=>{
   history.replaceState(null,'','/app/events/evt_wedding/invitation/templates');await render(<App mode="history"/>);await settle();
   const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services,before=(await api.invitations.get(event.id)).draft;
+  await click(button('المجموعة'));await settle();
   assert.ok(document.querySelector('.tg-studio-prop'));assert.ok(document.querySelector('.sig-tpl-tableau .card-thumb-inner'));
-  await click(document.querySelector('.sig-library-open')!);await settle();assert.ok(document.querySelector('.tp-stationery .ed-workbench .card-thumb-inner'));assert.equal(document.querySelector('.live-preview'),null);
-  const railBefore=document.querySelector('.tp-rail [aria-pressed="true"]');assert.ok(railBefore);
-  const stage=document.querySelector('.tp-stage')!;await key(stage,'ArrowLeft');await settle();assert.notEqual(document.querySelector('.tp-rail [aria-pressed="true"]'),railBefore);assert.deepEqual((await api.invitations.get(event.id)).draft,before);
+  await click(document.querySelector('.sig-library-open')!);await settle();assert.ok(document.querySelector('.template-feed-slide.is-active .ed-workbench .card-thumb-inner'));assert.equal(document.querySelector('.live-preview'),null);
+  const titleBefore=document.querySelector('.tp .template-feed-title')!.textContent;
+  const stage=document.querySelector('.tp .template-feed-scroll')!;await key(stage,'ArrowDown');await settle();assert.notEqual(document.querySelector('.tp .template-feed-title')!.textContent,titleBefore);assert.deepEqual((await api.invitations.get(event.id)).draft,before);
   await click(document.querySelector('.tp .dialog-foot .btn-primary')!);await settle();assert.ok(location.pathname.endsWith('/invitation/design'));assert.ok(document.querySelector('.ed-workbench'));
   const after=(await api.invitations.get(event.id)).draft;assert.deepEqual(after.displayNames,before.displayNames);assert.deepEqual(after.message,before.message);assert.deepEqual(after.program,before.program);
   await api.invitations.saveDraft(event.id,before);
@@ -374,6 +375,7 @@ export async function run(){
   const after=await made.services.parties.get(p.id);assert.equal(after.rsvpStatus,'declined');assert.equal(JSON.stringify(after).includes('paid'),false);
  });
  await check('food lens totals come from the same parties as the list; allergies stand out (F053, F054)',async()=>{
+  made.prototype.update({role:'caterer'});
   history.replaceState(null,'',paths.guests(event.id)+'?view=food');
   const ev=await made.services.events.get(event.id);
   await render(wrap(<GuestsPage event={ev}/>));await settle();
@@ -383,9 +385,13 @@ export async function run(){
   assert.equal(Number(document.querySelector('.food-bar.is-none .food-bar-n')!.textContent),r.unspecified);
   assert.ok(document.querySelector('.food-need.is-allergy'));
   assert.ok(!document.getElementById('root')!.textContent!.includes('+966'),'no phone numbers in the food report');
+  assert.equal(document.querySelector('.g2-row'),null,'caterer report has no editable guest rows');
+  assert.equal(document.querySelector('[href*="wa.me"]'),null,'caterer cannot open private messaging');
+  made.prototype.update({role:'organizer'});
   history.replaceState(null,'','/');
  });
  await check('guest experience settings: unsafe wish links block saving; answered meals are hidden, not deleted (T33, T39)',async()=>{
+  made.prototype.update({role:'caterer'});
   const ev=await made.services.events.get(event.id);const rev=ev.guestExperience!.revision;
   await render(wrap(<SettingsPage event={ev}/>));await settle();
   const url=document.querySelector<HTMLInputElement>('.gxs-item input[type=url]')!;assert.ok(url);
@@ -399,6 +405,17 @@ export async function run(){
   assert.equal(x.gifts.items[0]!.url,'https://shop.example.com/watch');
   const view=await made.services.guest.open(event.slug,(await made.services.parties.list(event.id)).find(p=>p.rsvpStatus==='pending')!.code);
   assert.ok(!view.experience!.meals.options.some(o=>o.id==='meal_meat'),'hidden from guests');
+  made.prototype.update({role:'organizer'});
+ });
+ await check('organizer guest list and settings hide food while preserving wishlist controls',async()=>{
+  made.prototype.update({role:'organizer'});
+  history.replaceState(null,'',paths.guests(event.id)+'?view=food');
+  const ev=await made.services.events.get(event.id);
+  await render(wrap(<GuestsPage event={ev}/>));await settle();
+  assert.equal(document.querySelector('.food'),null);assert.equal(document.querySelector('.g2-food'),null);
+  await render(wrap(<SettingsPage event={ev}/>));await settle();
+  assert.equal(document.getElementById('gxs-meals'),null);assert.equal(document.getElementById('gxs-diet'),null);
+  assert.ok(document.getElementById('gxs-gifts'));
  });
  await check('import reviews and blocks ambiguous sample rows before explicit batch approval',async()=>{
   const before=(await made.services.parties.list(event.id)).length;await render(wrap(<ImportFlow eventId={event.id}/>));await settle();await click(button('استخدم الملف النموذجي'));await settle();assert.ok(document.getElementById('root')!.textContent?.includes('راجع قبل الإضافة'));assert.equal((await made.services.parties.list(event.id)).length,before);const add=Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(b=>b.textContent?.startsWith('أضف ')&&!b.textContent.includes('على أي حال'));assert.ok(add?.disabled);
@@ -452,6 +469,39 @@ export async function run(){
  });
  await check('the home exposes account and logout',async()=>{
   history.pushState(null,'','/app/events');window.dispatchEvent(new Event('popstate'));await render(<App mode="history"/>);await settle();assert.ok(document.querySelector('.account-trigger'),'account menu');
+ });
+ await check('creation resumes saved essentials and shared catalogue links preserve the selected design',async()=>{
+  window.localStorage.removeItem('doyofy:create-draft:v1:usr_owner');
+  const selected=TEMPLATE_PRESETS.find(p=>p.primaryOccasion==='graduation'&&p.cardId==='mo-sky')!;
+  history.replaceState(null,'',`${paths.newEvent}?type=graduation&template=${selected.id}&preview=1`);
+  await render(<App mode="history"/>);await settle();
+  assert.ok(document.querySelector('.tp-feed-dialog[open]'),'a catalogue link opens without an existing event ID');
+  await click(document.querySelector('.tp .dialog-foot .btn-primary')!);await settle();
+  await fill(document.querySelector<HTMLInputElement>('#create-event input')!,'خريجة المسودة');
+  const saved=JSON.parse(window.localStorage.getItem('doyofy:create-draft:v1:usr_owner')!);assert.equal(saved.draft.a,'خريجة المسودة');assert.equal(saved.templateId,selected.id);
+  await render(null);history.replaceState(null,'',paths.newEvent);await render(<App mode="history"/>);await settle();
+  assert.ok(document.body.textContent?.includes('استعدنا ما كتبته'));assert.equal(document.querySelector<HTMLInputElement>('#create-event input')!.value,'خريجة المسودة');
+  const form=document.querySelector<HTMLFormElement>('#create-event')!;
+  await fill(form.querySelector<HTMLInputElement>('input[type=date]')!,event.date);
+  const textInputs=Array.from(form.querySelectorAll<HTMLInputElement>('input')).filter(x=>!['date','time'].includes(x.type));
+  await fill(textInputs[textInputs.length-2]!,'قاعة المسودة');await fill(textInputs[textInputs.length-1]!,'الرياض');
+  await act(async()=>{form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});await settle();
+  assert.ok(location.pathname.endsWith('/invitation/design'));
+  const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services;const id=location.pathname.split('/')[3]!;
+  assert.equal((await api.invitations.get(id)).draft.cardId,selected.cardId);assert.equal(window.localStorage.getItem('doyofy:create-draft:v1:usr_owner'),null);
+ });
+ await check('one publish saves event-only changes and focuses invalid details before publishing',async()=>{
+  history.replaceState(null,'',paths.design(event.id));await render(<App mode="history"/>);await settle();
+  const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services;
+  await act(async()=>{await api.invitations.publish(event.id);});await settle();
+  await click(document.querySelector('#ed-tab-event')!);
+  const venue=document.querySelector<HTMLInputElement>('[data-event-field="venue"]')!;await fill(venue,'قاعة النشر بخطوة واحدة');
+  const publish=document.querySelector<HTMLButtonElement>('.ed-dock .ed-publish')!;assert.ok(publish.textContent?.includes('انشر التعديلات'));
+  await click(publish);await settle();assert.equal((await api.events.get(event.id)).venue.name,'قاعة النشر بخطوة واحدة');
+  assert.ok(document.querySelector('.ed-dock .ed-publish')!.textContent?.includes('إلى الضيوف'));
+  const map=document.querySelector<HTMLInputElement>('[data-event-field="mapUrl"]')!;await fill(map,'javascript:alert(1)');
+  await click(document.querySelector('.ed-dock .ed-publish')!);await settle();
+  assert.equal(document.activeElement,map);assert.equal(map.getAttribute('aria-invalid'),'true');assert.ok(!String((await api.events.get(event.id)).venue.mapUrl).startsWith('javascript:'));
  });
  console.log(`DOM behavior: ${passed}/${passed} passed + malformed-route check.`);
  const routes=[

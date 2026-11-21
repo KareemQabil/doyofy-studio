@@ -26,6 +26,7 @@ import { haptic } from '../../ui/motion/motion';
 import { SealStamp } from '../signature/SealStamp';
 import { DraftQueue } from '../../domain/draft-queue';
 import { defaultDesign, publishState, toInvitationData } from '../../domain/invitation';
+import { applyPreset, presetById } from '../../domain/templates';
 import { Banner, Button, ErrorState, Icon, IconButton, Segmented, PageLoader } from '../../ui';
 import { useServices } from '../../app/data';
 import { Link, useBlocker, useLocation, useNavigate } from '../../app/router';
@@ -34,7 +35,7 @@ import { useToast } from '../../ui/primitives/Feedback';
 import { errorMessage } from '../../services/errors';
 import { useDesign, useEvent } from '../shared/queries';
 import { LivePreview } from '../invitation/LivePreview';
-import { ContentSection, DesignSection, EventSection, MotionSection, eventFields, previewEvent, type EventDraft } from './sections';
+import { ContentSection, DesignSection, EventSection, MotionSection, eventFields, previewEvent, validateEventFields, type EventDraft, type EventDraftErrors } from './sections';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
 export type EditorSection = 'content' | 'design' | 'motion' | 'event';
@@ -75,7 +76,7 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
     return () => { vp.removeEventListener('resize', sync); document.removeEventListener('focusin', sync); document.removeEventListener('focusout', sync); document.documentElement.style.removeProperty('--editor-viewport'); };
   }, [phone]);
 
-  const [content, setContent] = useState<InvitationDesignContent>(saved?.draft ?? defaultDesign(event));
+  const [content, setContent] = useState<InvitationDesignContent>(() => { const base = saved?.draft ?? defaultDesign(event); const selected = !saved && presetById(loc.search.get('template') ?? ''); return selected ? applyPreset(base, selected) : base; });
   const contentRef = useRef(content);
   const [save, setSave] = useState<SaveState>(saved ? 'saved' : 'dirty');
   const [design, setDesign] = useState<InvitationDesign | null>(saved);
@@ -93,10 +94,11 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
     canStep: (d) => { const i = PAGES.indexOf(page) + d; return i >= 0 && i < PAGES.length; },
     onStep: (d) => setPage((p) => PAGES[Math.max(0, Math.min(PAGES.length - 1, PAGES.indexOf(p) + d))]!),
   });
-  const [sheet, setSheet] = useState<SheetPoint>('half');
+  const [sheet, setSheet] = useState<SheetPoint>('peek');
   const [replay, setReplay] = useState(0);
   const [sound, setSound] = useState(false);
   const [evDraft, setEvDraft] = useState<EventDraft>(() => eventFields(event));
+  const [eventErrors, setEventErrors] = useState<EventDraftErrors>({});
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [queue] = useState(() => new DraftQueue(content, (value: InvitationDesignContent) => services.invitations.saveDraft(event.id, value), !saved));
   const [justPublished, setJustPublished] = useState(false);
@@ -141,13 +143,28 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
     go();
   };
 
-  const ps = publishState(design ? { ...design, draft: content } : null);
+  const designState = publishState(design ? { ...design, draft: content } : null);
+  const ps = evDirty && (designState === 'published' || designState === 'changed') ? 'changed' : designState;
   const doPublish = async () => {
+    if (publishing) return;
     setPublishError(undefined);
-    if (evDirty) { setSection('event'); setPublishError('احفظ تفاصيل المناسبة أولًا، ثم انشر الدعوة.'); return; }
+    const errors = validateEventFields(event, evDraft, services.clock.now());
+    setEventErrors(errors);
+    if (Object.keys(errors).length) {
+      setSection('event');
+      if (phone) setSheet('full');
+      setPublishError('راجع الحقول الموضّحة، ثم انشر الدعوة.');
+      requestAnimationFrame(() => { panel.current?.querySelector<HTMLElement>(`[data-event-field="${Object.keys(errors)[0]}"]`)?.focus(); });
+      return;
+    }
     setPublishing(true);
     if (save !== 'saved' && !(await persist())) { setPublishing(false); setPublishError('لم نتمكن من حفظ التعديلات، لذلك لم تُنشر. أعد المحاولة.'); return; }
     try {
+      if (evDirty) await services.events.update(event.id, {
+        date: evDraft.date, time: evDraft.time,
+        venue: { ...event.venue, name: evDraft.venue.trim(), city: evDraft.city.trim(), mapUrl: evDraft.mapUrl.trim() || undefined },
+        settings: { defaultPartySize: evDraft.partySize },
+      });
       const d = await services.invitations.publish(event.id);
       setDesign(d);
       setJustPublished(true);
@@ -238,15 +255,15 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
             {section === 'content' && <ContentSection event={event} content={content} update={update} />}
             {section === 'design' && <DesignSection event={shown} content={content} invitation={invitation} update={update} onChangeTemplate={changeTemplate} />}
             {section === 'motion' && <MotionSection content={content} invitation={invitation} update={update} sound={sound} onSound={setSound} />}
-            {section === 'event' && <EventSection event={event} draft={evDraft} onDraft={setEvDraft} />}
+            {section === 'event' && <EventSection event={event} draft={evDraft} onDraft={d => { setEvDraft(d); setEventErrors({}); }} validationErrors={eventErrors} />}
           </div>
         </aside>
 
         <section className="ed-stage" aria-label="معاينة الدعوة">
           <div className="ed-stage-heading"><div><p className="ed-stage-kicker">{live ? 'التجربة الكاملة' : 'على طاولة التصميم'}</p><p className="ed-stage-caption">{live ? 'شاهد الدعوة كما تُفتح لضيوفك' : 'دعوتك، بكل تفاصيلها'}</p></div><Segmented label="عرض الاستوديو" value={mode} onChange={setMode} options={[{value:'edit',label:'تعديل',icon:'edit'},{value:'preview',label:'معاينة',icon:'play'}]} /></div>
           {!live && <Segmented className="ed-canvas-tabs" label="صفحة الدعوة المعروضة" value={page} onChange={setPage} options={[{value:'card',label:'البطاقة'},{value:'message',label:'الكلمة'},{value:'program',label:'البرنامج'}]} />}
-          {!live ? <div className="ed-page-swipe" key={page} ref={pager.ref} data-pager="" data-enter={pager.enter} {...pager.gesture}><EditorWorkbench event={shown} content={content} page={page} motion={cardMotion} />{page === 'card' && <button type="button" className="ed-motion-replay" onClick={() => setCardMotion((n) => n + 1)}><Icon name="play" size="sm" />شغّل حركة البطاقة</button>}</div> : <div className="ed-screen-wrap">
-            <div className="ed-screen"><LivePreview start="card" invitation={invitation} content={content} replayToken={replay} muted={!sound} /></div>
+          {!live ? <div className="ed-page-swipe" key={page} ref={pager.ref} data-pager="" data-enter={pager.enter} {...pager.gesture}><EditorWorkbench event={shown} content={content} page={page} motion={cardMotion} expandable />{page === 'card' && <button type="button" className="ed-motion-replay" onClick={() => setCardMotion((n) => n + 1)}><Icon name="play" size="sm" />شغّل حركة البطاقة</button>}</div> : <div className="ed-screen-wrap">
+            <div className="ed-screen"><LivePreview start="intro" invitation={invitation} content={content} replayToken={replay} muted={!sound} /></div>
           </div>}
           {live && (
             <div className="ed-stage-tools">

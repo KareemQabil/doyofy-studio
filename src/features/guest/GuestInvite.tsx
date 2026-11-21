@@ -4,9 +4,11 @@
  *  - replied → the event hub (status, QR, edit reply, date, directions, program, table)
  *  - general link (no code) → invitation with a name field; replies wait for the organizer to match them
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toInvitationData } from '../../domain/invitation';
-import type { GuestView } from '../../services/contracts';
+import type { GuestApi, GuestView } from '../../services/contracts';
+import { createPortableGuestApi, decodePortableView } from '../../domain/portable-invite';
+import { decodeConfig } from '../../data/invite-link.js';
 import { errorMessage, isAppError } from '../../services/errors';
 import { Button, EmptyState, PageLoader } from '../../ui';
 import { useServices } from '../../app/data';
@@ -18,13 +20,24 @@ import { asksAfterAttending } from '../../domain/guest-experience';
 import { ExtrasSheet, extrasPayload, type ExtrasValue } from './GuestExtras';
 
 type EngineReply = { name: string; attending: boolean; guests: number };
-type EngineResult = { ok: true; id: string } | { ok: false; error: string };
+type EngineResult = { ok: true; id: string; demo?: boolean } | { ok: false; error: string };
 
 type Submission = { ok: true; name?: string } | { ok: false; error: string } | null;
 
 export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
   const services = useServices();
   const loc = useLocation();
+  const carried = loc.search.get('d');
+  const portable = useMemo(() => {
+    return carried ? decodePortableView(carried, slug, code) : null;
+  }, [carried, slug, code]);
+  const legacyCarried = useMemo(() => carried ? decodeConfig(carried) : null, [carried]);
+  const guestApi = useMemo(() => {
+    if (!portable) return services.guest;
+    let storage: Storage | undefined;
+    try { storage = localStorage; } catch { /* local-only reply remains usable */ }
+    return createPortableGuestApi(portable, storage);
+  }, [portable, services]);
   const [view, setView] = useState<GuestView | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [mode, setMode] = useState<'loading' | 'cover' | 'invitation' | 'hub'>('loading');
@@ -33,22 +46,21 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const v = await services.guest.open(slug, code);
+      const v = await guestApi.open(slug, code);
       setView(v);
       const play = loc.search.get('play') != null;
       if (v.phase === 'after') setMode('hub');
       else if (play) setMode('invitation');
       else setMode(v.party && v.party.rsvpStatus !== 'pending' ? 'hub' : 'cover');
     } catch (e) { setError(e); }
-  }, [services, slug, code]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [guestApi, slug, code]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // a shared link carries the invitation itself (?d=). There is no server behind this prototype, so a reply made from it
   // can never reach the organizer: open the carried copy, whose reply screen says plainly that it is a demo (Q1).
-  const carried = loc.search.get('d');
-  useEffect(() => { if (carried) location.replace(`${new URL('./', document.baseURI).href}?i=${encodeURIComponent(carried)}`); }, [carried]);
-  useEffect(() => { if (carried) return; document.body.classList.add('dy-guest'); void load(); return () => document.body.classList.remove('dy-guest'); }, [load, carried]);
+  useEffect(() => { if (carried && !portable && legacyCarried) location.replace(`${new URL('./', document.baseURI).href}?i=${encodeURIComponent(carried)}`); }, [carried, portable, legacyCarried]);
+  useEffect(() => { if (carried && !portable) return; document.body.classList.add('dy-guest'); void load(); return () => document.body.classList.remove('dy-guest'); }, [load, carried, portable]);
 
-  if (carried) return <main className="guest-page theme-guest guest-center"><PageLoader name="envelope" label="جارٍ فتح الدعوة" size={96} /></main>;
+  if (carried && !portable) return <main className="guest-page theme-guest guest-center">{legacyCarried ? <PageLoader name="envelope" label="جارٍ فتح الدعوة" size={96} /> : <EmptyState icon="alert" title="الرابط غير مكتمل">اطلبوا رابط الدعوة مرة أخرى من صاحب المناسبة.</EmptyState>}</main>;
   if (error) {
     const notPublished = isAppError(error) && error.code === 'not_published';
     return (
@@ -62,15 +74,15 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
   }
   if (!view || mode === 'loading') return <main className="guest-page theme-guest guest-center"><PageLoader name="envelope" label="جارٍ فتح الدعوة" size={96} /></main>;
   if (mode === 'cover') return <SealCover view={view} onOpen={() => setMode('invitation')} onDetails={() => setMode('hub')} />;
-  if (mode === 'hub') return <GuestHub view={view} code={code ?? null} submission={submission} onView={setView} onReplay={() => setMode('invitation')} />;
+  if (mode === 'hub') return <GuestHub view={view} code={code ?? null} submission={submission} onView={setView} onReplay={() => setMode('invitation')} guestApi={guestApi} demo={!!portable} />;
   return (
-    <InvitationPlayer view={view} code={code ?? null}
+    <InvitationPlayer view={view} code={code ?? null} guestApi={guestApi} demo={!!portable}
       onSubmitted={(v, s) => { if (v) setView(v); setSubmission(s); }}
       onDone={() => setMode('hub')} />
   );
 }
 
-function InvitationPlayer({ view, code, onSubmitted, onDone }: { view: GuestView; code: string | null; onSubmitted: (v: GuestView | null, s: Submission) => void; onDone: () => void }) {
+function InvitationPlayer({ view, code, onSubmitted, onDone, guestApi, demo = false }: { view: GuestView; code: string | null; onSubmitted: (v: GuestView | null, s: Submission) => void; onDone: () => void; guestApi?: GuestApi; demo?: boolean }) {
   const services = useServices();
   const host = useRef<HTMLDivElement>(null);
   const [err, setErr] = useState<unknown>(null);
@@ -80,9 +92,9 @@ function InvitationPlayer({ view, code, onSubmitted, onDone }: { view: GuestView
   cb.current = { onSubmitted, onDone };
   const send = async (r: EngineReply, extras?: ExtrasValue): Promise<EngineResult> => {
     try {
-      const v = await services.guest.submitRsvp(view.event.slug, code, { name: r.name, attending: r.attending, count: r.attending ? r.guests : 0, ...(extras ? extrasPayload(view.experience, extras) : {}) });
+      const v = await (guestApi ?? services.guest).submitRsvp(view.event.slug, code, { name: r.name, attending: r.attending, count: r.attending ? r.guests : 0, ...(extras ? extrasPayload(view.experience, extras) : {}) });
       cb.current.onSubmitted(v, { ok: true, name: r.name });
-      return { ok: true, id: v.responseId };
+      return { ok: true, id: v.responseId, ...(demo ? { demo: true } : {}) };
     } catch (e) {
       cb.current.onSubmitted(null, { ok: false, error: errorMessage(e) });
       return { ok: false, error: errorMessage(e) };
@@ -119,6 +131,7 @@ function InvitationPlayer({ view, code, onSubmitted, onDone }: { view: GuestView
   return (
     <>
       <div ref={host} className="guest-studio" />
+      {demo && <p className="guest-demo-note" role="note">نسخة تجريبية — ردّك يُحفظ على جهازك ولا يصل للمنظّم.</p>}
       <button type="button" className="guest-fast-track" onClick={onDone}>الموعد وتأكيد الحضور</button>
       {held && view.experience && (
         <ExtrasSheet x={view.experience} count={held.r.guests}

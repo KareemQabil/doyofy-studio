@@ -12,7 +12,7 @@ import { useState } from 'react';
 import type { Event, InvitationDesign } from '../../domain/types';
 import { eventTypeInfo, namesLine } from '../../domain/event';
 import { defaultDesign, toInvitationData } from '../../domain/invitation';
-import { TEMPLATE_STYLES, applyPreset, presetOf, presetsFor, type TemplatePreset, type TemplateStyle } from '../../domain/templates';
+import { TEMPLATE_STYLES, applyPreset, presetById, presetOf, presetsFor, type TemplatePreset, type TemplateStyle } from '../../domain/templates';
 import { Banner, Button, ErrorState, FocusLayout, Icon, LinkButton, PageLoader } from '../../ui';
 import { useMutation } from '../../app/data';
 import { useLocation, useNavigate } from '../../app/router';
@@ -38,15 +38,16 @@ type Filter = 'for-you' | 'all' | TemplateStyle;
 
 function Gallery({ event, design, first, back }: { event: Event; design: InvitationDesign | null; first: boolean; back: { to: string; label: string } }) {
   const navigate = useNavigate();
+  const loc = useLocation();
   const [filter, setFilter] = useState<Filter>('for-you');
-  const [preview, setPreview] = useState<TemplatePreset | null>(null);
+  const [preview, setPreview] = useState<TemplatePreset | null>(() => presetById(loc.search.get('template') ?? '') ?? null);
   const base = design?.draft ?? defaultDesign(event);
   const current = design ? presetOf(design.draft) : undefined;
   const occasion = eventTypeInfo(event.type);
   const { suited, rest } = presetsFor(event.type);
 
   const list: Array<TemplatePreset | 'divider'> = filter === 'for-you'
-    ? [...suited, ...(rest.length ? ['divider' as const] : []), ...rest]
+    ? suited
     : [...suited, ...rest].filter((p) => filter === 'all' || p.styles.includes(filter));
 
   const use = useMutation((s, p: TemplatePreset) => s.invitations.saveDraft(event.id, applyPreset(base, p)), {

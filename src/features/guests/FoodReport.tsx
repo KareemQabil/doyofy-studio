@@ -16,7 +16,7 @@ import { haptic } from '../../ui/motion/motion';
 const TONES = 'abcdef';
 
 export function FoodReport({ event, parties, responses, tables, onOpen, now }: {
-  event: Event; parties: InvitationParty[]; responses: RSVPResponse[]; tables: Table[]; onOpen: (partyId: string) => void; now: Date;
+  event: Event; parties: InvitationParty[]; responses: RSVPResponse[]; tables: Table[]; onOpen?: (partyId: string) => void; now: Date;
 }) {
   const x = experienceOf(event);
   const meals = useMemo(() => mealReport(x, parties, responses), [x, parties, responses]);
@@ -25,7 +25,7 @@ export function FoodReport({ event, parties, responses, tables, onOpen, now }: {
   const asks = asksMeals(x);
   if (!asks && !x.dietary.enabled && !meals.rows.some((r) => r.people)) {
     return (
-      <EmptyState compact icon="sparkle" title="لا أسئلة طعام بعد" action={<LinkButton to={paths.settings(event.id, 'guest-experience')} icon="settings">إعداد الطعام</LinkButton>}>
+      <EmptyState compact icon="sparkle" title="لا أسئلة طعام بعد" action={onOpen ? <LinkButton to={paths.settings(event.id, 'guest-experience')} icon="settings">إعداد الطعام</LinkButton> : undefined}>
         فعّل اختيار الوجبة أو سؤال الحساسية، وسيظهر هنا عدد كل وجبة ومن لديه ما نراعيه.
       </EmptyState>
     );
@@ -73,7 +73,7 @@ export function FoodReport({ event, parties, responses, tables, onOpen, now }: {
           {meals.review.length > 0 && (
             <div className="food-review" role="note">
               <Icon name="alert" size="sm" />
-              <span>تغيّر عدد الحضور بعد اختيار الوجبات — راجع: {meals.review.map((r, i) => <span key={r.partyId}>{i ? '، ' : ''}<button type="button" className="food-link" onClick={() => onOpen(r.partyId)}>{r.name}</button></span>)}. لا نحسبها حتى تُراجع.</span>
+              <span>تغيّر عدد الحضور بعد اختيار الوجبات — راجع: {meals.review.map((r, i) => <span key={r.partyId}>{i ? '، ' : ''}{onOpen ? <button type="button" className="food-link" onClick={() => onOpen(r.partyId)}>{r.name}</button> : r.name}</span>)}. لا نحسبها حتى تُراجع.</span>
             </div>
           )}
           {meals.provisional.people > 0 && (
@@ -104,7 +104,7 @@ export function FoodReport({ event, parties, responses, tables, onOpen, now }: {
             </ul>
           )}
           {diet.entries.length ? (
-            <ul className="food-entries">{diet.entries.map((e) => <DietRow key={e.partyId} e={e} table={tableName(e.tableId)} onOpen={() => onOpen(e.partyId)} />)}</ul>
+            <ul className="food-entries">{diet.entries.map((e) => <DietRow key={e.partyId} e={e} table={tableName(e.tableId)} onOpen={onOpen ? () => onOpen(e.partyId) : undefined} />)}</ul>
           ) : <p className="faint t-sm">لا احتياجات مسجلة بعد.</p>}
           <p className="food-fine"><Icon name="info" size="sm" />ما كتبه الضيف كما هو، لتوصله لمن يحضّر الطعام. «نباتي» لا يعني خلوًا من الحساسية.</p>
         </section>
@@ -132,17 +132,17 @@ export function FoodReport({ event, parties, responses, tables, onOpen, now }: {
 
       <div className="food-actions">
         <Button variant="secondary" icon="download" onClick={exportCsv}>تصدير للمطبخ (CSV)</Button>
-        <LinkButton to={paths.settings(event.id, 'guest-experience')} variant="ghost" icon="settings">تعديل الأسئلة</LinkButton>
+        {onOpen && <LinkButton to={paths.settings(event.id, 'guest-experience')} variant="ghost" icon="settings">تعديل الأسئلة</LinkButton>}
         <span className="faint t-sm">بدون أرقام هواتف · الإصدار {x.revision}</span>
       </div>
     </div>
   );
 }
 
-function DietRow({ e, table, onOpen }: { e: DietaryEntry; table: string; onOpen: () => void }) {
+function DietRow({ e, table, onOpen }: { e: DietaryEntry; table: string; onOpen?: () => void }) {
   return (
     <li className={`food-entry${e.allergy ? ' is-allergy' : ''}`}>
-      <button type="button" className="food-entry-name" onClick={onOpen}>{e.name}</button>
+      {onOpen ? <button type="button" className="food-entry-name" onClick={onOpen}>{e.name}</button> : <strong className="food-entry-name">{e.name}</strong>}
       <span className="food-entry-needs">{e.needs.map((n) => DIETARY[n].label).join('، ')}{e.affectedCount ? ` · تخص ${people(e.affectedCount)}` : ''}</span>
       {e.note && <span className="food-entry-note">«{e.note}»</span>}
       <span className={`food-entry-table${table ? '' : ' is-missing'}`}><Icon name="table" size="sm" />{table || 'بلا طاولة'}</span>

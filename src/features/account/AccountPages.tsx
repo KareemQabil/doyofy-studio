@@ -1,12 +1,19 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, Redirect, useLocation, useNavigate } from '../../app/router';
-import { useServices } from '../../app/data';
+import { usePrototype, useServices } from '../../app/data';
 import { safeAccountReturn } from '../../domain/account';
+import { DIALECTS, type Dialect } from '../../domain/copy';
+import type { Role } from '../../domain/types';
+import { useCopy } from '../../ui/copy';
+import { AudioLibrary } from './AudioLibrary';
 import { Logo } from '../../ui/brand';
-import { Button, Field, Input, Icon, LinkButton, Panel, PageHeader, AppShell } from '../../ui';
+import { Button, Field, Input, Icon, LinkButton, Panel, PageHeader, AppShell, Select } from '../../ui';
 import { AppearanceSwitch } from '../../ui/primitives/AppearanceSwitch';
 import { AccountMenu } from './AccountMenu';
 import { saveDemoAccount, useDemoAccount } from './session';
+import { CateringHome } from './CateringHome';
+import { canViewFood } from '../../domain/roles';
+import { paths } from '../../app/paths';
 
 /** each account moment gets its own still life (A10) instead of one repeated hero; phones show it as a slim band */
 const AUTH_ART = {
@@ -35,8 +42,53 @@ export function LogoutPage() {
 }
 
 export function AccountPage() {
-  const a = useDemoAccount(), user = useServices().session.currentUser(); const [name, setName] = useState(a.name || user.name), [email, setEmail] = useState(a.email || ''), [saved, setSaved] = useState(false), [nameError,setNameError] = useState('');
-  return <AppShell right={<AccountMenu />}><main id="main" className="account-page"><PageHeader title="حسابك، على طريقتك." subtitle="الاسم والبريد والمظهر في مكان واحد." /><div className="account-page-grid"><Panel title="الملف الشخصي"><form className="stack gap-5" onSubmit={e => { e.preventDefault(); if (!name.trim()) { setNameError('اكتب اسمًا قبل الحفظ.'); return; } setNameError(''); saveDemoAccount({ status: 'demo', name: name.trim(), email: email.trim() }); setSaved(true); }}><Field label="الاسم" required error={nameError}><Input value={name} required maxLength={70} onChange={e => { setName(e.target.value); setSaved(false); }} /></Field><Field label="البريد الإلكتروني" optional><Input type="email" ltr value={email} maxLength={160} onChange={e => { setEmail(e.target.value); setSaved(false); }} /></Field><div className="row wrap gap-3"><Button type="submit" variant="primary">حفظ الملف</Button>{saved && <span role="status" className="account-saved">تم حفظ ملفك</span>}</div></form></Panel><div className="stack gap-5"><Panel title="المظهر"><p className="muted">فاتح أو داكن أو حسب جهازك. تصميم دعوتك يبقى كما اخترته.</p><AppearanceSwitch /></Panel><Panel title="جلسة التجربة"><p className="muted">بيانات الملف والمناسبات محفوظة على هذا الجهاز. هذه ليست حسابات موثقة عبر خادم.</p><LinkButton to="/app/logout" variant="secondary" icon="back">تسجيل الخروج</LinkButton></Panel></div></div></main></AppShell>;
+  const a = useDemoAccount(), services = useServices(), proto = usePrototype(), user = services.session.currentUser();
+  const { t, dialect, setDialect } = useCopy();
+  const [name, setName] = useState(a.name || user.name), [email, setEmail] = useState(a.email || '');
+  const [saved, setSaved] = useState(false), [nameError, setNameError] = useState('');
+  const [role, setRole] = useState<Role>(user.role), [preferenceSaved, setPreferenceSaved] = useState<'language' | 'role' | null>(null);
+  useEffect(() => services.onChange(() => setRole(services.session.currentUser().role)), [services]);
+  return <AppShell right={<AccountMenu />}>
+    <main id="main" className="account-page">
+      <PageHeader title={t('account')} subtitle={t('accountSubtitle')} />
+      <div className="account-page-grid">
+        <div className="stack gap-5">
+          <Panel title={t('profile')}>
+            <form className="stack gap-5" onSubmit={e => {
+              e.preventDefault();
+              if (!name.trim()) { setNameError(t('nameRequired')); return; }
+              setNameError(''); saveDemoAccount({ status: 'demo', name: name.trim(), email: email.trim() }); setSaved(true);
+            }}>
+              <Field label={t('name')} required error={nameError}><Input value={name} required maxLength={70} onChange={e => { setName(e.target.value); setSaved(false); }} /></Field>
+              <Field label={t('email')} optional><Input type="email" ltr value={email} maxLength={160} onChange={e => { setEmail(e.target.value); setSaved(false); }} /></Field>
+              <div className="row wrap gap-3"><Button type="submit" variant="primary">{t('saveProfile')}</Button>{saved && <span role="status" className="account-saved">{t('profileSaved')}</span>}</div>
+            </form>
+          </Panel>
+          <AudioLibrary />
+        </div>
+        <div className="stack gap-5">
+          <Panel title={t('languageStyle')}>
+            <Field label={t('languageStyle')} hint={t('languageHint')}>
+              <Select value={dialect} onChange={e => { setDialect(e.target.value as Dialect); setPreferenceSaved('language'); }}>
+                {DIALECTS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+              </Select>
+            </Field>
+            {preferenceSaved === 'language' && <p role="status" className="account-saved">{t('languageSaved')}</p>}
+          </Panel>
+          <Panel title={t('roleTitle')}>
+            <Field label={t('roleTitle')} hint={t('roleHint')}>
+              <Select value={role} onChange={e => { const next = e.target.value as Role; proto.update({ role: next }); setRole(next); setPreferenceSaved('role'); }}>
+                <option value="organizer">{t('organizer')}</option><option value="coordinator">{t('coordinator')}</option><option value="caterer">{t('caterer')}</option>
+              </Select>
+            </Field>
+            {preferenceSaved === 'role' && <p role="status" className="account-saved">{t('roleSaved')}</p>}
+          </Panel>
+          <Panel title={t('appearance')}><p className="muted">{t('appearanceHint')}</p><AppearanceSwitch /></Panel>
+          <Panel title={t('demoSession')}><p className="muted">{t('demoSessionHint')}</p><LinkButton to="/app/logout" variant="secondary" icon="back">{t('logout')}</LinkButton></Panel>
+        </div>
+      </div>
+    </main>
+  </AppShell>;
 }
 
 export function HelpPage() {
@@ -44,7 +96,21 @@ export function HelpPage() {
 }
 
 export function OrganizerSessionGate({ children }: { children: ReactNode }) {
+  const services = useServices();
+  const [role, setRole] = useState(services.session.currentUser().role);
+  useEffect(() => services.onChange(() => setRole(services.session.currentUser().role)), [services]);
   const account = useDemoAccount(), loc = useLocation(); const open = ['/app/login','/app/signup','/app/logout','/app/welcome','/app/help'].includes(loc.pathname);
   if (account.status === 'signed-out' && (loc.pathname.startsWith('/app/') || loc.pathname.startsWith('/check-in/') || loc.pathname.startsWith('/prototype/')) && !open) return <Redirect to={`/app/login?next=${encodeURIComponent(loc.href)}`} />;
+  if (canViewFood(role)) {
+    if (loc.pathname === '/app/events') return <CateringHome />;
+    const eventRoute = loc.pathname.match(/^\/app\/events\/([^/]+)(?:\/(.*))?$/);
+    const allowed = eventRoute && ['guests', 'seating'].includes(eventRoute[2] || '');
+    const organizerRoute = eventRoute || loc.pathname.startsWith('/check-in/') || loc.pathname.startsWith('/prototype/');
+    if (organizerRoute && !allowed) {
+      const id = eventRoute?.[1] !== 'new' ? eventRoute?.[1] : undefined;
+      const recovery = id ? `${paths.guests(id)}?view=food` : paths.events;
+      return <AppShell right={<AccountMenu />}><main id="main" className="account-page"><PageHeader title="مساحة الضيافة" subtitle="هذه الأدوات متاحة لفريق التنظيم. يمكنك متابعة الطعام والطاولات أو تغيير طريقة عرض الحساب." /><div className="row wrap gap-3"><LinkButton to={recovery} variant="primary" icon="sparkle">افتح الضيافة</LinkButton><LinkButton to="/app/account" icon="settings">طريقة عرض الحساب</LinkButton></div></main></AppShell>;
+    }
+  }
   return <>{children}</>;
 }

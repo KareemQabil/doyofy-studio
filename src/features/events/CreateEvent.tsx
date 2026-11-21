@@ -5,7 +5,7 @@
  *   → occasion-specific design is ready in the editor for review and publishing.
  *     Changing the template is an optional secondary path.
  */
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { CreateEventInput, EventType } from '../../domain/types';
 import { eventTypeInfo, isCoupleEvent, validateEssentials, type EssentialsErrors } from '../../domain/event';
 import { localDateOf } from '../../domain/format';
@@ -17,6 +17,11 @@ import { errorMessage } from '../../services/errors';
 import { SignatureOccasions } from '../signature/SignatureOccasions';
 import { SignatureCreatePreview } from '../signature/SignatureCreatePreview';
 import { occasionAction } from '../../domain/experience';
+import { presetById, presetsFor, type TemplatePreset } from '../../domain/templates';
+import { defaultDesign } from '../../domain/invitation';
+import { useCopy } from '../../ui/copy';
+import { TemplatePreview } from '../templates/TemplatePreview';
+import { sampleEvent } from '../signature/sample-event';
 
 export const TIME_ZONES: Array<[string, string]> = [
   ['Asia/Riyadh', 'الرياض / جدة (السعودية)'], ['Asia/Dubai', 'دبي / أبوظبي'], ['Asia/Kuwait', 'الكويت'], ['Asia/Qatar', 'الدوحة'],
@@ -27,13 +32,33 @@ export const TIME_ZONES: Array<[string, string]> = [
 type Draft = { type: EventType | null; a: string; b: string; aEn: string; bEn: string; title: string; date: string; time: string; venue: string; city: string; timeZone: string };
 const EMPTY: Draft = { type: null, a: '', b: '', aEn: '', bEn: '', title: '', date: '', time: '20:00', venue: '', city: '', timeZone: 'Asia/Riyadh' };
 
+function readDraft(key: string, requested: EventType | null): { draft: Draft; templateId?: string } | null {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(key) || 'null');
+    if (saved?.version !== 1 || !saved.draft || typeof saved.draft !== 'object') return null;
+    const d = saved.draft;
+    if (!d.type || eventTypeInfo(d.type).id !== d.type || (requested && requested !== d.type)) return null;
+    if (Object.keys(EMPTY).some(k => k !== 'type' && typeof d[k] !== 'string')) return null;
+    if (!TIME_ZONES.some(([zone]) => zone === d.timeZone)) return null;
+    return { draft: d as Draft, templateId: typeof saved.templateId === 'string' ? saved.templateId : undefined };
+  } catch { return null; }
+}
+
 export function CreateEvent() {
   const services = useServices();
   const navigate = useNavigate();
   const loc = useLocation();
-  const preset = loc.search.get('type') as EventType | null;
-  const [step, setStep] = useState<1 | 2>(preset && eventTypeInfo(preset).id === preset ? 2 : 1);
-  const [d, setD] = useState<Draft>({ ...EMPTY, type: preset && eventTypeInfo(preset).id === preset ? preset : null });
+  const { t } = useCopy();
+  const requestedTemplate = presetById(loc.search.get('template') ?? '');
+  const queryType = loc.search.get('type') as EventType | null;
+  const preset = queryType && eventTypeInfo(queryType).id === queryType ? queryType : requestedTemplate?.primaryOccasion ?? null;
+  const draftKey = `doyofy:create-draft:v1:${services.session.currentUser().id}`;
+  const [cached] = useState(() => readDraft(draftKey, preset));
+  const [step, setStep] = useState<1 | 2>(preset || cached?.draft.a || cached?.draft.date ? 2 : 1);
+  const [d, setD] = useState<Draft>(cached?.draft ?? { ...EMPTY, type: preset });
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplatePreset | undefined>(() => requestedTemplate ?? presetById(cached?.templateId ?? ''));
+  const [sharedPreview, setSharedPreview] = useState<TemplatePreset | null>(() => loc.search.get('preview') === '1' ? requestedTemplate ?? null : null);
+  const [resumed, setResumed] = useState(!!cached);
   const [errors, setErrors] = useState<EssentialsErrors>({});
   const [showEn, setShowEn] = useState(false);
   const [showTz, setShowTz] = useState(false);
@@ -41,6 +66,12 @@ export function CreateEvent() {
   const typed = d.a || d.b || d.title || d.date || d.venue || d.city;
   const create = useMutation((s, input: CreateEventInput) => s.events.create(input));
   const [created, setCreated] = useState(false);
+  useEffect(() => {
+    try {
+      if (created) window.localStorage.removeItem(draftKey);
+      else if (d.type) window.localStorage.setItem(draftKey, JSON.stringify({ version: 1, draft: d, templateId: selectedTemplate?.id }));
+    } catch { /* Creation remains usable when browser storage is full or disabled. */ }
+  }, [d, selectedTemplate?.id, created, draftKey]);
   useBlocker(!!typed && !created, 'لم تُنشأ المناسبة بعد. هل تريد المغادرة وترك ما كتبته؟');
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => { setD((x) => ({ ...x, [k]: v })); if (errors[k as keyof EssentialsErrors]) setErrors((e) => ({ ...e, [k]: undefined })); };
@@ -75,27 +106,32 @@ export function CreateEvent() {
     const made = await create.run(input());
     if (made) {
       setCreated(true);
-      navigate(`${paths.design(made.id)}?first=1`, { force: true });
+      try { window.localStorage.removeItem(draftKey); } catch { /* storage can be unavailable */ }
+      const query = new URLSearchParams({ first: '1', ...(selectedTemplate ? { template: selectedTemplate.id } : {}) });
+      navigate(`${paths.design(made.id)}?${query}`, { force: true });
     }
   };
 
   return (
     <FocusLayout
       width={step === 1 ? 'full' : 'wide'}
-      title="مناسبة جديدة"
-      back={{ to: paths.events, label: 'إلغاء' }}
+      title={t('createEvent')}
+      back={{ to: paths.events, label: t('cancel') }}
       right={<span className="faint t-sm num">الخطوة {step} من 2</span>}
       footer={step === 1
         ? <><span className="create-picked" aria-live="polite">{info ? <>اخترت: <strong>{info.label}</strong></> : 'اختر نوع المناسبة'}</span><Button key="next" variant="primary" size="lg" iconEnd="forward" disabled={!d.type} onClick={() => toStep2()}>{occasionAction(d.type)}</Button></>
-        : <><Button key="back" variant="ghost" icon="back" disabled={create.pending} onClick={() => setStep(1)}>رجوع</Button><Button key="create" variant="primary" size="lg" type="submit" form="create-event" loading={create.pending}>جهّز دعوتي</Button></>}
+        : <><Button key="back" variant="ghost" icon="back" disabled={create.pending} onClick={() => setStep(1)}>{t('back')}</Button><Button key="create" variant="primary" size="lg" type="submit" form="create-event" loading={create.pending}>{t('prepareInvitation')}</Button></>}
     >
+      {resumed && <div className="create-resume"><Banner tone="info" compact title="استعدنا ما كتبته" action={<Button size="sm" variant="ghost" onClick={() => { setD({ ...EMPTY, type: preset ?? d.type }); setErrors({}); setResumed(false); setSelectedTemplate(requestedTemplate); }}>البدء من جديد</Button>}>يمكنك إكمال تجهيز الدعوة من هنا.</Banner></div>}
+      {selectedTemplate && <div className="create-shared-template"><p>التصميم المختار<strong>{selectedTemplate.name}</strong></p><Button size="sm" variant="secondary" icon="eye" onClick={() => setSharedPreview(selectedTemplate)}>معاينة التصميم</Button></div>}
       {step === 1 ? <SignatureOccasions value={d.type} onChange={t=>set('type',t)} onConfirm={t=>toStep2(t)}/> : (
         <div className="create-details">
           <form id="create-event" ref={formRef} className="stack gap-6 create-form" onSubmit={submit} noValidate>
             <header className="stack gap-2">
               <h2 className="create-h">{info?.label} تليق بك.</h2>
-              <p className="muted">ابدأ بالأسماء والموعد والمكان. باقي التفاصيل على مهل.</p>
+              <p className="muted">{t('createEssentials')}</p>
             </header>
+            {d.type && <details className="create-phone-preview"><summary>دعوتك أثناء الكتابة <span>معاينة</span></summary><SignatureCreatePreview type={d.type} a={d.a} b={d.b} aEn={d.aEn} bEn={d.bEn} title={d.title} date={d.date} time={d.time} venue={d.venue} city={d.city} timeZone={d.timeZone} today={today} template={selectedTemplate} /></details>}
             {create.error ? <Banner tone="danger" title="لم تُنشأ المناسبة">{errorMessage(create.error)}</Banner> : null}
 
             <fieldset className="form-group">
@@ -137,9 +173,10 @@ export function CreateEvent() {
             </fieldset>
           </form>
 
-          {d.type && <aside className="create-preview sig-create-aside" aria-label="معاينة الدعوة"><SignatureCreatePreview type={d.type} a={d.a} b={d.b} aEn={d.aEn} bEn={d.bEn} title={d.title} date={d.date} time={d.time} venue={d.venue} city={d.city} timeZone={d.timeZone} today={today}/></aside>}
+          {d.type && <aside className="create-preview sig-create-aside" aria-label="معاينة الدعوة"><SignatureCreatePreview type={d.type} a={d.a} b={d.b} aEn={d.aEn} bEn={d.bEn} title={d.title} date={d.date} time={d.time} venue={d.venue} city={d.city} timeZone={d.timeZone} today={today} template={selectedTemplate}/></aside>}
         </div>
       )}
+      {sharedPreview && (() => { const e = sampleEvent(d.type ?? sharedPreview.primaryOccasion ?? 'wedding'); const all = presetsFor(e.type); return <TemplatePreview presets={[...all.suited, ...all.rest]} preset={sharedPreview} event={e} base={defaultDesign(e)} isCurrent={selectedTemplate?.id === sharedPreview.id} pending={false} onNavigate={setSharedPreview} onClose={() => setSharedPreview(null)} onUse={p => { setSelectedTemplate(p); setSharedPreview(null); }} />; })()}
     </FocusLayout>
   );
 }

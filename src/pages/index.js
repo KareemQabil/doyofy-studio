@@ -5,7 +5,7 @@
  * RSVP choices, guest count) are updated in place by the Studio so entrance animations never replay.
  */
 import { PageRegistry } from '../engine/registries.js';
-import { STRINGS as T } from '../data/strings.js';
+import { STRINGS as T, currentStrings } from '../data/strings.js';
 
 const e = (v) => String(v ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 const kicker = (t, s) => `<span class="ar fx-rise fx-d1" style="font-size: 16px; color: ${t.aText}">${s.ar}</span>
@@ -79,7 +79,7 @@ const venue = {
   id: 'venue', name: 'Venue',
   render: ({ t, c, mapHref }) => col(`
     ${kicker(t, T.theVenue)}
-    <svg class="fx-rise fx-d2" width="250" height="240" viewBox="0 0 250 240" style="margin-top: 20px" role="img" aria-label="Illustrated map showing the venue location">
+    <svg class="fx-rise fx-d2" width="250" height="240" viewBox="0 0 250 240" style="margin-top: 20px" role="img" aria-label="خريطة توضح موقع المناسبة">
       <defs><clipPath id="st-mapclip"><path d="M2 238 V92 C2 56 28 40 62 38 C96 36 110 22 125 4 C140 22 154 36 188 38 C222 40 248 56 248 92 V238 Z"></path></clipPath></defs>
       <g clip-path="url(#st-mapclip)">
         <rect width="250" height="240" fill="${t.ink}" opacity=".05"></rect>
@@ -101,7 +101,7 @@ const venue = {
 
 const rsvp = {
   id: 'rsvp', name: 'RSVP',
-  render: ({ t, rsvp: r }) => `
+  render: ({ t, rsvp: r }) => { const T = currentStrings(); return `
   <form class="rsvp" novalidate style="display: flex; flex-direction: column; align-items: stretch; gap: 18px; width: 290px">
     <div class="fx-rise fx-d1" style="display: flex; flex-direction: column; align-items: center">
       <span style="font-family: ${t.fAr}; font-size: 38px; line-height: 1.35">${T.rsvpTitle.ar}</span>
@@ -111,7 +111,7 @@ const rsvp = {
       <label for="st-name" style="display: flex; justify-content: center; gap: 8px; align-items: baseline"><span class="ar" style="font-size: 15px">${T.yourName.ar}</span><span dir="ltr" style="font-size: 13px; font-style: italic; color: ${t.muted}">${T.yourName.en}</span></label>
       <input id="st-name" name="name" class="st-field" type="text" autocomplete="name" value="${e(r.name)}" placeholder="${T.namePlaceholder}" style="border-bottom-color: ${t.accent}${r.locked ? '; border-bottom-style: dotted; opacity: .92' : ''}" aria-describedby="st-need"${r.locked ? ' readonly aria-readonly="true"' : ''}>
     </div>
-    <div class="fx-rise fx-d3" role="group" aria-label="Attendance" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+    <div class="fx-rise fx-d3" role="group" aria-label="رد الحضور" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
       <button type="button" class="st-pill" data-attend="yes" aria-pressed="false" style="border-color: ${t.accent}">
         <span class="ar" style="font-size: 15px; line-height: 1.4">${T.accept.ar}</span><span dir="ltr" style="font-size: 13px; font-style: italic">${T.accept.en}</span>
       </button>
@@ -121,19 +121,20 @@ const rsvp = {
     </div>
     <div class="fx-rise fx-d4 rsvp-guests-row" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-top: 1px solid ${t.accent}; border-bottom: 1px solid ${t.accent}">
       <div style="display: flex; flex-direction: column; align-items: flex-start"><span class="ar" id="st-guests-l" style="font-size: 15px">${T.guests.ar}</span><span dir="ltr" style="font-size: 13px; font-style: italic; color: ${t.muted}">${T.guests.en}</span></div>
-      <div dir="ltr" style="display: flex; align-items: center; gap: 4px" role="group" aria-labelledby="st-guests-l">
-        <button type="button" class="st-round" data-guests="-1" aria-label="Fewer guests"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button>
+      <div dir="ltr" style="display: flex; align-items: center; gap: 4px" role="group" aria-labelledby="st-guests-l" aria-describedby="st-guests-h">
+        <button type="button" class="st-round" data-guests="-1" aria-label="إنقاص عدد الحاضرين"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button>
         <output class="rsvp-guests" aria-live="polite" style="font-size: 28px; width: 32px; text-align: center">${r.guests}</output>
-        <button type="button" class="st-round" data-guests="1" aria-label="More guests"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+        <button type="button" class="st-round" data-guests="1" aria-label="زيادة عدد الحاضرين"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
       </div>
     </div>
+    <p id="st-guests-h" class="ar rsvp-guests-row" style="margin: -12px 0 0; font-size: 12px; text-align: center; color: ${t.muted}">يشملك أنت والمرافقين</p>
     <button type="submit" class="st-cta fx-rise fx-d5 rsvp-submit" style="align-self: center; min-width: 220px; background: ${t.ink}; color: ${t.paper}; border-color: ${t.ink}">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M9 12.5l2 2 4-4.5"></path></svg>
       <span class="ar" style="font-size: 16px">${T.sealSend.ar}</span><span dir="ltr" style="font-size: 14px; font-style: italic">${T.sealSend.en}</span>
     </button>
     <p id="st-need" class="rsvp-need" aria-live="assertive" style="margin: -6px 0 0; font-size: 13.5px; text-align: center; color: ${t.aText}"><span class="ar">${T.need.ar}</span> · <span dir="ltr">${T.need.en}</span></p>
     <p class="rsvp-save-error" role="alert" hidden style="margin: -6px 0 0; font-size: 13.5px; text-align: center; color: #9b2729"></p>
-  </form>`,
+  </form>`; },
 };
 
 PageRegistry.registerMany([invitation, date, program, venue, rsvp]);

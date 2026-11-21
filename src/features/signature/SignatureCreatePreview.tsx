@@ -9,9 +9,11 @@ import { defaultDesign } from '../../domain/invitation';
 import { CardThumb } from '../invitation/CardThumb';
 import { Stage } from './SignatureArt';
 import { useTilt } from './useTilt';
+import { applyPreset, type TemplatePreset } from '../../domain/templates';
 
-export function SignatureCreatePreview({ type, a, b, aEn, bEn, title, date, time, venue, city, timeZone, today }: {
+export function SignatureCreatePreview({ type, a, b, aEn, bEn, title, date, time, venue, city, timeZone, today, template }: {
   type: EventType; a: string; b: string; aEn: string; bEn: string; title: string; date: string; time: string; venue: string; city: string; timeZone: string; today: string;
+  template?: TemplatePreset;
 }) {
   const info = eventTypeInfo(type);
   const couple = isCoupleEvent(type);
@@ -28,8 +30,8 @@ export function SignatureCreatePreview({ type, a, b, aEn, bEn, title, date, time
     <Stage size="md" tone="mesh" pattern="field" className="sig-create-preview" as="div" data-tilt-zone="">
       <picture className="sig-create-photo" aria-hidden="true"><source srcSet="assets/editorial/stationery-still-life.avif" type="image/avif" /><img src="assets/editorial/stationery-still-life.webp" alt="" width="1536" height="1024" loading="lazy" decoding="async" /></picture>
       <p className="sig-index"><span className="num">02</span>دعوتك تتجهّز الآن</p>
-      <div ref={tilt} className="sig-create-card"><CardThumb event={ev} content={defaultDesign(ev)} width={230} label={`معاينة دعوة ${info.label}`} /></div>
-      <p className="sig-create-note">{!date ? 'التاريخ في المعاينة مؤقت حتى تختاره. ' : ''}هذا التصميم مختار لـ«{info.label}». تقدر تغيّره بعد الإنشاء دون أن تضيع كتابتك.</p>
+      <div ref={tilt} className="sig-create-card"><CardThumb event={ev} content={template ? applyPreset(defaultDesign(ev), template) : defaultDesign(ev)} width={230} label={`معاينة دعوة ${info.label}`} /></div>
+      <p className="sig-create-note">{!date ? 'التاريخ في المعاينة مؤقت حتى تختاره. ' : ''}{template ? template.name : `هذا التصميم مختار لـ«${info.label}»`}. يمكنك تغييره بعد الإنشاء.</p>
     </Stage>
   );
 }

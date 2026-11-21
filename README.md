@@ -4,6 +4,7 @@ Arabic-first RTL invitation studio and event guest management prototype.
 
 ## Start here
 
+- [Workflow upgrade audit and plan — 21 November 2026](docs/audit/README.md) — requirement coverage, independent findings, implementation and verification.
 - [V2 final status and deploy guide](docs/handoff/V2_FINAL_STATUS_2026-10-28.md) — what ships, how to put it on Vercel, what is left.
 - [Final-phase plan](docs/handoff/FINAL_PHASE_PLAN_2026-10-28.md) — the batches, the owner's decisions (Q1–Q4) and the acceptance numbers.
 - Older round documents live in `docs/archive/` and are superseded by the two above.

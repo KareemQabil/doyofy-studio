@@ -10,7 +10,7 @@ export type LocalDate = string;   // 2026-10-13 (in the event's time zone)
 export type LocalTime = string;   // 20:30
 
 // ------------------------------------------------------------------ users / session (mock auth)
-export type Role = 'organizer' | 'coordinator';
+export type Role = 'organizer' | 'coordinator' | 'caterer';
 export interface User {
   id: string;
   name: string;
@@ -120,6 +120,7 @@ export interface ProgramItem { time: LocalTime; ar: string; en: string }
 
 /** Everything about the invitation that is NOT event data. Event data (date, venue…) is merged in at render time. */
 export interface InvitationDesignContent {
+  audio?: { mode: 'default' | 'library' | 'off'; trackId?: string; trackName?: string };
   experience: { dimension: Dimension; motion: Motion };
   cardId: string;
   sceneId: string;

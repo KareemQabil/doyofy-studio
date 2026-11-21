@@ -9,6 +9,7 @@ import { OCCASION_LABELS_EN, OCCASION_STARTERS } from './occasion-starters';
 import { CARD_NAMES, presetById } from './templates';
 export { CARD_NAMES };
 import { offsetString } from './format';
+import { resolveAudioSelection } from './audio-library';
 
 /** the flat backdrops behind the card (src/scenes/flat.js keeps the same ids) */
 export const SCENE_NAMES: Record<string, string> = {
@@ -86,6 +87,7 @@ export function toInvitationData(ev: InvitationEvent, c: InvitationDesignContent
   const couple = isCoupleEvent(ev.type);
   return {
     id: `${ev.slug}`,
+    audio: resolveAudioSelection(c.audio),
     locale: { primary: 'ar', secondary: 'en' },
     couple: {
       a: { ar: n.a, en: n.aEn, monogram: first(n.a), initial: first(n.aEn).toUpperCase() },

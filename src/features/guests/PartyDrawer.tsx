@@ -16,24 +16,30 @@ import { errorMessage } from '../../services/errors';
 import { CopyField, copyText } from '../shared/CopyField';
 import { RecordRsvpDialog } from '../rsvp/RecordRsvpDialog';
 import { PartyFormDialog } from './PartyForm';
-import { inviteMessage, reminderMessage, whatsappUrl } from './share';
+import { inviteMessage, reminderMessage, smsUrl, whatsappUrl } from './share';
+import { normalisePhone } from '../../domain/phone';
+import { useCopy } from '../../ui/copy';
 
 export function PartyDrawer({ event, party, all, tables, publish, onClose }: {
   event: Event; party: InvitationParty; all: readonly InvitationParty[]; tables: readonly Table[]; publish: PublishState; onClose: () => void;
 }) {
   const now = useNow();
   const toast = useToast();
+  const { t, dialect } = useCopy();
   const guestLink = useGuestLink(event);
   const { absolute, navigate } = useRouter();
   const [editing, setEditing] = useState(false);
   const [recording, setRecording] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [copiedAsk, setCopiedAsk] = useState(false);
+  const [shareStatus, setShareStatus] = useState('');
   const link = guestLink(party);
   const published = publish === 'published' || publish === 'changed';
   const inv = invitationStatus(party, publish);
   const table = tables.find((t) => t.id === party.tableId);
   const issues = partyNeedsAttention(party, duplicatePhoneIds(all));
+  const validPhone = normalisePhone(party.phone).ok;
+  const message = inviteMessage(event, party, link, dialect);
 
   const markShared = useMutation((s) => s.parties.markShared([party.id], 'manual'), { onSuccess: () => toast({ tone: 'success', text: 'تم تحديد الدعوة كمُرسلة يدويًا' }) });
   const simulate = useMutation((s) => s.parties.simulateSend([party.id]), {
@@ -77,9 +83,15 @@ export function PartyDrawer({ event, party, all, tables, publish, onClose }: {
                 </Banner>
               )}
               <div className="action-grid">
-                {party.phone ? <a className={`btn ${inv==='ready'||inv==='failed'?'btn-primary':'btn-secondary'} btn-md`} href={whatsappUrl(party.phone, inviteMessage(event, party, link))} target="_blank" rel="noopener noreferrer" onClick={()=>setCopiedAsk(true)}><Icon name="chat" size="sm"/>افتح الرسالة في واتساب</a> : <Button icon="phone" onClick={()=>setEditing(true)}>أضف رقم الجوال</Button>}
+                {validPhone ? <a className={`btn ${inv==='ready'||inv==='failed'?'btn-primary':'btn-secondary'} btn-md`} href={whatsappUrl(party.phone, message)} target="_blank" rel="noopener noreferrer" onClick={()=>setCopiedAsk(true)}><Icon name="chat" size="sm"/>{t('sendWhatsapp')}</a> : <Button icon="phone" onClick={()=>setEditing(true)}>{party.phone ? 'صحّح رقم الجوال' : 'أضف رقم الجوال'}</Button>}
+                {validPhone && <a className="btn btn-secondary btn-md" href={smsUrl(party.phone, message)} onClick={() => setCopiedAsk(true)}><Icon name="phone" size="sm" />{t('sendSms')}</a>}
+                {typeof navigator.share === 'function' && <Button icon="share" onClick={async () => {
+                  try { await navigator.share({ title: event.title, text: message }); setCopiedAsk(true); setShareStatus('انتهت المشاركة من الجهاز. أكّد الإرسال إذا أرسلتها للضيف.'); }
+                  catch (e) { if (!(e instanceof DOMException && e.name === 'AbortError')) setShareStatus('تعذّرت المشاركة. انسخ الرابط أو استخدم واتساب.'); }
+                }}>مشاركة من الجهاز</Button>}
                 {party.rsvpStatus==='pending' && ['shared','opened'].includes(inv) && party.phone && <a className="btn btn-secondary btn-md" href={whatsappUrl(party.phone, reminderMessage(event,party,link))} target="_blank" rel="noopener noreferrer" onClick={()=>setCopiedAsk(true)}><Icon name="bell" size="sm"/>جهّز رسالة تذكير</a>}
               </div>
+              {shareStatus && <p className="field-hint" role="status">{shareStatus}</p>}
               <details className="drawer-secondary"><summary>خيارات المشاركة والمتابعة</summary><div className="action-grid">
                 <Button icon="check" disabled={busy} loading={markShared.pending} onClick={()=>void markShared.run()}>تم التواصل يدويًا</Button>
                 <Button icon="send" loading={simulate.pending} disabled={busy} onClick={()=>void simulate.run()}>{inv==='failed'?'أعد المحاولة (محاكاة)':'جرّب الإرسال (محاكاة)'}</Button>

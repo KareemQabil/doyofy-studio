@@ -1,0 +1,56 @@
+import assert from 'node:assert/strict';
+import { act } from 'react';
+import { createRoot } from 'react-dom/client';
+import { ServicesProvider } from '../../src/app/data';
+import { RouterProvider } from '../../src/app/router';
+import { createServices } from '../../src/services';
+import { ShareQueue } from '../../src/features/guests/ShareQueue';
+import { GuestInvite } from '../../src/features/guest/GuestInvite';
+import { portableView, encodePortableView } from '../../src/domain/portable-invite';
+import { defaultDesign } from '../../src/domain/invitation';
+
+export async function run() {
+  const made = createServices(); made.prototype.update({ latencyMs: 0 }); made.prototype.reset('before');
+  const event = await made.services.events.get('evt_wedding');
+  const p = await made.services.parties.create(event.id, { primaryGuestName: 'ضيف تجربة مشاركة', phone: '+966559876543', maxPartySize: 2 });
+  const missing = await made.services.parties.create(event.id, { primaryGuestName: 'ضيف بلا رقم', maxPartySize: 1 });
+  const root = createRoot(document.getElementById('root')!);
+  const wrap = (node: React.ReactNode) => <ServicesProvider {...made}><RouterProvider mode="history">{node}</RouterProvider></ServicesProvider>;
+  const render = async (node: React.ReactNode) => { await act(async () => root.render(wrap(node))); };
+  const click = async (el: Element | undefined | null) => { assert.ok(el); await act(async () => el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))); };
+  const button = (text: string) => [...document.querySelectorAll('button')].find(x => x.textContent?.includes(text));
+  const settle = async () => { for (let i = 0; i < 5; i++) await act(async () => { await new Promise(r => setTimeout(r, 10)); }); };
+  const linkFor = (x: typeof p) => `https://doyofy.test/i/${event.slug}/${x.code}`;
+  await render(<ShareQueue event={event} parties={[p, missing]} urlFor={() => undefined} linkFor={linkFor} onClose={() => {}} />);
+  await click(button('نسخ روابط المحددين'));
+  const copy = document.querySelector<HTMLTextAreaElement>('textarea');
+  assert.ok(copy?.value.includes(missing.primaryGuestName), 'copy includes selected guests without phones');
+  assert.ok(document.body.textContent?.includes('بلا رقم صحيح'));
+  await click(button('رسالة نصية'));
+  const sms = document.querySelector<HTMLAnchorElement>('a[href^="sms:"]'); assert.ok(sms); sms.addEventListener('click', e => e.preventDefault());
+  await click(sms); assert.equal((await made.services.parties.get(p.id)).delivery.status, 'not_shared');
+  await click(button('أرسلت الرسالة — التالي'));
+  assert.equal((await made.services.parties.get(p.id)).delivery.status, 'shared');
+  assert.equal((await made.services.parties.get(missing.id)).delivery.status, 'not_shared');
+  console.log('PASS DOM selected sharing: channels, missing phone, SMS compose, explicit manual confirmation');
+  await act(async () => root.unmount());
+
+  const freshRoot = createRoot(document.getElementById('root')!);
+  const snapshot = portableView({ ...event, date: '2099-08-12', guestExperience: undefined }, defaultDesign(event), p);
+  const token = encodePortableView(snapshot);
+  history.replaceState(null, '', `/i/${event.slug}/${p.code}?d=${token}`);
+  const before = JSON.stringify(await made.services.parties.get(p.id));
+  await act(async () => freshRoot.render(wrap(<GuestInvite slug={event.slug} code={p.code} />))); await settle();
+  assert.ok(document.querySelector('.sig-cover'));
+  await click(button('الموعد وتأكيد الحضور مباشرة')); await settle();
+  await click(document.querySelector('input[type="radio"][value="yes"]'));
+  await click(button('إرسال الرد')); await settle();
+  assert.ok(document.querySelector('.hub-qr'), 'confirmed personal demo reaches its QR');
+  assert.ok(document.body.textContent?.includes('لم يُرسل ردّك للمنظّم'));
+  await click(button('معاينة بطاقة Google Wallet'));
+  assert.ok(document.querySelector('dialog[open] .wallet-pass'));
+  assert.ok(document.querySelector('dialog[open]')?.textContent?.includes('لم تُضف بطاقة إلى Google Wallet'));
+  assert.equal(JSON.stringify(await made.services.parties.get(p.id)), before, 'portable reply never alters organizer guest');
+  console.log('PASS DOM portable guest: cover → RSVP → personal QR → truthful Wallet preview; organizer unchanged');
+  await act(async () => freshRoot.unmount());
+}

@@ -1,0 +1,5 @@
+.audio-library-upload{margin-block:var(--s-4)}
+.audio-library-list{list-style:none;margin:var(--s-4) 0;padding:0;display:grid;gap:var(--s-4)}
+.audio-library-list>li{border:1px solid var(--c-hairline);border-radius:var(--r-md);padding:var(--s-3);display:grid;gap:var(--s-2);min-width:0}
+.audio-library-list strong{overflow-wrap:anywhere}
+.audio-library-list audio{width:100%;max-width:100%;height:40px}

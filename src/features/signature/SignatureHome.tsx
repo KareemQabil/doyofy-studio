@@ -7,7 +7,7 @@
  * Identity: Doyofy palette, Readex Pro display / IBM Plex Sans Arabic text, official logo and pattern,
  * Phosphor icons (MIT). Editorial photography is decorative; invitation content stays live HTML.
  */
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Event, EventType, InvitationDesignContent } from '../../domain/types';
 import { OCCASIONS_ORDERED, eventPhase, eventTypeInfo, PHASE_LABEL, todayFor } from '../../domain/event';
 import { countdownLabel, formatEventDate, formatTime } from '../../domain/format';
@@ -83,12 +83,14 @@ function HeroFan({ looks }: { looks: Look[] }) {
     onMove: (dx) => { fan.current?.setAttribute('data-dragging', ''); fan.current?.style.setProperty('--fan-drag', `${Math.max(-60, Math.min(60, dx * 0.35))}px`); },
     onEnd: (g) => { fan.current?.removeAttribute('data-dragging'); fan.current?.style.removeProperty('--fan-drag'); if (g.moved && !g.cancelled) { const s = swipeStep(g.dx, g.dy, g.duration); if (s) cycle(s); } },
   });
-  const width = phone ? 168 : 250;
+  const [screenWidth, setScreenWidth] = useState(() => window.innerWidth);
+  useEffect(() => { const resize = () => setScreenWidth(window.innerWidth); window.addEventListener('resize', resize); return () => window.removeEventListener('resize', resize); }, []);
+  const width = phone ? Math.round(Math.min(280, screenWidth * .66)) : 290;
   return (
     <div ref={tilt} className="sig-fan-wrap" data-tilt-zone="">
       <span className="sig-fan-mat" aria-hidden="true" />
       <img className="sig-fan-ribbon" src="assets/editorial/ribbon-seal.webp" alt="" width="1536" height="1024" decoding="async" aria-hidden="true" />
-      <div ref={fan} className="sig-fan" {...gesture} data-count={n} role="group" aria-roledescription="معرض أشكال" aria-label="أشكال الدعوة — اسحب أو اضغط لتبديل الشكل"
+      <div ref={fan} className="sig-fan" style={{ '--fan-w': `${width}px` } as React.CSSProperties} {...gesture} data-count={n} role="group" aria-roledescription="معرض أشكال" aria-label="أشكال الدعوة — اسحب أو اضغط لتبديل الشكل"
         onKeyDown={e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); focusFront.current = true; cycle(e.key === 'ArrowLeft' ? 1 : -1); } }}>
         {looks.map((l, i) => {
           const pos = (i - visibleFront + n) % n; // 0 = front, 1 = next (left in RTL), n-1 = previous (right)
@@ -124,7 +126,7 @@ function Hero({ featured, loading }: { featured?: Event; loading: boolean }) {
         <div className="sig-hero-copy">
           <p className="sig-hero-kicker"><i aria-hidden="true" />دعوات رقمية لكل فرحة</p>
           <h1 id="sig-hero-title"><span className="sig-line">كل فرحة</span> <span className="sig-line">تستاهل دعوة.</span></h1>
-          <p className="sig-hero-sub">اختر المناسبة، اكتب الأسماء والموعد، ودعوتك جاهزة في دقائق. رابط خاص لكل ضيف، وردود توصلك أولًا بأول حتى يوم الاستقبال.</p>
+          <p className="sig-hero-sub">صمّم دعوتك، شاركها، وتابع حضور ضيوفك من مكان واحد.</p>
           {loading ? <Skeleton lines={2} /> : featured && step ? (
             <div className="sig-hero-next">
               <p className="sig-hero-next-label"><span>مناسبتك القادمة</span><Status tone={PHASE_LABEL[phase].tone}>{countdownLabel(featured.date, todayFor(featured, now))}</Status></p>

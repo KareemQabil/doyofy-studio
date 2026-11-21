@@ -10,6 +10,8 @@
  * - Music (the canonical bell arpeggio) runs only while the invitation pages are open.
  * - Scene ambience (optional, per scene) loops quietly under the card/pages and ducks for the finale.
  */
+import { readAudioLibrary } from '../domain/audio-library';
+
 export class AudioEngine {
   constructor({ base = 'assets/' } = {}) {
     this.base = base;
@@ -20,6 +22,20 @@ export class AudioEngine {
     this.pack = null;
     this.music = null; this.amb = null;
     this.stats = { played: [], fallbacks: [] };
+    this.preference = { mode: 'default' };
+    this.customTrack = null;
+    this.customMusic = null;
+    this.customGeneration = 0;
+    this.missingUpload = false;
+  }
+
+  setPreference(selection) {
+    if (JSON.stringify(selection || { mode: 'default' }) === JSON.stringify(this.preference)) return;
+    this.stopMusic();
+    this.preference = selection || { mode: 'default' };
+    this.customTrack = this.preference.mode === 'library' ? readAudioLibrary().tracks.find(t => t.id === this.preference.trackId) || null : null;
+    this.missingUpload = this.preference.mode === 'library' && !this.customTrack;
+    if (this.preference.mode === 'off' || this.customTrack) this.setAmbience(null);
   }
 
   usePack(pack) {
@@ -29,7 +45,7 @@ export class AudioEngine {
   }
 
   _fetch(path) {
-    if (!this.raw.has(path)) this.raw.set(path, fetch(this.base + path).then((r) => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }));
+    if (!this.raw.has(path)) this.raw.set(path, fetch(path.startsWith('data:audio/') ? path : this.base + path).then((r) => { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); }));
     return this.raw.get(path);
   }
 
@@ -41,7 +57,7 @@ export class AudioEngine {
       this.buffers.set(path, buf);
       return buf;
     } catch (e) {
-      console.warn('[audio] cue file failed, using synth fallback:', path, e?.message || e);
+      console.warn('[audio] cue file failed, using synth fallback:', path.startsWith('data:') ? 'uploaded audio' : path, e?.message || e);
       this.buffers.set(path, 'failed');
       return 'failed';
     }
@@ -71,7 +87,7 @@ export class AudioEngine {
   }
 
   async emit(event) {
-    if (!this.pack || !this.ac || !this.enabled) return;
+    if (!this.pack || !this.ac || !this.enabled || this.preference.mode === 'off') return;
     const cue = this.pack.cues[event];
     if (!cue) return;
     this.stats.played.push(event);
@@ -137,7 +153,9 @@ export class AudioEngine {
 
   /** canonical background music: bell arpeggio over four chords, 340 ms steps */
   startMusic() {
-    if (this.music || !this.enabled || !this.ac || !this.pack?.music) return;
+    if (this.music || this.customMusic || !this.enabled || !this.ac || this.preference.mode === 'off') return;
+    if (this.customTrack) { void this._startCustomMusic(); return; }
+    if (!this.pack?.music) return;
     const chords = [[50, 54, 57], [47, 50, 54], [43, 47, 50], [45, 49, 52]];
     let step = 0;
     this.music = setInterval(() => {
@@ -149,14 +167,25 @@ export class AudioEngine {
       if (i % 8 === 0) this._bell(t, ch[0], 0.028 * 0.22);
     }, 340);
   }
-  stopMusic() { if (this.music) { clearInterval(this.music); this.music = null; } }
+  async _startCustomMusic() {
+    const generation = ++this.customGeneration;
+    const track = this.customTrack;
+    if (!track) return;
+    const buf = await this._buffer(track.dataUrl);
+    if (generation !== this.customGeneration || !this.enabled || !this.ac) return;
+    if (buf === 'failed') { this.customTrack = null; this.startMusic(); return; }
+    const src = this.ac.createBufferSource(); src.buffer = buf; src.loop = true;
+    const gain = this.ac.createGain(); gain.gain.value = 0.2;
+    src.connect(gain); gain.connect(this.master); src.start(); this.customMusic = src;
+  }
+  stopMusic() { this.customGeneration++; if (this.music) { clearInterval(this.music); this.music = null; } if (this.customMusic) { try { this.customMusic.stop(); } catch {} this.customMusic = null; } }
 
   /** scene ambience loop (optional) */
   async setAmbience(spec) {
     if (this.amb) { const a = this.amb; this.amb = null; try { a.g.gain.setTargetAtTime(0, this.ac.currentTime, 0.4); setTimeout(() => a.src.stop(), 1500); } catch {} }
-    if (!spec || !this.ac) return;
+    if (!spec || !this.ac || this.preference.mode === 'off' || this.customTrack) return;
     const buf = await this._buffer(spec.file);
-    if (buf === 'failed') return;
+    if (buf === 'failed' || !this.ac || this.preference.mode === 'off' || this.customTrack) return;
     const src = this.ac.createBufferSource(); src.buffer = buf; src.loop = true;
     const g = this.ac.createGain(); g.gain.value = 0;
     src.connect(g); g.connect(this.master); src.start();

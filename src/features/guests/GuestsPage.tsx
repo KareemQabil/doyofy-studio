@@ -15,7 +15,7 @@ import { CHECKIN_STATUS, PARTY_FILTERS, RSVP_STATUS, countParties, duplicatePhon
 import { publishState } from '../../domain/invitation';
 import { formatPhone, plural, pluralOf, P } from '../../domain/format';
 import { Avatar, Banner, Button, EmptyState, ErrorState, Icon, LinkButton, Menu, PageHeader, SearchInput, PageLoader } from '../../ui';
-import { useMutation, useNow } from '../../app/data';
+import { useMutation, useNow, useServices } from '../../app/data';
 import { Link, useLocation, useNavigate, useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
@@ -28,13 +28,23 @@ import { errorMessage } from '../../services/errors';
 import { PartyDrawer } from './PartyDrawer';
 import { PartyFormDialog } from './PartyForm';
 import { ShareQueue } from './ShareQueue';
-import { inviteMessage, whatsappUrl } from './share';
+import { inviteMessage, reminderMessage, whatsappUrl } from './share';
+import { guestNextAction } from '../../domain/guest-tools';
+import { normalisePhone } from '../../domain/phone';
+import { canManageGuests, canViewFood } from '../../domain/roles';
+import { ExportGuestsDialog, TransferGuestsDialog } from './GuestToolsDialog';
+import { useCopy } from '../../ui/copy';
+import { CapacityMeter } from '../billing/CapacityMeter';
 import { mergeHandlers, useLongPress, useSwipeReveal } from '../../ui/hooks/useTouchGestures';
 import { haptic } from '../../ui/motion/motion';
 
 const SWIPE_HINT = 'doyofy:guest-swipe-hint';
 
 export function GuestsPage({ event }: { event: Event }) {
+  const { t } = useCopy();
+  const services = useServices();
+  const role = services.session.currentUser().role;
+  const foodAccess = canViewFood(role), manage = canManageGuests(role);
   const parties = useParties(event.id);
   const design = useDesign(event.id);
   const tables = useTables(event.id);
@@ -48,7 +58,7 @@ export function GuestsPage({ event }: { event: Event }) {
   const responses = useResponses(event.id);
   const now = useNow();
   const xp = experienceOf(event);
-  const foodOn = asksAfterAttending(xp) || xp.meals.options.length > 0;
+  const foodOn = foodAccess && (asksAfterAttending(xp) || xp.meals.options.length > 0);
   const food = view === 'food' && foodOn;
   const openId = loc.search.get('party');
   const [q, setQ] = useState(loc.search.get('q') ?? '');
@@ -58,6 +68,8 @@ export function GuestsPage({ event }: { event: Event }) {
   const [moreFilters, setMoreFilters] = useState(false);
   const [sharePrompt, setSharePrompt] = useState<string | null>(null);
   const [queue, setQueue] = useState<string[] | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [transferring, setTransferring] = useState(false);
 
   const setParam = (k: string, v: string | null) => {
     const sp = new URLSearchParams(loc.search);
@@ -95,7 +107,7 @@ export function GuestsPage({ event }: { event: Event }) {
   const selecting = selectMode || sel.length > 0;
   const toggle = (id: string) => { haptic('tick'); setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); };
   const guestLink = useGuestLink(event);
-  const shareUrl = (p: InvitationParty) => published && p.phone ? whatsappUrl(p.phone, inviteMessage(event, p, guestLink(p))) : undefined;
+  const shareUrl = (p: InvitationParty) => published && p.phone && normalisePhone(p.phone).ok ? whatsappUrl(p.phone, inviteMessage(event, p, guestLink(p))) : undefined;
 
   // first visit on a phone: nudge the first card so the swipe is discoverable, once
   const [hintRow, setHintRow] = useState(false);
@@ -117,21 +129,35 @@ export function GuestsPage({ event }: { event: Event }) {
   ];
   const groups = grouped ? groupByTable(visible, tableList) : null;
   const rowProps = (p: InvitationParty, i: number) => ({
-    p, publish: ps, table: tableName(p.tableId), seatingEnabled: tableList.length > 0, attention: partyNeedsAttention(p, dup), checked: selected.has(p.id), selecting,
+    p, publish: ps, table: tableName(p.tableId), seatingEnabled: tableList.length > 0, attention: partyNeedsAttention(p, dup), checked: selected.has(p.id), selecting, foodAccess, manage,
     hint: hintRow && i === 0, onToggle: () => toggle(p.id), onSelectStart: () => { setSelectMode(true); setSelected((s) => new Set(s).add(p.id)); },
     onOpen: () => setParam('party', p.id), shareUrl: shareUrl(p), onShare: () => setSharePrompt(p.id), event,
+    onNext: (action: string) => {
+      if (action === 'publish') navigate(paths.invitation(event.id));
+      else if (action === 'seat') navigate(`${paths.seating(event.id)}?party=${encodeURIComponent(p.id)}`);
+      else if (action === 'arrival') navigate(paths.checkin(event.id));
+      else if (action === 'share') setQueue([p.id]);
+      else if (action === 'remind' && p.phone) { window.open(whatsappUrl(p.phone, reminderMessage(event, p, guestLink(p))), '_blank', 'noopener'); setSharePrompt(p.id); }
+      else setParam('party', p.id);
+    },
   });
+
+  if (foodAccess) return <div className="g2">
+    <PageHeader title="الضيافة" subtitle="الوجبات والاحتياجات الغذائية حسب الطاولة · عرض لفريق الضيافة" />
+    {parties.loading || tables.loading ? <PageLoader /> : <FoodReport event={event} parties={all} responses={responses.data || []} tables={tableList} now={now} />}
+  </div>;
 
   return (
     <div className="g2">
-      <PageHeader title="الضيوف"
+      <PageHeader title={t('guests')}
         subtitle={c.parties ? `${plural(c.parties, P.invitation)} · ${peopleLine(c.confirmedPeople)}` : 'أضف من ستدعوهم: شخصًا شخصًا أو من ملف'}
         actions={<>
-          <Button variant="primary" icon="plus" onClick={() => setAdding(true)}>أضف ضيفًا</Button>
-          <LinkButton to={paths.importGuests(event.id)} icon="upload">استيراد</LinkButton>
+          <Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!manage}>{t('addGuest')}</Button>
+          {manage && <><LinkButton to={paths.importGuests(event.id)} icon="upload">استيراد</LinkButton><Button icon="download" disabled={!all.length} onClick={() => setExporting(true)}>{t('exportFile')}</Button></>}
         </>} />
 
       <GuestViews eventId={event.id} active="list" />
+      {manage && <CapacityMeter eventId={event.id} parties={all} />}
       {parties.loading ? <PageLoader /> : all.length === 0 ? (
         <EmptyState icon="users" title="لا ضيوف بعد" action={<><Button variant="primary" icon="plus" onClick={() => setAdding(true)}>أضف ضيفًا</Button><LinkButton to={paths.importGuests(event.id)} icon="upload">استيراد من ملف</LinkButton></>}>
           كل دعوة يمكن أن تشمل شخصًا أو عائلة. تحدد العدد المسموح، والضيف يرد بالعدد الفعلي.
@@ -159,7 +185,7 @@ export function GuestsPage({ event }: { event: Event }) {
                 {foodOn && <button type="button" aria-pressed={food} onClick={() => { haptic('tick'); setParam('view', 'food'); }}><Icon name="sparkle" size="sm" />الطعام</button>}
               </div>}
               {!food && <Button variant="ghost" size="sm" icon="sliders" className="g2-tool" aria-label={moreFilters ? 'فلاتر أقل' : 'فلاتر'} aria-expanded={moreFilters} onClick={() => setMoreFilters((v) => !v)}><span className="g2-tool-label">{moreFilters ? 'فلاتر أقل' : 'فلاتر'}</span></Button>}
-              {!food && !selecting && visible.length > 0 && <Button variant="ghost" size="sm" icon="check" className="g2-tool" aria-label="تحديد" onClick={() => { haptic('tick'); setSelectMode(true); }}><span className="g2-tool-label">تحديد</span></Button>}
+              {!food && manage && !selecting && visible.length > 0 && <Button variant="ghost" size="sm" icon="check" className="g2-tool" aria-label="تحديد" onClick={() => { haptic('tick'); setSelectMode(true); }}><span className="g2-tool-label">تحديد</span></Button>}
             </div>
             {!food && moreFilters && <div className="g2-chips" role="group" aria-label="تصفية الضيوف">
               {PARTY_FILTERS.map((f) => <button key={f.id} type="button" className="chip v2-press" aria-pressed={filter === f.id} onClick={() => { clearSelection(); setParam('filter', f.id === 'all' ? null : f.id); }}>{f.label}<span className="num">{counts[f.id]}</span></button>)}
@@ -174,9 +200,11 @@ export function GuestsPage({ event }: { event: Event }) {
                 <button type="button" className="g2-bulk-all" onClick={() => setSelected(allVisibleSelected ? new Set() : new Set(visible.map((p) => p.id)))}>{allVisibleSelected ? 'إلغاء الكل' : `تحديد الظاهر (${visible.length})`}</button>
               </div>
               <div className="g2-bulk-actions">
-                <Button size="sm" variant="primary" icon="chat" disabled={!published || !sel.length} onClick={() => setQueue(sel)}>شارك بالتتابع</Button>
+                <Button size="sm" variant="primary" icon="chat" disabled={!published || !sel.length} onClick={() => setQueue(sel)}>مشاركة المحدد</Button>
                 <Button size="sm" icon="check" disabled={!published || !sel.length} loading={bulkManual.pending} onClick={() => void bulkManual.run(sel)}>تم التواصل يدويًا</Button>
                 <Menu label="إجراءات أخرى" items={[
+                  { label: t('exportSelected'), icon: 'download', disabled: !sel.length, onSelect: () => setExporting(true) },
+                  { label: t('moveGuests'), icon: 'move', disabled: !sel.length, onSelect: () => setTransferring(true) },
                   { label: 'إرسال (محاكاة)', icon: 'send', disabled: !published || !sel.length, onSelect: () => void bulkSend.run(sel) },
                   { label: 'تذكير (محاكاة)', icon: 'bell', disabled: !sel.length, onSelect: () => void bulkRemind.run(sel) },
                 ]} />
@@ -211,15 +239,17 @@ export function GuestsPage({ event }: { event: Event }) {
           ) : (
             <ul className="g2-list" aria-label="قائمة الضيوف">{visible.map((p, i) => <GuestCard key={p.id} {...rowProps(p, i)} />)}</ul>
           )}
-          {!food && <p className="faint t-sm g2-foot">{visible.length !== all.length ? `يعرض ${visible.length} من ${all.length}` : plural(all.length, P.invitation)}{published ? ' · روابط هذه النسخة التجريبية تعمل على هذا الجهاز فقط.' : ''}</p>}
+          {!food && <p className="faint t-sm g2-foot">{visible.length !== all.length ? `يعرض ${visible.length} من ${all.length}` : plural(all.length, P.invitation)}{published ? ' · روابط الدعوة تحمل نسخة المعاينة؛ الردود من جهاز آخر تجريبية.' : ''}</p>}
         </div>
       )}
 
+      {exporting && <ExportGuestsDialog event={event} parties={all} tables={tableList} visibleIds={new Set(visible.map((p) => p.id))} selectedIds={new Set(sel)} onClose={() => setExporting(false)} />}
+      {transferring && <TransferGuestsDialog event={event} parties={all.filter((p) => selected.has(p.id))} onClose={() => setTransferring(false)} onDone={clearSelection} />}
       {adding && (
         <PartyFormDialog open key="new" title="إضافة ضيف" existing={all} defaultSize={event.settings.defaultPartySize}
           onClose={() => { setAdding(false); add.reset(); }} pending={add.pending} error={add.error} onSubmit={(input) => void add.run(input)} />
       )}
-      {queue && <ShareQueue event={event} parties={queue.map((id) => all.find((p) => p.id === id)).filter((p): p is InvitationParty => !!p)} urlFor={shareUrl}
+      {queue && <ShareQueue event={event} parties={queue.map((id) => all.find((p) => p.id === id)).filter((p): p is InvitationParty => !!p)} urlFor={shareUrl} linkFor={guestLink}
         onClose={(done) => { setQueue(null); if (done) clearSelection(); }} />}
       {open && tables.data && <PartyDrawer key={open.id} event={event} party={open} all={all} tables={tables.data} publish={ps} onClose={() => setParam('party', null)} />}
       {openId && !open && !parties.loading && <Banner tone="info">هذا الضيف لم يعد في القائمة.</Banner>}
@@ -248,10 +278,13 @@ function DeliveryTicks({ p, publish }: { p: InvitationParty; publish: PublishSta
   );
 }
 
-function GuestCard({ p, publish, table, seatingEnabled, attention, checked, selecting, hint, onToggle, onSelectStart, onOpen, shareUrl, onShare, event }: {
+function GuestCard({ p, publish, table, seatingEnabled, attention, checked, selecting, hint, onToggle, onSelectStart, onOpen, shareUrl, onShare, event, foodAccess, manage, onNext }: {
   p: InvitationParty; publish: PublishState; table?: string; seatingEnabled: boolean; attention: string[]; checked: boolean; selecting: boolean; hint: boolean; event: Event;
-  onToggle: () => void; onSelectStart: () => void; onOpen: () => void; shareUrl?: string; onShare: () => void;
+  onToggle: () => void; onSelectStart: () => void; onOpen: () => void; shareUrl?: string; onShare: () => void; foodAccess: boolean; manage: boolean; onNext: (action: string) => void;
 }) {
+  const { t } = useCopy();
+  const next = guestNextAction(p, publish, seatingEnabled);
+  const nextLabel = { publish: 'انشر الدعوة', phone: 'أضف رقمًا', share: 'شارك الدعوة', remind: 'ذكّر بالرد', seat: t('assignTable'), arrival: 'سجّل الوصول', details: t('guestDetails') }[next];
   const share = () => { if (!shareUrl) return; window.open(shareUrl, '_blank', 'noopener'); onShare(); };
   const swipe = useSwipeReveal({ start: true, end: true, tray: 92, onCommit: (side) => { if (side === 'start') { if (shareUrl) share(); else onOpen(); } else onToggle(); } });
   const press = useLongPress(onSelectStart, { enabled: !selecting });
@@ -270,17 +303,18 @@ function GuestCard({ p, publish, table, seatingEnabled, attention, checked, sele
         <button type="button" className="swipe-action is-dark" tabIndex={-1} onClick={() => { swipe.close(); onToggle(); }}><Icon name="check" />{checked ? 'إلغاء' : 'تحديد'}</button>
       </div>
       <div ref={swipe.content} className="swipe-content g2-card" {...mergeHandlers(swipe.gesture, press)}>
-        <label className="g2-check gt-check-hit"><input type="checkbox" checked={checked} onChange={onToggle} aria-label={`تحديد ${name}`} /></label>
+        <label className="g2-check gt-check-hit" hidden={!manage}><input type="checkbox" checked={checked} onChange={onToggle} aria-label={`تحديد ${name}`} /></label>
         <Avatar name={name} tone={p.rsvpStatus === 'confirmed' ? 'success' : p.rsvpStatus === 'declined' ? 'neutral' : 'warning'} />
         <div className="g2-main">
           <button type="button" className="g2-name" data-gesture-surface="" onClick={selecting ? onToggle : onOpen} aria-pressed={selecting ? checked : undefined}>{name}</button>
           <span className="g2-meta">{[p.side, `حتى ${p.maxPartySize}`, p.companionNames?.length ? `+${p.companionNames.length} مرافقين` : null].filter(Boolean).join(' · ')}{p.phone && <bdi className="g2-phone num" dir="ltr">{formatPhone(p.phone)}</bdi>}</span>
           <span className="g2-share-line">
-            {shareUrl ? <a className="g2-wa v2-press" href={shareUrl} target="_blank" rel="noopener noreferrer" data-gesture-surface="" onClick={onShare} aria-label={`جهّز رسالة واتساب إلى ${name}`}><Icon name="chat" size="sm" />واتساب</a>
-              : <button type="button" className="g2-wa is-muted v2-press" data-gesture-surface="" onClick={onOpen} aria-label={publish === 'draft' || publish === 'none' ? `انشر الدعوة قبل مشاركة رابط ${name}` : `أضف رقمًا لمشاركة دعوة ${name}`}><Icon name="chat" size="sm" />{publish === 'draft' || publish === 'none' ? 'بعد النشر' : 'أضف رقمًا'}</button>}
+            {manage && <Button size="sm" variant="secondary" onClick={() => onNext(next)}>{nextLabel}</Button>}
+            {manage && (shareUrl ? <a className="g2-wa v2-press" href={shareUrl} target="_blank" rel="noopener noreferrer" data-gesture-surface="" onClick={onShare} aria-label={`جهّز رسالة واتساب إلى ${name}`}><Icon name="chat" size="sm" />واتساب</a>
+              : <button type="button" className="g2-wa is-muted v2-press" data-gesture-surface="" onClick={onOpen} aria-label={publish === 'draft' || publish === 'none' ? `انشر الدعوة قبل مشاركة رابط ${name}` : `أضف رقمًا لمشاركة دعوة ${name}`}><Icon name="chat" size="sm" />{publish === 'draft' || publish === 'none' ? 'بعد النشر' : 'أضف رقمًا'}</button>)}
             <DeliveryTicks p={p} publish={publish} />
           </span>
-          <FoodLine event={event} p={p} />
+          {foodAccess && <FoodLine event={event} p={p} />}
           {attention.length > 0 && <span className="g2-flag"><Icon name="alert" size="sm" />{attention[0]}</span>}
         </div>
         <div className="g2-state">

@@ -40,6 +40,8 @@ export interface PartyRepository {
   update(id: string, input: Partial<PartyInput>): Promise<InvitationParty>;
   remove(id: string): Promise<void>;
   importMany(eventId: string, inputs: PartyInput[], meta: { skipped: number; source: string }): Promise<InvitationParty[]>;
+  /** Fresh invitations in the destination; attendance/delivery/table state never carries between events. Atomic, duplicate-safe. */
+  transfer(input: { ids: string[]; targetEventId: string; mode: 'copy' | 'move' }): Promise<InvitationParty[]>;
   /** organizer shared the link themselves (copy / share sheet / "contacted manually") */
   markShared(ids: string[], how: ShareHow): Promise<void>;
   /** prototype stand-in for WhatsApp sending: numbers that are missing/invalid fail (simulated) */
@@ -61,6 +63,8 @@ export interface SeatingRepository {
   listTables(eventId: string): Promise<Table[]>;
   createTables(eventId: string, tables: Array<{ name: string; capacity: number }>): Promise<Table[]>;
   updateTable(id: string, patch: { name?: string; capacity?: number }): Promise<Table>;
+  /** Complete ordered ID list. Reject stale/foreign/duplicate IDs without partial writes. */
+  reorderTables(eventId: string, ids: string[]): Promise<Table[]>;
   /** parties at the table become unassigned */
   deleteTable(id: string): Promise<void>;
   assign(partyId: string, tableId: string | null): Promise<InvitationParty>;

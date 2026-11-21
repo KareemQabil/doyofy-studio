@@ -68,6 +68,7 @@ export class Studio {
     this.finale = FinaleRegistry.get('envelope');
     this.audio = new AudioEngine({ base: assetBase });
     this.audio.usePack(AudioRegistry.get('studio'));
+    this.audio.setPreference(invitation?.audio);
     this.rsvpAdapter = rsvp || new LocalRSVPAdapter();
     this.cleanups = [];
     this.debug = { sceneRenderer: null, sceneErrors: [], states: [] };
@@ -119,6 +120,7 @@ export class Studio {
       replayBtn.style.marginTop = '12px';
     }
     if (this.startMuted) this.toggleSound();
+    this._syncAudioPreference();
     this._wireInput();
     this._applyCard();
     this._mountScene();
@@ -263,6 +265,9 @@ export class Studio {
   /** live content update (wizard details step): re-derive and refresh every surface that shows content */
   setContent(invitation) {
     this.data = this._derive(invitation);
+    this.audio.setPreference(invitation?.audio);
+    this._syncAudioPreference();
+    if (this.sm?.state === 'pages') this.audio.startMusic();
     const c = this.data.c, $ = (q) => this.host.querySelector(q);
     $('.bar-date').textContent = c.dateNum;
     $('.bar-city').textContent = c.cityEnU;
@@ -322,7 +327,7 @@ export class Studio {
     this.el.page.innerHTML = PageRegistry.get(id).render(v);
     this.el.page.classList.toggle('instant', instant);
     this.el.page.dataset.page = id;
-    this.el.dots.innerHTML = PAGE_ORDER.map((p, i) => `<button type="button" class="st-dotbtn ${i === this.page ? 'on' : ''}" data-go="${i}" aria-label="Go to ${T.pageLabels[i]}" aria-current="${i === this.page ? 'page' : 'false'}"><span class="st-dot"></span></button>`).join('');
+    this.el.dots.innerHTML = PAGE_ORDER.map((p, i) => `<button type="button" class="st-dotbtn ${i === this.page ? 'on' : ''}" data-go="${i}" aria-label="انتقل إلى ${T.pageLabels[i]}" aria-current="${i === this.page ? 'page' : 'false'}"><span class="st-dot"></span></button>`).join('');
     this.host.querySelector('[data-act="prev"]').disabled = this.page === 0;
     this.host.querySelector('[data-act="next"]').disabled = this.page === 4;
     if (id === 'date') this._tickCountdown();
@@ -363,7 +368,7 @@ export class Studio {
       b.style.color = on ? t.paper : t.ink;
     });
     // FX-13: a decline asks no headcount — the counter folds away and returns with its last value on «سأحضر»
-    const row = root.querySelector('.rsvp-guests-row'); if (row) row.hidden = r.attending === 'no';
+    root.querySelectorAll('.rsvp-guests-row').forEach(row => { row.hidden = r.attending === 'no'; });
     const out = root.querySelector('.rsvp-guests'); if (out) out.textContent = r.guests;
     const [dn, up] = root.querySelectorAll('[data-guests]');
     if (dn) dn.disabled = r.guests <= this.data.rsvp.minGuests;
@@ -532,7 +537,14 @@ export class Studio {
     const b = this.el.soundBtn;
     b.innerHTML = on ? ICON.soundOn : ICON.soundOff;
     b.setAttribute('aria-pressed', String(on));
-    b.setAttribute('aria-label', on ? 'Mute music' : 'Play music');
+    b.setAttribute('aria-label', on ? 'كتم الصوت' : 'تشغيل الصوت');
+  }
+
+  _syncAudioPreference() {
+    const button = this.el.soundBtn;
+    button.hidden = this.audio.preference.mode === 'off';
+    if (this.audio.missingUpload) button.title = 'المقطع المرفوع غير متاح على هذا الجهاز؛ يعمل الصوت الأساسي.';
+    else button.removeAttribute('title');
   }
 
   replay() {
