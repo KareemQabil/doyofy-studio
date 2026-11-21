@@ -82,7 +82,7 @@ try {
     const before = await page.evaluate(async () => JSON.stringify(await window.__doyofy.services.invitations.get('evt_wedding')));
     const first = await page.locator('.template-feed-title h3').innerText();
     await feed.focus(); await page.keyboard.press('ArrowDown');
-    await page.waitForFunction(title => document.querySelector('.template-feed-title h3')?.textContent !== title, first);
+    await page.waitForFunction(title => { const heading = document.querySelector('.template-feed-title h3'); return !!heading && heading.textContent !== title; }, first);
     const second = await page.locator('.template-feed-title h3').innerText();
     const style = await feed.evaluate(el => ({ overflow: getComputedStyle(el).overflowY, snap: getComputedStyle(el).scrollSnapType }));
     assert.ok(['auto', 'scroll'].includes(style.overflow) && style.snap.includes('y'), `not a native vertical snap feed: ${JSON.stringify(style)}`);
@@ -120,14 +120,17 @@ try {
     const select = page.getByRole('combobox', { name: 'صوت الدعوة', exact: true }); await select.selectOption(`track:${track.id}`);
     const waitAudio = async (expected, persisted = false) => {
       try {
-        await page.waitForFunction(async ({ expected, persisted }) => {
+        // Keep the polled predicate synchronous. Playwright treats a returned Promise as
+        // truthy before its boolean resolves, which otherwise skips the autosave wait.
+        await page.waitForFunction(({ expected, persisted }) => {
           const store = JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}');
           const stored = store.designs?.find(d => d.eventId === 'evt_wedding')?.draft.audio;
-          const saved = window.__doyofy ? (await window.__doyofy.services.invitations.get('evt_wedding'))?.draft.audio : null;
           const matches = audio => expected === 'off' ? audio?.mode === 'off' : audio?.mode === 'library' && `track:${audio.trackId}` === expected;
           const control = document.querySelector('#ed-motion select');
-          return matches(stored) && matches(saved) && control?.value === expected && (!persisted || document.querySelector('.save-state')?.classList.contains('is-saved'));
+          return !!window.__doyofy && matches(stored) && control?.value === expected && (!persisted || document.querySelector('.save-state')?.classList.contains('is-saved'));
         }, { expected, persisted }, { timeout: 4500 });
+        const savedAudio = await page.evaluate(async () => (await window.__doyofy.services.invitations.get('evt_wedding'))?.draft.audio);
+        assert.equal(expected === 'off' ? savedAudio?.mode : `track:${savedAudio?.trackId}`, expected, 'service agrees with the durable audio choice');
       } catch (error) {
         const diagnostic = await page.evaluate(async () => ({
           persisted: JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}').designs?.find(d => d.eventId === 'evt_wedding')?.draft.audio,
@@ -156,7 +159,7 @@ try {
     const tables = page.locator('[data-order-table]'); assert.ok(await tables.count() >= 2);
     const initial = await tables.evaluateAll(nodes => nodes.map(n => n.dataset.orderTable));
     await tables.first().focus(); await page.keyboard.press('ArrowDown');
-    await page.waitForFunction(id => document.querySelector('[data-order-table]')?.getAttribute('data-order-table') !== id, initial[0]);
+    await page.waitForFunction(id => { const table = document.querySelector('[data-order-table]'); return !!table && table.getAttribute('data-order-table') !== id; }, initial[0]);
     const afterKey = await tables.evaluateAll(nodes => nodes.map(n => n.dataset.orderTable));
     assert.equal(afterKey[1], initial[0]);
     await page.reload({ waitUntil: 'domcontentloaded' }); await tables.first().waitFor();
@@ -189,7 +192,7 @@ try {
     await page.getByRole('button', { name: 'إضافة', exact: true }).click();
     await page.getByRole('button', { name: 'متابعة بالدفع التجريبي', exact: true }).click();
     await page.getByRole('button', { name: 'تأكيد الدفع التجريبي', exact: true }).click();
-    await page.waitForFunction(async id => (await window.__doyofy.services.parties.list(id)).length === 6, id);
+    await page.waitForFunction(id => JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}').parties?.filter(p => p.eventId === id).length === 6, id);
     const added = await page.evaluate(async id => (await window.__doyofy.services.parties.list(id)).filter(p => p.primaryGuestName === 'ضيف بعد الترقية').length, id);
     assert.equal(added, 1); await page.reload({ waitUntil: 'domcontentloaded' });
     assert.equal(await page.evaluate(async id => (await window.__doyofy.services.parties.list(id)).length, id), 6);
