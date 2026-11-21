@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, type KeyboardEvent } from 'react';
 import type { Event, InvitationDesignContent } from '../../domain/types';
 import { applyPreset, type TemplatePreset } from '../../domain/templates';
 import { Button, Icon, IconButton } from '../../ui';
@@ -14,6 +14,7 @@ export function TemplateFeed({ presets, preset, event, base, current, pending, o
 }) {
   const { t } = useCopy();
   const { share, copyUrl } = useTemplateShare(event.type);
+  const frame = useRef<HTMLDivElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
   const settle = useRef<ReturnType<typeof setTimeout>>(undefined);
   const observed = useRef<number | null>(null);
@@ -22,6 +23,26 @@ export function TemplateFeed({ presets, preset, event, base, current, pending, o
   indexRef.current = index;
   const firstMount = useRef(true);
   const catalogueKey = presets.map(p => p.cardId).join('|');
+  useLayoutEffect(() => {
+    const root = frame.current, node = scroll.current;
+    if (!root || !node || !root.closest('.sig-library')) return;
+    let alive = true, scheduled = 0;
+    const fit = () => {
+      const bounds = node.getBoundingClientRect();
+      if (!alive || !bounds.width || window.innerWidth > 640) return;
+      const controls = root.getBoundingClientRect().height - bounds.height;
+      const height = Math.round(Math.max(220, Math.min(620, window.innerHeight - Math.max(0, bounds.top) - controls - 16)));
+      const value = `${height}px`;
+      if (root.style.getPropertyValue('--template-feed-height') !== value) root.style.setProperty('--template-feed-height', value);
+    };
+    const schedule = () => { if (alive) { cancelAnimationFrame(scheduled); scheduled = requestAnimationFrame(fit); } };
+    fit();
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(schedule) : null;
+    observer?.observe(root);
+    window.addEventListener('resize', schedule);
+    void document.fonts?.ready.then(schedule);
+    return () => { alive = false; cancelAnimationFrame(scheduled); observer?.disconnect(); window.removeEventListener('resize', schedule); };
+  }, []);
   useEffect(() => {
     const node = scroll.current;
     if (!node) return;
@@ -44,7 +65,7 @@ export function TemplateFeed({ presets, preset, event, base, current, pending, o
     if (next === null) return;
     e.preventDefault(); select(next);
   };
-  return <div className="template-feed">
+  return <div ref={frame} className="template-feed">
     <div ref={scroll} className="template-feed-scroll" tabIndex={0} role="region" aria-label={t('templateBrowse')} aria-roledescription="معرض عمودي" onKeyDown={keyDown}
       onScroll={() => {
         clearTimeout(settle.current);

@@ -71,6 +71,7 @@
   .sig-library-view { opacity: 1; transform: none; }
   .sig-library:has(.template-feed) .sig-library-banner { display: none; }
   .template-feed-scroll { height: min(64dvh, 620px); }
+  .sig-library .template-feed-scroll { height: var(--template-feed-height, min(64dvh, 620px)); }
   .template-feed-title h3 { font-size: 16px; }
   .template-feed-title p { font-size: 11px; }
   .template-feed-meta { align-items: start; }

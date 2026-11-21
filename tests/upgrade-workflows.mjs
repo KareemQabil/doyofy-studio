@@ -31,7 +31,7 @@ async function cleanViewport(page) {
   assert.ok(widths[0] <= widths[1] + 1, `horizontal overflow: ${widths.join('/')}`);
 }
 async function scenario(name, viewport, run) {
-  const context = await browser.newContext({ viewport, locale: 'ar', reducedMotion: 'reduce' });
+  const context = await browser.newContext({ viewport, locale: 'ar', reducedMotion: name === '01-phone-cards' ? 'no-preference' : 'reduce' });
   const page = await context.newPage();
   page.setDefaultTimeout(4500); page.setDefaultNavigationTimeout(8000);
   const errors = [];
@@ -64,6 +64,7 @@ try {
     await page.locator('.ed-workbench .card-thumb-inner').first().waitFor();
     const card = await page.locator('.ed-workbench-paper .card-thumb').first().boundingBox();
     assert.ok(card && card.width >= 220, `initial editor card too small: ${card?.width}`);
+    assert.ok(await page.locator('.ed-workbench-paper .oc-names').evaluate(el => Number(getComputedStyle(el).opacity) > .95), 'editor names are readable before replaying motion');
     assert.ok(card.y >= 0 && card.y + card.height <= 844, `initial poster clipped: ${JSON.stringify(card)}`);
     await page.getByRole('button', { name: 'تكبير البطاقة', exact: true }).click();
     await page.getByRole('dialog', { name: 'البطاقة بحجم أكبر' }).waitFor();
@@ -73,6 +74,7 @@ try {
   await scenario('02-vertical-template-feed', { width: 390, height: 844 }, async page => {
     await go(page, '/app/events/evt_wedding/invitation/templates');
     const feed = page.locator('.template-feed-scroll'); await feed.waitFor();
+    await page.waitForFunction(() => document.querySelector('.template-feed-actions')?.getBoundingClientRect().bottom <= innerHeight);
     await feed.focus(); await page.keyboard.press('Home');
     await page.waitForFunction(() => document.querySelector('.template-feed-slide')?.classList.contains('is-active'));
     const before = await page.evaluate(async () => JSON.stringify(await window.__doyofy.services.invitations.get('evt_wedding')));
@@ -92,11 +94,11 @@ try {
 
   await scenario('03-account-audio-dialect', { width: 1440, height: 1000 }, async page => {
     await go(page, '/app/account');
-    await page.getByLabel('أسلوب اللغة', { exact: true }).selectOption('ar-EG');
+    await page.getByRole('combobox', { name: 'أسلوب اللغة', exact: true }).selectOption('ar-EG');
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.getByLabel('طريقة الكلام', { exact: true }).waitFor();
-    assert.equal(await page.getByLabel('طريقة الكلام', { exact: true }).inputValue(), 'ar-EG');
-    await page.getByLabel('طريقة الكلام', { exact: true }).selectOption('ar');
+    await page.getByRole('combobox', { name: 'طريقة الكلام', exact: true }).waitFor();
+    assert.equal(await page.getByRole('combobox', { name: 'طريقة الكلام', exact: true }).inputValue(), 'ar-EG');
+    await page.getByRole('combobox', { name: 'طريقة الكلام', exact: true }).selectOption('ar');
     await page.getByLabel('اسم المقطع', { exact: false }).fill('صوت اختبار القبول');
     await page.locator('input[type=file][accept*="audio/mpeg"]').setInputFiles({ name: 'acceptance.wav', mimeType: 'audio/wav', buffer: wav() });
     const audio = page.locator('.audio-library-list audio'); await audio.waitFor();
@@ -113,7 +115,7 @@ try {
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('doyofy:audio-library:v1')));
     assert.equal(saved.defaultTrackId, track.id);
     await go(page, '/app/events/evt_wedding/invitation/design?section=motion');
-    const select = page.getByLabel('صوت الدعوة', { exact: true }); await select.selectOption(`track:${track.id}`);
+    const select = page.getByRole('combobox', { name: 'صوت الدعوة', exact: true }); await select.selectOption(`track:${track.id}`);
     await page.waitForFunction(async id => (await window.__doyofy.services.invitations.get('evt_wedding'))?.draft.audio?.trackId === id, track.id);
     await page.reload({ waitUntil: 'domcontentloaded' }); assert.equal(await select.inputValue(), `track:${track.id}`);
     await select.selectOption('off');

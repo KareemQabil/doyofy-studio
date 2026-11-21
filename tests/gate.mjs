@@ -203,7 +203,7 @@ for (const appearance of APPEARANCES) {
     try {
       await guest.goto(link.replace(/^https?:\/\/[^/]+/, BASE));
       await guest.getByRole('button', { name: 'الموعد وتأكيد الحضور مباشرة', exact: true }).click();
-      await guest.getByRole('radio', { name: 'نعم، سنحضر', exact: true }).check();
+      await guest.getByText('نعم، سنحضر', { exact: true }).click();
       await guest.getByRole('button', { name: 'إرسال الرد', exact: true }).click();
       await guest.locator('.hub-qr').waitFor();
       if (!guest.url().includes('?d=')) issue = 'portable invitation left the guest route';

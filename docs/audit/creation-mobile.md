@@ -36,3 +36,7 @@ Focused DOM checks cover:
 Validation on the combined working tree passed: `node tests/dom.mjs` (45 behavior cases, 34 light/dark route mounts and missing/malformed route checks), `npm run typecheck`, `npm run build`, and `git diff --check`. The DOM run emits React `act` warnings from asynchronous cross-store updates; it reports no failed assertions. DOM checks verify behavior, not layout, actual touch scrolling or card readability. Local browser execution is blocked by the environment; phone sizes, scroll snap, safe-area spacing, long Arabic names and reduced-motion presentation still require the browser/preview checks before release. No visual measurements are claimed here.
 
 The feed uses native scrolling, bounds artwork mounting, cleans pending timers on unmount even without ResizeObserver, and provides button/keyboard alternatives. Gesture hints play only a few cycles and respect reduced motion.
+
+### Browser evidence follow-up
+
+The first CI phone-home capture showed crowded Arabic metadata on the wedding face. The collection's metadata now uses the readable UI Arabic font with explicit line spacing and minimum row heights, rather than inheriting the decorative face typography. This correction is in `src/cards/collection.js` and applies to the face itself in the gallery and guest engine as well as thumbnails. Generated canonical files are untouched. A subsequent browser capture must confirm the visual result; unit/DOM tests cannot establish text geometry.

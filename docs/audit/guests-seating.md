@@ -35,7 +35,7 @@ Audit and implementation: 21 November 2026. Baseline: `main` at `bd6000a` (which
 4. Move clears source response history; checked-in moves and destination quota overflow are rejected without removing the source.
 5. Reorder persistence, stale/duplicate order validation, and foreign-event seating rejection.
 
-The latest unit suite passed 101/101, including these cases. The existing DOM food test now explicitly selects caterer and restores organizer. Additional DOM assertions verify the caterer has no editable guest rows/private messaging and organizer list/settings hide food while preserving wishlist controls. `node tests/roles-dom.mjs` adds four focused cases for direct-route blocking, a read-only event home, food/seating presentation, food-only menu setup, owner wishlist preservation, public guest/account access and live role switching. DOM tests do not constitute physical-device touch QA.
+The latest unit suite passed 101/101, including these cases. The existing DOM food test now explicitly selects caterer and restores organizer. Additional DOM assertions verify the caterer has no editable guest rows/private messaging and organizer list/settings hide food while preserving wishlist controls. `node tests/roles-dom.mjs` adds five focused cases for direct-route blocking, a read-only event home, food/seating presentation, food-only menu setup, owner wishlist preservation, public guest/account access and live role switching, including closing open editing tools and removing warning actions when switching to catering. DOM tests do not constitute physical-device touch QA.
 
 ## Remaining production dependencies
 

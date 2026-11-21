@@ -72,6 +72,13 @@ const KC_STYLE = `<style>
 .kc-rule{display:block;margin:0 auto;flex:none}
 .kc-lines{flex:none;display:grid;gap:2px;font-size:11.5px;line-height:1.5;overflow-wrap:anywhere}
 .kc-date{font-size:12.5px}.kc-time,.kc-city{color:var(--oc-muted)}
+/* Metadata is reading text, independent of the decorative face font. Reserve real Arabic
+   line boxes so larger date glyphs cannot collide with the following time/place rows. */
+.kc .kc-lines{gap:3px;font:400 11.5px/1.75 'IBM Plex Sans Arabic',Tahoma,sans-serif;letter-spacing:normal;direction:rtl;unicode-bidi:isolate}
+.kc .kc-lines>div{position:static;min-height:20px;line-height:1.75;letter-spacing:normal}
+.kc .kc-date{font-size:11.5px}
+.kc .kc-cell{font-family:'IBM Plex Sans Arabic',Tahoma,sans-serif;line-height:1.65}
+.kc .kc-cell b{line-height:1.65}
 .kc-info{flex:none;display:grid;gap:6px}
 .kc-row{display:grid;grid-template-columns:1fr 1fr 1fr;border-block:1px solid var(--oc-line);padding:7px 0}
 .kc-cell{display:grid;justify-items:center;align-content:start;gap:1px;padding:0 4px;font-size:10px;line-height:1.4;color:var(--oc-muted);overflow-wrap:anywhere;min-width:0}

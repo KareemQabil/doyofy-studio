@@ -87,7 +87,7 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [page, setPage] = useState<WorkbenchPage>('card');
   // the face's entrance plays when the editor opens and on request; typing never restarts it
-  const [cardMotion, setCardMotion] = useState(1);
+  const [cardMotion, setCardMotion] = useState(0);
   // phones: swipe the workbench sideways to turn the invitation's pages (RTL: the page follows the finger, right = next); the tabs remain
   const PAGES: WorkbenchPage[] = ['card', 'message', 'program'];
   const pager = useSwipePager<HTMLDivElement>({

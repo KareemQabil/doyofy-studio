@@ -9,14 +9,19 @@ Arabic-first RTL invitation studio and event guest management prototype.
 - [Final-phase plan](docs/handoff/FINAL_PHASE_PLAN_2026-10-28.md) — the batches, the owner's decisions (Q1–Q4) and the acceptance numbers.
 - Older round documents live in `docs/archive/` and are superseded by the two above.
 
-## Current snapshot (V2 final, 28 October 2026)
+## Current snapshot (workflow upgrade, 22 November 2026)
 
-One identity («توقيع») with light, dark and follow-the-device appearance; 30 invitation faces (at least two per occasion,
-13 occasions) that animate with preset GSAP timelines; guest lists, replies, food and wishes, optional seating, reception and summary.
+One identity («توقيع») with light, dark and follow-the-device appearance; 30 animated invitation faces across 13 occasions.
+Creation stays two steps, restores unfinished drafts and supports shared template links. Mobile cards are larger and templates
+have vertical browsing. Event changes save during publication. Guest tools include scoped CSV exports, copy/move between events,
+state-aware actions and table drag/reordering. Catering has a focused report and food-only menu setup. Account preferences provide
+modern Arabic, Egyptian and Saudi writing, plus a local audio library. Capacity upgrades demonstrate checkout and resume the pending operation.
 
 **This is a local demo:** accounts and event data are stored in this browser. Remote adapters exist but are not selected.
 Shared guest links carry the invitation itself, so they open on any phone — a reply made from such a link is clearly marked
-as a demo and is not sent to the organizer. No real outbound messaging and no live camera scanning.
+as a demo and is not sent to the organizer. Confirmed personal guests reach QR and a clearly labelled Google Wallet preview.
+WhatsApp and SMS open a prepared message for manual sending. There is no live payment, automated delivery, Wallet issuance or
+live camera scanning. Uploaded audio stays on this browser; sharing the file itself needs a storage service.
 
 ## Run
 
@@ -28,12 +33,13 @@ npm start
 ## Validate and build
 
 ```bash
-npm test            # typecheck · unit · DOM · release gate (5 viewports × light/dark) · Signature journey
+npm test            # typecheck · unit · DOM · release gate · Signature journey · upgrade acceptance
 npm run build       # dist/ — content-hashed entries, lazy chunks for the engine, GSAP and the Lottie player
-npm run validate    # the fast subset plus token contrast and shipped-asset checks
+npm run validate    # unit/DOM, build, token contrast and shipped-asset checks, including on a clean checkout
+npm run test:upgrade # focused mobile, template, audio, table-order and checkout browser journeys
 ```
 
-The release gate (`tests/gate.mjs`) needs Chromium: it uses `/opt/pw-browsers/chromium` when present, otherwise run
+The browser checks use `CHROMIUM_EXECUTABLE_PATH`, a supported system Chromium, or Playwright's browser. Run
 `npx playwright install chromium` once.
 
 Browser/device tests require a supported browser test environment. DOM tests are not evidence of real touch or visual QA.
