@@ -25,7 +25,7 @@ export function FoodReport({ event, parties, responses, tables, onOpen, now }: {
   const asks = asksMeals(x);
   if (!asks && !x.dietary.enabled && !meals.rows.some((r) => r.people)) {
     return (
-      <EmptyState compact icon="sparkle" title="لا أسئلة طعام بعد" action={onOpen ? <LinkButton to={paths.settings(event.id, 'guest-experience')} icon="settings">إعداد الطعام</LinkButton> : undefined}>
+      <EmptyState compact icon="sparkle" title="لا أسئلة طعام بعد" action={<LinkButton to={paths.settings(event.id, 'guest-experience')} icon="settings">جهّز قائمة الطعام</LinkButton>}>
         فعّل اختيار الوجبة أو سؤال الحساسية، وسيظهر هنا عدد كل وجبة ومن لديه ما نراعيه.
       </EmptyState>
     );

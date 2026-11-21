@@ -6,7 +6,7 @@ Audit and implementation: 21 November 2026. Baseline: `main` at `bd6000a` (which
 
 | Priority | Baseline evidence | User impact | Resolution in this upgrade |
 | --- | --- | --- | --- |
-| P0 | `src/domain/types.ts` had only organizer/coordinator; `GuestsPage` always rendered food, `FoodReport` and `SeatingPage` showed allergies without a role policy | Organizer was distracted by food operations; catering had no focused view | Added caterer presentation role; organizer/coordinator hide food; caterer gets food totals and read-only seating, with no private messaging or editable guest list. Account switches the presentation role. |
+| P0 | `src/domain/types.ts` had only organizer/coordinator; `GuestsPage` always rendered food, `FoodReport` and `SeatingPage` showed allergies without a role policy | Organizer was distracted by food operations; catering had no focused view | Added caterer presentation role; organizer/coordinator hide food; caterer gets food totals, read-only seating and dedicated food-only menu settings, with no private messaging or editable guest list. Account switches the presentation role. |
 | P1 | `HallMap` buttons accepted guest drops but tables had no reorder API | Requested table drag gesture was absent | Explicit “ترتيب الطاولات” mode adds mouse drag, touch pointer drag and RTL keyboard arrow ordering. Table menu supplies previous/next order actions. Complete ordered IDs are persisted atomically. This remains a list arrangement, not a measured floor plan. |
 | P1 | `GuestsPage` page and selection actions had no export; only `FoodReport` exported whole food CSV | Could not hand off selected guests, tables or departments | CSV dialog exports current filtered results, selected parties, multiple chosen tables, multiple chosen departments, or all guests. Checkboxes show scope counts. Table menus preselect that table. Phone numbers opt in; organizer notes and dietary data stay out of general exports. |
 | P1 | `PartyRepository` had no transfer operation | Guests could not be reused between occasions | Atomic copy/move to a different active event, duplicate phone/name detection, destination quota validation and explicit move confirmation. Creates fresh IDs/codes and resets delivery, RSVP, seating, arrival and food state. Copy retains the source. Move removes source replies and refuses checked-in parties. |
@@ -23,7 +23,7 @@ Audit and implementation: 21 November 2026. Baseline: `main` at `bd6000a` (which
 - Table order changes do not change assignments, table identity or names. Stale/missing/foreign/duplicate order IDs abort atomically.
 - A guest cannot be assigned to a table from another event (a previously unchecked service invariant).
 - Food visibility is a **prototype presentation policy**, not authentication or server authorization. The existing remote adapter explicitly refuses transfer/reorder until transactional backend endpoints are implemented; it never pretends to persist those operations.
-- The caterer workspace shows only catering and read-only tables. Direct workspace routes outside that scope show a link back to catering. The role switch remains reachable in account settings.
+- The caterer workspace shows catering reports, read-only tables and a dedicated menu configuration page. The settings route renders only meal/dietary controls for caterer and never mounts general event settings or wishlist controls. A global presentation guard also blocks direct import, editor, template, preview, creation and reception routes, with recovery links; its event home omits creation actions. The role switch remains reachable in account settings.
 
 ## Acceptance and verification
 
@@ -35,7 +35,7 @@ Audit and implementation: 21 November 2026. Baseline: `main` at `bd6000a` (which
 4. Move clears source response history; checked-in moves and destination quota overflow are rejected without removing the source.
 5. Reorder persistence, stale/duplicate order validation, and foreign-event seating rejection.
 
-The unit suite passed 100/100 after adding these cases. The existing DOM food test now explicitly selects caterer and restores organizer. Additional DOM assertions verify the caterer has no editable guest rows/private messaging and organizer list/settings hide food while preserving wishlist controls. DOM tests do not constitute physical-device touch QA.
+The latest unit suite passed 101/101, including these cases. The existing DOM food test now explicitly selects caterer and restores organizer. Additional DOM assertions verify the caterer has no editable guest rows/private messaging and organizer list/settings hide food while preserving wishlist controls. `node tests/roles-dom.mjs` adds four focused cases for direct-route blocking, a read-only event home, food/seating presentation, food-only menu setup, owner wishlist preservation, public guest/account access and live role switching. DOM tests do not constitute physical-device touch QA.
 
 ## Remaining production dependencies
 

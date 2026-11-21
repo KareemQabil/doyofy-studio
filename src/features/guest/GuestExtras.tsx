@@ -52,7 +52,7 @@ export function GuestExtrasFields({ x, count, value, onChange, error }: { x: Gue
     <div className="gx">
       {asksMeals(x) && <MealsField x={x} count={count} value={value.meals} onChange={(meals) => onChange({ ...value, meals })} error={error?.field === 'meals' ? error.text : null} />}
       {x.dietary.enabled && <DietaryField count={count} value={value.dietary} onChange={(dietary) => onChange({ ...value, dietary })} error={error?.field === 'dietary' ? error.text : null} />}
-      <p className="gx-privacy"><Icon name="eye" size="sm" />يرى إجاباتكم أصحاب المناسبة ومن يرتّب الطعام فقط.</p>
+      <p className="gx-privacy"><Icon name="eye" size="sm" />يرى إجابات الطعام فريق الضيافة فقط.</p>
     </div>
   );
 }

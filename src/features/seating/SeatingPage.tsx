@@ -44,6 +44,9 @@ export function SeatingPage({ event }: { event: Event }) {
   // Signature: moving a family shows every table as a destination (tap), or lift-and-drag on touch
   const [moving, setMoving] = useState<InvitationParty | null>(null);
   const [dockHover, setDockHover] = useState<string | null>(null);
+  useEffect(() => {
+    if (!manage) { setOrderMode(false); setExportTable(null); setAssigning(null); setEditing(null); setDeleting(null); setMoving(null); setOverride(null); setDockHover(null); endDrag(); }
+  }, [manage]);
 
   const assign = useMutation((s, partyId: string, tableId: string | null) => s.seating.assign(partyId, tableId), {
     onSuccess: (p) => toast({ tone: 'success', text: p.tableId ? `تم توزيع ${p.primaryGuestName} على ${tables.data?.find((t) => t.id === p.tableId)?.name ?? 'الطاولة'}` : `تمت إزالة ${p.primaryGuestName} من الطاولة` }),
@@ -71,6 +74,7 @@ export function SeatingPage({ event }: { event: Event }) {
   if (parties.loading || tables.loading) return <PageLoader />;
 
   const tryAssign = (party: InvitationParty, t: TableOccupancy) => {
+    if (!manage) return;
     const ok = checkAssign(party, t);
     if (!ok.ok && ok.reason === 'does_not_fit') { setOverride({ party, table: t }); return; }
     if (!ok.ok) { toast({ tone: 'warning', text: 'يمكن توزيع الدعوات المؤكدة فقط' }); return; }
@@ -87,7 +91,7 @@ export function SeatingPage({ event }: { event: Event }) {
   const startMove = (p: InvitationParty) => setMoving(p);
   dropTo.current = (id) => { const t = occ.find((o) => o.table.id === id); const p = moving; if (t && p && p.tableId !== t.table.id) tryAssign(p, t); else if (!t) setMoving(null); };
   const reorderTo = (source: string, target: string) => {
-    if (reorder.pending || source === target) return;
+    if (!manage || reorder.pending || source === target) return;
     const ids = occ.map((o) => o.table.id), from = ids.indexOf(source), to = ids.indexOf(target);
     if (from < 0 || to < 0) return;
     ids.splice(from, 1); ids.splice(to, 0, source); void reorder.run(ids);
@@ -104,13 +108,13 @@ export function SeatingPage({ event }: { event: Event }) {
 
       {occ.length === 0 ? manage ? <QuickSetup event={event} confirmedPeople={c.confirmedPeople} /> : <EmptyState icon="table" title="لم تُجهّز الطاولات بعد">يجهّز فريق التنظيم الطاولات لتظهر هنا.</EmptyState> : (
         <div className="stack gap-5">
-          {<HallMap showFood={showFood} orderMode={orderMode} onReorder={reorderTo} tables={occ} focus={focus} onFocus={setTableFocus} onDropParty={manage ? onDrop : undefined} dragOver={dragTarget} onDragOverTable={(id)=>{if(dragId)setDragTarget(id);}} />}
+          {<HallMap showFood={showFood} orderMode={manage && orderMode} onReorder={manage ? reorderTo : undefined} tables={occ} focus={focus} onFocus={setTableFocus} onDropParty={manage ? onDrop : undefined} dragOver={dragTarget} onDragOverTable={(id)=>{if(dragId)setDragTarget(id);}} />}
           {(warn.overCapacity.length > 0 || warn.declinedAssigned.length > 0 || cap < c.confirmedPeople) && (
             <div className="stack gap-2">
               {warn.overCapacity.map((o) => <Banner key={o.table.id} tone="danger" compact title={`${o.table.name} فوق السعة`}>عليها {people(o.used)} والسعة {o.table.capacity}. انقل دعوة إلى طاولة أخرى أو زِد السعة.</Banner>)}
               {warn.declinedAssigned.map((p) => (
                 <Banner key={p.id} tone="warning" compact title={`${p.primaryGuestName} اعتذر وما زال على ${occ.find((o) => o.table.id === p.tableId)?.table.name}`}
-                  action={<Button size="sm" onClick={() => void assign.run(p.id, null)}>أزله من الطاولة</Button>}>لم نُزله تلقائيًا — القرار لك.</Banner>
+                  action={manage ? <Button size="sm" onClick={() => void assign.run(p.id, null)}>أزله من الطاولة</Button> : undefined}>{manage ? 'لم نُزله تلقائيًا — القرار لك.' : 'يراجع فريق التنظيم توزيع هذه الدعوة.'}</Banner>
               ))}
               {cap < c.confirmedPeople && <Banner tone="warning" compact title="المقاعد أقل من المؤكدين">{people(c.confirmedPeople)} مؤكدون و{plural(cap, P.seat)} فقط. أضف طاولة أو زِد السعة.</Banner>}
             </div>
@@ -147,13 +151,13 @@ export function SeatingPage({ event }: { event: Event }) {
                       <h3 id={`t-${o.table.id}`} className="table-name">{o.table.name}</h3>
                       <p className={`table-seats num${o.over ? ' text-danger' : ''}`}>{o.used} / {o.table.capacity} {o.over ? `· زيادة ${-o.remaining}` : o.remaining === 0 ? '· ممتلئة' : `· متبقٍ ${o.remaining}`}</p>
                     </div>
-                    <Menu label={`خيارات ${o.table.name}`} items={[
+                    {manage && <Menu label={`خيارات ${o.table.name}`} items={[
                       { label: t('exportFile'), icon: 'download', disabled: !manage, onSelect: () => setExportTable(o.table.id) },
                       { label: 'تقديم في الترتيب', icon: 'chevron-up', disabled: !manage || occ[0]?.table.id === o.table.id, onSelect: () => reorderTo(o.table.id, occ[occ.indexOf(o) - 1]!.table.id) },
                       { label: 'تأخير في الترتيب', icon: 'chevron-down', disabled: !manage || occ[occ.length - 1]?.table.id === o.table.id, onSelect: () => reorderTo(o.table.id, occ[occ.indexOf(o) + 1]!.table.id) },
                       { label: 'تعديل الاسم والسعة', icon: 'edit', disabled: !manage, onSelect: () => setEditing(o) },
                       { label: 'حذف الطاولة', icon: 'trash', danger: true, disabled: !manage, onSelect: () => setDeleting(o) },
-                    ]} />
+                    ]} />}
                   </header>
                   {o.table.capacity <= 20 && <div className="seat-dots" aria-hidden="true">{Array.from({length:o.table.capacity},(_,i)=><span key={i} className={i<o.used?'is-filled':''}/>)}</div>}
                   <ProgressBar value={o.used} max={o.table.capacity} tone={o.over ? 'danger' : o.remaining === 0 ? 'success' : 'primary'} label={`إشغال ${o.table.name}`} />
@@ -164,10 +168,10 @@ export function SeatingPage({ event }: { event: Event }) {
                           onDragStart={(e) => { e.dataTransfer.setData('text/plain', p.id); setDragId(p.id); }} onDragEnd={endDrag}>
                           <span className="grow truncate">{p.primaryGuestName}{showFood && <DietBadge p={p} />}</span>
                           {p.rsvpStatus === 'declined' ? <Badge tone="warning">اعتذر</Badge> : <span className="num faint t-sm">{seatsFor(p)}</span>}
-                          <Menu label={`خيارات ${p.primaryGuestName}`} items={[
+                          {manage && <Menu label={`خيارات ${p.primaryGuestName}`} items={[
                             manage && p.rsvpStatus === 'confirmed' ? { label: 'نقل إلى طاولة أخرى', icon: 'move', onSelect: () => startMove(p) } : null,
                             { label: 'إزالة من الطاولة', icon: 'close', disabled: !manage, onSelect: () => void assign.run(p.id, null) },
-                          ]} />
+                          ]} />}
                         </li>
                       ))}
                     </ul>

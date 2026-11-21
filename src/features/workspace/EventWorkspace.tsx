@@ -18,6 +18,7 @@ import { isAppError } from '../../services/errors';
 import { NotFound } from './NotFound';
 import { OccasionGlyph } from '../../ui/icons';
 import { AccountMenu } from '../account/AccountMenu';
+import { GuestExperienceSettings } from '../settings/GuestExperienceSettings';
 
 export type Section = 'overview' | 'invitation' | 'guests' | 'rsvp' | 'seating' | 'checkin' | 'settings' | 'summary' | 'more';
 
@@ -54,8 +55,9 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
   const cateringNav: NavItem[] = [
     { to: `${paths.guests(id)}?view=food`, label: 'الضيافة', icon: 'sparkle', active: section === 'guests', group: 'فريق الضيافة' },
     { to: paths.seating(id), label: 'الطاولات', icon: 'table', active: section === 'seating', group: 'فريق الضيافة' },
+    { to: paths.settings(id), label: 'قائمة الطعام', icon: 'settings', active: section === 'settings', group: 'فريق الضيافة' },
   ];
-  const cateringAllowed = ['guests', 'seating'].includes(section);
+  const cateringAllowed = ['guests', 'seating', 'settings'].includes(section);
 
   const context = e ? (
     <div className="ws-event">
@@ -87,7 +89,7 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
       >
         {ev.loading ? <PageLoader /> : ev.error ? <ErrorState error={ev.error} onRetry={ev.refetch} /> : e ? catering && !cateringAllowed
           ? <section className="stack gap-3"><h1>مساحة الضيافة</h1><p>تابع الوجبات والاحتياجات والطاولات. إدارة الدعوات والضيوف متاحة لفريق التنظيم.</p><LinkButton to={`${paths.guests(id)}?view=food`} variant="primary" icon="sparkle">افتح الضيافة</LinkButton></section>
-          : children(e) : null}
+          : catering && section === 'settings' ? <GuestExperienceSettings event={e} foodOnly /> : children(e) : null}
       </WorkspaceLayout>
     </AppShell>
   );

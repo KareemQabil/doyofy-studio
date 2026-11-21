@@ -104,7 +104,7 @@ export function OrganizerSessionGate({ children }: { children: ReactNode }) {
   if (canViewFood(role)) {
     if (loc.pathname === '/app/events') return <CateringHome />;
     const eventRoute = loc.pathname.match(/^\/app\/events\/([^/]+)(?:\/(.*))?$/);
-    const allowed = eventRoute && ['guests', 'seating'].includes(eventRoute[2] || '');
+    const allowed = eventRoute && ['guests', 'seating', 'settings'].includes(eventRoute[2] || '');
     const organizerRoute = eventRoute || loc.pathname.startsWith('/check-in/') || loc.pathname.startsWith('/prototype/');
     if (organizerRoute && !allowed) {
       const id = eventRoute?.[1] !== 'new' ? eventRoute?.[1] : undefined;

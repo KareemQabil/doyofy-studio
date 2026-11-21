@@ -20,7 +20,7 @@ import { GuestExtrasFields, Wishlist, emptyExtras, type ExtrasValue } from '../g
 const SUGGESTED = ['لحم', 'دجاج', 'سمك', 'نباتي', 'وجبة أطفال'];
 const draftOf = (ev: Event): ExperienceDraft => { const { revision: _r, ...d } = experienceOf(ev); return structuredClone(d); };
 
-export function GuestExperienceSettings({ event }: { event: Event }) {
+export function GuestExperienceSettings({ event, foodOnly = false }: { event: Event; foodOnly?: boolean }) {
   const toast = useToast();
   const foodAccess = canViewFood(useServices().session.currentUser().role);
   const parties = useParties(event.id);
@@ -61,7 +61,7 @@ export function GuestExperienceSettings({ event }: { event: Event }) {
   const asksAnything = foodAccess && (d.meals.enabled && previewX.meals.options.length > 0) || foodAccess && d.dietary.enabled;
 
   return (
-    <Panel title="بعد تأكيد الحضور" subtitle="أسئلة قصيرة وقائمة رغبات — كلها اختيارية، وتظهر للضيف فقط إن فعّلتها." className="gxs" id="guest-experience">
+    <Panel title={foodOnly ? 'قائمة الطعام' : 'بعد تأكيد الحضور'} subtitle={foodOnly ? 'جهّز اختيارات الوجبات وسؤال الاحتياجات الغذائية للضيوف.' : 'أسئلة قصيرة وقائمة رغبات — كلها اختيارية، وتظهر للضيف فقط إن فعّلتها.'} className="gxs" id="guest-experience">
       <div className="gxs-grid">
         <div className="gxs-editor">
           {/* ------------------------------------------------ meals */}
@@ -106,7 +106,7 @@ export function GuestExperienceSettings({ event }: { event: Event }) {
           </section>}
 
           {/* ------------------------------------------------ wishlist */}
-          <section className="gxs-part" aria-labelledby="gxs-gifts">
+          {!foodOnly && <section className="gxs-part" aria-labelledby="gxs-gifts">
             <h3 id="gxs-gifts" className="gxs-h"><span className="gxs-num">{foodAccess ? '٣' : '١'}</span>قائمة الرغبات</h3>
             <Switch label="أظهر قائمة الرغبات في صفحة الضيف" hint="هدية بعينها، مساهمة في هدية أكبر أو نقوط، أو باقة ورد — كلها روابط تختارها أنت." checked={d.gifts.enabled}
               onChange={(v) => { setGifts({ enabled: v }); if (v && !d.gifts.items.some((g) => !g.archived)) addItem(); }} />
@@ -121,7 +121,7 @@ export function GuestExperienceSettings({ event }: { event: Event }) {
                 <p className="gxs-note"><Icon name="info" size="sm" />نحن لا نستلم أموالًا ولا نتابع الدفع. ضع رابط متجر أو صفحة مساهمة أو محفظتك؛ يذهب الضيف إليه مباشرة، ولا يظهر عندنا من دفع أو اشترى.</p>
               </div>
             )}
-          </section>
+          </section>}
 
           {save.error ? <Banner tone={isAppError(save.error) && save.error.code === 'conflict' ? 'warning' : 'danger'} title="لم تُحفظ الإعدادات">{errorMessage(save.error)}</Banner> : null}
           {dirty && problem && <p className="field-error" role="alert">{problem.message}</p>}
@@ -136,17 +136,17 @@ export function GuestExperienceSettings({ event }: { event: Event }) {
 
         {/* ------------------------------------------------ the guest's phone, live */}
         <aside className="gxs-preview" aria-label="معاينة ما يراه الضيف">
-          <Segmented label="المعاينة" size="sm" value={preview} onChange={setPreview} options={[{ value: 'attend', label: 'ضيف سيحضر' }, { value: 'decline', label: 'ضيف اعتذر' }]} />
+          {!foodOnly && <Segmented label="المعاينة" size="sm" value={preview} onChange={setPreview} options={[{ value: 'attend', label: 'ضيف سيحضر' }, { value: 'decline', label: 'ضيف اعتذر' }]} />}
           <div className="gxs-phone theme-guest">
             <div className="gxs-screen">
-              {preview === 'attend' ? (
+              {foodOnly || preview === 'attend' ? (
                 asksAnything ? <section className="hub-card"><h4 className="hub-h">نعم، سنحضر — ٣ أشخاص</h4><GuestExtrasFields x={previewX} count={3} value={sample} onChange={setSample} /></section>
                   : <p className="gxs-empty">لا أسئلة بعد التأكيد. يرسل الضيف رده مباشرة.</p>
               ) : null}
-              {preview === 'decline' && (d.gifts.enabled && d.gifts.afterDecline && previewX.gifts.items.length
+              {!foodOnly && preview === 'decline' && (d.gifts.enabled && d.gifts.afterDecline && previewX.gifts.items.length
                 ? <Wishlist x={previewX} mode="decline" />
                 : <p className="gxs-empty">«سجّلنا اعتذاركم» — دون خيارات إضافية.</p>)}
-              {preview === 'attend' && d.gifts.enabled && previewX.gifts.items.length > 0 && <Wishlist x={previewX} mode="hub" />}
+              {!foodOnly && preview === 'attend' && d.gifts.enabled && previewX.gifts.items.length > 0 && <Wishlist x={previewX} mode="hub" />}
             </div>
           </div>
           <p className="gxs-preview-note">معاينة فقط — لا تُرسل أي إجابة.</p>

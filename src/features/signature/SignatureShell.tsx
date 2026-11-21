@@ -17,8 +17,11 @@ import { paths } from '../../app/paths';
 import { Logo } from '../../ui/brand';
 import { Icon } from '../../ui/icons';
 import type { NavItem } from '../../ui/layouts/Layouts';
+import { useServices } from '../../app/data';
+import { canManageGuests } from '../../domain/roles';
 
 export function SignatureShell({ children, right, mobileContext }: { children: ReactNode; right?: ReactNode; mobileContext?: ReactNode }) {
+  const manage = canManageGuests(useServices().session.currentUser().role);
   const scrolled = useScrolled(8);
   const hidden = useScrollHide(56) && !!mobileContext;
   return (
@@ -31,7 +34,7 @@ export function SignatureShell({ children, right, mobileContext }: { children: R
         <span className="sig-edition" aria-hidden="true">توقيع</span>
         <nav className="sig-header-nav" aria-label="القائمة الرئيسية">
           <Link to={paths.events}>مناسباتي</Link>
-          <Link to={paths.newEvent} className="sig-header-new"><Icon name="plus" size="sm" />مناسبة جديدة</Link>
+          {manage && <Link to={paths.newEvent} className="sig-header-new"><Icon name="plus" size="sm" />مناسبة جديدة</Link>}
         </nav>
         <span className="sig-header-tools"><AppearanceToggle />{right ?? <AccountMenu />}</span>
       </header>
