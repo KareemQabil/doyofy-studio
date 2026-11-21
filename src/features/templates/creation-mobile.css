@@ -64,6 +64,7 @@
   :root[data-theme] .create-details > .create-preview { display: none; }
 }
 @media (max-width: 640px) {
+  .tg:has(.template-feed) .tg-head { display: none; }
   :root[data-theme] .sig-library-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; }
   .sig-library-open .sig-tpl-tableau { min-height: 370px; aspect-ratio: 4 / 5; }
   .sig-library-meta h3 { font-size: 18px; }

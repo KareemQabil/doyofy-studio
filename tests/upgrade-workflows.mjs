@@ -75,6 +75,8 @@ try {
     await go(page, '/app/events/evt_wedding/invitation/templates');
     const feed = page.locator('.template-feed-scroll'); await feed.waitFor();
     await page.waitForFunction(() => document.querySelector('.template-feed-actions')?.getBoundingClientRect().bottom <= innerHeight);
+    const poster = await page.locator('.template-feed-slide.is-active .card-thumb').boundingBox();
+    assert.ok(poster?.width >= 260, `template poster too small: ${poster?.width}`);
     await feed.focus(); await page.keyboard.press('Home');
     await page.waitForFunction(() => document.querySelector('.template-feed-slide')?.classList.contains('is-active'));
     const before = await page.evaluate(async () => JSON.stringify(await window.__doyofy.services.invitations.get('evt_wedding')));
