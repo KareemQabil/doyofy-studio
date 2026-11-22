@@ -203,18 +203,45 @@ export async function run(){
   history.replaceState(null,'','/app/events/evt_wedding/invitation/design');
   await render(<App mode="history"/>);for(let i=0;i<12;i++)await act(async()=>{await new Promise(r=>setTimeout(r,15));});
   const handle=document.querySelector('.ed-handle')!;assert.ok(handle);
-  assert.ok(document.querySelector('.ed.sheet-peek'),'editing starts with a large card');await key(handle,'ArrowUp');
+  assert.ok(document.querySelector('.ed.at-peek'),'editing starts with a large card');await key(handle,'ArrowUp');
   // jsdom has no layout: supply the panel geometry this position-based gesture actually measures.
   const panel=document.querySelector<HTMLElement>('.ed-panel')!;
   const measure=panel.getBoundingClientRect.bind(panel);
   panel.getBoundingClientRect=()=>{
    const rect=measure();const stop=handle.getAttribute('data-stop');
-   const base=stop==='full'?window.innerHeight-136:window.innerHeight*(stop==='peek'?.22:.54);
+   const base=stop==='full'?window.innerHeight-Math.max(128,Math.min(240,window.innerHeight*.3)):stop==='peek'?96:window.innerHeight*.5;
    return Object.assign(rect,{height:base-(parseFloat(panel.style.getPropertyValue('--drag'))||0)});
   };
-  await pointer(handle,'pointerdown',100,200,0);await pointer(handle,'pointermove',100,80,200);await pointer(handle,'pointerup',100,80,300);assert.ok(document.querySelector('.ed.sheet-full'));
-  await pointer(handle,'pointerdown',100,80,400);await pointer(handle,'pointermove',100,200,600);await pointer(handle,'pointercancel',100,200,700);assert.ok(document.querySelector('.ed.sheet-full'));
-  await pointer(handle,'pointerdown',100,80,800);await pointer(handle,'pointermove',100,200,1000);await pointer(handle,'pointerup',100,200,1100);assert.ok(document.querySelector('.ed.sheet-half'));
+  await pointer(handle,'pointerdown',100,200,0);await pointer(handle,'pointermove',100,80,200);await pointer(handle,'pointerup',100,80,300);assert.ok(document.querySelector('.ed.at-full'));
+  await pointer(handle,'pointerdown',100,80,400);await pointer(handle,'pointermove',100,200,600);await pointer(handle,'pointercancel',100,200,700);assert.ok(document.querySelector('.ed.at-full'));
+  await pointer(handle,'pointerdown',100,80,800);await pointer(handle,'pointermove',100,200,1000);await pointer(handle,'pointerup',100,200,1100);assert.ok(document.querySelector('.ed.at-half'));
+ });
+ await check('phone editor: the tab row opens and hides the tools, typing keeps a live mini card, publishing and «بحجم أكبر» return to the card',async()=>{
+  history.replaceState(null,'','/app/events/evt_wedding/invitation/design');await render(<App mode="history"/>);await settle();
+  const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services,original=(await api.invitations.get(event.id)).draft;
+  const ed=()=>document.querySelector('.ed')!.className,tab=()=>document.querySelector('#ed-tab-content')!;
+  try {
+   assert.ok(/at-peek/.test(ed()),'the card leads');assert.equal(document.querySelectorAll('.ed-dock').length,0,'no second action bar');
+   assert.equal(document.querySelectorAll('.ed-publish').length,1,'one primary action, in the header');
+   await click(tab());assert.ok(/at-half/.test(ed()),'a section opens the tools');
+   await click(tab());assert.ok(/at-peek/.test(ed()),'the open section hides them again');
+   await click(tab());
+   const name=document.querySelector<HTMLInputElement>('.ed-content-names input')!;
+   await act(async()=>{name.focus();});
+   assert.ok(/at-full/.test(ed())&&/is-typing/.test(ed()),'typing: the sheet takes the room the keyboard leaves');
+   await fill(name,'نورة المصغّرة');assert.ok(document.querySelector('.ed-stage .ed-workbench .card-thumb-inner')!.textContent?.includes('نورة المصغّرة'),'the mini card updates live while typing');
+   await act(async()=>{name.blur();await new Promise(r=>setTimeout(r,220));});
+   assert.ok(/at-half/.test(ed())&&!/is-typing/.test(ed()),'leaving the field restores the sheet');
+   await act(async()=>{await new Promise(r=>setTimeout(r,750));});await settle();
+   assert.ok(document.querySelector('.ed-actions .ed-publish')!.textContent?.includes('انشر التعديلات'));
+   await click(document.querySelector('.ed-actions .ed-publish')!);await settle();
+   assert.ok(/at-peek/.test(ed()),'publishing returns to the full card');assert.ok(document.querySelector('.ed-published'));
+   assert.ok(document.querySelector('.ed-actions .ed-publish')!.textContent?.includes('إلى الضيوف'));
+   await click(document.querySelector('.ed-workbench-expand')!);await settle();
+   const dialog=document.querySelector('.ed-expanded-dialog')!;assert.ok(dialog?.hasAttribute('open'));assert.ok(dialog.querySelector('.card-thumb'));
+   const zoom=Array.from(dialog.querySelectorAll<HTMLButtonElement>('button[aria-pressed]'))[0]!;await click(zoom);
+   assert.equal(dialog.querySelector('.ed-expanded-scroll')!.getAttribute('data-zoom'),'2');assert.equal(zoom.getAttribute('aria-pressed'),'true');
+  } finally { await api.invitations.saveDraft(event.id,original);await api.invitations.publish(event.id); }
  });
  await check('Signature desktop studio edits a live card, saves, previews and publishes the same draft',async()=>{
   const originalMedia=globalThis.matchMedia;
@@ -254,7 +281,7 @@ export async function run(){
   // real latency: the gallery's write invalidates the design while its refetch is still in flight on arrival
   const until=async(ok:()=>boolean,what:string)=>{for(let i=0;i<80&&!ok();i++)await act(async()=>{await new Promise(r=>setTimeout(r,25));});assert.ok(ok(),what);};
   const cardLabel=()=>document.querySelector('.ed-workbench .card-thumb')?.getAttribute('aria-label')??'';
-  const publishText=()=>document.querySelector('.ed-dock .ed-publish')?.textContent??'';
+  const publishText=()=>document.querySelector('.ed-actions .ed-publish')?.textContent??'';
   history.replaceState(null,'','/app/events/evt_wedding/invitation/design');await render(<App mode="history"/>);await settle();
   const first=(window as unknown as {__doyofy:typeof made}).__doyofy.services;
   const original=(await first.invitations.get(event.id)).draft;
@@ -539,11 +566,11 @@ export async function run(){
   await act(async()=>{await api.invitations.publish(event.id);});await settle();
   await click(document.querySelector('#ed-tab-event')!);
   const venue=document.querySelector<HTMLInputElement>('[data-event-field="venue"]')!;await fill(venue,'قاعة النشر بخطوة واحدة');
-  const publish=document.querySelector<HTMLButtonElement>('.ed-dock .ed-publish')!;assert.ok(publish.textContent?.includes('انشر التعديلات'));
+  const publish=document.querySelector<HTMLButtonElement>('.ed-actions .ed-publish')!;assert.ok(publish.textContent?.includes('انشر التعديلات'));
   await click(publish);await settle();assert.equal((await api.events.get(event.id)).venue.name,'قاعة النشر بخطوة واحدة');
-  assert.ok(document.querySelector('.ed-dock .ed-publish')!.textContent?.includes('إلى الضيوف'));
+  assert.ok(document.querySelector('.ed-actions .ed-publish')!.textContent?.includes('إلى الضيوف'));
   const map=document.querySelector<HTMLInputElement>('[data-event-field="mapUrl"]')!;await fill(map,'javascript:alert(1)');
-  await click(document.querySelector('.ed-dock .ed-publish')!);await settle();
+  await click(document.querySelector('.ed-actions .ed-publish')!);await settle();
   assert.equal(document.activeElement,map);assert.equal(map.getAttribute('aria-invalid'),'true');assert.ok(!String((await api.events.get(event.id)).venue.mapUrl).startsWith('javascript:'));
  });
  console.log(`DOM behavior: ${passed}/${passed} passed + malformed-route check.`);

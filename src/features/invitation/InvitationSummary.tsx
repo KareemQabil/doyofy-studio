@@ -16,6 +16,7 @@ import { useToast } from '../../ui/primitives/Feedback';
 import { errorMessage } from '../../services/errors';
 import { useDesign, useParties } from '../shared/queries';
 import { CardThumb } from './CardThumb';
+import { SceneBackdrop } from './SceneBackdrop';
 import { CopyField } from '../shared/CopyField';
 
 export function InvitationSummary({ event }: { event: Event }) {
@@ -69,7 +70,8 @@ export function InvitationSummary({ event }: { event: Event }) {
 
       <div className="invite-layout">
         <Panel className="invite-card-panel">
-          {<picture className="invite-stationery-surface" aria-hidden="true"><source srcSet="assets/editorial/studio-workbench.avif" type="image/avif" /><img src="assets/editorial/studio-workbench.webp" alt="" width="1536" height="1024" decoding="async" /></picture>}
+          {/* the card stands on its own setting — what the guest sees around it — instead of a decorative photo */}
+          <SceneBackdrop sceneId={content.sceneId} className="invite-scene" />
           <div className="invite-card">
             <CardThumb event={event} content={content} width={240} label={`بطاقة ${CARD_NAMES[content.cardId] ?? ''} باسم ${names.a}${names.b ? ` و${names.b}` : ''}`} />
             <div className="stack gap-2 invite-card-actions">

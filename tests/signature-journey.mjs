@@ -99,9 +99,9 @@ async function run(vp) {
     const st = async () => page.locator('.ed').getAttribute('class');
     await page.keyboard.press('ArrowUp'); await page.waitForTimeout(400); const up = await st();
     await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown'); await page.waitForTimeout(400); const down = await st();
-    if (!/sheet-peek/.test(down)) throw new Error(`no peek after ArrowDown: ${down}`);
+    if (!/at-peek/.test(down)) throw new Error(`no peek after ArrowDown: ${down}`);
     await shot('05b-editor-peek'); await page.keyboard.press('ArrowUp');
-    return `up: ${/sheet-full/.test(up) ? 'full' : 'half'} · down: peek`;
+    return `up: ${/at-full/.test(up) ? 'full' : 'half'} · down: peek`;
   });
 
   await step(vp, '06 publish → seal stamp', async () => {

@@ -28,8 +28,8 @@ export function SummaryPage({ event }: { event: Event }) {
   return <>
     <PageHeader title="ملخص المناسبة" subtitle={`${event.title} · ${formatEventDate(event.date)}`}/>
     {!completed&&<Banner tone="info">المناسبة لم تنتهِ بعد. هذه أرقام اللحظة، ويكتمل الملخص بعد الاستقبال.</Banner>}
-    <section className="summary-closure has-editorial">
-      {<picture className="summary-photo" aria-hidden="true"><source srcSet="assets/editorial/celebration-table.avif" type="image/avif" /><img src="assets/editorial/celebration-table.webp" alt="" width="1536" height="1024" loading="lazy" decoding="async" /></picture>}
+    {/* the brand's own closure block (colour field, pattern and the celebrate artwork) — no decorative photography */}
+    <section className="summary-closure">
       <div className="summary-closure-copy"><JourneyArtwork kind="celebrate"/><p className="eyebrow">{completed?'وتبقى المحبة':'لحظات تتشكّل'}</p><h2>{completed?'كل حضور، صنع ذكرى.':'فرحتك تكتمل بضيوفك.'}</h2><p>{c.checkedInPeople?<>شارككم <strong>{c.checkedInPeople}</strong> شخصًا بحسب سجل الاستقبال.</>:'لم تُسجّل عمليات وصول لهذه المناسبة.'}</p></div>
     </section>
     <div className="summary-layout">
