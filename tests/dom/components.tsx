@@ -22,7 +22,8 @@ import { createServices } from '../../src/services';
 import type { EventType } from '../../src/domain/types';
 import { AppearanceSwitch } from '../../src/ui/primitives/AppearanceSwitch';
 import { ThemeSync, applyReviewLink } from '../../src/app/review';
-import { TemplatePreview } from '../../src/features/templates/TemplatePreview';
+import { TemplateFeed, fitFeedCard } from '../../src/features/templates/TemplateFeed';
+import { designFamilies } from '../../src/features/templates/design-feed';
 import { TEMPLATE_PRESETS } from '../../src/domain/templates';
 import { presetOf } from '../../src/domain/templates';
 import { Field, Input } from '../../src/ui/primitives/Form';
@@ -194,19 +195,30 @@ export async function run(){
   await pointer(surface,'pointerup',10,100,340);
   assert.equal(ends.length,3);assert.equal(ends[2]!.cancelled,false);assert.equal(ends[2]!.moved,true);
  });
- await check('vertical template browsing supports scroll and keyboard without applying a design',async()=>{
-  const design=await made.services.invitations.get(event.id);let navigated='',used=0;
-  const rail=TEMPLATE_PRESETS.filter((p,i)=>TEMPLATE_PRESETS.findIndex(x=>x.cardId===p.cardId)===i);const mid=rail[1]!,NEXT=rail[2]!.id,PREV=rail[0]!.id;
-  const show=(pending=false)=>wrap(<TemplatePreview event={event} base={design.draft} presets={TEMPLATE_PRESETS} preset={mid} isCurrent={false} pending={pending} onNavigate={p=>{navigated=p.id;}} onClose={()=>{}} onUse={()=>{used++;}}/>);
-  await render(show());assert.equal(document.querySelector('.live-preview'),null);
-  const stage=document.querySelector<HTMLElement>('.template-feed-scroll')!;assert.ok(stage);
+ await check('the full-screen design feed supports scroll, keyboard and its labelled rail without applying a design',async()=>{
+  const design=await made.services.invitations.get(event.id);let navigated='',filtered='';
+  const rail=designFamilies(TEMPLATE_PRESETS);const mid=rail[1]!,NEXT=rail[2]!.id,PREV=rail[0]!.id;
+  const filters=[{id:'for-you',label:'مختارة',count:rail.length},{id:'classic',label:'كلاسيكي',count:3}];
+  const show=(pending=false)=>wrap(<TemplateFeed event={event} base={design.draft} presets={rail} preset={mid} pending={pending} onNavigate={p=>{navigated=p.id;}} filters={filters} filter="for-you" onFilter={id=>{filtered=id;}}/>);
+  await render(show());assert.equal(document.querySelector('.live-preview'),null,'browsing never mounts the full invitation');
+  assert.equal(document.querySelectorAll('.tf-slide .card-thumb').length,3,'only the visible design and its neighbours render art');
+  const stage=document.querySelector<HTMLElement>('.tf-scroll')!;assert.ok(stage);
   await key(stage,'ArrowDown');assert.equal(navigated,NEXT);await key(stage,'ArrowUp');assert.equal(navigated,PREV);
-  navigated='';await key(document.querySelector('.template-feed-nav button')!,'ArrowDown');assert.equal(navigated,'','arrows in a button must not bubble into feed navigation');
+  navigated='';await key(document.querySelector('.tf-rail-arrow')!,'ArrowDown');assert.equal(navigated,'','arrows in a button must not bubble into feed navigation');
+  await click(document.querySelector('[aria-label="التصميم التالي"]')!);assert.equal(navigated,NEXT);
   Object.defineProperty(stage,'clientHeight',{value:400,configurable:true});stage.scrollTop=0;
   await act(async()=>{stage.dispatchEvent(new Event('scroll',{bubbles:true}));await new Promise(r=>setTimeout(r,130));});
-  assert.equal(navigated,PREV);assert.equal(used,0,'browsing never applies a template');
-  await click(document.querySelector('.tp .dialog-foot .btn-primary')!);assert.equal(used,1);
+  assert.equal(navigated,PREV);
+  // share, style and playback are labelled actions (not bare corner icons); the style filters live in a sheet
+  const labels=Array.from(document.querySelectorAll('.tf-rail-label')).map(x=>x.textContent);assert.deepEqual(labels,['الأسلوب','مشاركة','شاهدها']);
+  await click(button('الأسلوب'));const options=Array.from(document.querySelectorAll<HTMLButtonElement>('.tf-sheet [role="radio"]'));assert.equal(options.length,2);assert.equal(options[0]!.getAttribute('aria-checked'),'true');
+  await click(options[1]!);assert.equal(filtered,'classic');assert.equal(document.querySelector('.tf-sheet[open]'),null);
+  // the playback plays the CURRENT design directly, never a second feed reset to the first design
+  await click(button('شاهدها'));assert.equal(document.querySelector('.tf-play .dialog-title')?.textContent,mid.name);assert.equal(document.querySelector('.tf-play .tf-scroll'),null);
+  await click(document.querySelector('.tf-play .dialog-foot .btn-primary')!);assert.equal(document.querySelector('.tf-play[open]'),null);
   navigated='';await render(show(true));await key(stage,'ArrowDown');assert.equal(navigated,'','busy feed cannot change the design');
+  // the card fills the feed: ≥ 220px wide on a 320×640 phone (feed ≈ 320×500), centred beside the rail on wide screens
+  assert.ok(fitFeedCard(320,500).card>=220);assert.equal(fitFeedCard(1440,770).padEnd,0);assert.ok(fitFeedCard(390,700).card>=290);
  });
  await check('review URLs set the appearance and ignore unknown values (and the retired ?theme=)',async()=>{
   history.replaceState(null,'','/app/events?appearance=dark');applyReviewLink(made.prototype);assert.equal(document.documentElement.dataset.appearance,'dark');
@@ -279,16 +291,16 @@ export async function run(){
    await api.invitations.saveDraft(event.id,original);await api.invitations.publish(event.id);
   } finally {globalThis.matchMedia=originalMedia;}
  });
- await check('Signature template surfaces show real names and browsing keeps the draft until explicit use',async()=>{
+ await check('the in-event gallery is the same full-screen feed, and browsing keeps the draft until explicit use',async()=>{
   history.replaceState(null,'','/app/events/evt_wedding/invitation/templates');await render(<App mode="history"/>);await settle();
   const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services,before=(await api.invitations.get(event.id)).draft;
-  await click(button('المجموعة'));await settle();
-  assert.ok(document.querySelector('.tg-studio-prop'));assert.ok(document.querySelector('.sig-tpl-tableau .card-thumb-inner'));
-  await click(document.querySelector('.sig-library-open')!);await settle();assert.ok(document.querySelector('.template-feed-slide.is-active .ed-workbench .card-thumb-inner'));assert.equal(document.querySelector('.live-preview'),null);
-  const titleBefore=document.querySelector('.tp .template-feed-title')!.textContent;
-  const stage=document.querySelector('.tp .template-feed-scroll')!;await key(stage,'ArrowDown');await settle();assert.notEqual(document.querySelector('.tp .template-feed-title')!.textContent,titleBefore);assert.deepEqual((await api.invitations.get(event.id)).draft,before);
-  await click(document.querySelector('.tp .dialog-foot .btn-primary')!);await settle();assert.ok(location.pathname.endsWith('/invitation/design'));assert.ok(document.querySelector('.ed-workbench'));
-  const after=(await api.invitations.get(event.id)).draft;assert.deepEqual(after.displayNames,before.displayNames);assert.deepEqual(after.message,before.message);assert.deepEqual(after.program,before.program);
+  assert.ok(document.querySelector('.tf-slide.is-active .card-thumb-inner'));assert.equal(document.querySelector('.live-preview'),null);
+  assert.equal(document.querySelector('img[src*="editorial"]'),null,'no decorative photography around the designs');
+  assert.ok(document.querySelector('.tf-slide.is-active .tf-current'),'the current design is marked');
+  const title=()=>document.querySelector('.tf-slide.is-active .tf-info h3')!.textContent;const titleBefore=title();
+  await key(document.querySelector('.tf-scroll')!,'ArrowDown');await settle();assert.notEqual(title(),titleBefore);assert.deepEqual((await api.invitations.get(event.id)).draft,before);
+  await click(document.querySelector('.focus-foot .btn-primary')!);await settle();assert.ok(location.pathname.endsWith('/invitation/design'));assert.ok(document.querySelector('.ed-workbench'));
+  const after=(await api.invitations.get(event.id)).draft;assert.notEqual(after.cardId,before.cardId);assert.deepEqual(after.displayNames,before.displayNames);assert.deepEqual(after.message,before.message);assert.deepEqual(after.program,before.program);
   await api.invitations.saveDraft(event.id,before);
  });
  await check('an applied template reaches the editor, survives typing and offers publishing the change (P0)',async()=>{
@@ -306,8 +318,8 @@ export async function run(){
   const handle=(window as unknown as {__doyofy:typeof made}).__doyofy,api=handle.services;
   handle.prototype.update({latencyMs:60});
   try {
-   await until(()=>!!document.querySelector('.tp .dialog-foot .btn-primary'),'gallery preview opens');
-   await click(document.querySelector('.tp .dialog-foot .btn-primary')!);
+   await until(()=>!!document.querySelector('.tf-slide.is-active .card-thumb')?.getAttribute('aria-label')?.includes('شرفة الحديقة'),'the gallery feed opens on the linked design');
+   await click(document.querySelector('.focus-foot .btn-primary')!);
    await until(()=>location.pathname.endsWith('/invitation/design')&&!!document.querySelector('.ed-workbench .card-thumb'),'editor opens');
    assert.ok(cardLabel().includes('شرفة الحديقة'),`editor shows the applied design, got «${cardLabel()}»`);
    assert.ok(publishText().includes('انشر التعديلات'),`publish offers the change, got «${publishText()}»`);
@@ -393,16 +405,38 @@ export async function run(){
   assert.equal(document.activeElement,document.querySelector('.sig-fan-card.is-front'),'keyboard browsing moves focus with the visible card');
   await key(fan,'ArrowRight');assert.equal(shown(),first);
   await pointer(fan,'pointerdown',100,100,0);await pointer(fan,'pointermove',0,100,150);assert.ok(fan.hasAttribute('data-dragging'));
+  assert.equal((fan as HTMLElement).style.getPropertyValue('--fan-drag'),'-100.0px','the card follows the finger 1:1');
   await pointer(fan,'pointercancel',0,100,200);assert.equal(shown(),first);assert.equal(fan.hasAttribute('data-dragging'),false);
   await pointer(fan,'pointerdown',100,100,300);await pointer(fan,'pointermove',20,100,450);await pointer(fan,'pointerup',20,100,500);
   const afterSwipe=shown();assert.notEqual(afterSwipe,first);await click(document.querySelector('.sig-fan-card.is-front')!);assert.equal(shown(),afterSwipe,'a release click must not cycle a second time');
   assert.ok(document.querySelector('.sig-celebration-banner a[href$="type=graduation"]'));
   assert.ok(document.querySelector('.sig-banner-caption')?.textContent?.includes('نموذج دعوة'));
  });
- await check('Signature list mode gives search instructions instead of a swipe hint',async()=>{
+ await check('creation is a 3-step wizard: occasion (deck or search) → design feed → essentials with a live card',async()=>{
+  window.localStorage.removeItem('doyofy:create-draft:v1:usr_owner');
   history.replaceState(null,'','/app/events/new');await render(<App mode="history"/>);await settle();
-  await click(button('قائمة وبحث'));assert.ok(document.querySelector('.sig-create-sub')?.textContent?.includes('ابحث عن مناسبتك'));
-  await click(button('بطاقات'));assert.ok(document.querySelector('.sig-create-sub')?.textContent?.includes('اسحب البطاقات'));
+  const current=()=>document.querySelector('.wz-steps [aria-current="step"]')?.textContent;
+  assert.equal(current(),'1المناسبة');assert.equal(document.querySelectorAll('.wz-steps li').length,3);
+  assert.equal(document.querySelector('.sig-view-switch, .sig-occ-groups'),null,'one way to choose: no view toggle or category chips');
+  assert.ok(document.querySelector('.wz-head p')?.textContent?.includes('اسحب البطاقات'));
+  await click(button('ابحث بالاسم'));assert.ok(document.querySelector('.wz-head p')?.textContent?.includes('اكتب اسم'));
+  await fill(document.querySelector<HTMLInputElement>('.wz-search input')!,'تخرج');
+  const options=Array.from(document.querySelectorAll('.wz-search-option'));assert.equal(options.length,1);await click(options[0]!);
+  assert.ok(document.querySelector('.deck-card.is-active')?.getAttribute('aria-label')?.startsWith('تخرج'));
+  await click(button('التالي: التصميم'));await settle();
+  assert.equal(current(),'2التصميم');assert.ok(document.querySelector('.tf-scroll'));assert.ok(document.querySelector('.focus:has(.wz-feed-page)'));
+  const picked=document.querySelector('.tf-slide.is-active .tf-info h3')!.textContent;
+  await key(document.querySelector('.tf-scroll')!,'ArrowDown');await settle();const second=document.querySelector('.tf-slide.is-active .tf-info h3')!.textContent;assert.notEqual(second,picked);
+  await click(button('اختر هذا التصميم'));await settle();
+  assert.equal(current(),'3التفاصيل');assert.ok(document.querySelector('#create-event'));
+  assert.ok(document.querySelector('.wz-live .card-thumb, .wz-aside .card-thumb'),'the chosen invitation stays visible beside the fields');
+  assert.ok(document.querySelector('.wz-live-name, .wz-preview-note')!.textContent!.includes(second!));
+  assert.equal(document.querySelector('#create-event input[type="date"]')!.closest('.wz-datetime')!.querySelector('.wz-datetime-face')!.textContent,'اختر التاريخ','no mm/dd/yyyy in the Arabic UI');
+  await fill(document.querySelector<HTMLInputElement>('#create-event input')!,'جود');await settle();
+  assert.ok(document.querySelector('.wz-live, .wz-aside')!.textContent!.includes('جود'),'the card takes the name while typing');
+  const saved=JSON.parse(window.localStorage.getItem('doyofy:create-draft:v1:usr_owner')!);assert.equal(saved.step,3);assert.equal(saved.draft.type,'graduation');
+  await click(button('المناسبة'));assert.equal(current(),'1المناسبة','finished steps can be revisited');
+  window.localStorage.removeItem('doyofy:create-draft:v1:usr_owner');
  });
  await check('food after «نعم»: meals are split per person and saved once with the reply (F047, F051, T28)',async()=>{
   const p=await made.services.parties.create(event.id,{primaryGuestName:'عائلة الوجبات',maxPartySize:4});
@@ -555,8 +589,9 @@ export async function run(){
   const selected=TEMPLATE_PRESETS.find(p=>p.primaryOccasion==='graduation'&&p.cardId==='mo-sky')!;
   history.replaceState(null,'',`${paths.newEvent}?type=graduation&template=${selected.id}&preview=1`);
   await render(<App mode="history"/>);await settle();
-  assert.ok(document.querySelector('.tp-feed-dialog[open]'),'a catalogue link opens without an existing event ID');
-  await click(document.querySelector('.tp .dialog-foot .btn-primary')!);await settle();
+  assert.ok(document.querySelector('.tf-slide.is-active .card-thumb')?.getAttribute('aria-label')?.startsWith(selected.name),'a catalogue link opens step 2 on that design, without an existing event ID');
+  assert.equal(document.querySelector('.wz-steps [aria-current="step"]')?.textContent,'2التصميم');
+  await click(button('اختر هذا التصميم'));await settle();
   await fill(document.querySelector<HTMLInputElement>('#create-event input')!,'خريجة المسودة');
   const saved=JSON.parse(window.localStorage.getItem('doyofy:create-draft:v1:usr_owner')!);assert.equal(saved.draft.a,'خريجة المسودة');assert.equal(saved.templateId,selected.id);
   await render(null);history.replaceState(null,'',paths.newEvent);await render(<App mode="history"/>);await settle();

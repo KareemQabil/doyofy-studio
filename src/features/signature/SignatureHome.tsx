@@ -5,7 +5,7 @@
  *   C «تحرير» for everything that follows: white canvas, strong type hierarchy, colour tiles holding real cards.
  *   B «مساء» for the closing block (charcoal + gold).
  * Identity: Doyofy palette, Readex Pro display / IBM Plex Sans Arabic text, official logo and pattern,
- * Phosphor icons (MIT). Editorial photography is decorative; invitation content stays live HTML.
+ * Phosphor icons (MIT). No decorative photography: the invitations are the imagery, and they stay live HTML.
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Event, EventType, InvitationDesignContent } from '../../domain/types';
@@ -20,6 +20,7 @@ import { paths } from '../../app/paths';
 import { ErrorState, Icon, LinkButton, Skeleton, Status, PageLoader } from '../../ui';
 import { OccasionGlyph } from '../../ui/icons';
 import { usePointerGesture } from '../../ui/hooks/usePointerGesture';
+import { springTo } from '../../ui/motion/motion';
 import { TactileDeck } from '../../ui/primitives/TactileDeck';
 import { CardThumb } from '../invitation/CardThumb';
 import { useDesign, useEvents } from '../shared/queries';
@@ -78,10 +79,22 @@ function HeroFan({ looks }: { looks: Look[] }) {
   useLayoutEffect(() => {
     if (focusFront.current) { fan.current?.querySelector<HTMLButtonElement>('.is-front')?.focus({ preventScroll: true }); focusFront.current = false; }
   }, [visibleFront]);
+  // the front card follows the finger 1:1 (the side cards drift with it); release either throws it to the next
+  // look (RTL: a swipe to the right shows the NEXT one) and lets the cards settle on a spring, or springs it back
+  const stopSpring = useRef<() => void>(() => {});
+  const drag = (x: number) => { const el = fan.current; if (!el) return; el.style.setProperty('--fan-drag', `${x.toFixed(1)}px`); el.style.setProperty('--fan-turn', `${(x * 0.03).toFixed(2)}deg`); };
+  const release = () => { const el = fan.current; if (!el) return; el.removeAttribute('data-dragging'); el.style.removeProperty('--fan-drag'); el.style.removeProperty('--fan-turn'); };
+  useEffect(() => () => stopSpring.current(), []);
   const gesture = usePointerGesture({
     axis: 'x',
-    onMove: (dx) => { fan.current?.setAttribute('data-dragging', ''); fan.current?.style.setProperty('--fan-drag', `${Math.max(-60, Math.min(60, dx * 0.35))}px`); },
-    onEnd: (g) => { fan.current?.removeAttribute('data-dragging'); fan.current?.style.removeProperty('--fan-drag'); if (g.moved && !g.cancelled) { const s = swipeStep(g.dx, g.dy, g.duration); if (s) cycle(s); } },
+    onStart: () => stopSpring.current(),
+    onMove: (dx) => { fan.current?.setAttribute('data-dragging', ''); drag(dx); },
+    onEnd: (g) => {
+      const s = g.moved && !g.cancelled ? swipeStep(g.dx, g.dy, g.duration) : 0;
+      if (s) { release(); cycle(s); return; }
+      if (!g.moved || g.cancelled) { release(); return; }
+      stopSpring.current = springTo(g.dx, 0, { velocity: g.velocity * 1000, onUpdate: drag, onRest: release });
+    },
   });
   const [screenWidth, setScreenWidth] = useState(() => window.innerWidth);
   useEffect(() => { const resize = () => setScreenWidth(window.innerWidth); window.addEventListener('resize', resize); return () => window.removeEventListener('resize', resize); }, []);
@@ -89,7 +102,6 @@ function HeroFan({ looks }: { looks: Look[] }) {
   return (
     <div ref={tilt} className="sig-fan-wrap" data-tilt-zone="">
       <span className="sig-fan-mat" aria-hidden="true" />
-      <img className="sig-fan-ribbon" src="assets/editorial/ribbon-seal.webp" alt="" width="1536" height="1024" decoding="async" aria-hidden="true" />
       <div ref={fan} className="sig-fan" style={{ '--fan-w': `${width}px` } as React.CSSProperties} {...gesture} data-count={n} role="group" aria-roledescription="معرض أشكال" aria-label="أشكال الدعوة — اسحب أو اضغط لتبديل الشكل"
         onKeyDown={e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); focusFront.current = true; cycle(e.key === 'ArrowLeft' ? 1 : -1); } }}>
         {looks.map((l, i) => {

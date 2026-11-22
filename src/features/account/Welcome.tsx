@@ -1,7 +1,7 @@
 /**
  * Public landing (board 01; feedback F014, F016, F073).
- *   Hero     paper, envelope and ribbon (editorial photo) with a fan of REAL invitation faces dealt from
- *            the envelope. Drag/flick the fan on phones (spring physics), tilt with the pointer on desktop,
+ *   Hero     the design system's warm surface and brand pattern (no decorative photo) with a fan of REAL
+ *            invitation faces dealt in. Drag/flick the fan on phones (spring physics), tilt with the pointer on desktop,
  *            tap a card to bring it forward. Headline/CTA are live HTML, never baked into an image.
  *   Rail     every occasion as an object you can swipe through; each opens the creator for that occasion.
  *   Phone    «هكذا يراها ضيفك»: a small, clearly-labelled demo of the guest's side — lift the seal, open,
@@ -198,10 +198,6 @@ export function WelcomePage() {
       </header>
       <main id="main" tabIndex={-1}>
         <section className="wl-hero" aria-labelledby="wl-title">
-          <picture className="wl-hero-photo" aria-hidden="true">
-            <source srcSet="assets/editorial/stationery-still-life.avif" type="image/avif" />
-            <img src="assets/editorial/stationery-still-life.webp" alt="" width="1536" height="1024" decoding="async" fetchPriority="high" />
-          </picture>
           <div className="wl-hero-copy">
             <p className="wl-kicker"><span aria-hidden="true" />دعوات رقمية لكل فرحة</p>
             <h1 id="wl-title"><span className="wl-line">كل فرحة</span><span className="wl-line is-red">تستاهل دعوة.</span></h1>

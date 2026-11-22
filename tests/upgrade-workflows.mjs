@@ -74,21 +74,22 @@ try {
   await scenario('02-vertical-template-feed', { width: 390, height: 844 }, async page => {
     await go(page, '/app/events/evt_wedding/invitation/templates');
     const feed = page.locator('.template-feed-scroll'); await feed.waitFor();
-    await page.waitForFunction(() => document.querySelector('.template-feed-actions')?.getBoundingClientRect().bottom <= innerHeight);
+    await page.waitForFunction(() => document.querySelector('.tf-rail')?.getBoundingClientRect().bottom <= innerHeight && document.querySelector('.focus-foot')?.getBoundingClientRect().bottom <= innerHeight);
     const poster = await page.locator('.template-feed-slide.is-active .card-thumb').boundingBox();
     assert.ok(poster?.width >= 260, `template poster too small: ${poster?.width}`);
+    assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), 'the feed is the only scroller (no nested page scroll)');
     await feed.focus(); await page.keyboard.press('Home');
     await page.waitForFunction(() => document.querySelector('.template-feed-slide')?.classList.contains('is-active'));
     const before = await page.evaluate(async () => JSON.stringify(await window.__doyofy.services.invitations.get('evt_wedding')));
-    const first = await page.locator('.template-feed-title h3').innerText();
+    const first = await page.locator('.tf-slide.is-active .tf-info h3').innerText();
     await feed.focus(); await page.keyboard.press('ArrowDown');
-    await page.waitForFunction(title => { const heading = document.querySelector('.template-feed-title h3'); return !!heading && heading.textContent !== title; }, first);
-    const second = await page.locator('.template-feed-title h3').innerText();
+    await page.waitForFunction(title => { const heading = document.querySelector('.tf-slide.is-active .tf-info h3'); return !!heading && heading.textContent !== title; }, first);
+    const second = await page.locator('.tf-slide.is-active .tf-info h3').innerText();
     const style = await feed.evaluate(el => ({ overflow: getComputedStyle(el).overflowY, snap: getComputedStyle(el).scrollSnapType }));
     assert.ok(['auto', 'scroll'].includes(style.overflow) && style.snap.includes('y'), `not a native vertical snap feed: ${JSON.stringify(style)}`);
     // Native scroll back to the first snap point must update navigation without saving a design.
     await feed.evaluate(el => { el.scrollTop = 0; });
-    await page.waitForFunction(title => document.querySelector('.template-feed-title h3')?.textContent === title, first);
+    await page.waitForFunction(title => document.querySelector('.tf-slide.is-active .tf-info h3')?.textContent === title, first);
     const after = await page.evaluate(async () => JSON.stringify(await window.__doyofy.services.invitations.get('evt_wedding')));
     assert.equal(after, before, 'browsing auto-applied a template');
     return `keyboard ${first} → ${second}; native scroll returns; saved design unchanged`;
