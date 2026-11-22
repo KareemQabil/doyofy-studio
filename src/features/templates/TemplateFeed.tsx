@@ -49,7 +49,7 @@ function RailButton({ icon, label, onClick, disabled, pressed }: { icon: IconNam
   return <button type="button" className="tf-rail-btn" onClick={onClick} disabled={disabled} aria-pressed={pressed}><span className="tf-rail-icon"><Icon name={icon} size="sm" /></span><span className="tf-rail-label">{label}</span></button>;
 }
 
-export function TemplateFeed({ presets, preset, event, base, current, currentLabel = 'التصميم الحالي', pending, onNavigate, filters, filter, onFilter, emptyAction }: {
+export function TemplateFeed({ presets, preset, event, base, current, currentLabel, pending, onNavigate, filters, filter, onFilter, emptyAction }: {
   presets: TemplatePreset[]; preset: TemplatePreset | null; event: Event; base: InvitationDesignContent; current?: string; currentLabel?: string; pending: boolean;
   onNavigate: (p: TemplatePreset) => void;
   /** style filters, offered in a small sheet; the feed shows only the chosen subset */
@@ -116,7 +116,7 @@ export function TemplateFeed({ presets, preset, event, base, current, currentLab
   const content = shown ? applyPreset(base, shown) : base;
 
   return <div ref={frame} className={`tf${fit.bottom ? ' is-row-rail' : ''}`} style={{ '--tf-card': `${fit.card}px`, '--tf-pad-end': `${fit.padEnd}px`, '--tf-rail-inset': `${fit.railInset}px`, '--tf-bottom': `${fit.bottom}px` } as React.CSSProperties}>
-    <div ref={scroll} className="tf-scroll template-feed-scroll" tabIndex={0} role="region" aria-label={`${t('templateBrowse')} — ${t('templateSwipe')}`} aria-roledescription="معرض عمودي" onKeyDown={keyDown}
+    <div ref={scroll} className="tf-scroll template-feed-scroll" tabIndex={0} role="region" aria-label={`${t('templateBrowse')} — ${t('templateSwipe')}`} aria-roledescription={t('tfRole')} onKeyDown={keyDown}
       onScroll={() => {
         clearTimeout(settle.current);
         settle.current = setTimeout(() => {
@@ -128,26 +128,26 @@ export function TemplateFeed({ presets, preset, event, base, current, currentLab
       }}>
       {presets.map((p, i) => <article key={p.id} className={`tf-slide template-feed-slide${i === index ? ' is-active' : ''}`} aria-hidden={i !== index} inert={i !== index}>
         <div className={`tf-card${i === index && hint && !reduced && presets.length > 1 ? ' is-hinting' : ''}`}>
-          {Math.abs(index - i) <= 1 ? <CardThumb event={event} content={applyPreset(base, p)} width={fit.card} label={`${p.name} — ${i + 1} من ${presets.length}`} /> : <span className="tf-placeholder" style={{ width: fit.card, height: fit.card * 1.4 }}><Icon name="envelope" size="lg" /></span>}
-          {current === p.id && <span className="tf-current"><Icon name="check" size="sm" />{currentLabel}</span>}
+          {Math.abs(index - i) <= 1 ? <CardThumb event={event} content={applyPreset(base, p)} width={fit.card} label={t('tfOf', { name: p.name, i: i + 1, n: presets.length })} /> : <span className="tf-placeholder" style={{ width: fit.card, height: fit.card * 1.4 }}><Icon name="envelope" size="lg" /></span>}
+          {current === p.id && <span className="tf-current"><Icon name="check" size="sm" />{currentLabel ?? t('wzCurrentDesign')}</span>}
         </div>
         <div className="tf-info template-feed-title"><h3>{p.name}</h3><p>{p.line}</p></div>
       </article>)}
-      {!presets.length && <div className="tf-empty" role="status"><p>لا تصاميم بهذا الأسلوب بعد.</p>{emptyAction && <Button size="sm" variant="secondary" onClick={emptyAction}>اعرض كل التصاميم</Button>}</div>}
+      {!presets.length && <div className="tf-empty" role="status"><p>{t('tfNoStyle')}</p>{emptyAction && <Button size="sm" variant="secondary" onClick={emptyAction}>{t('tfShowAll')}</Button>}</div>}
     </div>
     {hint && reduced && presets.length > 1 && <p className="tf-still-hint"><Icon name="chevron-up" size="sm" />{t('templateSwipe')}</p>}
-    <div className="tf-rail" role="toolbar" aria-label="خيارات التصميم" aria-orientation={fit.bottom ? 'horizontal' : 'vertical'}>
+    <div className="tf-rail" role="toolbar" aria-label={t('tfToolbar')} aria-orientation={fit.bottom ? 'horizontal' : 'vertical'}>
       <div className="tf-rail-nav">
-        <button type="button" className="tf-rail-arrow" aria-label="التصميم السابق" onClick={() => select(index - 1)} disabled={pending || index <= 0}><Icon name="chevron-up" size="sm" /></button>
-        <span className="tf-count num" dir="ltr" aria-live="polite" aria-atomic="true"><span className="sr-only">التصميم </span>{presets.length ? index + 1 : 0}<span aria-hidden="true">/</span><span className="sr-only"> من </span>{presets.length}</span>
-        <button type="button" className="tf-rail-arrow" aria-label="التصميم التالي" onClick={() => select(index + 1)} disabled={pending || index >= presets.length - 1}><Icon name="chevron-down" size="sm" /></button>
+        <button type="button" className="tf-rail-arrow" aria-label={t('tfPrev')} onClick={() => select(index - 1)} disabled={pending || index <= 0}><Icon name="chevron-up" size="sm" /></button>
+        <span className="tf-count num" dir="ltr" aria-live="polite" aria-atomic="true"><span className="sr-only">{t('tfCountWord')}</span>{presets.length ? index + 1 : 0}<span aria-hidden="true">/</span><span className="sr-only">{t('tfCountOf')}</span>{presets.length}</span>
+        <button type="button" className="tf-rail-arrow" aria-label={t('tfNext')} onClick={() => select(index + 1)} disabled={pending || index >= presets.length - 1}><Icon name="chevron-down" size="sm" /></button>
       </div>
       {filters && onFilter && <RailButton icon="sliders" label={t('templateFilter')} onClick={() => setSheet(true)} disabled={pending} pressed={!!activeFilter && activeFilter.id !== filters[0]?.id} />}
       {shown && <RailButton icon="share" label={t('templateShareShort')} onClick={() => void share(shown)} disabled={pending} />}
       {shown && <RailButton icon="play" label={t('templateWatch')} onClick={() => { setReplay(0); setPlaying(true); }} disabled={pending} />}
     </div>
-    {copyUrl && <div className="tf-copy"><CopyField label="رابط التصميم — انسخه للمشاركة" value={copyUrl} /></div>}
-    {sheet && filters && onFilter && <Dialog open variant="drawer" size="sm" title={t('templateFilter')} description="اختر ما يناسب ذوقك. يبقى التصميم الحالي حتى تختار غيره." onClose={() => setSheet(false)} className="tf-sheet">
+    {copyUrl && <div className="tf-copy"><CopyField label={t('tfCopyLabel')} value={copyUrl} /></div>}
+    {sheet && filters && onFilter && <Dialog open variant="drawer" size="sm" title={t('templateFilter')} description={t('tfFilterHint')} onClose={() => setSheet(false)} className="tf-sheet">
       <div className="tf-filters" role="radiogroup" aria-label={t('templateFilter')}>
         {filters.map(f => <button key={f.id} type="button" role="radio" aria-checked={filter === f.id} className="tf-filter" disabled={!f.count} onClick={() => { onFilter(f.id); setSheet(false); }}>
           <span>{f.label}</span><span className="num">{f.count}</span>{filter === f.id && <Icon name="check" size="sm" />}
@@ -155,7 +155,7 @@ export function TemplateFeed({ presets, preset, event, base, current, currentLab
       </div>
     </Dialog>}
     {playing && shown && <Dialog open size="xl" className="tf-play" title={shown.name} description={t('previewInvitation')} onClose={() => setPlaying(false)}
-      footer={<><Button variant="ghost" icon="play" onClick={() => setReplay(n => n + 1)}>إعادة من البداية</Button><Button variant="primary" onClick={() => setPlaying(false)}>{t('back')}</Button></>}>
+      footer={<><Button variant="ghost" icon="play" onClick={() => setReplay(n => n + 1)}>{t('tfReplay')}</Button><Button variant="primary" onClick={() => setPlaying(false)}>{t('back')}</Button></>}>
       <div className="tf-play-screen"><LivePreview key={shown.id} start="intro" invitation={toInvitationData(event, content, event.settings.defaultPartySize)} content={content} muted={false} replayToken={replay} label={`${t('previewInvitation')}: ${shown.name}`} /></div>
     </Dialog>}
   </div>;

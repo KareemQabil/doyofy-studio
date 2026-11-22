@@ -10,6 +10,7 @@ import { defaultDesign } from '../../domain/invitation';
 import { applyPreset, type TemplatePreset } from '../../domain/templates';
 import { CardThumb } from '../invitation/CardThumb';
 import { useTilt } from './useTilt';
+import { useCopy } from '../../ui/copy';
 
 export type DraftFields = { type: EventType; a: string; b: string; aEn: string; bEn: string; title: string; date: string; time: string; venue: string; city: string; timeZone: string };
 
@@ -30,28 +31,29 @@ export function draftPreviewEvent(f: DraftFields, today: string): Event {
 export function SignatureCreatePreview({ fields, today, template, compact = false, onChangeDesign }: {
   fields: DraftFields; today: string; template?: TemplatePreset; compact?: boolean; onChangeDesign?: () => void;
 }) {
+  const { t } = useCopy();
   const info = eventTypeInfo(fields.type);
   const tilt = useTilt<HTMLDivElement>(compact ? 0 : 6);
   const ev = draftPreviewEvent(fields, today);
   const content = template ? applyPreset(defaultDesign(ev), template) : defaultDesign(ev);
-  const name = template?.name ?? `تصميم ${info.label}`;
-  const card = <CardThumb event={ev} content={content} width={compact ? 84 : 300} label={`معاينة حية لدعوة ${info.label}`} />;
+  const name = template?.name ?? t('wzDesignOf', { type: info.label });
+  const card = <CardThumb event={ev} content={content} width={compact ? 84 : 300} label={t('wzLivePreview', { type: info.label })} />;
   if (compact) return (
     <div className="wz-live" aria-live="off">
       <div className="wz-live-card">{card}</div>
       <div className="wz-live-copy">
-        <p className="wz-live-kicker"><span className="wz-live-dot" aria-hidden="true" />دعوتك تتجهّز الآن</p>
+        <p className="wz-live-kicker"><span className="wz-live-dot" aria-hidden="true" />{t('wzLive')}</p>
         <p className="wz-live-name">{name}</p>
-        {onChangeDesign && <button type="button" className="wz-text-btn" onClick={onChangeDesign}>غيّر التصميم</button>}
+        {onChangeDesign && <button type="button" className="wz-text-btn" onClick={onChangeDesign}>{t('wzChangeDesign')}</button>}
       </div>
     </div>
   );
   return (
     <div className="wz-preview">
-      <p className="wz-live-kicker"><span className="wz-live-dot" aria-hidden="true" />دعوتك تتجهّز الآن</p>
+      <p className="wz-live-kicker"><span className="wz-live-dot" aria-hidden="true" />{t('wzLive')}</p>
       <div ref={tilt} className="wz-preview-card" data-tilt-zone="">{card}</div>
-      <p className="wz-preview-note">{name}{!fields.date ? ' · التاريخ مؤقت حتى تختاره' : ''}</p>
-      {onChangeDesign && <button type="button" className="wz-text-btn" onClick={onChangeDesign}>غيّر التصميم</button>}
+      <p className="wz-preview-note">{name}{!fields.date ? t('wzDateLater') : ''}</p>
+      {onChangeDesign && <button type="button" className="wz-text-btn" onClick={onChangeDesign}>{t('wzChangeDesign')}</button>}
     </div>
   );
 }

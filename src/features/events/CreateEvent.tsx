@@ -65,13 +65,13 @@ function readDraft(key: string, requested: EventType | null): { draft: Draft; te
 function WizardSteps({ step, onGo, disabled }: { step: Step; onGo: (s: Step) => void; disabled?: boolean }) {
   const { t } = useCopy();
   const labels = [t('wizardOccasion'), t('wizardDesign'), t('wizardDetails')];
-  return <nav className="wz-steps" aria-label="خطوات إنشاء المناسبة"><ol>
+  return <nav className="wz-steps" aria-label={t('wzStepsLabel')}><ol>
     {labels.map((label, i) => {
       const n = (i + 1) as Step, done = n < step, on = n === step;
       // the step's position and state are read as words; the numeral and tick are only drawn
-      const inner = <><span className="wz-step-n num" aria-hidden="true">{done ? '✓' : n}</span><span className="sr-only">{`الخطوة ${n} من 3: `}</span><span className="wz-step-label">{label}</span>{on && <span className="sr-only"> (الخطوة الحالية)</span>}</>;
+      const inner = <><span className="wz-step-n num" aria-hidden="true">{done ? '✓' : n}</span><span className="sr-only">{t('wzStepOf', { n })}</span><span className="wz-step-label">{label}</span>{on && <span className="sr-only">{t('wzStepCurrent')}</span>}</>;
       return <li key={n} className={`${done ? 'is-done' : ''}${on ? ' is-on' : ''}`} aria-current={on ? 'step' : undefined}>
-        {done ? <button type="button" onClick={() => onGo(n)} disabled={disabled} aria-label={`الخطوة ${n} من 3: ${label} — رجوع إليها`}>{inner}</button>
+        {done ? <button type="button" onClick={() => onGo(n)} disabled={disabled} aria-label={t('wzStepBack', { n, label })}>{inner}</button>
           : <span aria-current={on ? 'step' : undefined}>{inner}</span>}
       </li>;
     })}
@@ -83,8 +83,9 @@ function WizardSteps({ step, onGo, disabled }: { step: Step; onGo: (s: Step) => 
  * is hidden until the field is focused for typing (the picker still opens on tap).
  */
 const ArabicDateTime = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { kind: 'date' | 'time' }>(function ArabicDateTime({ kind, value, ...rest }, ref) {
+  const { t } = useCopy();
   const v = String(value ?? '');
-  const face = !v ? (kind === 'date' ? 'اختر التاريخ' : 'اختر الوقت') : kind === 'date' ? formatEventDate(v) : formatTime(v);
+  const face = !v ? t(kind === 'date' ? 'wzPickDate' : 'wzPickTime') : kind === 'date' ? formatEventDate(v) : formatTime(v);
   return <span className={`wz-datetime${v ? '' : ' is-empty'}`}>
     <Input ref={ref} type={kind} value={v} {...rest} onClick={(e) => { try { (e.currentTarget as HTMLInputElement & { showPicker?: () => void }).showPicker?.(); } catch { /* not allowed here: typing still works */ } rest.onClick?.(e); }} />
     <span className="wz-datetime-face" aria-hidden="true">{face}</span>
@@ -121,7 +122,7 @@ export function CreateEvent() {
       else if (d.type) window.localStorage.setItem(draftKey, JSON.stringify({ version: 1, draft: d, templateId: selectedTemplate?.id, step }));
     } catch { /* Creation remains usable when browser storage is full or disabled. */ }
   }, [d, selectedTemplate?.id, step, created, draftKey]);
-  useBlocker(!!typed && !created, 'لم تُنشأ المناسبة بعد. هل تريد المغادرة وترك ما كتبته؟');
+  useBlocker(!!typed && !created, t('wzLeave'));
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => { setD((x) => ({ ...x, [k]: v })); if (errors[k as keyof EssentialsErrors]) setErrors((e) => ({ ...e, [k]: undefined })); };
   const info = d.type ? eventTypeInfo(d.type) : null;
@@ -181,7 +182,7 @@ export function CreateEvent() {
       title={t('createEvent')}
       back={{ to: paths.events, label: t('cancel') }}
       footer={step === 1
-        ? <><span className="create-picked" aria-live="polite">{info ? <>اخترت: <strong>{info.label}</strong></> : 'اختر نوع المناسبة'}</span><Button key="next" variant="primary" size="lg" iconEnd="forward" disabled={!d.type} onClick={() => go(2)}>{t('wizardToDesign')}</Button></>
+        ? <><span className="create-picked" aria-live="polite">{info ? <>{t('wzPicked')} <strong>{info.label}</strong></> : t('wzPickType')}</span><Button key="next" variant="primary" size="lg" iconEnd="forward" disabled={!d.type} onClick={() => go(2)}>{t('wizardToDesign')}</Button></>
         : step === 2
           ? <><Button key="back" variant="ghost" icon="back" onClick={() => go(1)}>{t('back')}</Button><Button key="choose" variant="primary" size="lg" iconEnd="forward" disabled={!shown} onClick={chooseDesign}>{t('chooseDesign')}</Button></>
           : <><Button key="back" variant="ghost" icon="back" disabled={create.pending} onClick={() => go(2)}>{t('back')}</Button><Button key="create" variant="primary" size="lg" type="submit" form="create-event" loading={create.pending}>{t('prepareInvitation')}</Button></>}
@@ -189,13 +190,13 @@ export function CreateEvent() {
       <div className={`wz wz-step-${step}`}>
         <WizardSteps step={step} onGo={go} disabled={create.pending} />
         {/* one slim line, only when something typed was restored */}
-        {resumed && step !== 2 && <p className="wz-resume" role="status"><Icon name="info" size="sm" /><span>استعدنا ما كتبته سابقًا.</span>
-          <button type="button" className="link-btn" onClick={() => { setD({ ...EMPTY, type: preset ?? d.type }); setErrors({}); setResumed(false); setSelectedTemplate(requestedTemplate); setBrowsed(requestedTemplate ?? null); }}>ابدأ من جديد</button></p>}
+        {resumed && step !== 2 && <p className="wz-resume" role="status"><Icon name="info" size="sm" /><span>{t('wzResumed')}</span>
+          <button type="button" className="link-btn" onClick={() => { setD({ ...EMPTY, type: preset ?? d.type }); setErrors({}); setResumed(false); setSelectedTemplate(requestedTemplate); setBrowsed(requestedTemplate ?? null); }}>{t('wzStartOver')}</button></p>}
         {step === 1 && <SignatureOccasions value={d.type} onChange={chooseType} onConfirm={(type) => { chooseType(type); go(2); }} />}
         {step === 2 && feedEvent && d.type && (
           <div className="wz-feed-page">
-            <h2 className="sr-only">اختر تصميم دعوة {info?.label}</h2>
-            <TemplateFeed presets={feed.list} preset={shown} event={feedEvent} base={defaultDesign(feedEvent)} current={selectedTemplate?.id} currentLabel={fromLink && selectedTemplate?.id === requestedTemplate?.id ? 'التصميم المُرسَل لك' : 'اختيارك'} pending={false} onNavigate={setBrowsed}
+            <h2 className="sr-only">{t('wzFeedTitle', { type: info?.label ?? '' })}</h2>
+            <TemplateFeed presets={feed.list} preset={shown} event={feedEvent} base={defaultDesign(feedEvent)} current={selectedTemplate?.id} currentLabel={t(fromLink && selectedTemplate?.id === requestedTemplate?.id ? 'wzSentToYou' : 'wzYourChoice')} pending={false} onNavigate={setBrowsed}
               filters={feed.filters} filter={feed.filter} onFilter={feed.setFilter} emptyAction={() => feed.setFilter('for-you')} />
           </div>
         )}
@@ -204,39 +205,39 @@ export function CreateEvent() {
             {!desktop && <SignatureCreatePreview compact fields={fields} today={today} template={selectedTemplate} onChangeDesign={() => go(2)} />}
             <form id="create-event" ref={formRef} className="wz-form" onSubmit={submit} noValidate>
               <header className="wz-head wz-head-start">
-                <h2>{info?.label}: البيانات الأساسية</h2>
+                <h2>{t('wzEssentials', { type: info?.label ?? '' })}</h2>
                 <p>{t('createEssentials')}</p>
               </header>
-              {create.error ? <Banner tone="danger" title="لم تُنشأ المناسبة">{errorMessage(create.error)}</Banner> : null}
+              {create.error ? <Banner tone="danger" title={t('wzNotCreated')}>{errorMessage(create.error)}</Banner> : null}
               <fieldset className="wz-group">
-                <legend>{couple ? 'العروسان' : 'صاحب المناسبة'}</legend>
+                <legend>{t(couple ? 'wzCouple' : 'wzHost')}</legend>
                 <div className={couple ? 'wz-pair' : 'wz-one'}>
-                  <Field label={info?.nameLabel ?? 'الاسم'} required error={errors.a}><Input value={d.a} onChange={(e) => set('a', e.target.value)} autoComplete="off" /></Field>
-                  {couple && <Field label={info?.nameLabelB ?? 'الاسم الثاني'} required error={errors.b}><Input value={d.b} onChange={(e) => set('b', e.target.value)} autoComplete="off" /></Field>}
+                  <Field label={info?.nameLabel ?? t('wzName')} required error={errors.a}><Input value={d.a} onChange={(e) => set('a', e.target.value)} autoComplete="off" /></Field>
+                  {couple && <Field label={info?.nameLabelB ?? t('wzSecondName')} required error={errors.b}><Input value={d.b} onChange={(e) => set('b', e.target.value)} autoComplete="off" /></Field>}
                 </div>
-                {d.type === 'other' && <Field label="اسم المناسبة" required error={errors.title} hint="مثال: حفل افتتاح، عزيمة رمضان"><Input value={d.title} onChange={(e) => set('title', e.target.value)} /></Field>}
+                {d.type === 'other' && <Field label={t('wzEventName')} required error={errors.title} hint={t('wzEventNameHint')}><Input value={d.title} onChange={(e) => set('title', e.target.value)} /></Field>}
               </fieldset>
               <fieldset className="wz-group">
-                <legend>الموعد</legend>
+                <legend>{t('wzWhen')}</legend>
                 <div className="wz-pair">
-                  <Field label="التاريخ" required error={errors.date}><ArabicDateTime kind="date" value={d.date} min={today} onChange={(e) => set('date', e.target.value)} /></Field>
-                  <Field label="الوقت" required error={errors.time}><ArabicDateTime kind="time" value={d.time} onChange={(e) => set('time', e.target.value)} /></Field>
+                  <Field label={t('wzDate')} required error={errors.date}><ArabicDateTime kind="date" value={d.date} min={today} onChange={(e) => set('date', e.target.value)} /></Field>
+                  <Field label={t('wzTime')} required error={errors.time}><ArabicDateTime kind="time" value={d.time} onChange={(e) => set('time', e.target.value)} /></Field>
                 </div>
                 {!showTz ? (
-                  <p className="wz-tz">التوقيت: {TIME_ZONES.find(([z]) => z === d.timeZone)?.[1]} <button type="button" className="link-btn wz-tz-change" onClick={() => setShowTz(true)} aria-label="تغيير المنطقة الزمنية">تغيير</button></p>
+                  <p className="wz-tz">{t('wzTimeZone', { zone: TIME_ZONES.find(([z]) => z === d.timeZone)?.[1] ?? '' })} <button type="button" className="link-btn wz-tz-change" onClick={() => setShowTz(true)} aria-label={t('wzChangeZone')}>{t('wzChange')}</button></p>
                 ) : (
-                  <Field label="المنطقة الزمنية"><Select value={d.timeZone} onChange={(e) => set('timeZone', e.target.value)}>{TIME_ZONES.map(([z, l]) => <option key={z} value={z}>{l}</option>)}</Select></Field>
+                  <Field label={t('wzZone')}><Select value={d.timeZone} onChange={(e) => set('timeZone', e.target.value)}>{TIME_ZONES.map(([z, l]) => <option key={z} value={z}>{l}</option>)}</Select></Field>
                 )}
               </fieldset>
               <fieldset className="wz-group">
-                <legend>المكان</legend>
+                <legend>{t('wzWhere')}</legend>
                 <div className="wz-pair">
-                  <Field label="اسم القاعة أو المكان" required error={errors.venue}><Input value={d.venue} onChange={(e) => set('venue', e.target.value)} placeholder="مثال: قاعة الياسمين" /></Field>
-                  <Field label="المدينة" required error={errors.city}><Input value={d.city} onChange={(e) => set('city', e.target.value)} placeholder="مثال: الرياض" /></Field>
+                  <Field label={t('wzVenue')} required error={errors.venue}><Input value={d.venue} onChange={(e) => set('venue', e.target.value)} placeholder={t('wzVenueExample')} /></Field>
+                  <Field label={t('wzCity')} required error={errors.city}><Input value={d.city} onChange={(e) => set('city', e.target.value)} placeholder={t('wzCityExample')} /></Field>
                 </div>
               </fieldset>
             </form>
-            {desktop && <aside className="wz-aside sig-create-aside" aria-label="معاينة الدعوة"><SignatureCreatePreview fields={fields} today={today} template={selectedTemplate} onChangeDesign={() => go(2)} /></aside>}
+            {desktop && <aside className="wz-aside sig-create-aside" aria-label={t('wzPreviewAside')}><SignatureCreatePreview fields={fields} today={today} template={selectedTemplate} onChangeDesign={() => go(2)} /></aside>}
           </div>
         )}
       </div>

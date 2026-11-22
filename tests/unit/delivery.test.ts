@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { portableView, encodePortableView, decodePortableView, createPortableGuestApi } from '../../src/domain/portable-invite';
 import { defaultDesign } from '../../src/domain/invitation';
-import { inviteMessage, smsUrl, whatsappUrl, selectedLinks } from '../../src/features/guests/share';
+import { inviteMessage, reminderMessage, smsUrl, whatsappUrl, selectedLinks } from '../../src/features/guests/share';
 import { codeFromScan } from '../../src/domain/checkin';
 import type { Event } from '../../src/domain/types';
 
@@ -53,6 +53,13 @@ test('SMS and WhatsApp encode one validated normalized recipient; copied links i
   assert.equal(smsUrl('bad-number', 'text'), undefined);
   assert.ok(whatsappUrl('٠٥٥٩٨٧٦٥٤٣', 'دعوة').startsWith('https://wa.me/966559876543?text='));
   assert.equal(selectedLinks([party], p => `https://example.com/i/${p.code}`), `${party.primaryGuestName}\nhttps://example.com/i/${party.code}`);
-  assert.match(inviteMessage(event, party, 'https://example.com', 'ar-EG'), /مستنيينك في/);
-  assert.match(inviteMessage(event, party, 'https://example.com', 'ar-SA'), /نتشرّف بحضورك/);
+  // every voice addresses the guests in the plural; the Saudi greeting is «حيّاكم الله»
+  assert.match(inviteMessage(event, party, 'https://example.com', 'ar'), /دعوتكم إلى/);
+  assert.match(inviteMessage(event, party, 'https://example.com', 'ar-EG'), /مستنيينكم في/);
+  assert.match(inviteMessage(event, party, 'https://example.com', 'ar-SA'), /^حيّاكم الله .*\nنتشرّف بحضوركم في/);
+  for (const d of ['ar', 'ar-EG', 'ar-SA'] as const) {
+    const text = inviteMessage(event, party, 'https://example.com/i/x', d);
+    assert.ok(text.includes(party.primaryGuestName) && text.endsWith('https://example.com/i/x') && !/\{\w+\}/.test(text), `${d}: ${text}`);
+    assert.ok(!/\{\w+\}/.test(reminderMessage(event, party, 'https://example.com/i/x', d)));
+  }
 });

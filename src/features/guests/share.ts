@@ -2,17 +2,16 @@
 import type { Event, InvitationParty } from '../../domain/types';
 import { formatEventDate, formatTime } from '../../domain/format';
 import { normalisePhone } from '../../domain/phone';
-import { copyFor, type Dialect } from '../../domain/copy';
+import { copyFor, fill, type Dialect } from '../../domain/copy';
 import { currentDialect } from '../../ui/copy';
 
+/** the invitation a guest receives, in the organizer's voice — always addressed in the plural (حضوركم، ردّكم) */
 export function inviteMessage(ev: Event, p: Pick<InvitationParty, 'primaryGuestName'>, link: string, dialect: Dialect = currentDialect()): string {
-  const c = copyFor(dialect);
-  return `${c.invitationGreeting} ${p.primaryGuestName}،\n${c.invitationIntro} ${ev.title}\n${formatEventDate(ev.date)} · ${formatTime(ev.time)}\n${ev.venue.name}، ${ev.venue.city}\n\n${c.invitationOpen}\n${link}`;
+  return fill(copyFor(dialect).msgInvite, { name: p.primaryGuestName, title: ev.title, when: `${formatEventDate(ev.date)} · ${formatTime(ev.time)}`, place: `${ev.venue.name}، ${ev.venue.city}`, link });
 }
 
 export function reminderMessage(ev: Event, p: Pick<InvitationParty, 'primaryGuestName'>, link: string, dialect: Dialect = currentDialect()): string {
-  const c = copyFor(dialect);
-  return `${c.invitationGreeting} ${p.primaryGuestName}،\n${c.reminderIntro} ${ev.title} يوم ${formatEventDate(ev.date, { year: false })}.\n${c.reminderReply}\n${link}`;
+  return fill(copyFor(dialect).msgReminder, { name: p.primaryGuestName, title: ev.title, date: formatEventDate(ev.date, { year: false }), link });
 }
 
 export function whatsappUrl(phone: string | undefined, text: string): string {

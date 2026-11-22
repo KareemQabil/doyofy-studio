@@ -23,11 +23,12 @@ import { useDesignFeed } from './design-feed';
 export function TemplateGallery({ eventId }: { eventId: string }) {
   const ev = useEvent(eventId);
   const design = useDesign(eventId);
+  const { t } = useCopy();
   const loc = useLocation();
   const first = loc.search.get('first') === '1';
-  const back = first ? { to: paths.overview(eventId), label: 'لاحقًا' } : { to: paths.design(eventId), label: 'رجوع للتصميم' };
-  if (ev.error || design.error) return <FocusLayout title="قوالب الدعوة" back={back}><ErrorState error={ev.error || design.error} onRetry={() => { ev.refetch(); design.refetch(); }} /></FocusLayout>;
-  if (ev.loading || design.loading || !ev.data) return <FocusLayout title="قوالب الدعوة" back={back} width="wide"><PageLoader /></FocusLayout>;
+  const back = first ? { to: paths.overview(eventId), label: t('tgLater') } : { to: paths.design(eventId), label: t('tgBack') };
+  if (ev.error || design.error) return <FocusLayout title={t('templatesTitle')} back={back}><ErrorState error={ev.error || design.error} onRetry={() => { ev.refetch(); design.refetch(); }} /></FocusLayout>;
+  if (ev.loading || design.loading || !ev.data) return <FocusLayout title={t('templatesTitle')} back={back} width="wide"><PageLoader /></FocusLayout>;
   return <Gallery event={ev.data} design={design.data ?? null} first={first} back={back} />;
 }
 
@@ -55,10 +56,10 @@ function Gallery({ event, design, first, back }: { event: Event; design: Invitat
 
   return (
     <FocusLayout width="full" title={t('templatesTitle')} back={back}
-      right={first ? <LinkButton to={paths.overview(event.id)} variant="ghost" size="sm">سأختار لاحقًا</LinkButton> : undefined}
-      footer={<><span className="wz-foot-note">{first ? <>أُنشئت «{event.title}». اختر شكلها.</> : 'يتغيّر الشكل فقط، ونصوصك تبقى.'}</span><Button variant="primary" size="lg" loading={use.pending} disabled={!shown} onClick={() => shown && (isCurrent ? navigate(paths.design(event.id)) : void use.run(shown))}>{isCurrent ? 'متابعة بالتصميم الحالي' : t('templateUse')}</Button></>}>
+      right={first ? <LinkButton to={paths.overview(event.id)} variant="ghost" size="sm">{t('tgChooseLater')}</LinkButton> : undefined}
+      footer={<><span className="wz-foot-note">{first ? t('tgCreated', { title: event.title }) : t('tgOnlyLook')}</span><Button variant="primary" size="lg" loading={use.pending} disabled={!shown} onClick={() => shown && (isCurrent ? navigate(paths.design(event.id)) : void use.run(shown))}>{isCurrent ? t('tgKeep') : t('templateUse')}</Button></>}>
       <div className="wz-feed-page">
-        {use.error ? <Banner tone="danger" title="لم يُطبَّق القالب">{errorMessage(use.error)}</Banner> : null}
+        {use.error ? <Banner tone="danger" title={t('tgFailed')}>{errorMessage(use.error)}</Banner> : null}
         <TemplateFeed presets={feed.list} preset={shown} event={event} base={base} current={current?.id} pending={use.pending} onNavigate={setBrowsed}
           filters={feed.filters} filter={feed.filter} onFilter={feed.setFilter} emptyAction={() => feed.setFilter('for-you')} />
       </div>

@@ -13,8 +13,10 @@ import { Button, Icon, SearchInput } from '../../ui';
 import { OccasionGlyph } from '../../ui/icons';
 import { OccasionPoster } from './SignatureHome';
 import { useMedia } from './useMedia';
+import { useCopy } from '../../ui/copy';
 
 export function SignatureOccasions({ value, onChange, onConfirm }: { value: EventType | null; onChange: (t: EventType) => void; onConfirm: (t: EventType) => void }) {
+  const { t } = useCopy();
   const [searching, setSearching] = useState(false);
   // a mouse and keyboard don't swipe: the hint names what works on this device
   const fine = useMedia('(hover: hover) and (pointer: fine)');
@@ -28,28 +30,28 @@ export function SignatureOccasions({ value, onChange, onConfirm }: { value: Even
   return (
     <div className="wz-occasion">
       <header className="wz-head">
-        <h2>ما المناسبة؟</h2>
-        <p>{searching ? 'اكتب اسم مناسبتك واخترها.' : fine ? 'تصفّح البطاقات بالأسهم، واضغط على مناسبتك.' : 'اسحب البطاقات، واضغط على مناسبتك.'}</p>
+        <h2>{t('wzWhat')}</h2>
+        <p>{t(searching ? 'wzSearchHint' : fine ? 'wzBrowseFine' : 'wzBrowseTouch')}</p>
       </header>
       {searching ? (
         <div className="wz-search">
-          <SearchInput value={q} onChange={setQ} placeholder="مثال: تخرّج، عقيقة، إفطار" label="ابحث عن مناسبتك" autoFocus />
+          <SearchInput value={q} onChange={setQ} placeholder={t('wzSearchPlaceholder')} label={t('wzSearchLabel')} autoFocus />
           {matches.length ? (
-            <ul ref={list} className="wz-search-list" aria-label="نتائج البحث">
+            <ul ref={list} className="wz-search-list" aria-label={t('wzResults')}>
               {matches.map((t) => <li key={t.id}><button type="button" className="wz-search-option" aria-pressed={value === t.id} onClick={() => pick(t.id)}>
                 <OccasionGlyph type={t.id} size={22} /><span><strong>{t.label}</strong><small>{t.line}</small></span>{value === t.id && <Icon name="check" size="sm" />}
               </button></li>)}
             </ul>
-          ) : <p className="wz-search-empty" role="status">لم نجد «{q}». اختر «مناسبة أخرى» واكتب اسمها في الخطوة الأخيرة.<Button size="sm" variant="secondary" onClick={() => pick('other')}>مناسبة أخرى</Button></p>}
-          <button type="button" className="wz-text-btn" onClick={() => { setSearching(false); setQ(''); }}><Icon name="back" size="sm" />العودة إلى البطاقات</button>
+          ) : <p className="wz-search-empty" role="status">{t('wzNoMatch', { q })}<Button size="sm" variant="secondary" onClick={() => pick('other')}>{t('wzOther')}</Button></p>}
+          <button type="button" className="wz-text-btn" onClick={() => { setSearching(false); setQ(''); }}><Icon name="back" size="sm" />{t('wzBackToCards')}</button>
         </div>
       ) : (
         <>
-          <TactileDeck items={OCCASIONS_ORDERED} index={at} onIndexChange={(i) => onChange(OCCASIONS_ORDERED[i]!.id)} getKey={(t) => t.id}
-            label="اختر نوع المناسبة — اسحب يمينًا للتالي" itemLabel={(t) => `${t.label}، ${t.line}`} activateHint="اضغط للمتابعة"
-            hint={fine ? 'تصفّح البطاقات بالأسهم' : 'اسحب البطاقات لتتصفّح'}
-            onActivate={(t) => onConfirm(t.id)} renderCard={(t, s) => <OccasionPoster type={t.id} active={s.active} />} className="wz-deck" />
-          <button type="button" className="wz-text-btn" onClick={() => setSearching(true)}><Icon name="search" size="sm" />لا تجد مناسبتك؟ ابحث بالاسم</button>
+          <TactileDeck items={OCCASIONS_ORDERED} index={at} onIndexChange={(i) => onChange(OCCASIONS_ORDERED[i]!.id)} getKey={(o) => o.id}
+            label={t('wzDeckLabel')} itemLabel={(o) => `${o.label}، ${o.line}`} activateHint={t('wzDeckActivate')}
+            hint={t(fine ? 'wzDeckHintFine' : 'wzDeckHintTouch')}
+            onActivate={(o) => onConfirm(o.id)} renderCard={(o, s) => <OccasionPoster type={o.id} active={s.active} />} className="wz-deck" />
+          <button type="button" className="wz-text-btn" onClick={() => setSearching(true)}><Icon name="search" size="sm" />{t('wzSearchByName')}</button>
         </>
       )}
     </div>

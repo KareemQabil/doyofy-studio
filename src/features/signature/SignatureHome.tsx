@@ -30,15 +30,17 @@ import { Stage, TicketEdge, type BrandTone } from './SignatureArt';
 import { useMedia } from './useMedia';
 import { useTilt } from './useTilt';
 import { SignatureBanner } from './SignatureBanner';
+import { useCopy } from '../../ui/copy';
+import type { Copy } from '../../domain/copy';
 
 /** the next useful step for an event, in the organizer's words (not engine terms) */
-export function nextStep(e: Event, ps: string, phase: string) {
+export function nextStep(e: Event, ps: string, phase: string, c: Pick<Copy, 'stepSummary' | 'stepGate' | 'stepReview' | 'stepPublishChanges' | 'stepFollow'>) {
   const past = phase === 'completed' || phase === 'archived';
-  if (past) return { label: 'ملخص المناسبة', to: paths.summary(e.id) };
-  if (phase === 'event_day') return { label: 'افتح الاستقبال', to: paths.gate(e.id) };
-  if (ps === 'none' || ps === 'draft') return { label: 'راجع دعوتك وانشرها', to: paths.design(e.id) };
-  if (ps === 'changed') return { label: 'انشر تعديلات الدعوة', to: paths.design(e.id) };
-  return { label: 'تابع ضيوفك وردودهم', to: paths.guests(e.id) };
+  if (past) return { label: c.stepSummary, to: paths.summary(e.id) };
+  if (phase === 'event_day') return { label: c.stepGate, to: paths.gate(e.id) };
+  if (ps === 'none' || ps === 'draft') return { label: c.stepReview, to: paths.design(e.id) };
+  if (ps === 'changed') return { label: c.stepPublishChanges, to: paths.design(e.id) };
+  return { label: c.stepFollow, to: paths.guests(e.id) };
 }
 
 export const firstLetter = (s: string) => {
@@ -56,18 +58,20 @@ export { sampleEvent } from './sample-event';
 type Look = { key: string; event: Event; content: InvitationDesignContent; label: string };
 
 function useLooks(featured: Event | undefined, draft: InvitationDesignContent | undefined): Look[] {
+  const { t } = useCopy();
   return useMemo(() => {
     if (featured) {
       const base = draft ?? defaultDesign(featured);
       const others = presetsFor(featured.type).suited.filter((p) => p.cardId !== base.cardId);
       const uniq = others.filter((p, i, a) => a.findIndex((q) => q.cardId === p.cardId) === i).slice(0, 2);
-      return [{ key: 'current', event: featured, content: base, label: 'دعوتك الحالية' }, ...uniq.map((p) => ({ key: p.id, event: featured, content: applyPreset(base, p), label: p.name }))];
+      return [{ key: 'current', event: featured, content: base, label: t('homeLookCurrent') }, ...uniq.map((p) => ({ key: p.id, event: featured, content: applyPreset(base, p), label: p.name }))];
     }
-    return (['wedding', 'graduation', 'birthday'] as EventType[]).map((t) => { const e = sampleEvent(t); return { key: t, event: e, content: defaultDesign(e), label: `مثال: ${eventTypeInfo(t).label}` }; });
-  }, [featured, draft]);
+    return (['wedding', 'graduation', 'birthday'] as EventType[]).map((type) => { const e = sampleEvent(type); return { key: type, event: e, content: defaultDesign(e), label: t('homeLookExample', { type: eventTypeInfo(type).label }) }; });
+  }, [featured, draft, t]);
 }
 
 function HeroFan({ looks }: { looks: Look[] }) {
+  const { t } = useCopy();
   const [front, setFront] = useState(0);
   const phone = useMedia('(max-width: 760px)');
   const fan = useRef<HTMLDivElement>(null);
@@ -102,63 +106,64 @@ function HeroFan({ looks }: { looks: Look[] }) {
   return (
     <div ref={tilt} className="sig-fan-wrap" data-tilt-zone="">
       <span className="sig-fan-mat" aria-hidden="true" />
-      <div ref={fan} className="sig-fan" style={{ '--fan-w': `${width}px` } as React.CSSProperties} {...gesture} data-count={n} role="group" aria-roledescription="معرض أشكال" aria-label="أشكال الدعوة — اسحب أو اضغط لتبديل الشكل"
+      <div ref={fan} className="sig-fan" style={{ '--fan-w': `${width}px` } as React.CSSProperties} {...gesture} data-count={n} role="group" aria-roledescription={t('homeFanRole')} aria-label={t('homeFanLabel')}
         onKeyDown={e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); focusFront.current = true; cycle(e.key === 'ArrowLeft' ? 1 : -1); } }}>
         {looks.map((l, i) => {
           const pos = (i - visibleFront + n) % n; // 0 = front, 1 = next (left in RTL), n-1 = previous (right)
           const slot = pos === 0 ? 'front' : pos === 1 ? 'next' : 'prev';
           return (
             <button key={l.key} type="button" className={`sig-fan-card is-${slot}`} data-gesture-surface="" tabIndex={pos === 0 ? 0 : -1}
-              aria-label={pos === 0 ? `${l.label} — الشكل المعروض` : `اعرض: ${l.label}`} onClick={() => (pos === 0 ? cycle(1) : setFront(i))}>
+              aria-label={t(pos === 0 ? 'homeFanFront' : 'homeFanShow', { label: l.label })} onClick={() => (pos === 0 ? cycle(1) : setFront(i))}>
               <CardThumb event={l.event} content={l.content} width={width} />
             </button>
           );
         })}
       </div>
       <div className="sig-fan-controls">
-        <button type="button" className="sig-fan-arrow" onClick={() => cycle(-1)} aria-label="الشكل السابق"><Icon name="back" /></button>
+        <button type="button" className="sig-fan-arrow" onClick={() => cycle(-1)} aria-label={t('homeFanPrev')}><Icon name="back" /></button>
         <p className="sig-fan-label" aria-live="polite">{looks[visibleFront]?.label}</p>
-        <button type="button" className="sig-fan-arrow" onClick={() => cycle(1)} aria-label="الشكل التالي"><Icon name="forward" /></button>
+        <button type="button" className="sig-fan-arrow" onClick={() => cycle(1)} aria-label={t('homeFanNext')}><Icon name="forward" /></button>
       </div>
-      <p className="sig-fan-hint">اسحب لتكتشف شكلًا آخر <span aria-hidden="true">→</span></p>
+      <p className="sig-fan-hint">{t('homeFanHint')} <span aria-hidden="true">→</span></p>
     </div>
   );
 }
 
 function Hero({ featured, loading }: { featured?: Event; loading: boolean }) {
+  const { t, copy } = useCopy();
   const now = useNow(60000);
   const design = useDesign(featured?.id ?? '');
   const looks = useLooks(featured, design.data?.draft);
   const phase = featured ? eventPhase(featured, now) : 'upcoming';
-  const step = featured ? nextStep(featured, publishState(design.data), phase) : null;
+  const step = featured ? nextStep(featured, publishState(design.data), phase, copy) : null;
   return (
     <section className="sig-hero" aria-labelledby="sig-hero-title">
       <span className="sig-hero-pattern" aria-hidden="true" />
       <div className="sig-hero-inner">
         <div className="sig-hero-copy">
-          <p className="sig-hero-kicker"><i aria-hidden="true" />دعوات رقمية لكل فرحة</p>
-          <h1 id="sig-hero-title"><span className="sig-line">كل فرحة</span> <span className="sig-line">تستاهل دعوة.</span></h1>
-          <p className="sig-hero-sub">صمّم دعوتك، شاركها، وتابع حضور ضيوفك من مكان واحد.</p>
+          <p className="sig-hero-kicker"><i aria-hidden="true" />{t('homeKicker')}</p>
+          <h1 id="sig-hero-title"><span className="sig-line">{t('homeSloganA')}</span> <span className="sig-line">{t('homeSloganB')}</span></h1>
+          <p className="sig-hero-sub">{t('homeSub')}</p>
           {loading ? <Skeleton lines={2} /> : featured && step ? (
             <div className="sig-hero-next">
-              <p className="sig-hero-next-label"><span>مناسبتك القادمة</span><Status tone={PHASE_LABEL[phase].tone}>{countdownLabel(featured.date, todayFor(featured, now))}</Status></p>
+              <p className="sig-hero-next-label"><span>{t('homeNextLabel')}</span><Status tone={PHASE_LABEL[phase].tone}>{countdownLabel(featured.date, todayFor(featured, now))}</Status></p>
               <p className="sig-hero-next-title">{featured.title}</p>
               <div className="sig-hero-actions">
                 <LinkButton to={step.to} variant="primary" size="lg" iconEnd="forward">{step.label}</LinkButton>
-                <Link to={paths.overview(featured.id)} className="sig-text-link">كل التفاصيل</Link>
+                <Link to={paths.overview(featured.id)} className="sig-text-link">{t('homeAllDetails')}</Link>
               </div>
             </div>
           ) : (
             <div className="sig-hero-actions">
-              <LinkButton to={paths.newEvent} variant="primary" size="lg" icon="plus" className="sig-hero-cta">ابدأ دعوتك</LinkButton>
-              <Link to={`${paths.newEvent}?type=graduation`} className="sig-hero-link">أو جهّز دعوة تخرّج مباشرة</Link>
+              <LinkButton to={paths.newEvent} variant="primary" size="lg" icon="plus" className="sig-hero-cta">{t('homeStart')}</LinkButton>
+              <Link to={`${paths.newEvent}?type=graduation`} className="sig-hero-link">{t('homeGraduationLink')}</Link>
             </div>
           )}
         </div>
         <HeroFan looks={looks} />
-        <span className="sig-hero-sticker" aria-hidden="true"><b className="num">13</b>مناسبة</span>
+        <span className="sig-hero-sticker" aria-hidden="true"><b className="num">13</b>{t('homeStickerUnit')}</span>
       </div>
-      <nav className="sig-hero-band" aria-label="ابدأ بمناسبة">
+      <nav className="sig-hero-band" aria-label={t('homeStartBy')}>
         <ul>{OCCASIONS_ORDERED.map((t) => <li key={t.id}><Link to={`${paths.newEvent}?type=${t.id}`}>{t.label}</Link></li>)}</ul>
       </nav>
     </section>
@@ -167,10 +172,11 @@ function Hero({ featured, loading }: { featured?: Event; loading: boolean }) {
 
 /* ------------------------------------------------------------------ white sections (C) */
 function EventTicket({ event }: { event: Event }) {
+  const { copy } = useCopy();
   const now = useNow();
   const design = useDesign(event.id);
   const phase = eventPhase(event, now);
-  const step = nextStep(event, publishState(design.data), phase);
+  const step = nextStep(event, publishState(design.data), phase, copy);
   const past = phase === 'completed' || phase === 'archived';
   return (
     <article className={`sig-ticket${past ? ' is-past' : ''}`}>
@@ -204,6 +210,7 @@ export function OccasionPoster({ type, active }: { type: EventType; active?: boo
 }
 
 function OccasionDeckSection() {
+  const { t } = useCopy();
   const navigate = useNavigate();
   const [index, setIndex] = useState(0);
   const items = OCCASIONS_ORDERED;
@@ -211,40 +218,42 @@ function OccasionDeckSection() {
   return (
     <section className="sig-section sig-deck-section" aria-labelledby="sig-occasions">
       <header className="sig-section-head">
-        <p className="sig-index"><span className="num">02</span>المناسبات</p>
-        <h2 id="sig-occasions">ثلاث عشرة مناسبة،<br />ولكل واحدة دعوتها.</h2>
+        <p className="sig-index"><span className="num">02</span>{t('homeOccasions')}</p>
+        <h2 id="sig-occasions">{t('homeOccasionsA')}<br />{t('homeOccasionsB')}</h2>
       </header>
       <div className="sig-deck-layout">
         <div className="sig-deck-copy" aria-live="polite">
           <p className="sig-deck-kind"><span className={`sig-dot tone-${toneOf(active.id)}`} aria-hidden="true" />{active.hint}</p>
           <h3>{active.label}</h3>
-          <p>{active.couple ? 'نجهّز دعوة باسمَي العروسين، بكلمة وبرنامج يناسبان المناسبة.' : 'نجهّز دعوة باسم صاحب المناسبة، بكلمة وبرنامج يناسبانها.'} وكل شيء قابل للتعديل لاحقًا.</p>
-          <LinkButton to={`${paths.newEvent}?type=${active.id}`} variant="primary" size="lg" iconEnd="forward">ابدأ {active.label}</LinkButton>
+          <p>{t(active.couple ? 'homeDeckCouple' : 'homeDeckSingle')} {t('homeDeckEditable')}</p>
+          <LinkButton to={`${paths.newEvent}?type=${active.id}`} variant="primary" size="lg" iconEnd="forward">{t('homeDeckStart', { type: active.label })}</LinkButton>
         </div>
-        <TactileDeck items={items} index={index} onIndexChange={setIndex} getKey={(t) => t.id} window={2}
-          label="المناسبات — اسحب يمينًا للتالي أو استخدم الأسهم" itemLabel={(t) => t.label} activateHint="اضغط للبدء"
-          onActivate={(t) => navigate(`${paths.newEvent}?type=${t.id}`)}
-          renderCard={(t, s) => <OccasionPoster type={t.id} active={s.active} />} className="sig-occasion-deck" />
+        <TactileDeck items={items} index={index} onIndexChange={setIndex} getKey={(o) => o.id} window={2}
+          label={t('homeDeckLabel')} itemLabel={(o) => o.label} activateHint={t('homeDeckActivate')}
+          onActivate={(o) => navigate(`${paths.newEvent}?type=${o.id}`)}
+          renderCard={(o, s) => <OccasionPoster type={o.id} active={s.active} />} className="sig-occasion-deck" />
       </div>
     </section>
   );
 }
 
 function Steps() {
+  const { t } = useCopy();
   const steps: Array<[string, string]> = [
-    ['اختر المناسبة', 'زفاف، تخرّج، افتتاح، أو لمّة عائلة. كل مناسبة تبدأ بدعوة مكتوبة لها.'],
-    ['راجع دعوتك وانشرها', 'الأسماء والكلمة والبرنامج جاهزة. غيّر الشكل متى شئت دون أن يضيع شيء.'],
-    ['استقبل ضيوفك', 'رابط خاص لكل ضيف، ردود واضحة، ورمز دخول يمسحه فريق الاستقبال.'],
+    [t('homeStep1'), t('homeStep1Hint')],
+    [t('homeStep2'), t('homeStep2Hint')],
+    [t('homeStep3'), t('homeStep3Hint')],
   ];
   return (
     <section className="sig-section sig-steps" aria-labelledby="sig-steps-title">
-      <header className="sig-section-head"><p className="sig-index"><span className="num">03</span>كيف تعمل</p><h2 id="sig-steps-title">من أول دعوة حتى آخر ضيف.</h2></header>
+      <header className="sig-section-head"><p className="sig-index"><span className="num">03</span>{t('homeHow')}</p><h2 id="sig-steps-title">{t('homeHowTitle')}</h2></header>
       <ol>{steps.map(([t, d], i) => <li key={t}><span className="sig-step-art" aria-hidden="true"><Icon name={i === 0 ? 'calendar' : i === 1 ? 'envelope' : 'users'} size="lg" /></span><span className="sig-steps-num num">{String(i + 1).padStart(2, '0')}</span><strong>{t}</strong><p>{d}</p></li>)}</ol>
     </section>
   );
 }
 
 export function SignatureHome() {
+  const { t } = useCopy();
   const events = useEvents();
   const now = useNow(60000);
   const [memories, setMemories] = useState(false);
@@ -261,14 +270,14 @@ export function SignatureHome() {
         <div className="sig-page">
           <section className="sig-section" aria-labelledby="sig-mine">
             <header className="sig-section-head sig-section-head-row">
-              <div><p className="sig-index"><span className="num">01</span>مناسباتك</p><h2 id="sig-mine">{memories ? 'مناسبات مضت.' : active.length > 1 ? 'مناسبات أخرى قادمة.' : 'مساحة لمناسبة جديدة.'}</h2></div>
-              {past.length > 0 && <button type="button" className="sig-chip-toggle" aria-pressed={memories} onClick={() => setMemories((v) => !v)}><Icon name="archive" size="sm" />{memories ? 'المناسبات القادمة' : <>المناسبات السابقة <span className="num">{past.length}</span></>}</button>}
+              <div><p className="sig-index"><span className="num">01</span>{t('homeMine')}</p><h2 id="sig-mine">{t(memories ? 'homeMinePast' : active.length > 1 ? 'homeMineMore' : 'homeMineRoom')}</h2></div>
+              {past.length > 0 && <button type="button" className="sig-chip-toggle" aria-pressed={memories} onClick={() => setMemories((v) => !v)}><Icon name="archive" size="sm" />{memories ? t('homeShowUpcoming') : <>{t('homeShowPast')} <span className="num">{past.length}</span></>}</button>}
             </header>
             {events.loading ? <PageLoader /> : events.error ? <ErrorState error={events.error} onRetry={events.refetch} /> : (
               <div className="sig-tickets">
                 {list.map((e) => <EventTicket key={e.id} event={e} />)}
-                {!memories && <Link to={paths.newEvent} className="sig-new-ticket"><span className="sig-new-plus" aria-hidden="true"><Icon name="plus" /></span><span><strong>مناسبة جديدة</strong><small>تبدأ باختيار المناسبة، والدعوة تتجهّز معك.</small></span><Icon name="forward" size="sm" /></Link>}
-                {memories && !past.length && <p className="sig-empty-line">لا توجد مناسبات سابقة بعد.</p>}
+                {!memories && <Link to={paths.newEvent} className="sig-new-ticket"><span className="sig-new-plus" aria-hidden="true"><Icon name="plus" /></span><span><strong>{t('homeNewEvent')}</strong><small>{t('homeNewEventHint')}</small></span><Icon name="forward" size="sm" /></Link>}
+                {memories && !past.length && <p className="sig-empty-line">{t('homeNoPast')}</p>}
               </div>
             )}
           </section>
@@ -276,10 +285,10 @@ export function SignatureHome() {
           <SignatureBanner />
           <Steps />
         </div>
-        <Stage tone="charcoal" size="lg" className="sig-closing" pattern="bloom" as="section" aria-label="ابدأ">
+        <Stage tone="charcoal" size="lg" className="sig-closing" pattern="bloom" as="section" aria-label={t('homeStartRegion')}>
           <p className="sig-closing-kicker">ضيوفي</p>
-          <p className="sig-closing-line">فرحتك علينا.<br /><em>وضيوفك في انتظارك.</em></p>
-          <div className="sig-closing-actions"><LinkButton to={paths.newEvent} variant="primary" size="lg" icon="plus">مناسبة جديدة</LinkButton><Link to="/app/help" className="sig-text-link">كيف تعمل ضيوفي؟</Link></div>
+          <p className="sig-closing-line">{t('homeClosingA')}<br /><em>{t('homeClosingB')}</em></p>
+          <div className="sig-closing-actions"><LinkButton to={paths.newEvent} variant="primary" size="lg" icon="plus">{t('homeNewEvent')}</LinkButton><Link to="/app/help" className="sig-text-link">{t('homeHowLink')}</Link></div>
         </Stage>
       </main>
     </SignatureShell>

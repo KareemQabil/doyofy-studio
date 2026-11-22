@@ -19,22 +19,24 @@ import { Icon } from '../../ui/icons';
 import type { NavItem } from '../../ui/layouts/Layouts';
 import { useServices } from '../../app/data';
 import { canManageGuests } from '../../domain/roles';
+import { useCopy } from '../../ui/copy';
 
 export function SignatureShell({ children, right, mobileContext }: { children: ReactNode; right?: ReactNode; mobileContext?: ReactNode }) {
   const manage = canManageGuests(useServices().session.currentUser().role);
+  const { t } = useCopy();
   const scrolled = useScrolled(8);
   const hidden = useScrollHide(56) && !!mobileContext;
   return (
     <div className={`sig-shell${mobileContext ? ' has-appbar' : ''}`}>
-      <a href="#main" className="skip-link">تخطَّ إلى المحتوى</a>
+      <a href="#main" className="skip-link">{t('shellSkip')}</a>
       {/* phones inside an event: one compact bar (back · event · account) instead of brand + banner + title */}
       {mobileContext && <header className={`sig-appbar${scrolled ? ' is-scrolled' : ''}${hidden ? ' is-hidden' : ''}`} onFocusCapture={(e) => e.currentTarget.classList.remove('is-hidden')}><div className="sig-appbar-context">{mobileContext}</div><span className="sig-appbar-tools"><AppearanceToggle />{right ?? <AccountMenu />}</span></header>}
       <header className="sig-header">
-        <Link to={paths.events} className="sig-brand" aria-label="ضيوفي — مناسباتي"><Logo height={30} /></Link>
+        <Link to={paths.events} className="sig-brand" aria-label={t('shellBrand')}><Logo height={30} /></Link>
         <span className="sig-edition" aria-hidden="true">توقيع</span>
-        <nav className="sig-header-nav" aria-label="القائمة الرئيسية">
-          <Link to={paths.events}>مناسباتي</Link>
-          {manage && <Link to={paths.newEvent} className="sig-header-new"><Icon name="plus" size="sm" />مناسبة جديدة</Link>}
+        <nav className="sig-header-nav" aria-label={t('shellMainNav')}>
+          <Link to={paths.events}>{t('shellMyEvents')}</Link>
+          {manage && <Link to={paths.newEvent} className="sig-header-new"><Icon name="plus" size="sm" />{t('homeNewEvent')}</Link>}
         </nav>
         <span className="sig-header-tools"><AppearanceToggle />{right ?? <AccountMenu />}</span>
       </header>
@@ -46,6 +48,7 @@ export function SignatureShell({ children, right, mobileContext }: { children: R
 const ESSENTIAL = ['home', 'envelope', 'users', 'door'];
 
 export function SignatureWorkspace({ context, nav, mobileNav, footer, children }: { context: ReactNode; nav: NavItem[]; mobileNav: NavItem[]; footer?: ReactNode; children: ReactNode }) {
+  const { t } = useCopy();
   const essential = nav.filter((n) => ESSENTIAL.includes(n.icon));
   const optional = nav.filter((n) => !essential.includes(n));
   const optionalActive = optional.some((n) => n.active);
@@ -70,9 +73,9 @@ export function SignatureWorkspace({ context, nav, mobileNav, footer, children }
   });
   return (
     <div className="sig-ws">
-      <aside className="sig-rail" aria-label="رحلة المناسبة">
+      <aside className="sig-rail" aria-label={t('shellJourney')}>
         <div className="sig-rail-context">{context}</div>
-        <nav className="sig-journey" aria-label="مراحل المناسبة">
+        <nav className="sig-journey" aria-label={t('shellStages')}>
           <ol>
             {essential.map((n, i) => (
               <li key={n.to}>
@@ -86,17 +89,17 @@ export function SignatureWorkspace({ context, nav, mobileNav, footer, children }
           </ol>
         </nav>
         <button type="button" className="sig-more-toggle" aria-expanded={more} onClick={() => setMore((v) => !v)}>
-          <Icon name="sliders" size="sm" />تفاصيل إضافية<Icon name={more ? 'chevron-up' : 'chevron-down'} size="sm" />
+          <Icon name="sliders" size="sm" />{t('shellMoreDetails')}<Icon name={more ? 'chevron-up' : 'chevron-down'} size="sm" />
         </button>
         {more && (
-          <nav className="sig-optional" aria-label="تفاصيل إضافية">
-            {optional.map((n) => <Link key={n.to} to={n.to} aria-current={n.active ? 'page' : undefined}><Icon name={n.icon} size="sm" /><span>{n.label}</span>{n.icon === 'table' && <small>اختياري</small>}</Link>)}
+          <nav className="sig-optional" aria-label={t('shellMoreDetails')}>
+            {optional.map((n) => <Link key={n.to} to={n.to} aria-current={n.active ? 'page' : undefined}><Icon name={n.icon} size="sm" /><span>{n.label}</span>{n.icon === 'table' && <small>{t('shellOptional')}</small>}</Link>)}
           </nav>
         )}
         {footer && <div className="sig-rail-foot">{footer}</div>}
       </aside>
       <main id="main" ref={content} className="sig-content" tabIndex={-1} {...swipe}>{children}</main>
-      <nav className="sig-tabbar" aria-label="أقسام المناسبة" style={{ '--tab-i': Math.max(0, mobileNav.findIndex((n) => n.active)), '--tab-n': mobileNav.length } as CSSProperties} data-has-active={mobileNav.some((n) => n.active) || undefined}>
+      <nav className="sig-tabbar" aria-label={t('shellSections')} style={{ '--tab-i': Math.max(0, mobileNav.findIndex((n) => n.active)), '--tab-n': mobileNav.length } as CSSProperties} data-has-active={mobileNav.some((n) => n.active) || undefined}>
         <span className="sig-tab-indicator" aria-hidden="true" />
         {mobileNav.map((n) => (
           <Link key={n.to} to={n.to} aria-current={n.active ? 'page' : undefined} className={`sig-tab${n.active ? ' is-active' : ''}`} onClick={() => { if (!n.active) { haptic('tick'); setNavIntent(mobileNav.indexOf(n) > active ? 'next' : 'prev'); } }}>

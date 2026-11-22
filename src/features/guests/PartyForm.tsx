@@ -2,7 +2,8 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import type { InvitationParty, PartyInput } from '../../domain/types';
 import { normalisePhone } from '../../domain/phone';
-import { formatPhone, plural, pluralOf, P } from '../../domain/format';
+import { formatPhone } from '../../domain/format';
+import { useCopy } from '../../ui/copy';
 import { allocatedGuests, capacityLevel, guestLimit } from '../../domain/billing';
 import { useCapacityVersion } from '../billing/CapacityMeter';
 import { Banner, Button, Dialog, Field, Input, Stepper, Textarea } from '../../ui';
@@ -15,6 +16,7 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
   eventId?: string;
 }) {
   useCapacityVersion();
+  const { t, n } = useCopy();
   const [name, setName] = useState(initial?.primaryGuestName ?? '');
   const [phone, setPhone] = useState(initial?.phone ?? '');
   const [size, setSize] = useState(initial?.maxPartySize ?? defaultSize);
@@ -27,8 +29,8 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
   const phoneRes = phone.trim() ? normalisePhone(phone) : null;
   const dupe = phoneRes?.ok ? existing.find((p) => p.phone === phoneRes.e164 && p.id !== initial?.id) : undefined;
   const sides = useMemo(() => [...new Set(existing.map((p) => p.side).filter(Boolean))] as string[], [existing]);
-  const nameErr = tried && !name.trim() ? 'اكتب اسم الضيف أو العائلة' : null;
-  const phoneErr = phoneRes && !phoneRes.ok ? 'الرقم غير صحيح. مثال: 0551234567 أو ‎+966551234567' : isAppError(error) && error.field === 'phone' ? error.message : null;
+  const nameErr = tried && !name.trim() ? t('pfNameRequired') : null;
+  const phoneErr = phoneRes && !phoneRes.ok ? t('pfBadPhone') : isAppError(error) && error.field === 'phone' ? error.message : null;
 
   // Capacity counts allowed people (companions included); editing frees this party's current allowance first.
   const limit = eventId ? guestLimit(eventId) : 0;
@@ -36,8 +38,8 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
   const left = Math.max(0, limit - usedElsewhere), after = limit - usedElsewhere - size;
   const growing = size > (initial?.maxPartySize ?? 0);
   const capacityNote = !eventId || !growing ? null : after < 0
-    ? <Banner tone="warning" compact title="هذا العدد يتجاوز سعة مناسبتك">الدعوة لـ{pluralOf(size, P.person)} والمتبقي في السعة {plural(left, P.person)}. عند {initial ? 'الحفظ' : 'الإضافة'} نعرض عليك زيادة السعة، أو قلّل العدد.</Banner>
-    : capacityLevel(usedElsewhere + size, limit) !== 'ok' ? <p className="field-hint capacity-form-hint" role="status">بعد {initial ? 'الحفظ' : 'الإضافة'} يتبقى في سعة مناسبتك {plural(after, P.person)} من {plural(limit, P.person)}.</p>
+    ? <Banner tone="warning" compact title={t('pfOverTitle')}>{t('pfOverText', { size: n(size, 'person', true), left: n(left, 'person'), when: t(initial ? 'pfWhenSave' : 'pfWhenAdd') })}</Banner>
+    : capacityLevel(usedElsewhere + size, limit) !== 'ok' ? <p className="field-hint capacity-form-hint" role="status">{t('pfAfter', { when: t(initial ? 'pfWhenSave' : 'pfWhenAdd'), after: n(after, 'person'), limit: n(limit, 'person') })}</p>
     : null;
 
   const submit = (e: FormEvent) => {
@@ -52,29 +54,29 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
 
   return (
     <Dialog open={open} onClose={onClose} title={title} size="md"
-      footer={<><Button variant="primary" type="submit" form="party-form" loading={pending}>{initial ? 'حفظ التعديلات' : 'إضافة'}</Button><Button variant="ghost" onClick={onClose}>إلغاء</Button></>}>
+      footer={<><Button variant="primary" type="submit" form="party-form" loading={pending}>{t(initial ? 'pfSaveEdits' : 'pfAdd')}</Button><Button variant="ghost" onClick={onClose}>{t('cancel')}</Button></>}>
       <form id="party-form" className="stack gap-4" onSubmit={submit} noValidate>
         {error && !(isAppError(error) && error.field) ? <Banner tone="danger" reveal={error}>{errorMessage(error)}</Banner> : null}
-        <Field label="اسم الضيف أو العائلة" required error={nameErr} hint="كما تريد أن يظهر في الدعوة، مثل: عائلة الحربي">
+        <Field label={t('pfName')} required error={nameErr} hint={t('pfNameHint')}>
           <Input value={name} onChange={(e) => setName(e.target.value)} data-autofocus autoComplete="off" />
         </Field>
-        <Field label="رقم الجوال" optional error={phoneErr} hint={phoneRes?.ok ? <>سيُحفظ: <bdi dir="ltr" className="num">{formatPhone(phoneRes.e164)}</bdi></> :'لإرسال الدعوة عبر واتساب. يمكنك إضافته لاحقًا.'}>
+        <Field label={t('pfPhone')} optional error={phoneErr} hint={phoneRes?.ok ? <>{t('pfWillSave')} <bdi dir="ltr" className="num">{formatPhone(phoneRes.e164)}</bdi></> :t('pfPhoneHint')}>
           <Input ltr type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" autoComplete="off" />
         </Field>
-        {dupe && <Banner tone="warning" compact title="هذا الرقم مسجل مسبقًا">باسم «{dupe.primaryGuestName}». تأكد أنها ليست نفس الدعوة قبل الإضافة.</Banner>}
-        <Stepper label="العدد المسموح" value={size} min={1} max={20} onChange={setSize} suffix={(n) => (n === 1 ? 'شخص' : n === 2 ? 'شخصان' : 'أشخاص')} />
-        <p className="field-hint">كم شخصًا تشمل هذه الدعوة، بما فيهم صاحبها. يحدد الضيف العدد الفعلي عند الرد.</p>
+        {dupe && <Banner tone="warning" compact title={t('pfDupeTitle')}>{t('pfDupeText', { name: dupe.primaryGuestName })}</Banner>}
+        <Stepper label={t('pfAllowed')} value={size} min={1} max={20} onChange={setSize} suffix={(k) => t(k === 1 ? 'pfOne' : k === 2 ? 'pfTwo' : 'pfMany')} />
+        <p className="field-hint">{t('pfAllowedHint')}</p>
         {capacityNote}
         {!more ? (
-          <button type="button" className="link-btn" onClick={() => setMore(true)}>+ أسماء المرافقين، الجهة، ملاحظة (اختياري)</button>
+          <button type="button" className="link-btn" onClick={() => setMore(true)}>{t('pfMore')}</button>
         ) : (
           <>
-            <Field label="أسماء المرافقين" optional hint="اسم في كل سطر"><Textarea rows={2} value={companions} onChange={(e) => setCompanions(e.target.value)} /></Field>
-            <Field label="الجهة" optional hint="مثل: الأهل، الأصدقاء، زملاء العمل">
+            <Field label={t('pfCompanions')} optional hint={t('pfCompanionsHint')}><Textarea rows={2} value={companions} onChange={(e) => setCompanions(e.target.value)} /></Field>
+            <Field label={t('pfSide')} optional hint={t('pfSideHint')}>
               <Input value={side} onChange={(e) => setSide(e.target.value)} list="sides-list" />
             </Field>
             <datalist id="sides-list">{sides.map((s) => <option key={s} value={s} />)}</datalist>
-            <Field label="ملاحظة لك" optional><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+            <Field label={t('pfNote')} optional><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
           </>
         )}
       </form>
