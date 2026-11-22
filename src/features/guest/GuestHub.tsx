@@ -9,7 +9,8 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { GuestApi, GuestView } from '../../services/contracts';
-import { countdownLabel, daysBetween, formatEventDate, formatTime, localDateOf, people, peopleOf } from '../../domain/format';
+import { countdownLabel, daysBetween, formatEventDate, formatTime, inDigits, localDateOf, people, peopleOf } from '../../domain/format';
+import { faceDigits } from '../../domain/templates';
 import { eventStart, eventEnd, isCoupleEvent } from '../../domain/event';
 import { resolvedNames } from '../../domain/invitation';
 import { validateRsvp, RSVP_ERROR_TEXT } from '../../domain/parties';
@@ -38,6 +39,8 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
   const names = resolvedNames(view.event, view.design);
   const today = localDateOf(now, view.event.timeZone);
   const days = daysBetween(today, view.event.date);
+  // the invitation's date and time use its face's number system (١٢٣ or 123), as on the card and its pages
+  const digits = faceDigits(view.design.cardId);
   const failed = submission && !submission.ok;
   const [generalSubmitted, setGeneralSubmitted] = useState('');
   const [editing, setEditing] = useState<boolean>(!!failed || (!!p && p.rsvpStatus === 'pending'));
@@ -60,8 +63,8 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
     <header className="hub-head">
       <p className="hub-kicker">{view.event.title}</p>
       <h1 className="hub-names">{names.a}{isCoupleEvent(view.event.type) && names.b ? <> <span className="hub-amp">و</span> {names.b}</> : null}</h1>
-      <p className="hub-date">{formatEventDate(view.event.date)} · {formatTime(view.event.time)}</p>
-      {view.phase !== 'after' && <p className="hub-count">{days > 0 ? countdownLabel(view.event.date, today) : days === 0 ? 'اليوم!' : ''}</p>}
+      <p className="hub-date">{formatEventDate(view.event.date, { digits })} · {formatTime(view.event.time, digits)}</p>
+      {view.phase !== 'after' && <p className="hub-count">{days > 0 ? inDigits(countdownLabel(view.event.date, today), digits) : days === 0 ? 'اليوم!' : ''}</p>}
     </header>
   );
 
@@ -142,7 +145,7 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
         <section className="hub-card" aria-labelledby="hub-where">
           <h2 id="hub-where" className="hub-h">الموعد والمكان</h2>
           <ul className="hub-facts">
-            <li><Icon name="calendar" size="sm" /><span>{formatEventDate(view.event.date)}<br /><span className="faint">{formatTime(view.event.time)}</span></span></li>
+            <li><Icon name="calendar" size="sm" /><span>{formatEventDate(view.event.date, { digits })}<br /><span className="faint">{formatTime(view.event.time, digits)}</span></span></li>
             <li><Icon name="pin" size="sm" /><span>{view.event.venue.name}<br /><span className="faint">{view.event.venue.city}</span></span></li>
           </ul>
           <div className="row wrap gap-2">
@@ -155,7 +158,7 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
           <section className="hub-card" aria-labelledby="hub-prog">
             <h2 id="hub-prog" className="hub-h">برنامج المناسبة</h2>
             <ol className="hub-program">
-              {view.design.program.filter((x) => x.time && x.ar).map((x, i) => <li key={i}><span className="num" dir="ltr">{formatTime(x.time)}</span><span>{x.ar}</span></li>)}
+              {view.design.program.filter((x) => x.time && x.ar).map((x, i) => <li key={i}><span className="num" dir={digits === 'arab' ? 'rtl' : 'ltr'}>{formatTime(x.time, digits)}</span><span>{x.ar}</span></li>)}
             </ol>
           </section>
         )}

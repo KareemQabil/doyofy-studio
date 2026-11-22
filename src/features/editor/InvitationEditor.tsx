@@ -54,8 +54,10 @@ function useMedia(q: string) {
 }
 
 export function InvitationEditor({ eventId }: { eventId: string }) {
-  const ev = useEvent(eventId);
-  const design = useDesign(eventId);
+  // fresh: the editor seeds its draft once; a cached copy from before the last write (a template
+  // just applied, a card picked elsewhere) would be shown, edited and autosaved back over it
+  const ev = useEvent(eventId, { fresh: true });
+  const design = useDesign(eventId, { fresh: true });
   if (ev.error || design.error) return <div className="ed-state"><ErrorState error={ev.error || design.error} onRetry={() => { ev.refetch(); design.refetch(); }} /></div>;
   if (ev.loading || design.loading || !ev.data) return <div className="ed-state"><PageLoader /></div>;
   return <Editor event={ev.data} saved={design.data ?? null} />;
@@ -103,6 +105,18 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   const [queue] = useState(() => new DraftQueue(content, (value: InvitationDesignContent) => services.invitations.saveDraft(event.id, value), !saved));
   const [justPublished, setJustPublished] = useState(false);
   const mounted = useRef(true);
+
+  // the draft or publication changed outside this editor (another tab, a template applied elsewhere):
+  // take it while there are no local edits waiting, so an autosave can never write an older design back
+  useEffect(() => {
+    if (!saved || save !== 'saved') return;
+    if (saved.draftSavedAt === design?.draftSavedAt && saved.publishedAt === design?.publishedAt) return;
+    if (design && saved.draftSavedAt < design.draftSavedAt) return; // our own newer save is not in the cache yet
+    if (!queue.replace(saved.draft)) return;
+    contentRef.current = saved.draft;
+    setContent(saved.draft);
+    setDesign(saved);
+  }, [saved?.draftSavedAt, saved?.publishedAt, save]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const evDirty = JSON.stringify(evDraft) !== JSON.stringify(eventFields(event));
   // the event was saved (or changed in another tab): take the new values

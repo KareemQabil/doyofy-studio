@@ -7,7 +7,11 @@ import { EditorWorkbench } from '../editor/EditorWorkbench';
 import { CopyField } from '../shared/CopyField';
 import { useTemplateShare } from './template-share';
 
-/** Native vertical scrolling, with one snap point per design. Only the visible design and its neighbours render art. */
+/**
+ * Native vertical scrolling, with one snap point per design. Only the visible design and its neighbours render art.
+ * Browsing shows each face at rest, never mid-entrance (a motion face would look empty for a second after each
+ * swipe); the entrance plays in the full preview («معاينة الدعوة») and for the guest.
+ */
 export function TemplateFeed({ presets, preset, event, base, current, pending, onNavigate, onPreview, onUse, showUse = true }: {
   presets: TemplatePreset[]; preset: TemplatePreset; event: Event; base: InvitationDesignContent; current?: string; pending: boolean;
   onNavigate: (p: TemplatePreset) => void; onPreview: (p: TemplatePreset) => void; onUse: (p: TemplatePreset) => void; showUse?: boolean;
@@ -77,7 +81,7 @@ export function TemplateFeed({ presets, preset, event, base, current, pending, o
         }, 100);
       }}>
       {presets.map((p, i) => <article key={p.cardId} className={`template-feed-slide${i === index ? ' is-active' : ''}`} aria-hidden={i !== index} inert={i !== index}>
-        {Math.abs(index - i) <= 1 ? <EditorWorkbench event={event} content={applyPreset(base, p)} caption={p.name} motion={i === index ? 1 : 0} /> : <div className="template-feed-placeholder"><Icon name="envelope" size="lg" /></div>}
+        {Math.abs(index - i) <= 1 ? <EditorWorkbench event={event} content={applyPreset(base, p)} caption={p.name} /> : <div className="template-feed-placeholder"><Icon name="envelope" size="lg" /></div>}
         {current === p.id && <span className="template-feed-current"><Icon name="check" size="sm" />التصميم الحالي</span>}
       </article>)}
     </div>

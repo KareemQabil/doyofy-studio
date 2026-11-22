@@ -74,21 +74,29 @@ export function localDateOf(at: Date, timeZone: string): LocalDate {
   return f.format(at);
 }
 
-/** "الثلاثاء 13 أكتوبر 2026" */
-export function formatEventDate(date: LocalDate, opts: { weekday?: boolean; year?: boolean } = {}): string {
+/**
+ * "الثلاثاء 13 أكتوبر 2026". `digits: 'arab'` writes ١٢٣ — only for an invitation's own date and time,
+ * whose face chose that system (domain/templates faceDigits); the platform itself keeps Western digits.
+ */
+export function formatEventDate(date: LocalDate, opts: { weekday?: boolean; year?: boolean; digits?: 'arab' | 'latn' } = {}): string {
   const d = new Date(`${date}T12:00:00Z`);
-  const f = new Intl.DateTimeFormat(LOCALE, { timeZone: 'UTC', day: 'numeric', month: 'long', ...(opts.year === false ? {} : { year: 'numeric' }), ...(opts.weekday === false ? {} : { weekday: 'long' }) });
+  const f = new Intl.DateTimeFormat(opts.digits === 'arab' ? 'ar-u-ca-gregory-nu-arab' : LOCALE, { timeZone: 'UTC', day: 'numeric', month: 'long', ...(opts.year === false ? {} : { year: 'numeric' }), ...(opts.weekday === false ? {} : { weekday: 'long' }) });
   return f.format(d).replace('،', '');
 }
 
-/** "8:30 مساءً" */
-export function formatTime(time: LocalTime): string {
+/** "8:30 مساءً" (or "٨:٣٠ مساءً" with `digits: 'arab'`, see formatEventDate) */
+export function formatTime(time: LocalTime, digits: 'arab' | 'latn' = 'latn'): string {
   const [hs, ms] = time.split(':');
   const h = Number(hs), m = Number(ms);
   if (Number.isNaN(h) || Number.isNaN(m)) return time;
   const h12 = ((h + 11) % 12) + 1;
   const period = h < 12 ? 'صباحًا' : h < 17 ? 'ظهرًا' : 'مساءً';
-  return `${h12}:${String(m).padStart(2, '0')} ${h === 12 && m === 0 ? 'ظهرًا' : period}`;
+  return inDigits(`${h12}:${String(m).padStart(2, '0')} ${h === 12 && m === 0 ? 'ظهرًا' : period}`, digits);
+}
+
+/** writes a formatted text's digits as ١٢٣ for `digits: 'arab'` (an invitation's own dates, see formatEventDate) */
+export function inDigits(text: string, digits: 'arab' | 'latn' = 'latn'): string {
+  return digits === 'arab' ? text.replace(/[0-9]/g, (n) => String.fromCharCode(0x0660 + Number(n))) : text;
 }
 
 /** "الآن" / "قبل 5 دقائق" / "قبل ساعتين" / "أمس 9:15 م" / date */

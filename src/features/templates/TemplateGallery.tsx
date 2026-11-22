@@ -50,7 +50,12 @@ function Gallery({ event, design, first, back }: { event: Event; design: Invitat
     ? suited
     : [...suited, ...rest].filter((p) => filter === 'all' || p.styles.includes(filter));
 
-  const use = useMutation((s, p: TemplatePreset) => s.invitations.saveDraft(event.id, applyPreset(base, p)), {
+  // apply onto the latest saved draft, not this render's copy: edits flushed just before opening the
+  // gallery may still be revalidating here, and a template must never undo them
+  const use = useMutation(async (s, p: TemplatePreset) => {
+    const latest = await s.invitations.get(event.id);
+    return s.invitations.saveDraft(event.id, applyPreset(latest?.draft ?? base, p));
+  }, {
     onSuccess: () => navigate(paths.design(event.id), { force: true }),
   });
 
