@@ -13,7 +13,7 @@ export type Target =
   | { to: 'settings'; focus?: 'map' }
   | { to: 'invitation' }
   | { to: 'design' }
-  | { to: 'guests'; filter?: string }
+  | { to: 'guests'; filter?: string; share?: 'unsent' }
   | { to: 'import' }
   | { to: 'rsvp'; tab?: string }
   | { to: 'seating' }
@@ -56,9 +56,9 @@ export function nextAction(i: OverviewInput, c: PartyCounts = countParties(i.par
   if (phase === 'event_day') return { label: 'افتح وضع الدخول', reason: 'اليوم يوم المناسبة', target: { to: 'gate' } };
   if (i.publish === 'none' || i.publish === 'draft') return { label: 'راجع وانشر دعوتك', reason: 'قالب مناسب جاهز بالأسماء والموعد — راجعه قبل المشاركة', target: { to: 'design' } };
   if (c.parties === 0) return { label: 'أضف الضيوف', reason: 'الدعوة جاهزة — أضف من ستدعوهم', target: { to: 'guests' } };
-  if (c.notShared + c.failed > 0 && c.notShared + c.failed >= c.parties / 2) return { label: 'ابدأ المشاركة', reason: `${plural(c.notShared + c.failed, P.invitation)} لم تُشارك بعد`, target: { to: 'guests', filter: 'not_shared' } };
+  if (c.notShared + c.failed > 0 && c.notShared + c.failed >= c.parties / 2) return { label: 'ابدأ المشاركة', reason: `${plural(c.notShared + c.failed, P.invitation)} لم تُشارك بعد`, target: { to: 'guests', filter: 'not_shared', share: 'unsent' } };
   if (phase === 'final_week' && i.tables.length > 0 && c.unassignedConfirmed > 0) return { label: 'راجع الجلوس', reason: c.unassignedConfirmed ? `${plural(c.unassignedConfirmed, P.invitation)} مؤكدة بلا طاولة` : 'المناسبة قريبة', target: { to: 'seating' } };
-  if (c.notShared + c.failed > 0) return { label: 'أكمل المشاركة', reason: `${plural(c.notShared + c.failed, P.invitation)} لم تُشارك بعد`, target: { to: 'guests', filter: 'not_shared' } };
+  if (c.notShared + c.failed > 0) return { label: 'أكمل المشاركة', reason: `${plural(c.notShared + c.failed, P.invitation)} لم تُشارك بعد`, target: { to: 'guests', filter: 'not_shared', share: 'unsent' } };
   if (c.pendingParties > 0) return { label: 'تابع الردود', reason: `${plural(c.pendingParties, P.invitation)} بانتظار الرد`, target: { to: 'rsvp' } };
   if (i.tables.length > 0 && c.unassignedConfirmed > 0) return { label: 'راجع الجلوس', reason: `${plural(c.unassignedConfirmed, P.invitation)} مؤكدة بلا طاولة`, target: { to: 'seating' } };
   return { label: 'جهز الدخول', reason: 'كل شيء جاهز تقريبًا', target: { to: 'checkin' } };

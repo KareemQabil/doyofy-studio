@@ -7,15 +7,17 @@ import { useEvents } from '../shared/queries';
 import { useToast } from '../../ui/primitives/Feedback';
 import { errorMessage } from '../../services/errors';
 import { useCopy } from '../../ui/copy';
+import { plural, pluralOf, P } from '../../domain/format';
 
 export function ExportGuestsDialog({ event, parties, tables, visibleIds, selectedIds, initialTable, onClose }: {
   event: Event; parties: InvitationParty[]; tables: Table[]; visibleIds: Set<string>; selectedIds: Set<string>; initialTable?: string; onClose: () => void;
 }) {
   const { t } = useCopy();
   const [scope, setScope] = useState<GuestExportScope>(initialTable ? 'table' : selectedIds.size ? 'selected' : 'visible');
-  const [tableIds, setTableIds] = useState(new Set([initialTable || tables[0]?.id || 'none']));
+  // nothing is preselected unless the dialog was opened from that table's menu
+  const [tableIds, setTableIds] = useState(new Set<string>(initialTable ? [initialTable] : []));
   const groups = [...new Set(parties.map((p) => p.side || ''))];
-  const [groupNames, setGroupNames] = useState(new Set([groups[0] || '']));
+  const [groupNames, setGroupNames] = useState(new Set<string>());
   const [phones, setPhones] = useState(false);
   const chosen = scopedGuests(parties, scope, { visibleIds, selectedIds, tableIds, groupNames });
   const toggleValue = (set: Set<string>, value: string) => { const next = new Set(set); if (next.has(value)) next.delete(value); else next.add(value); return next; };
@@ -25,7 +27,7 @@ export function ExportGuestsDialog({ event, parties, tables, visibleIds, selecte
     setTimeout(() => URL.revokeObjectURL(url), 1000); onClose();
   };
   return <Dialog open onClose={onClose} title={t('exportFile')} description="اختر ما تحتاجه في ملف يفتح في Excel وGoogle Sheets."
-    footer={<><Button variant="primary" icon="download" disabled={!chosen.length} onClick={download}>تصدير {chosen.length} دعوة</Button><Button variant="ghost" onClick={onClose}>{t('cancel')}</Button></>}>
+    footer={<><Button variant="primary" icon="download" disabled={!chosen.length} onClick={download}>{chosen.length ? `تصدير ${pluralOf(chosen.length, P.invitation)}` : 'تصدير'}</Button><Button variant="ghost" onClick={onClose}>{t('cancel')}</Button></>}>
     <Field label="نطاق التصدير"><Select value={scope} onChange={(e) => setScope(e.target.value as GuestExportScope)}>
       <option value="visible">القائمة الظاهرة ({visibleIds.size})</option><option value="selected" disabled={!selectedIds.size}>المحدد ({selectedIds.size})</option>
       <option value="table">طاولات محددة</option><option value="group">أقسام محددة</option><option value="all">كل الضيوف ({parties.length})</option>
@@ -33,7 +35,8 @@ export function ExportGuestsDialog({ event, parties, tables, visibleIds, selecte
     {scope === 'table' && <fieldset className="guest-export-scope"><legend>اختر الطاولات ({tableIds.size})</legend><div className="stack gap-2">{[...tables.map((table) => ({ id: table.id, name: table.name })), { id: 'none', name: 'بلا طاولة' }].map((table) => <Checkbox key={table.id} label={table.name} checked={tableIds.has(table.id)} onChange={() => setTableIds(toggleValue(tableIds, table.id))} />)}</div></fieldset>}
     {scope === 'group' && <fieldset className="guest-export-scope"><legend>اختر الأقسام ({groupNames.size})</legend><div className="stack gap-2">{groups.map((g) => <Checkbox key={g} label={g || 'بلا قسم'} checked={groupNames.has(g)} onChange={() => setGroupNames(toggleValue(groupNames, g))} />)}</div></fieldset>}
     <Checkbox checked={phones} onChange={setPhones} label="تضمين أرقام الجوال" hint="الملف بدون أرقام افتراضيًا. لا يتضمن ملاحظاتك الخاصة أو بيانات الطعام." />
-    <p role="status" className="muted t-sm">{chosen.length ? `جاهز لتصدير ${chosen.length} دعوة.` : 'لا توجد دعوات في هذا النطاق.'}</p>
+    <p role="status" className="muted t-sm">{chosen.length ? `جاهز لتصدير ${pluralOf(chosen.length, P.invitation)}، مع العدد المسموح وأسماء المرافقين.`
+      : scope === 'table' && !tableIds.size ? 'اختر طاولة واحدة على الأقل.' : scope === 'group' && !groupNames.size ? 'اختر قسمًا واحدًا على الأقل.' : 'لا توجد دعوات في هذا النطاق.'}</p>
   </Dialog>;
 }
 
@@ -48,12 +51,12 @@ export function TransferGuestsDialog({ event, parties, onClose, onDone }: {
   const [confirm, setConfirm] = useState(false);
   const destination = events.data?.find((e) => e.id === target);
   const transfer = useMutation((s) => s.parties.transfer({ ids: parties.map((p) => p.id), targetEventId: target, mode }), {
-    onSuccess: (made) => { toast({ tone: 'success', text: `${mode === 'move' ? 'نُقلت' : 'نُسخت'} ${made.length} دعوة إلى ${destination?.title || 'المناسبة'}` }); onDone(); onClose(); },
+    onSuccess: (made) => { toast({ tone: 'success', text: `${mode === 'move' ? 'نُقلت' : 'نُسخت'} ${plural(made.length, P.invitation)} إلى ${destination?.title || 'المناسبة'}` }); onDone(); onClose(); },
     onError: () => setConfirm(false),
   });
   const eligible = (events.data || []).filter((e) => e.id !== event.id && !e.archivedAt);
   return <>
-    <Dialog open={!confirm} onClose={onClose} title={t('moveGuests')} description={`${parties.length} دعوة محددة من ${event.title}`}
+    <Dialog open={!confirm} onClose={onClose} title={t('moveGuests')} description={`${plural(parties.length, P.invitation)} من ${event.title}`}
       footer={<><Button variant="primary" disabled={!target || !parties.length} loading={transfer.pending} onClick={() => mode === 'move' ? setConfirm(true) : void transfer.run()}>{mode === 'move' ? 'متابعة النقل' : 'نسخ الدعوات'}</Button><Button variant="ghost" onClick={onClose}>{t('cancel')}</Button></>}>
       {!!transfer.error && <Banner tone="danger">{errorMessage(transfer.error)}</Banner>}
       {!!events.error && <Banner tone="danger">{errorMessage(events.error)}</Banner>}
@@ -63,7 +66,7 @@ export function TransferGuestsDialog({ event, parties, onClose, onDone }: {
       <p className="muted t-sm">تُنشأ روابط جديدة بانتظار الرد. الردود والطاولات والوصول وبيانات الطعام تبقى خاصة بكل مناسبة.</p>
       <p className="faint t-sm">نراجع التكرار وسعة الباقة قبل الإضافة. إذا وُجد تعارض، لا تُنقل أي دعوة.</p>
     </Dialog>
-    <ConfirmDialog open={confirm} title={`نقل ${parties.length} دعوة؟`} confirmLabel="نقل الدعوات" loading={transfer.pending}
+    <ConfirmDialog open={confirm} title={`نقل ${pluralOf(parties.length, P.invitation)}؟`} confirmLabel="نقل الدعوات" loading={transfer.pending}
       body={`ستُزال الدعوات المحددة وروابطها وردودها من ${event.title}، وتُنشأ دعوات جديدة في ${destination?.title || 'المناسبة المختارة'}.`}
       onCancel={() => setConfirm(false)} onConfirm={() => void transfer.run()} />
   </>;
