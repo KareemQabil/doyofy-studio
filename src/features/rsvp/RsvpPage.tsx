@@ -1,12 +1,15 @@
 /**
  * Replies (spec §14–15): confirmed headcount vs invitations, who still needs a nudge (opened but
  * silent first), the latest replies, and general-link replies that must be matched to a party.
+ * Reminders use the share queue in «remind» mode: the organizer sends each one from WhatsApp/SMS and confirms
+ * «أرسلتها»; only then is the invitation stamped «ذُكّر». Nothing here pretends to send.
  */
 import { useMemo, useState } from 'react';
 import type { Event, InvitationParty, RSVPResponse } from '../../domain/types';
 import { INVITATION_STATUS, countParties, invitationStatus, normaliseForSearch, searchParties } from '../../domain/parties';
 import { publishState } from '../../domain/invitation';
 import { people, plural, pluralOf, P, relativeTime } from '../../domain/format';
+import { normalisePhone } from '../../domain/phone';
 import { GuestViews } from '../shared/GuestViews';
 import { Avatar, Badge, Banner, Button, Dialog, EmptyState, ErrorState, FilterChips, Icon, PageHeader, Panel, ProgressBar, SearchInput, Stat, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
@@ -16,6 +19,10 @@ import { useToast } from '../../ui/primitives/Feedback';
 import { errorMessage } from '../../services/errors';
 import { useDesign, useParties, useResponses } from '../shared/queries';
 import { RecordRsvpDialog } from './RecordRsvpDialog';
+import { ShareQueue } from '../guests/ShareQueue';
+import { reminderMessage, whatsappUrl } from '../guests/share';
+import { useGuestLink } from '../shared/share-link';
+
 
 type Tab = 'pending' | 'recent' | 'unmatched';
 const CHANNEL: Record<RSVPResponse['channel'], string> = { guest_link: 'من رابطه الشخصي', general_link: 'من الرابط العام', organizer: 'سجّلتَه يدويًا' };
@@ -30,8 +37,8 @@ export function RsvpPage({ event }: { event: Event }) {
   const toast = useToast();
   const [recording, setRecording] = useState<InvitationParty | null>(null);
   const [matching, setMatching] = useState<RSVPResponse | null>(null);
-  const remindAll = useMutation((s, ids: string[]) => s.parties.sendReminder(ids), { onSuccess: (n) => toast({ tone: 'success', text: `تم إرسال تذكير إلى ${pluralOf(n, P.invitation)} (محاكاة)` }) });
-  const remindOne = useMutation((s, id: string) => s.parties.sendReminder([id]), { onSuccess: (n) => toast(n ? { tone: 'success', text: 'تم إرسال تذكير (محاكاة)' } : { tone: 'warning', text: 'لا يمكن التذكير بلا رقم جوال' }) });
+  const guestLink = useGuestLink(event);
+  const [reminding, setReminding] = useState<string[] | null>(null);
   const addFrom = useMutation((s, id: string) => s.rsvp.addPartyFromResponse(id), { onSuccess: (p) => toast({ tone: 'success', text: `أُضيف ${p.primaryGuestName} إلى القائمة بحالة «أكد الحضور»` }) });
   const dismiss = useMutation((s, id: string) => s.rsvp.dismissResponse(id), { onSuccess: () => toast({ tone: 'neutral', text: 'تم تجاهل الرد' }) });
 
@@ -46,7 +53,10 @@ export function RsvpPage({ event }: { event: Event }) {
     { id: 'shared', title: 'أُرسلت ولم تُفتح بعد', hint: 'ربما لم تصلهم الرسالة — تأكد من الرقم', items: pending.filter((p) => p.delivery.status === 'shared') },
     { id: 'unsent', title: 'لم تُرسل لهم الدعوة', hint: 'أرسلها أولًا من صفحة الضيوف', items: pending.filter((p) => p.delivery.status === 'not_shared' || p.delivery.status === 'failed') },
   ];
-  const remindable = pending.filter((p) => p.phone && (p.delivery.status === 'opened' || p.delivery.status === 'shared')).map((p) => p.id);
+  const published = ps === 'published' || ps === 'changed';
+  // already invited and still silent; guests without a number get the copy option at the end of the queue
+  const remindable = published ? pending.filter((p) => p.delivery.status === 'opened' || p.delivery.status === 'shared').map((p) => p.id) : [];
+  const remindUrl = (p: InvitationParty) => published && normalisePhone(p.phone).ok ? whatsappUrl(p.phone, reminderMessage(event, p, guestLink(p))) : undefined;
   const replied = c.parties - c.pendingParties;
 
   if (parties.error || responses.error) return <ErrorState error={parties.error || responses.error} onRetry={() => { parties.refetch(); responses.refetch(); }} />;
@@ -82,11 +92,10 @@ export function RsvpPage({ event }: { event: Event }) {
             pending.length === 0 ? <EmptyState compact icon="check-circle" title="الجميع ردّوا">لا أحد بانتظار الرد.</EmptyState> : (
               <div className="stack gap-5">
                 {remindable.length > 0 && (
-                  <Banner tone="info" title={`${plural(remindable.length, P.invitation)} يمكن تذكيرها`} action={<Button size="sm" icon="bell" loading={remindAll.pending} onClick={() => void remindAll.run(remindable)}>ذكّرهم (محاكاة)</Button>}>
-                    التذكير في هذا النموذج محاكاة — لا تُرسل رسائل فعلية.
+                  <Banner tone="info" title={`${plural(remindable.length, P.invitation)} يمكن تذكيرها`} action={<Button size="sm" icon="bell" onClick={() => setReminding(remindable)}>ذكّرهم بالرد</Button>}>
+                    نفتح لك رسالة التذكير لكل ضيف في واتساب أو SMS، وتؤكد «أرسلتها» بعد إرسالها.
                   </Banner>
                 )}
-                {remindAll.error ? <Banner tone="danger">{errorMessage(remindAll.error)}</Banner> : null}
                 {groups.filter((g) => g.items.length).map((g) => (
                   <Panel key={g.id} title={`${g.title} (${g.items.length})`} subtitle={g.hint} padded={false}>
                     <ul className="plain-list">
@@ -101,11 +110,11 @@ export function RsvpPage({ event }: { event: Event }) {
                                 <Badge tone={INVITATION_STATUS[inv].tone}>{INVITATION_STATUS[inv].label}</Badge>
                                 <span>{people(p.maxPartySize)} مسموح</span>
                                 {p.delivery.openedAt && <span>فتحها {relativeTime(p.delivery.openedAt, now)}</span>}
-                                {p.delivery.reminderAt && <span>ذُكّر {relativeTime(p.delivery.reminderAt, now)}</span>}
+                                {p.delivery.reminderAt && <span>ذكّرته {relativeTime(p.delivery.reminderAt, now)}</span>}
                               </span>
                             </span>
                             <span className="row gap-2 row-actions">
-                              {g.id !== 'unsent' && <Button size="sm" variant="ghost" icon="bell" disabled={!p.phone || remindOne.pending} onClick={() => void remindOne.run(p.id)}>تذكير</Button>}
+                              {published && g.id !== 'unsent' && <Button size="sm" variant="ghost" icon="bell" onClick={() => setReminding([p.id])} aria-label={`تذكير ${p.primaryGuestName} بالرد`}>تذكير</Button>}
                               <Button size="sm" onClick={() => setRecording(p)}>سجّل الرد</Button>
                             </span>
                           </li>
@@ -166,6 +175,8 @@ export function RsvpPage({ event }: { event: Event }) {
         </div>
       )}
       {recording && <RecordRsvpDialog party={recording} onClose={() => setRecording(null)} />}
+      {reminding && <ShareQueue event={event} mode="remind" parties={reminding.map((id) => all.find((p) => p.id === id)).filter((p): p is InvitationParty => !!p)} urlFor={remindUrl} linkFor={guestLink}
+        onClose={() => setReminding(null)} />}
       {matching && <MatchDialog response={matching} parties={all} onClose={() => setMatching(null)} />}
     </>
   );

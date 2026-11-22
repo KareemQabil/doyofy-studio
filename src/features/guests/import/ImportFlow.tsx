@@ -15,7 +15,7 @@ import { paths } from '../../../app/paths';
 import { readSpreadsheet } from '../../../services/files/spreadsheet';
 import { errorMessage } from '../../../services/errors';
 import { useEvent, useParties } from '../../shared/queries';
-import { allocatedGuests, guestLimit } from '../../../domain/billing';
+import { allocatedGuests, guestLimit, GuestLimitError } from '../../../domain/billing';
 import { useCapacityVersion } from '../../billing/CapacityMeter';
 
 type Step = 'source' | 'map' | 'review' | 'done';
@@ -60,11 +60,10 @@ function Flow({ event, existing }: { event: Event; existing: NonNullable<ReturnT
     <><Button variant="ghost" icon="back" onClick={() => { setStep('source'); setTable(null); }}>ملف آخر</Button>
       <Button variant="primary" size="lg" iconEnd="forward" disabled={mappingProblems(mapping).length > 0} onClick={() => setStep('review')}>راجع الأسماء</Button></>
   ) : step === 'review' ? (
-    <><Button variant="ghost" icon="back" onClick={() => setStep('map')}>تعديل الأعمدة</Button>
-      <div className="row gap-3">
-        {sum.blocked > 0 && <span className="t-sm text-warning">عالج {pluralOf(sum.blocked, P.row)} أو تخطَّها</span>}
-        <Button variant="primary" size="lg" disabled={sum.blocked > 0 || sum.toImport === 0} loading={importing.pending} onClick={() => void confirm()}>أضف {pluralOf(sum.toImport, P.guest)}</Button>
-      </div></>
+    // phones: the hint gets its own line above the two buttons (never a word-per-line column beside a clipped primary)
+    <>{sum.blocked > 0 && <p className="import-foot-hint t-sm text-warning" role="status">عالج {pluralOf(sum.blocked, P.row)} أو تخطَّها قبل الإضافة</p>}
+      <Button variant="ghost" icon="back" className="import-foot-btn" onClick={() => setStep('map')}>تعديل الأعمدة</Button>
+      <Button variant="primary" size="lg" className="import-foot-btn" disabled={sum.blocked > 0 || sum.toImport === 0} loading={importing.pending} onClick={() => void confirm()}>أضف {pluralOf(sum.toImport, P.guest)}</Button></>
   ) : undefined;
 
   return (
@@ -83,7 +82,7 @@ function Flow({ event, existing }: { event: Event; existing: NonNullable<ReturnT
           <JourneyArtwork kind="celebrate"/>
           <div className="stack gap-2">
             <h2 className="t-xl">تمت إضافة {pluralOf(result.added, P.guest)}</h2>
-            <p className="muted">{result.added ? `${plural(result.added, P.invitation)} تتسع لـ${peopleOf(result.people)}.` : ''} {result.skipped ? `تم تخطي ${pluralOf(result.skipped, P.row)} — لم يُضف منها شيء.` : 'لم يُتخطَّ أي صف.'}</p>
+            <p className="muted">{result.added ? `${plural(result.added, P.invitation)} تتسع لـ${peopleOf(result.people)}.` : ''} {result.skipped ? `وتخطّينا ${pluralOf(result.skipped, P.row)} كما اخترت.` : 'لم يُتخطَّ أي صف.'}</p>
           </div>
           <div className="row wrap gap-2">
             <Button variant="primary" size="lg" icon="share" onClick={() => navigate(paths.guests(event.id, { filter: 'not_shared' }))}>شارك الدعوات الجديدة</Button>
@@ -194,10 +193,13 @@ function ReviewStep({ rows, sum, error, capacity, onEdit, onDecide, onSkipBlocke
         <h2 className="t-xl">راجع قبل الإضافة</h2>
         <p className="muted">لن يُضاف أي ضيف حتى تضغط «أضف». يمكنك تصحيح الصفوف هنا أو تخطيها.</p>
       </header>
-      {error ? <Banner tone="danger" title="لم يكتمل الاستيراد" reveal={error}>{errorMessage(error)} لم يُضف أي ضيف.</Banner> : null}
-      {/* before the wall, not after: the limit counts allowed people, companions included */}
+      {/* closing the capacity upgrade is a choice, not a failure: calm, and nothing is lost */}
+      {error instanceof GuestLimitError ? <Banner tone="info" compact title="لم نضف أحدًا. ما كتبته محفوظ" reveal={error}>
+        القائمة بعد الإضافة {plural(error.required, P.person)} وحد مناسبتك {plural(error.limit, P.person)}. زِد السعة من «أضف»، أو تخطَّ بعض الصفوف.
+      </Banner> : error ? <Banner tone="danger" title="لم يكتمل الاستيراد" reveal={error}>{errorMessage(error)} لم يُضف أي ضيف.</Banner> : null}
+      {/* before the wall, not after — and with the same numbers the upgrade will show (the whole list after adding) */}
       {!error && sum.people > left && <Banner tone="warning" compact title="الاستيراد أكبر من سعة مناسبتك">
-        الصفوف الجاهزة تضيف {plural(sum.people, P.person)} والمتبقي في السعة {plural(left, P.person)} من {plural(capacity.limit, P.person)}. عند الضغط على «أضف» نعرض عليك زيادة السعة، ولا يُضاف أحد قبل ذلك.
+        بعد الإضافة تصبح القائمة {plural(capacity.used + sum.people, P.person)} وحد مناسبتك {plural(capacity.limit, P.person)}. نعرض عليك زيادة السعة عند «أضف»، ولا يُضاف أحد قبلها.
       </Banner>}
       <div className="import-summary">
         <div className="is-ok"><strong className="num">{sum.toImport}</strong><span>ستُضاف</span></div>
@@ -205,7 +207,7 @@ function ReviewStep({ rows, sum, error, capacity, onEdit, onDecide, onSkipBlocke
         <div className="is-warn"><strong className="num">{sum.warnings}</strong><span>بملاحظات</span></div>
         <div className="is-skip"><strong className="num">{sum.skipped}</strong><span>متخطاة</span></div>
       </div>
-      <div className="row wrap between gap-3">
+      <div className="row wrap between gap-3 import-review-filters">
         <FilterChips label="عرض الصفوف" value={f} onChange={setF} options={[
           { id: 'blocked', label: 'تحتاج قرارك', count: sum.blocked }, { id: 'warning', label: 'بملاحظات', count: sum.warnings },
           { id: 'skipped', label: 'متخطاة', count: sum.skipped }, { id: 'all', label: 'الكل', count: sum.total }]} />

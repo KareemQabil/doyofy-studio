@@ -12,6 +12,15 @@
 .capacity-meter-actions { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
 .capacity-receipt-link, .capacity-meter-actions .btn { min-height: 44px; }
 .g2 > .capacity-meter, .overview > .capacity-meter { margin-block: var(--s-3); }
+/* slim: one line on the guest list (label · count · meter · receipt), the note only when it matters */
+.capacity-meter.is-slim { gap: var(--s-1); padding: 4px var(--s-3); border-radius: var(--r-pill); }
+.capacity-meter.is-slim:not(.is-ok) { border-radius: var(--r-md); padding-block: 6px; }
+.capacity-meter-line { display: flex; align-items: center; gap: var(--s-2) var(--s-3); min-height: 36px; flex-wrap: wrap; }
+.capacity-meter-line .progress { flex: 1 1 64px; min-width: 64px; }
+.is-slim .capacity-meter-count { white-space: nowrap; }
+.is-slim .capacity-meter-count strong { font-size: var(--fs-md, 16px); }
+.is-slim .capacity-receipt-link, .is-slim .capacity-meter-line .btn { min-height: 36px; }
+@media (pointer: coarse) { .is-slim .capacity-receipt-link, .is-slim .capacity-meter-line .btn { min-height: 44px; } .capacity-meter.is-slim { padding-block: 0; } }
 
 /* checkout */
 .capacity-dialog .choices-grid { gap: var(--s-2); }

@@ -20,7 +20,11 @@ export function useCapacityVersion(): number {
   return version;
 }
 
-export function CapacityMeter({ eventId, parties, alwaysOfferUpgrade = false, receiptLink = true }: { eventId: string; parties: readonly InvitationParty[]; alwaysOfferUpgrade?: boolean; receiptLink?: boolean }) {
+/**
+ * `slim`: one line for working screens (the guest list) — label, count, a thin meter, the receipt; the explanatory
+ * note appears only once capacity needs attention (near / full / over).
+ */
+export function CapacityMeter({ eventId, parties, alwaysOfferUpgrade = false, receiptLink = true, slim = false }: { eventId: string; parties: readonly InvitationParty[]; alwaysOfferUpgrade?: boolean; receiptLink?: boolean; slim?: boolean }) {
   useCapacityVersion();
   const { t } = useCopy();
   const id = useId();
@@ -31,6 +35,16 @@ export function CapacityMeter({ eventId, parties, alwaysOfferUpgrade = false, re
       : level === 'full' ? 'وصلت إلى حد مناسبتك. لإضافة ضيوف أو مرافقين زِد السعة أولًا.'
         : 'القائمة أكبر من حد المناسبة. يمكنك تقليل العدد أو زيادة السعة.';
   const offer = owner && (alwaysOfferUpgrade || level !== 'ok');
+  if (slim) return <section className={`capacity-meter is-slim is-${level}`} data-capacity-meter aria-labelledby={`${id}-l`}>
+    <div className="capacity-meter-line">
+      <span id={`${id}-l`} className="capacity-meter-label">سعة الضيوف</span>
+      <span className="capacity-meter-count num"><strong>{used}</strong> / {limit}</span>
+      <ProgressBar value={used} max={limit} label="سعة الضيوف المستخدمة" tone={level === 'ok' ? 'primary' : level === 'near' ? 'warning' : 'danger'} />
+      {receiptLink && <ReceiptButton receipts={receiptsFor(eventId)} label="الإيصال" />}
+      {offer && <Button size="sm" variant={level === 'ok' ? 'ghost' : 'secondary'} onClick={() => openCapacityUpgrade(eventId, used)}>{t('upgradeCapacity')}</Button>}
+    </div>
+    {level !== 'ok' && <p className="capacity-meter-note" role="status">{note}{!owner ? ' زيادة السعة لصاحب المناسبة.' : ''}</p>}
+  </section>;
   return <section className={`capacity-meter is-${level}`} data-capacity-meter aria-labelledby={`${id}-l`}>
     <div className="capacity-meter-head">
       <span id={`${id}-l`} className="capacity-meter-label">سعة الضيوف</span>

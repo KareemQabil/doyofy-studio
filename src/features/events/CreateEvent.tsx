@@ -11,7 +11,7 @@ import { forwardRef, useEffect, useMemo, useRef, useState, type FormEvent, type 
 import type { CreateEventInput, EventType } from '../../domain/types';
 import { eventTypeInfo, isCoupleEvent, validateEssentials, type EssentialsErrors } from '../../domain/event';
 import { formatEventDate, formatTime, localDateOf } from '../../domain/format';
-import { Banner, Button, Field, FocusLayout, Input, Select } from '../../ui';
+import { Banner, Button, Field, FocusLayout, Icon, Input, Select } from '../../ui';
 import { useMutation, useServices } from '../../app/data';
 import { useBlocker, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -35,6 +35,19 @@ export const TIME_ZONES: Array<[string, string]> = [
 type Step = 1 | 2 | 3;
 type Draft = { type: EventType | null; a: string; b: string; aEn: string; bEn: string; title: string; date: string; time: string; venue: string; city: string; timeZone: string };
 const EMPTY: Draft = { type: null, a: '', b: '', aEn: '', bEn: '', title: '', date: '', time: '20:00', venue: '', city: '', timeZone: 'Asia/Riyadh' };
+
+/** a draft worth announcing: something the organizer actually typed (not just the occasion they tapped) */
+const hasTyped = (d: Draft) => !!(d.a.trim() || d.b.trim() || d.title.trim() || d.date || d.venue.trim() || d.city.trim());
+
+/** Brings an invalid field into view BELOW the sticky live-card band (phones), label included, then focuses it. */
+function revealField(el: HTMLElement) {
+  el.focus({ preventScroll: true });
+  const target = el.closest<HTMLElement>('.field') ?? el;
+  const band = document.querySelector<HTMLElement>('.wz-live');
+  const cover = band && getComputedStyle(band).position === 'sticky' ? band.getBoundingClientRect().bottom : (document.querySelector('.focus-bar')?.getBoundingClientRect().bottom ?? 0);
+  const top = target.getBoundingClientRect().top;
+  if (top < cover + 12 || top > window.innerHeight - 120) window.scrollTo({ top: window.scrollY + top - cover - 16, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
 
 function readDraft(key: string, requested: EventType | null): { draft: Draft; templateId?: string; step?: Step } | null {
   try {
@@ -93,7 +106,7 @@ export function CreateEvent() {
   const [d, setD] = useState<Draft>(cached?.draft ?? { ...EMPTY, type: preset });
   const [selectedTemplate, setSelectedTemplate] = useState<TemplatePreset | undefined>(() => requestedTemplate ?? presetById(cached?.templateId ?? ''));
   const [browsed, setBrowsed] = useState<TemplatePreset | null>(() => requestedTemplate ?? presetById(cached?.templateId ?? '') ?? null);
-  const [resumed, setResumed] = useState(!!cached);
+  const [resumed, setResumed] = useState(!!cached && hasTyped(cached.draft));
   const [errors, setErrors] = useState<EssentialsErrors>({});
   const [showTz, setShowTz] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
@@ -145,7 +158,7 @@ export function CreateEvent() {
     const e = validateEssentials(input(), today);
     setErrors(e);
     if (Object.keys(e).length) {
-      requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+      requestAnimationFrame(() => { const bad = formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]'); if (bad) revealField(bad); });
       return;
     }
     const made = await create.run(input());
@@ -174,7 +187,9 @@ export function CreateEvent() {
     >
       <div className={`wz wz-step-${step}`}>
         <WizardSteps step={step} onGo={go} disabled={create.pending} />
-        {resumed && step !== 2 && <div className="wz-resume"><Banner tone="info" compact title="استعدنا ما كتبته" action={<Button size="sm" variant="ghost" onClick={() => { setD({ ...EMPTY, type: preset ?? d.type }); setErrors({}); setResumed(false); setSelectedTemplate(requestedTemplate); setBrowsed(requestedTemplate ?? null); }}>البدء من جديد</Button>}>يمكنك إكمال تجهيز الدعوة من هنا.</Banner></div>}
+        {/* one slim line, only when something typed was restored */}
+        {resumed && step !== 2 && <p className="wz-resume" role="status"><Icon name="info" size="sm" /><span>استعدنا ما كتبته سابقًا.</span>
+          <button type="button" className="link-btn" onClick={() => { setD({ ...EMPTY, type: preset ?? d.type }); setErrors({}); setResumed(false); setSelectedTemplate(requestedTemplate); setBrowsed(requestedTemplate ?? null); }}>ابدأ من جديد</button></p>}
         {step === 1 && <SignatureOccasions value={d.type} onChange={chooseType} onConfirm={(type) => { chooseType(type); setStep(2); }} />}
         {step === 2 && feedEvent && d.type && (
           <div className="wz-feed-page">

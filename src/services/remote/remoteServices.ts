@@ -201,7 +201,13 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
       },
       // No WhatsApp Business provider yet: refuse honestly instead of pretending delivery (D-008/D-031).
       simulateSend: async () => { throw appError('forbidden', 'messaging_not_configured'); },
-      sendReminder: async () => { throw appError('forbidden', 'messaging_not_configured'); },
+      // a reminder the organizer sent themselves and confirmed: stamp it on the invitations still waiting for a reply
+      markReminded: async (ids: string[]) => {
+        const at = now().toISOString();
+        const rows = await Promise.all(ids.map((id) => db.update<PartyRow>('parties', [['id', eq(requireId(id, 'party_not_found'))], ['rsvp_status', 'eq.pending']], { delivery_reminder_at: at })));
+        changed(undefined);
+        return rows.reduce((n, r) => n + r.length, 0);
+      },
     },
 
     // ---------------------------------------------------------------- RSVP (organizer side)

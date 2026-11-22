@@ -17,7 +17,10 @@
 .wz-steps li.is-on { color: var(--c-text); }
 .wz-steps li.is-on .wz-step-n { background: var(--c-text); border-color: var(--c-text); color: var(--c-surface); }
 .wz-steps li.is-on .wz-step-label { font-weight: 700; }
-.wz-resume { width: 100%; max-width: 1040px; margin: 12px auto 0; padding-inline: 16px; }
+/* a slim one-line notice (only when typed content was restored) */
+.wz-resume { display: flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; width: 100%; max-width: 1040px; margin: 8px auto 0; padding-inline: 16px; color: var(--c-text-2); font-size: 13px; }
+.wz-resume .icon { flex: none; color: var(--c-info); }
+.wz-resume .link-btn { min-height: 44px; font-size: 13px; }
 
 .wz-head { display: grid; justify-items: center; gap: 6px; text-align: center; padding-inline: 16px; }
 .wz-head h2 { font: 700 clamp(26px, 3.2vw, 40px)/1.25 var(--font-display); letter-spacing: -0.01em; }
@@ -82,6 +85,13 @@
 .tf-rail-btn[aria-pressed='true'] .tf-rail-icon { background: var(--c-text); color: var(--c-surface); border-color: var(--c-text); }
 .tf-rail-btn:disabled { opacity: .5; cursor: default; }
 .tf-rail-label { font: 500 11.5px/1.2 var(--font-body); color: var(--c-text-2); }
+/* phones: the rail is one row under the centred, full-width card (the feed fills the screen, no side gutter) */
+.tf.is-row-rail .tf-slide { justify-content: center; padding-bottom: calc(10px + var(--tf-bottom, 0px)); gap: 8px; }
+.tf.is-row-rail .tf-rail { top: auto; bottom: 6px; inset-inline: 0; margin-inline: auto; transform: none; flex-direction: row; justify-content: center; width: max-content; max-width: calc(100% - 16px); gap: 4px; }
+.tf.is-row-rail .tf-rail-nav { flex-direction: row; padding: 0 2px; }
+.tf.is-row-rail .tf-rail-nav .tf-count { min-width: 34px; }
+.tf.is-row-rail .tf-rail-btn { min-height: 0; width: 64px; }
+.tf.is-row-rail .tf-rail-icon { width: 40px; height: 40px; }
 .tf-copy { position: absolute; z-index: 4; inset-inline: 12px; bottom: 10px; padding: 10px; border-radius: var(--r-md); background: var(--c-surface); border: 1px solid var(--c-hairline); box-shadow: var(--shadow-2); }
 
 /* the filter sheet and the full playback */

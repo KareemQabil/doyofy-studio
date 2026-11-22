@@ -2,7 +2,8 @@
  * The design feed — one invitation design per screen, TikTok-style (creation step 2 and the in-event gallery).
  *   · native vertical scrolling with one snap point per design; swipe up/down, the rail's arrows, or the keyboard
  *     (↑/↓, Page Up/Down, Home/End) move between designs. Only the visible design and its neighbours render art.
- *   · the card is sized to the space the feed actually has (it fills the screen; ≥ 220px wide on a 320px phone)
+ *   · the card is sized to the space the feed actually has (it fills the screen; ≥ 220px wide on a 320px phone).
+ *     On phones the rail becomes one row under the card, so the card is centred and takes the full width.
  *   · a labelled side rail holds the secondary actions: share, style filter (a small sheet) and a full playback of
  *     the CURRENT design. The primary («اختر هذا التصميم») belongs to the page footer.
  *   · on arrival the card itself bounces upward twice to teach the gesture; reduced motion shows a still hint instead
@@ -26,18 +27,22 @@ export type FeedFilter = { id: string; label: string; count: number };
 const RAIL = 60;      // the side rail's width
 const INFO = 62;      // the design name under the card
 const MAX_CARD = 440; // past this the face only grows its whitespace
+const RAIL_ROW = 66;  // the rail as one row under the card (phones)
 
-/** fit a 5:7 card in the feed; on narrow screens the card shifts away from the rail rather than shrinking */
+/**
+ * Fit a 5:7 card in the feed. Wide boxes keep the rail beside a centred card; when the rail would squeeze the card
+ * (phones) it moves under the card as one row and the card takes the full width, centred (`bottom` = that row).
+ */
 export function fitFeedCard(width: number, height: number) {
-  if (!width || !height) return { card: 260, padEnd: RAIL + 12, railInset: 6 };
+  if (!width || !height) return { card: 260, padEnd: 0, railInset: 6, bottom: RAIL_ROW };
   const byHeight = (height - INFO - 28) / 1.4;
   const centredWidth = width - 2 * (RAIL + 16);
   if (Math.min(byHeight, MAX_CARD) <= centredWidth) {
     const card = Math.round(Math.max(160, Math.min(byHeight, MAX_CARD)));
-    return { card, padEnd: 0, railInset: Math.max(6, Math.round((width - card) / 2 - RAIL - 20)) };
+    return { card, padEnd: 0, railInset: Math.max(6, Math.round((width - card) / 2 - RAIL - 20)), bottom: 0 };
   }
-  const card = Math.round(Math.max(160, Math.min(byHeight, MAX_CARD, width - RAIL - 26)));
-  return { card, padEnd: RAIL + 8, railInset: 6 };
+  const card = Math.round(Math.max(160, Math.min((height - INFO - 28 - RAIL_ROW) / 1.4, MAX_CARD, width - 32)));
+  return { card, padEnd: 0, railInset: 6, bottom: RAIL_ROW };
 }
 
 function RailButton({ icon, label, onClick, disabled, pressed }: { icon: IconName; label: string; onClick: () => void; disabled?: boolean; pressed?: boolean }) {
@@ -77,7 +82,7 @@ export function TemplateFeed({ presets, preset, event, base, current, currentLab
     const measure = () => {
       const r = node.getBoundingClientRect();
       const next = fitFeedCard(r.width, r.height);
-      setFit(f => f.card === next.card && f.padEnd === next.padEnd && f.railInset === next.railInset ? f : next);
+      setFit(f => f.card === next.card && f.padEnd === next.padEnd && f.railInset === next.railInset && f.bottom === next.bottom ? f : next);
     };
     const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(measure); };
     measure();
@@ -110,7 +115,7 @@ export function TemplateFeed({ presets, preset, event, base, current, currentLab
   const activeFilter = filters?.find(f => f.id === filter);
   const content = shown ? applyPreset(base, shown) : base;
 
-  return <div ref={frame} className="tf" style={{ '--tf-card': `${fit.card}px`, '--tf-pad-end': `${fit.padEnd}px`, '--tf-rail-inset': `${fit.railInset}px` } as React.CSSProperties}>
+  return <div ref={frame} className={`tf${fit.bottom ? ' is-row-rail' : ''}`} style={{ '--tf-card': `${fit.card}px`, '--tf-pad-end': `${fit.padEnd}px`, '--tf-rail-inset': `${fit.railInset}px`, '--tf-bottom': `${fit.bottom}px` } as React.CSSProperties}>
     <div ref={scroll} className="tf-scroll template-feed-scroll" tabIndex={0} role="region" aria-label={`${t('templateBrowse')} — ${t('templateSwipe')}`} aria-roledescription="معرض عمودي" onKeyDown={keyDown}
       onScroll={() => {
         clearTimeout(settle.current);
@@ -131,7 +136,7 @@ export function TemplateFeed({ presets, preset, event, base, current, currentLab
       {!presets.length && <div className="tf-empty" role="status"><p>لا تصاميم بهذا الأسلوب بعد.</p>{emptyAction && <Button size="sm" variant="secondary" onClick={emptyAction}>اعرض كل التصاميم</Button>}</div>}
     </div>
     {hint && reduced && presets.length > 1 && <p className="tf-still-hint"><Icon name="chevron-up" size="sm" />{t('templateSwipe')}</p>}
-    <div className="tf-rail" role="toolbar" aria-label="خيارات التصميم" aria-orientation="vertical">
+    <div className="tf-rail" role="toolbar" aria-label="خيارات التصميم" aria-orientation={fit.bottom ? 'horizontal' : 'vertical'}>
       <div className="tf-rail-nav">
         <button type="button" className="tf-rail-arrow" aria-label="التصميم السابق" onClick={() => select(index - 1)} disabled={pending || index <= 0}><Icon name="chevron-up" size="sm" /></button>
         <span className="tf-count num" dir="ltr" aria-live="polite" aria-atomic="true"><span className="sr-only">التصميم </span>{presets.length ? index + 1 : 0}<span aria-hidden="true">/</span><span className="sr-only"> من </span>{presets.length}</span>

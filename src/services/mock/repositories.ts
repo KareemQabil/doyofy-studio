@@ -268,11 +268,12 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
       if (failed.length) log(db, now(), first.eventId, 'invitation_failed', { count: failed.length, name: findParty(db, failed[0]!).primaryGuestName });
       return { sent, failed };
     }), 'write'),
-    sendReminder: (ids) => store.request(() => store.write((db) => {
+    // nothing is sent from here: the organizer sent the reminder from their own WhatsApp/SMS and confirmed «أرسلتها»
+    markReminded: (ids) => store.request(() => store.write((db) => {
       const t = now().toISOString();
-      const ps = ids.map((id) => findParty(db, id)).filter((p) => p.rsvpStatus === 'pending' && p.phone);
+      const ps = ids.map((id) => findParty(db, id)).filter((p) => p.rsvpStatus === 'pending');
       for (const p of ps) { p.delivery = { ...p.delivery, reminderAt: t }; p.updatedAt = t; }
-      if (ps[0]) log(db, now(), ps[0].eventId, 'reminder_sent', { count: ps.length, name: ps[0].primaryGuestName });
+      if (ps[0]) log(db, now(), ps[0].eventId, 'reminder_sent', { count: ps.length, name: ps[0].primaryGuestName, how: 'manual' }, 'organizer', ps.length === 1 ? ps[0].id : undefined);
       return ps.length;
     }), 'write'),
   };

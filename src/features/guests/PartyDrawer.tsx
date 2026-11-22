@@ -45,7 +45,9 @@ export function PartyDrawer({ event, party, all, tables, publish, startEditing =
   const simulate = useMutation((s) => s.parties.simulateSend([party.id]), {
     onSuccess: (r) => toast(r.failed.length ? { tone: 'danger', text: 'تعذر الإرسال (محاكاة): لا يوجد رقم جوال صحيح' } : { tone: 'success', text: 'تم الإرسال (محاكاة)' }),
   });
-  const remind = useMutation((s) => s.parties.sendReminder([party.id]), { onSuccess: (n) => toast(n ? { tone: 'success', text: 'تم إرسال تذكير (محاكاة)' } : { tone: 'warning', text: 'لا يمكن التذكير: بلا رقم جوال أو تم الرد' }) });
+  // a reminder is recorded only after the organizer confirms they sent it (no simulated reminders)
+  const [remindAsk, setRemindAsk] = useState(false);
+  const remind = useMutation((s) => s.parties.markReminded([party.id]), { onSuccess: () => { setRemindAsk(false); toast({ tone: 'success', text: 'سجّلنا التذكير' }); } });
   const update = useMutation((s, input: Parameters<typeof s.parties.update>[1]) => s.parties.update(party.id, input), { onSuccess: () => { setEditing(false); toast({ tone: 'success', text: 'تم حفظ التعديلات' }); } });
   const remove = useMutation((s) => s.parties.remove(party.id), { onSuccess: () => { toast({ tone: 'neutral', text: `تم حذف ${party.primaryGuestName}` }); onClose(); } });
 
@@ -89,13 +91,17 @@ export function PartyDrawer({ event, party, all, tables, publish, startEditing =
                   try { await navigator.share({ title: event.title, text: message }); setCopiedAsk(true); setShareStatus('انتهت المشاركة من الجهاز. أكّد الإرسال إذا أرسلتها للضيف.'); }
                   catch (e) { if (!(e instanceof DOMException && e.name === 'AbortError')) setShareStatus('تعذّرت المشاركة. انسخ الرابط أو استخدم واتساب.'); }
                 }}>مشاركة من الجهاز</Button>}
-                {party.rsvpStatus==='pending' && ['shared','opened'].includes(inv) && party.phone && <a className="btn btn-secondary btn-md" href={whatsappUrl(party.phone, reminderMessage(event,party,link))} target="_blank" rel="noopener noreferrer" onClick={()=>setCopiedAsk(true)}><Icon name="bell" size="sm"/>جهّز رسالة تذكير</a>}
+                {party.rsvpStatus==='pending' && ['shared','opened'].includes(inv) && validPhone && <a className="btn btn-secondary btn-md" href={whatsappUrl(party.phone, reminderMessage(event,party,link,dialect))} target="_blank" rel="noopener noreferrer" onClick={()=>setRemindAsk(true)}><Icon name="bell" size="sm"/>جهّز رسالة تذكير</a>}
               </div>
+              {remindAsk && (
+                <Banner tone="info" compact title="هل أرسلت التذكير؟" action={<Button size="sm" loading={remind.pending} onClick={() => void remind.run()}>نعم، أرسلتها</Button>}>
+                  نسجّل التذكير بعد أن ترسله بنفسك.
+                </Banner>
+              )}
               {shareStatus && <p className="field-hint" role="status">{shareStatus}</p>}
               <details className="drawer-secondary"><summary>خيارات المشاركة والمتابعة</summary><div className="action-grid">
                 <Button icon="check" disabled={busy} loading={markShared.pending} onClick={()=>void markShared.run()}>تم التواصل يدويًا</Button>
                 <Button icon="send" loading={simulate.pending} disabled={busy} onClick={()=>void simulate.run()}>{inv==='failed'?'أعد المحاولة (محاكاة)':'جرّب الإرسال (محاكاة)'}</Button>
-                {party.rsvpStatus==='pending' && <Button icon="bell" loading={remind.pending} disabled={busy} onClick={()=>void remind.run()}>جرّب التذكير (محاكاة)</Button>}
               </div></details>
               <p className="faint t-xs">فتح واتساب لا يعني أن الرسالة أُرسلت. أكّد «تم التواصل يدويًا» بعد إرسالها. خيارات المحاكاة لا ترسل رسائل فعلية.</p>
             </>

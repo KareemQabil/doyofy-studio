@@ -19,7 +19,8 @@ export function activityText(a: EventActivity): string {
     case 'invitation_shared': return n(d.count) > 1 ? `تمت مشاركة ${pluralOf(n(d.count), P.invitation)}${d.how === 'simulated' ? ' (محاكاة)' : ''}` : `تمت مشاركة دعوة ${s(d.name)}${d.how === 'manual' ? ' يدويًا' : d.how === 'simulated' ? ' (محاكاة)' : ''}`;
     case 'invitation_opened': return `${s(d.name)} فتح الدعوة`;
     case 'invitation_failed': return n(d.count) > 1 ? `تعذر إرسال ${pluralOf(n(d.count), P.invitation)} (محاكاة)` : `تعذر إرسال دعوة ${s(d.name)} (محاكاة)`;
-    case 'reminder_sent': return n(d.count) > 1 ? `تم إرسال تذكير إلى ${pluralOf(n(d.count), P.invitation)} (محاكاة)` : `تم إرسال تذكير إلى ${s(d.name)} (محاكاة)`;
+    // reminders are sent by the organizer from their own WhatsApp/SMS and recorded only after they confirm
+    case 'reminder_sent': return n(d.count) > 1 ? `ذكّرت ${pluralOf(n(d.count), P.invitation)} بالرد` : `ذكّرت ${s(d.name)} بالرد`;
     case 'rsvp_confirmed': return `${s(d.name)} أكد الحضور — ${people(n(d.count))}`;
     case 'rsvp_declined': return `${s(d.name)} اعتذر عن الحضور`;
     case 'rsvp_edited': return d.attending ? `${s(d.name)} عدّل رده — ${people(n(d.count))}` : `${s(d.name)} عدّل رده إلى الاعتذار`;

@@ -47,7 +47,8 @@ export interface PartyRepository {
   markShared(ids: string[], how: ShareHow): Promise<void>;
   /** prototype stand-in for WhatsApp sending: numbers that are missing/invalid fail (simulated) */
   simulateSend(ids: string[]): Promise<{ sent: string[]; failed: string[] }>;
-  sendReminder(ids: string[]): Promise<number>;
+  /** the organizer confirmed they sent a reply reminder themselves (WhatsApp / SMS / their own way); only pending invitations count */
+  markReminded(ids: string[]): Promise<number>;
 }
 
 export interface RsvpRepository {
