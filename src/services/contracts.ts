@@ -10,6 +10,7 @@ import type {
   InvitationParty, MealAllocation, PartyInput, RSVPResponse, RsvpInput, Table, UpdateEventInput, User,
 } from '../domain/types';
 import type { ExperienceDraft } from '../domain/guest-experience';
+import type { AutoSeatApply, AutoSeatUndo } from '../domain/auto-seating';
 
 export interface EventRepository {
   list(): Promise<Event[]>;
@@ -68,6 +69,11 @@ export interface SeatingRepository {
   /** parties at the table become unassigned */
   deleteTable(id: string): Promise<void>;
   assign(partyId: string, tableId: string | null): Promise<InvitationParty>;
+  /** A reviewed automatic-seating plan, all or nothing: proposed tables are created and every move applied in one write.
+   *  Rejects with 'conflict' (nothing written) when a party, reply or table changed since the preview, or a table would go over capacity. */
+  applyAutoSeating(eventId: string, plan: AutoSeatApply): Promise<{ parties: InvitationParty[]; tables: Table[]; undo: AutoSeatUndo }>;
+  /** Puts back exactly what applyAutoSeating changed; refused with 'conflict' if seating changed since. */
+  undoAutoSeating(eventId: string, undo: AutoSeatUndo): Promise<void>;
 }
 
 export interface CheckInContext {

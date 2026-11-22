@@ -28,6 +28,13 @@
   --c-accent: #BC4749;
   --c-accent-strong: #E58C8D;
   --c-accent-soft: #3A2624;
+  /* seating guest groups (tokens.css): soft fills stay dark under ivory text, edges stay ≥ 3:1 on #201E1C */
+  --grp-1: #6FCFC9; --grp-1-soft: #1D3432;
+  --grp-2: #F09AAE; --grp-2-soft: #3B2530;
+  --grp-3: #E2C27E; --grp-3-soft: #38301F;
+  --grp-4: #A9B6F0; --grp-4-soft: #262B44;
+  --grp-5: #A9C98A; --grp-5-soft: #27321D;
+  --grp-6: #D3A6E6; --grp-6-soft: #33263B;
   --c-selected: #F2EAD9;
   --c-selected-soft: #2F2B27;
   --c-on-selected: #171615;

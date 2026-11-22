@@ -225,6 +225,9 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
     // ---------------------------------------------------------------- seating
     seating: {
       reorderTables: async () => { throw new AppError('forbidden', 'ترتيب الطاولات متاح في التجربة المحلية. لم يُفعّل حفظ الترتيب على الخادم بعد.'); },
+      // many moves + new tables must land together or not at all: refuse until the API has one transactional endpoint
+      applyAutoSeating: async () => { throw new AppError('forbidden', 'التوزيع التلقائي متاح في التجربة المحلية. يحتاج الخادم إلى عملية توزيع آمنة قبل تفعيله.'); },
+      undoAutoSeating: async () => { throw new AppError('forbidden', 'التوزيع التلقائي متاح في التجربة المحلية. يحتاج الخادم إلى عملية توزيع آمنة قبل تفعيله.'); },
       listTables: async (eventId) => (await db.select<TableRow>('seating_tables', [['select', '*'], ['event_id', eq(requireId(eventId, 'event_not_found'))], ['order', 'sort_order.asc']])).map(toTable),
       createTables: async (eventId, tables) => {
         for (const t of tables) { const e = Object.values(validateTable(t))[0]; if (e) throw new AppError('validation', e); }
