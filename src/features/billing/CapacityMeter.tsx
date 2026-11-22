@@ -40,7 +40,7 @@ export function CapacityMeter({ eventId, parties, alwaysOfferUpgrade = false, re
       <span id={`${id}-l`} className="capacity-meter-label">سعة الضيوف</span>
       <span className="capacity-meter-count num"><strong>{used}</strong> / {limit}</span>
       <ProgressBar value={used} max={limit} label="سعة الضيوف المستخدمة" tone={level === 'ok' ? 'primary' : level === 'near' ? 'warning' : 'danger'} />
-      {receiptLink && <ReceiptButton receipts={receiptsFor(eventId)} label="الإيصال" />}
+      {receiptLink && <ReceiptButton receipts={receiptsFor(eventId)} />}
       {offer && <Button size="sm" variant={level === 'ok' ? 'ghost' : 'secondary'} onClick={() => openCapacityUpgrade(eventId, used)}>{t('upgradeCapacity')}</Button>}
     </div>
     {level !== 'ok' && <p className="capacity-meter-note" role="status">{note}{!owner ? ' زيادة السعة لصاحب المناسبة.' : ''}</p>}

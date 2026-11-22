@@ -137,7 +137,7 @@ async function run(vp) {
   let code = '';
   await step(vp, '08 add a guest', async () => {
     await go(`/app/events/${eventId}/guests`);
-    await page.getByRole('button', { name: 'أضف ضيفًا' }).first().click();
+    await page.getByRole('button', { name: /^(إضافة ضيف|أضف ضيفًا)$/ }).first().click(); // the empty list's one «add»
     await page.getByLabel('اسم الضيف أو العائلة').fill('عائلة الحربي');
     const hint = await page.locator('dialog[open]').innerText();
     if (/العروس|العريس/.test(hint)) throw new Error('wedding copy in the guest form');
