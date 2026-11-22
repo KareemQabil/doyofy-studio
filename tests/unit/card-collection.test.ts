@@ -75,3 +75,41 @@ test('collection artwork is light: clean inlined motifs and small shipped layers
     assert.ok(bytes < 180 * 1024, `${/id: '([^']+)'/.exec(block)?.[1]}: ${bytes} bytes of layers`);
   }
 });
+
+test('each face declares its number system and the invitation, its pages and the guest hub follow it', async () => {
+  const { faceDigits } = await import('../../src/domain/templates');
+  const { formatEventDate, formatTime } = await import('../../src/domain/format');
+  const { PageRegistry } = await import('../../src/engine/registries.js') as unknown as { PageRegistry: { get(id: string): unknown } };
+  await import('../../src/pages/index.js');
+  const ARABIC = /[٠-٩]/, LATIN = /[0-9]/;
+  const used = new Set<string>();
+  for (const d of COLLECTION) {
+    const card = CardRegistry.get(d.id);
+    assert.ok(card.digits === 'arab' || card.digits === 'latn', `${d.id}: declares digits`);
+    assert.equal(faceDigits(d.id), card.digits, `${d.id}: the platform mirror matches the face`);
+    used.add(card.digits!);
+  }
+  assert.deepEqual(used, new Set(['arab', 'latn']), 'both systems are in use');
+  const ev = event('wedding', 'نورة', 'فيصل');
+  for (const [cardId, digits] of [['kit-rose-garden', 'arab'], ['ty-blue', 'latn']] as const) {
+    const inv = toInvitationData(ev, { ...defaultDesign(ev), cardId });
+    assert.equal(inv.display.digits, digits, `${cardId}: carried by the invitation data`);
+    const { c, program } = deriveContent(inv);
+    const own = digits === 'arab' ? ARABIC : LATIN, other = digits === 'arab' ? LATIN : ARABIC;
+    for (const k of ['dateAr', 'timeAr', 'dayNum', 'yearAr', 'dateNum'] as const) assert.ok(own.test(c[k]!) && !other.test(c[k]!), `${cardId} ${k}: «${c[k]}»`);
+    assert.equal(c.year, '2031', 'English lines keep Latin digits');
+    assert.ok(own.test(program[0]!.time) && !other.test(program[0]!.time), `${cardId}: programme times`);
+    const html = CardRegistry.get(cardId).render(c);
+    assert.ok(html.includes(c.dateAr!) || html.includes(c.dayNum!), `${cardId}: the face shows its date`);
+    const page = (PageRegistry.get('date') as unknown as { render(v: unknown): string }).render({ t: CardRegistry.get(cardId).theme, c, calHref: '#', program, rsvp: {} });
+    assert.ok(page.includes(`>${c.dayNum}<`) && page.includes(c.timeAr!), `${cardId}: date page in the same digits`);
+    // guest hub
+    const hub = `${formatEventDate(ev.date, { digits })} · ${formatTime(ev.time, digits)}`;
+    assert.ok(own.test(hub) && !other.test(hub), `${cardId}: guest hub «${hub}»`);
+  }
+  // the face decides when drawn with another face's invitation data (thumbnails, the switcher)
+  const roseData = toInvitationData(ev, { ...defaultDesign(ev), cardId: 'kit-rose-garden' });
+  assert.ok(LATIN.test(deriveContent(roseData, { digits: CardRegistry.get('ty-blue').digits }).c.dateAr!));
+  // the platform's own dates stay Western
+  assert.ok(!ARABIC.test(formatEventDate(ev.date)) && !ARABIC.test(formatTime(ev.time)));
+});

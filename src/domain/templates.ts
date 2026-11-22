@@ -44,26 +44,31 @@ export interface CardEntry {
   primary: EventType; for: EventType[]; styles: TemplateStyle[];
   /** its three settings, the first is the default */
   scenes: [string, string, string];
+  /** the face's number system (cards/collection.js declares it; omitted = 'arab') */
+  digits?: Digits;
 }
+
+/** ١٢٣ or 123: every date and time of an invitation follows its face */
+export type Digits = 'arab' | 'latn';
 
 export const CARD_CATALOGUE: CardEntry[] = [
   { card: 'kit-rose-garden', slug: 'rose-garden', name: 'حديقة الورد', line: 'ورود مائية على ورق قطني، وإطار ذهبي رفيع.', primary: 'wedding', for: ['wedding', 'engagement'], styles: ['classic'], scenes: ['silk', 'palace', 'marble'] },
   { card: 'kit-two-rings', slug: 'two-rings', name: 'خاتمان', line: 'خاتمان داخل إطار بيضاوي، ويوم الحفل بخط كبير.', primary: 'engagement', for: ['engagement', 'wedding'], styles: ['minimal', 'classic'], scenes: ['petals', 'silk', 'marble'] },
   { card: 'kit-seal-arch', slug: 'seal-arch', name: 'ميثاق وقوس', line: 'ختم شمعي بأول حرفين من اسميكما، تحت قوس ونقش هندسي.', primary: 'katb_kitab', for: ['katb_kitab', 'wedding'], styles: ['classic'], scenes: ['palace', 'silk', 'candlelit'] },
   { card: 'kit-henna-rosette', slug: 'henna-rosette', name: 'وردة الحنّة', line: 'وردات ذهبية على أخضر الحنّة العميق.', primary: 'henna', for: ['henna'], styles: ['bold', 'classic'], scenes: ['palace', 'desert', 'candlelit'] },
-  { card: 'kit-balloons', slug: 'balloons', name: 'بالونات', line: 'بالونات وأعلام ملونة، ويوم الحفل بخط كبير.', primary: 'birthday', for: ['birthday'], styles: ['bold', 'modern'], scenes: ['clay', 'petals', 'silk'] },
+  { card: 'kit-balloons', slug: 'balloons', name: 'بالونات', line: 'بالونات وأعلام ملونة، ويوم الحفل بخط كبير.', primary: 'birthday', for: ['birthday'], styles: ['bold', 'modern'], scenes: ['clay', 'petals', 'silk'], digits: 'latn' },
   { card: 'kit-cap-diamond', slug: 'cap-diamond', name: 'قبعة في ماسة', line: 'قبعة التخرج في ماسة كحلية، مع سنة الدفعة.', primary: 'graduation', for: ['graduation'], styles: ['modern', 'classic'], scenes: ['marble', 'palace', 'starry'] },
   { card: 'kit-moon-cloud', slug: 'moon-cloud', name: 'قمر وغيمة', line: 'قمر وغيوم ناعمة، وخطوات صغيرة في الأسفل.', primary: 'newborn', for: ['newborn'], styles: ['minimal'], scenes: ['silk', 'petals', 'starry'] },
   { card: 'kit-dallah-olive', slug: 'dallah-olive', name: 'دلّة وزيتون', line: 'دلّة وأغصان زيتون، ونقش دافئ في الأسفل.', primary: 'family', for: ['family', 'iftar'], styles: ['classic'], scenes: ['garden', 'desert', 'marble'] },
   { card: 'kit-lantern-night', slug: 'lantern-night', name: 'فوانيس الليل', line: 'فوانيس معلّقة وهلال ذهبي على ليل كحلي.', primary: 'iftar', for: ['iftar', 'family'], styles: ['classic', 'bold'], scenes: ['palace', 'candlelit', 'starry'] },
-  { card: 'kit-forum-stars', slug: 'forum-stars', name: 'منبر النجوم', line: 'شريط نجمي جانبي، وعنوان واضح لمؤتمرك.', primary: 'conference', for: ['conference', 'corporate'], styles: ['modern', 'minimal'], scenes: ['marble', 'sea', 'palace'] },
-  { card: 'kit-satin-ribbon', slug: 'satin-ribbon', name: 'شريط الافتتاح', line: 'شريط ساتان وفيونكة تنتظر لحظة القص.', primary: 'opening', for: ['opening', 'corporate'], styles: ['modern', 'classic'], scenes: ['palace', 'marble', 'silk'] },
-  { card: 'kit-laurel-gala', slug: 'laurel-gala', name: 'وردة الحفل', line: 'وردة ذهبية تحمل السنة، على كحلي فاخر.', primary: 'corporate', for: ['corporate', 'conference'], styles: ['bold', 'classic'], scenes: ['candlelit', 'palace', 'sea'] },
+  { card: 'kit-forum-stars', slug: 'forum-stars', name: 'منبر النجوم', line: 'شريط نجمي جانبي، وعنوان واضح لمؤتمرك.', primary: 'conference', for: ['conference', 'corporate'], styles: ['modern', 'minimal'], scenes: ['marble', 'sea', 'palace'], digits: 'latn' },
+  { card: 'kit-satin-ribbon', slug: 'satin-ribbon', name: 'شريط الافتتاح', line: 'شريط ساتان وفيونكة تنتظر لحظة القص.', primary: 'opening', for: ['opening', 'corporate'], styles: ['modern', 'classic'], scenes: ['palace', 'marble', 'silk'], digits: 'latn' },
+  { card: 'kit-laurel-gala', slug: 'laurel-gala', name: 'وردة الحفل', line: 'وردة ذهبية تحمل السنة، على كحلي فاخر.', primary: 'corporate', for: ['corporate', 'conference'], styles: ['bold', 'classic'], scenes: ['candlelit', 'palace', 'sea'], digits: 'latn' },
   { card: 'kit-eucalyptus', slug: 'eucalyptus', name: 'غصن الأوكالبتوس', line: 'غصن أوكالبتوس وإخراج تحريري هادئ.', primary: 'other', for: ['other', 'engagement', 'family'], styles: ['minimal', 'modern'], scenes: ['garden', 'marble', 'silk'] },
   // six motion faces, nine from the owner's PDF layers, two typographic
   { card: 'mo-garden', slug: 'mo-garden', name: 'حديقة الوعد', line: 'قوس يُرسم وزهور تتفتح من الأطراف — بطاقة تتحرك.', primary: 'wedding', for: ['wedding', 'engagement', 'katb_kitab'], styles: ['classic', 'modern'], scenes: ['garden', 'silk', 'palace'] },
   { card: 'mo-orbits', slug: 'mo-orbits', name: 'مداران', line: 'خاتمان يدوران حتى يلتقيا، ويوم الحفل بخط كبير.', primary: 'engagement', for: ['engagement', 'wedding'], styles: ['modern', 'minimal'], scenes: ['petals', 'starry', 'silk'] },
-  { card: 'mo-colour', slug: 'mo-colour', name: 'يوم ملوّن', line: 'بالونات تطفو، وأعلام وكعكة بشموعها.', primary: 'birthday', for: ['birthday', 'newborn', 'other'], styles: ['bold', 'modern'], scenes: ['clay', 'petals', 'silk'] },
+  { card: 'mo-colour', slug: 'mo-colour', name: 'يوم ملوّن', line: 'بالونات تطفو، وأعلام وكعكة بشموعها.', primary: 'birthday', for: ['birthday', 'newborn', 'other'], styles: ['bold', 'modern'], scenes: ['clay', 'petals', 'silk'], digits: 'latn' },
   { card: 'mo-sky', slug: 'mo-sky', name: 'نحو السماء', line: 'قبعة ترتفع داخل غار يكتمل، على كحلي عميق.', primary: 'graduation', for: ['graduation'], styles: ['bold', 'classic'], scenes: ['starry', 'sea', 'marble'] },
   { card: 'mo-lanterns', slug: 'mo-lanterns', name: 'لمّة على نور', line: 'هلال وفوانيس تتمايل تحت قوس أخضر.', primary: 'iftar', for: ['iftar', 'family'], styles: ['classic'], scenes: ['candlelit', 'starry', 'desert'] },
   { card: 'mo-moon', slug: 'mo-moon', name: 'أصغر فرحة', line: 'قمر يطلّ وغيوم تمرّ فوق تلال ناعمة.', primary: 'newborn', for: ['newborn'], styles: ['minimal'], scenes: ['starry', 'silk', 'petals'] },
@@ -71,13 +76,13 @@ export const CARD_CATALOGUE: CardEntry[] = [
   { card: 'pf-rings', slug: 'pf-rings', name: 'وعد الذهب', line: 'ورود وردية وخاتمان من ذهب.', primary: 'engagement', for: ['engagement', 'wedding'], styles: ['classic'], scenes: ['petals', 'silk', 'marble'] },
   { card: 'pf-white-arch', slug: 'pf-white-arch', name: 'قوس الياسمين', line: 'قوس مريمي بحرفيكما الأولين، وورد أبيض.', primary: 'katb_kitab', for: ['katb_kitab', 'engagement', 'wedding'], styles: ['minimal', 'classic'], scenes: ['garden', 'palace', 'marble'] },
   { card: 'pf-henna', slug: 'pf-henna', name: 'نقش الحنّة', line: 'نقش أخضر هادئ على ورق دافئ.', primary: 'henna', for: ['henna', 'katb_kitab'], styles: ['classic'], scenes: ['palace', 'desert', 'garden'] },
-  { card: 'pf-gold-balloons', slug: 'pf-gold-balloons', name: 'بالونات الذهب', line: 'أسود وذهبي وبالونات وقصاصات لامعة.', primary: 'graduation', for: ['graduation', 'birthday', 'opening'], styles: ['bold'], scenes: ['marble', 'starry', 'palace'] },
+  { card: 'pf-gold-balloons', slug: 'pf-gold-balloons', name: 'بالونات الذهب', line: 'أسود وذهبي وبالونات وقصاصات لامعة.', primary: 'graduation', for: ['graduation', 'birthday', 'opening'], styles: ['bold'], scenes: ['marble', 'starry', 'palace'], digits: 'latn' },
   { card: 'pf-cornflower', slug: 'pf-cornflower', name: 'أزهار الترمس', line: 'أزهار زرقاء مائية تحتفي بالقادم الصغير.', primary: 'newborn', for: ['newborn', 'birthday'], styles: ['minimal'], scenes: ['garden', 'silk', 'marble'] },
   { card: 'pf-parchment', slug: 'pf-parchment', name: 'ورق الأيام', line: 'ورق عتيق ودلّة وأغصان زيتون للمّة العائلة.', primary: 'family', for: ['family', 'iftar'], styles: ['classic'], scenes: ['desert', 'garden', 'candlelit'] },
-  { card: 'pf-confetti', slug: 'pf-confetti', name: 'شرائط الذهب', line: 'شرائط ذهبية وقصاصات لافتتاح يليق.', primary: 'opening', for: ['opening', 'corporate', 'graduation'], styles: ['bold', 'modern'], scenes: ['palace', 'marble', 'starry'] },
+  { card: 'pf-confetti', slug: 'pf-confetti', name: 'شرائط الذهب', line: 'شرائط ذهبية وقصاصات لافتتاح يليق.', primary: 'opening', for: ['opening', 'corporate', 'graduation'], styles: ['bold', 'modern'], scenes: ['palace', 'marble', 'starry'], digits: 'latn' },
   { card: 'pf-dahlia', slug: 'pf-dahlia', name: 'أضاليا الفرح', line: 'أضاليا مائية تحت قوس ذهبي رفيع.', primary: 'other', for: ['other', 'wedding', 'engagement', 'birthday'], styles: ['bold', 'classic'], scenes: ['petals', 'silk', 'palace'] },
-  { card: 'ty-vertical', slug: 'ty-vertical', name: 'عنوان عمودي', line: 'عنوان لاتيني عمودي وتفاصيل واضحة للمؤتمرات.', primary: 'conference', for: ['conference', 'corporate'], styles: ['modern', 'minimal'], scenes: ['marble', 'sea', 'palace'] },
-  { card: 'ty-blue', slug: 'ty-blue', name: 'أزرق الدعوة', line: 'أزرق واثق وخط كوفي ورقم اليوم كبيرًا.', primary: 'corporate', for: ['corporate', 'conference', 'opening'], styles: ['modern'], scenes: ['sea', 'marble', 'starry'] },
+  { card: 'ty-vertical', slug: 'ty-vertical', name: 'عنوان عمودي', line: 'عنوان لاتيني عمودي وتفاصيل واضحة للمؤتمرات.', primary: 'conference', for: ['conference', 'corporate'], styles: ['modern', 'minimal'], scenes: ['marble', 'sea', 'palace'], digits: 'latn' },
+  { card: 'ty-blue', slug: 'ty-blue', name: 'أزرق الدعوة', line: 'أزرق واثق وخط كوفي ورقم اليوم كبيرًا.', primary: 'corporate', for: ['corporate', 'conference', 'opening'], styles: ['modern'], scenes: ['sea', 'marble', 'starry'], digits: 'latn' },
 ];
 
 /** every face × its three settings; the first setting of each face is featured */
@@ -85,6 +90,9 @@ export const TEMPLATE_PRESETS: TemplatePreset[] = CARD_CATALOGUE.flatMap((c) => 
   id: `${c.slug}-${scene}`, name: `${c.name} · ${SCENE_SHORT[scene] ?? scene}`, line: c.line, cardId: c.card, sceneId: scene, experience: A,
   styles: c.styles, occasionTags: c.for, primaryOccasion: c.primary, ...(i === 0 ? { featured: true } : {}),
 })));
+
+/** the number system a face shows its date and time in */
+export const faceDigits = (cardId: string): Digits => CARD_CATALOGUE.find((c) => c.card === cardId)?.digits ?? 'arab';
 
 /** display names of the faces (editor, workbench caption) */
 export const CARD_NAMES: Record<string, string> = Object.fromEntries(CARD_CATALOGUE.map((c) => [c.card, c.name]));

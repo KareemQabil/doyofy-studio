@@ -6,7 +6,7 @@
 import type { Event, InvitationDesign, InvitationDesignContent, PublishState } from './types';
 import { eventTypeInfo, isCoupleEvent } from './event';
 import { OCCASION_LABELS_EN, OCCASION_STARTERS } from './occasion-starters';
-import { CARD_NAMES, presetById } from './templates';
+import { CARD_NAMES, faceDigits, presetById } from './templates';
 export { CARD_NAMES };
 import { offsetString } from './format';
 import { resolveAudioSelection } from './audio-library';
@@ -98,6 +98,7 @@ export function toInvitationData(ev: InvitationEvent, c: InvitationDesignContent
     copy: { invitation: { ar: c.message.ar, en: c.message.en } },
     program: c.program.filter((p) => p.time && (p.ar || p.en)),
     rsvp: { minGuests: 1, maxGuests: Math.max(1, maxGuests), defaultGuests: Math.min(2, Math.max(1, maxGuests)) },
-    display: {},
+    // the face's number system travels with the invitation to its pages
+    display: { digits: faceDigits(c.cardId) },
   };
 }

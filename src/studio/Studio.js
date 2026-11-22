@@ -14,7 +14,7 @@ import { playCardMotion } from '../cards/card-motion.js';
 import { StateMachine } from '../engine/StateMachine.js';
 import { AudioEngine } from '../engine/AudioEngine.js';
 import { detectQuality } from '../engine/Quality.js';
-import { deriveContent, countdown } from '../data/derive.js';
+import { deriveContent, countdown, localDigits } from '../data/derive.js';
 import { STRINGS as T } from '../data/strings.js';
 import { PAGE_ORDER } from '../pages/index.js';
 import { SCENE_AMBIENCE } from '../audio/index.js';
@@ -59,9 +59,10 @@ export class Studio {
     this.embedded = embedded; this.showSwitcher = showSwitcher; this.startMuted = muted;
     this.guest = guest;
     this.doneAction = doneAction;
-    this.data = this._derive(invitation);
     this.assetBase = assetBase;
     this.cardId = CardRegistry.has(params.get('card')) ? params.get('card') : card;
+    this.invitation = invitation;
+    this.data = this._derive(invitation); // after cardId: the face sets the invitation's digits
     this.sceneId = SceneRegistry.has(params.get('scene')) ? params.get('scene') : scene;
     this.startAt = params.get('start') || start;
     this.reveal = RevealRegistry.get('depth-arrival');
@@ -76,7 +77,7 @@ export class Studio {
   }
 
   _derive(invitation) {
-    const d = deriveContent(invitation);
+    const d = deriveContent(invitation, { digits: CardRegistry.has(this.cardId) ? CardRegistry.get(this.cardId).digits : undefined });
     if (this.guest?.maxGuests) d.rsvp = { ...d.rsvp, maxGuests: this.guest.maxGuests, defaultGuests: Math.min(d.rsvp.defaultGuests ?? 2, this.guest.maxGuests) };
     return d;
   }
@@ -264,6 +265,7 @@ export class Studio {
 
   /** live content update (wizard details step): re-derive and refresh every surface that shows content */
   setContent(invitation) {
+    this.invitation = invitation;
     this.data = this._derive(invitation);
     this.audio.setPreference(invitation?.audio);
     this._syncAudioPreference();
@@ -280,6 +282,11 @@ export class Studio {
   setCard(id) {
     if (!CardRegistry.has(id) || id === this.cardId) return;
     this.cardId = id;
+    // another face may use the other number system: every date and time is derived again
+    if (CardRegistry.get(id).digits !== this.data.digits) {
+      this.data = this._derive(this.invitation);
+      this.host.querySelector('.bar-date').textContent = this.data.c.dateNum;
+    }
     this._applyCard();
     if (this.sm?.state === 'card') this._playFace();
     this._syncSwitcher();
@@ -337,7 +344,7 @@ export class Studio {
   _tickCountdown() {
     const paint = () => {
       const cd = countdown(this.data.start);
-      for (const k of ['days', 'h', 'm', 's']) { const el = this.el.page.querySelector(`[data-cd="${k}"]`); if (el) el.textContent = cd[k]; }
+      for (const k of ['days', 'h', 'm', 's']) { const el = this.el.page.querySelector(`[data-cd="${k}"]`); if (el) el.textContent = localDigits(cd[k], this.data.digits); }
     };
     paint();
     clearInterval(this.clock);

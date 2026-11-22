@@ -11,17 +11,30 @@ function parts(date, timeZone, locale, opts) {
   return Object.fromEntries(f.formatToParts(date).filter((p) => p.type !== 'literal').map((p) => [p.type, p.value]));
 }
 
-function fmtTime12(hhmm) {
-  const [h, m] = hhmm.split(':').map(Number);
-  const h12 = ((h + 11) % 12) + 1;
-  return `${h12}:${pad(m)} ${h >= 12 ? 'PM' : 'AM'}`;
+/**
+ * The invitation's number system: each face declares 'arab' (١٢٣) or 'latn' (123) and every date and time
+ * shown for that invitation — the face, the pages, the countdown — follows it. English text stays Latin.
+ */
+export const digitsOf = (value) => (value === 'latn' ? 'latn' : 'arab');
+/** rewrite ASCII digits in the invitation's number system */
+export function localDigits(value, digits) {
+  const s = String(value ?? '');
+  return digitsOf(digits) === 'arab' ? s.replace(/[0-9]/g, (n) => String.fromCharCode(0x0660 + Number(n))) : s;
 }
 
-export function deriveContent(inv) {
+function fmtTime12(hhmm, digits) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const h12 = ((h + 11) % 12) + 1;
+  return digits === 'arab' ? localDigits(`${h12}:${pad(m)} ${h >= 12 ? 'م' : 'ص'}`, digits) : `${h12}:${pad(m)} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+
+/** `opts.digits` (the face being drawn) wins over the invitation's own `display.digits` */
+export function deriveContent(inv, opts = {}) {
+  const digits = digitsOf(opts.digits ?? inv.display?.digits);
   const d = new Date(inv.event.start);
   const tz = inv.event.timeZone;
   const en = parts(d, tz, 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
-  const ar = parts(d, tz, 'ar-EG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const ar = parts(d, tz, `ar-EG-u-nu-${digits}`, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' });
   const num = parts(d, tz, 'en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const disp = inv.display || {};
   const A = inv.couple.a, B = inv.couple.b;
@@ -36,9 +49,11 @@ export function deriveContent(inv) {
     dayAr: disp.dayAr ?? ar.weekday, dayEn: disp.dayEn ?? en.weekday,
     dateAr: disp.dateAr ?? `${ar.day} ${ar.month} ${ar.year}`,
     dateEn: disp.dateEn ?? `${Number(en.day)} ${en.month} ${en.year}`,
-    dayNum: String(Number(num.day)), monthAr: disp.monthAr ?? ar.month, monthEn: en.month, year: num.year,
-    dateNum: `${num.day} · ${num.month} · ${num.year}`,
-    dateShort: `${num.day}.${num.month}.${num.year.slice(2)}`,
+    // dayNum, yearAr, dateNum, dateShort follow the face's digits; `year` stays Latin for English lines
+    dayNum: localDigits(Number(num.day), digits), monthAr: disp.monthAr ?? ar.month, monthEn: en.month, year: num.year, yearAr: localDigits(num.year, digits),
+    dateNum: localDigits(`${num.day} · ${num.month} · ${num.year}`, digits),
+    dateShort: localDigits(`${num.day}.${num.month}.${num.year.slice(2)}`, digits),
+    digits, numLang: digits === 'arab' ? 'ar' : 'en',
     timeAr: disp.timeAr ?? `${ar.hour}:${ar.minute} ${ar.dayPeriod || ''}`.trim(),
     timeEn: disp.timeEn ?? `${Number(en.hour)}:${en.minute} ${(en.dayPeriod || '').toUpperCase().replace(/\./g, '')}`.trim(),
     venueAr: inv.venue.ar, venueEn: inv.venue.en, cityAr: inv.venue.city.ar, cityEn: inv.venue.city.en,
@@ -58,11 +73,11 @@ export function deriveContent(inv) {
   const mapHref = inv.venue.mapUrl || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(`${c.venueEn} ${c.cityEn}`);
 
   const program = inv.program.map((p, i, a) => ({
-    time: fmtTime12(p.time), ar: p.ar, en: p.en,
+    time: fmtTime12(p.time, digits), dir: digits === 'arab' ? 'rtl' : 'ltr', ar: p.ar, en: p.en,
     delay: (0.25 + i * 0.22).toFixed(2), tailOpacity: i === a.length - 1 ? 0 : 1,
   }));
 
-  return { c, calHref, mapHref, program, start, copy: inv.copy, rsvp: inv.rsvp };
+  return { c, calHref, mapHref, program, start, digits, copy: inv.copy, rsvp: inv.rsvp };
 }
 
 /** live countdown parts, as the canonical Date page shows them */

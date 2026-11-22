@@ -9,7 +9,8 @@ import type { PrototypeControls } from '../services';
 import { GuestLimitError } from '../domain/billing';
 import { requestGuestUpgrade } from '../features/billing/UpgradeFlow';
 
-interface Entry { data?: unknown; error?: unknown; promise?: Promise<void>; loadedOnce: boolean; stale: boolean; version: number; fn: (s: Services) => Promise<unknown>; subs: Set<() => void> }
+/** `started`/`settled` count fetches, so a caller can wait for one that began after the data last changed. */
+interface Entry { data?: unknown; error?: unknown; promise?: Promise<void>; loadedOnce: boolean; stale: boolean; version: number; started: number; settled: number; fn: (s: Services) => Promise<unknown>; subs: Set<() => void> }
 
 class QueryClient {
   private entries = new Map<string, Entry>();
@@ -18,7 +19,7 @@ class QueryClient {
   }
   entry(key: string, fn: (s: Services) => Promise<unknown>): Entry {
     let e = this.entries.get(key);
-    if (!e) { e = { loadedOnce: false, stale: true, version: 0, fn, subs: new Set() }; this.entries.set(key, e); }
+    if (!e) { e = { loadedOnce: false, stale: true, version: 0, started: 0, settled: 0, fn, subs: new Set() }; this.entries.set(key, e); }
     e.fn = fn;
     return e;
   }
@@ -26,11 +27,12 @@ class QueryClient {
     const e = this.entries.get(key);
     if (!e || e.promise) return;
     e.stale = false;
+    const run = ++e.started;
     e.promise = e.fn(this.services).then(
       (d) => { e.data = d; e.error = undefined; },
       (err) => { e.error = err; },
     ).finally(() => {
-      e.promise = undefined; e.loadedOnce = true; e.version++;
+      e.promise = undefined; e.loadedOnce = true; e.settled = run; e.version++;
       e.subs.forEach((s) => s());
       if (e.stale && e.subs.size) this.fetch(key); // changed while in flight
     });
@@ -77,21 +79,30 @@ export interface QueryResult<T> {
   refetch: () => void;
 }
 
-/** `key` identifies the data (include ids); `null` disables the query. */
-export function useQuery<T>(key: string | null, fn: (s: Services) => Promise<T>): QueryResult<T> {
+/**
+ * `key` identifies the data (include ids); `null` disables the query.
+ * `fresh`: stay `loading` until a fetch that started after the latest change has settled, instead of
+ * showing cached data while it revalidates. Use it where the data seeds local state once (an editor
+ * draft): a cached copy from before a write that just happened would otherwise be edited and saved back.
+ */
+export function useQuery<T>(key: string | null, fn: (s: Services) => Promise<T>, opts: { fresh?: boolean } = {}): QueryResult<T> {
   const { client } = useCtx();
   const fnRef = useRef(fn);
   fnRef.current = fn;
   const k = key ?? '__disabled__';
   const entry = client.entry(k, (s) => (key ? fnRef.current(s) : Promise.resolve(undefined)));
+  // the fetch this mount must wait for: the one in flight, or the next one when the cache is already stale
+  const needed = useRef<{ key: string; run: number } | null>(null);
+  if (needed.current?.key !== k) needed.current = { key: k, run: entry.stale ? entry.started + 1 : entry.started };
   useSyncExternalStore(
     useCallback((cb) => (key ? client.subscribe(k, cb) : () => {}), [client, k, key]),
     () => entry.version,
   );
+  const waiting = !!opts.fresh && entry.settled < needed.current!.run;
   return {
-    data: entry.data as T | undefined,
-    error: entry.error,
-    loading: !!key && !entry.loadedOnce,
+    data: waiting ? undefined : entry.data as T | undefined,
+    error: waiting ? undefined : entry.error,
+    loading: !!key && (!entry.loadedOnce || waiting),
     refreshing: !!entry.promise && entry.loadedOnce,
     refetch: () => { entry.stale = true; client.fetch(k); },
   };

@@ -7,6 +7,12 @@ export class DraftQueue<T, R> {
   constructor(private value: T, private write: (value: T) => Promise<R>, dirty = false) { this.revision = dirty ? 1 : 0; }
   get dirty() { return this.revision !== this.savedRevision; }
   update(value: T) { this.value = value; this.revision++; }
+  /** adopt a value saved elsewhere; refused (false) while local edits are pending or being written */
+  replace(value: T): boolean {
+    if (this.dirty || this.running) return false;
+    this.value = value;
+    return true;
+  }
   flush(): Promise<R | null> {
     if (this.running) return this.running;
     this.running = this.drain().finally(() => { this.running = null; });

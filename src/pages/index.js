@@ -45,7 +45,7 @@ const date = {
     <div class="fx-rise fx-d2" style="display: flex; align-items: center; gap: 16px; margin-top: 18px">
       <div style="display: flex; flex-direction: column; align-items: center"><span class="ar" style="font-size: 16px; color: ${t.muted}">${e(c.dayAr)}</span><span dir="ltr" style="font-size: 12px; letter-spacing: 0.2em; color: ${t.muted}">${e(c.dayEnU)}</span></div>
       <span style="display: block; width: 1px; height: 60px; background: ${t.accent}"></span>
-      <span dir="ltr" style="font-size: 96px; font-weight: 300; line-height: 1">${e(c.dayNum)}</span>
+      <span dir="ltr"${c.digits === 'arab' ? ' class="ar"' : ''} style="font-size: 96px; font-weight: 300; line-height: 1">${e(c.dayNum)}</span>
       <span style="display: block; width: 1px; height: 60px; background: ${t.accent}"></span>
       <div style="display: flex; flex-direction: column; align-items: center"><span class="ar" style="font-size: 16px; color: ${t.muted}">${e(c.monthAr)}</span><span dir="ltr" style="font-size: 12px; letter-spacing: 0.2em; color: ${t.muted}">${e(c.monthEnU)} ${e(c.year)}</span></div>
     </div>
@@ -67,7 +67,7 @@ const program = {
     ${kicker(t, T.theEvening)}
     <ol style="list-style: none; margin: 26px 0 0; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 14px">
       ${rows.map((it) => `<li class="fx-rise" style="display: flex; flex-direction: column; align-items: center; animation-delay: ${it.delay}s">
-        <span dir="ltr" style="font-size: 11.5px; letter-spacing: 0.3em; color: ${t.aText}">${e(it.time)}</span>
+        <span dir="${it.dir === 'rtl' ? 'rtl' : 'ltr'}"${it.dir === 'rtl' ? ' class="ar"' : ''} style="font-size: ${it.dir === 'rtl' ? '13px' : '11.5px'}; letter-spacing: ${it.dir === 'rtl' ? '0.04em' : '0.3em'}; color: ${t.aText}">${e(it.time)}</span>
         <span style="font-family: ${t.fAr}; font-size: 25px; line-height: 1.45">${e(it.ar)}</span>
         <span dir="ltr" style="font-size: 15px; font-style: italic; color: ${t.muted}">${e(it.en)}</span>
         <svg width="10" height="26" viewBox="0 0 10 26" style="margin-top: 10px; opacity: ${it.tailOpacity}" aria-hidden="true"><line x1="5" y1="0" x2="5" y2="16" stroke="${t.accent}" stroke-width="1"></line><path d="M5 16 L9 21 L5 26 L1 21Z" fill="${t.accent}"></path></svg>

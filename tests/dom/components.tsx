@@ -250,6 +250,45 @@ export async function run(){
   const after=(await api.invitations.get(event.id)).draft;assert.deepEqual(after.displayNames,before.displayNames);assert.deepEqual(after.message,before.message);assert.deepEqual(after.program,before.program);
   await api.invitations.saveDraft(event.id,before);
  });
+ await check('an applied template reaches the editor, survives typing and offers publishing the change (P0)',async()=>{
+  // real latency: the gallery's write invalidates the design while its refetch is still in flight on arrival
+  const until=async(ok:()=>boolean,what:string)=>{for(let i=0;i<80&&!ok();i++)await act(async()=>{await new Promise(r=>setTimeout(r,25));});assert.ok(ok(),what);};
+  const cardLabel=()=>document.querySelector('.ed-workbench .card-thumb')?.getAttribute('aria-label')??'';
+  const publishText=()=>document.querySelector('.ed-dock .ed-publish')?.textContent??'';
+  history.replaceState(null,'','/app/events/evt_wedding/invitation/design');await render(<App mode="history"/>);await settle();
+  const first=(window as unknown as {__doyofy:typeof made}).__doyofy.services;
+  const original=(await first.invitations.get(event.id)).draft;
+  await act(async()=>{await first.invitations.publish(event.id);});await settle();
+  assert.notEqual(original.cardId,'pf-gazebo');assert.ok(publishText().includes('إلى الضيوف'));
+  // 1) the gallery: open the design from its link and use it (a new App instance: re-read its services)
+  await render(null);history.replaceState(null,'','/app/events/evt_wedding/invitation/templates?template=pf-gazebo-garden');await render(<App mode="history"/>);
+  const handle=(window as unknown as {__doyofy:typeof made}).__doyofy,api=handle.services;
+  handle.prototype.update({latencyMs:60});
+  try {
+   await until(()=>!!document.querySelector('.tp .dialog-foot .btn-primary'),'gallery preview opens');
+   await click(document.querySelector('.tp .dialog-foot .btn-primary')!);
+   await until(()=>location.pathname.endsWith('/invitation/design')&&!!document.querySelector('.ed-workbench .card-thumb'),'editor opens');
+   assert.ok(cardLabel().includes('شرفة الحديقة'),`editor shows the applied design, got «${cardLabel()}»`);
+   assert.ok(publishText().includes('انشر التعديلات'),`publish offers the change, got «${publishText()}»`);
+   const name=document.querySelector<HTMLInputElement>('.ed-group input')!;await fill(name,'نورة بعد القالب');
+   await until(()=>document.querySelector('.save-state.is-saved')!==null,'autosave settles');
+   const saved=(await api.invitations.get(event.id)).draft;
+   assert.equal(saved.cardId,'pf-gazebo','typing must not write the previous design back');assert.equal(saved.displayNames.a,'نورة بعد القالب');
+   assert.ok(cardLabel().includes('شرفة الحديقة'));assert.ok(publishText().includes('انشر التعديلات'));
+   // 2) the editor's own card picker
+   await click(document.querySelector('#ed-tab-design')!);
+   const pick=Array.from(document.querySelectorAll<HTMLButtonElement>('.ed-cards [role="radio"]')).find(b=>b.getAttribute('aria-checked')==='false')!;
+   const pickedName=pick.querySelector('.ed-pick-name')!.textContent!;await click(pick);
+   await click(document.querySelector('#ed-tab-content')!);await fill(document.querySelector<HTMLInputElement>('.ed-group input')!,'نورة بعد البطاقة');
+   await until(()=>document.querySelector('.save-state.is-saved')!==null&&(document.querySelector<HTMLInputElement>('.ed-group input')!.value==='نورة بعد البطاقة'),'second autosave settles');
+   await act(async()=>{await new Promise(r=>setTimeout(r,800));});
+   assert.ok(cardLabel().includes(pickedName));assert.notEqual((await api.invitations.get(event.id)).draft.cardId,'pf-gazebo');
+   assert.ok(publishText().includes('انشر التعديلات'));
+  } finally {
+   handle.prototype.update({latencyMs:0});
+   await api.invitations.saveDraft(event.id,original);await api.invitations.publish(event.id);
+  }
+ });
  await check('invitation without a draft starts directly in the editor and never claims single-name cards are missing',async()=>{
   const ev=await made.services.events.create({type:'graduation',names:{a:'اختبار التخرج'},date:event.date,time:'19:00',venue:{name:'قاعة',city:'الرياض'}});
   history.replaceState(null,'',`/app/events/${ev.id}/invitation?theme=horizon`);await render(<App mode="history"/>);await settle();
@@ -489,6 +528,10 @@ export async function run(){
   assert.ok(location.pathname.endsWith('/invitation/design'));
   const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services;const id=location.pathname.split('/')[3]!;
   assert.equal((await api.invitations.get(id)).draft.cardId,selected.cardId);assert.equal(window.localStorage.getItem('doyofy:create-draft:v1:usr_owner'),null);
+  // typing in the editor keeps the design chosen from the link
+  await fill(document.querySelector<HTMLInputElement>('.ed-group input')!,'خريجة الرابط');await act(async()=>{await new Promise(r=>setTimeout(r,800));});await settle();
+  const typed=(await api.invitations.get(id)).draft;assert.equal(typed.cardId,selected.cardId);assert.equal(typed.displayNames.a,'خريجة الرابط');
+  assert.ok(document.querySelector('.ed-workbench .card-thumb')!.getAttribute('aria-label')!.includes('نحو السماء'));
  });
  await check('one publish saves event-only changes and focuses invalid details before publishing',async()=>{
   history.replaceState(null,'',paths.design(event.id));await render(<App mode="history"/>);await settle();
