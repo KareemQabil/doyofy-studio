@@ -74,6 +74,8 @@ export function recommendedPlan(required: number): { limit: number; price: numbe
 export function planPrice(limit: number): number {
   return GUEST_PLANS.find(p => p.limit === limit)?.price ?? Math.ceil(limit / 1000) * 149;
 }
+/** every demo receipt on this device, newest first (the account's payments list) */
+export function allReceipts(): Receipt[] { return storedReceipts().sort((a, b) => b.at.localeCompare(a.at)); }
 export function receiptsFor(eventId: string): Receipt[] {
   return storedReceipts().filter(r => r.eventId === eventId).sort((a, b) => b.at.localeCompare(a.at));
 }

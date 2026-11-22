@@ -96,3 +96,50 @@ test('all 13 occasions complete the simplified journey with their own starter, p
     assert.equal((await s.checkIn.list(ev.id)).filter(r=>!r.undone).length,1);
   }
 });
+
+test('reminders are recorded only when the organizer confirms them; nothing simulates a send', async () => {
+  const { createServices } = await import('../../src/services/index');
+  const { services: s } = createServices();
+  const ev = (await s.events.list())[0]!;
+  const p = await s.parties.create(ev.id, { primaryGuestName: 'تذكير مؤكد', phone: '0551112299', maxPartySize: 2 });
+  assert.equal('sendReminder' in s.parties, false, 'no fake reminder path');
+  await s.parties.markShared([p.id], 'manual');
+  assert.equal((await s.parties.get(p.id)).delivery.reminderAt, undefined, 'sharing is not a reminder');
+  assert.equal(await s.parties.markReminded([p.id]), 1);
+  const after = await s.parties.get(p.id);
+  assert.ok(after.delivery.reminderAt);
+  assert.equal(after.delivery.status, 'shared', 'the delivery state is untouched');
+  const log = (await s.activity.list(ev.id)).find((a) => a.kind === 'reminder_sent' && a.partyId === p.id);
+  assert.ok(log && log.data.how === 'manual');
+  // a guest who already replied is not reminded
+  await s.rsvp.setByOrganizer(p.id, { attending: true, count: 1 });
+  assert.equal(await s.parties.markReminded([p.id]), 0);
+});
+
+test('import creates the missing tables it was asked to and keeps each guest\'s planned table, in one write', async () => {
+  const { createServices } = await import('../../src/services/index');
+  const { services: s } = createServices();
+  const ev = await s.events.create({ type: 'birthday', names: { a: 'طاولات الملف' }, date: '2027-06-20', time: '20:00', venue: { name: 'قاعة', city: 'الرياض' } });
+  await s.seating.createTables(ev.id, [{ name: 'طاولة 1', capacity: 8 }]);
+  const made = await s.parties.importMany(ev.id, [
+    { primaryGuestName: 'أ', maxPartySize: 2, tableName: 'طاولة 1' },
+    { primaryGuestName: 'ب', maxPartySize: 2, tableName: 'الشرفة' },
+    { primaryGuestName: 'ج', maxPartySize: 2 },
+  ], { skipped: 0, source: 'ملف', newTables: ['الشرفة'] });
+  const tables = await s.seating.listTables(ev.id);
+  assert.deepEqual(tables.map((t) => t.name), ['طاولة 1', 'الشرفة']);
+  assert.equal(made[0]!.tableId, tables[0]!.id);
+  assert.equal(made[1]!.tableId, tables[1]!.id);
+  assert.equal(made[2]!.tableId, undefined);
+  assert.equal(made[1]!.rsvpStatus, 'pending', 'a planned table does not confirm anyone');
+});
+
+test('a new account starts empty (no demo events); the demo comes back on request', async () => {
+  const { createServices } = await import('../../src/services/index');
+  const { services: s, prototype } = createServices();
+  prototype.reset('empty');
+  assert.equal((await s.events.list()).length, 0);
+  assert.equal(prototype.scenario(), 'empty');
+  prototype.reset('before');
+  assert.ok((await s.events.list()).length > 0);
+});

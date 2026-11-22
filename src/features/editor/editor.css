@@ -32,6 +32,12 @@
 .ed-sec-head { display: flex; align-items: flex-start; gap: var(--s-3); }
 .ed-sec-title { font-size: var(--fs-md); }
 .ed-sec-hint { font-size: var(--fs-sm); color: var(--c-text-3); line-height: 1.7; }
+/* the English line did not follow an Arabic edit: say so beside the field, with «edit» / «remove» */
+.ed-en-stale { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; padding: 8px 10px; border-radius: var(--r-md); background: var(--c-info-soft); color: var(--c-text); font-size: var(--fs-sm); line-height: 1.6; }
+.ed-en-stale > .icon { flex: none; color: var(--c-info); }
+.ed-en-stale > span:first-of-type { flex: 1 1 12rem; min-width: 0; }
+.ed-en-stale-actions { display: inline-flex; gap: 12px; }
+.ed-en-stale .link-btn { min-height: 44px; }
 
 .ed-program { list-style: none; display: flex; flex-direction: column; gap: var(--s-2); }
 .ed-program li { display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; gap: var(--s-2); align-items: center; }

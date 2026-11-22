@@ -40,7 +40,8 @@ export interface PartyRepository {
   create(eventId: string, input: PartyInput): Promise<InvitationParty>;
   update(id: string, input: Partial<PartyInput>): Promise<InvitationParty>;
   remove(id: string): Promise<void>;
-  importMany(eventId: string, inputs: PartyInput[], meta: { skipped: number; source: string }): Promise<InvitationParty[]>;
+  /** `newTables`: names of tables to create in the same write (the file's «الطاولة» column); inputs refer to tables by `tableName` */
+  importMany(eventId: string, inputs: PartyInput[], meta: { skipped: number; source: string; newTables?: string[] }): Promise<InvitationParty[]>;
   /** Fresh invitations in the destination; attendance/delivery/table state never carries between events. Atomic, duplicate-safe. */
   transfer(input: { ids: string[]; targetEventId: string; mode: 'copy' | 'move' }): Promise<InvitationParty[]>;
   /** organizer shared the link themselves (copy / share sheet / "contacted manually") */

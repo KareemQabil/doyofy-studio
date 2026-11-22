@@ -36,7 +36,7 @@ const WEDDING: Spec[] = [
   { name: 'هند السالم', phone: '+966566102948', max: 2, side: 'أهل العروس', rsvp: 'c', count: 2, delivery: 'opened', table: 5 },
   { name: 'عمة نورة — أم خالد', phone: '+966566102948', max: 3, side: 'أهل العروس', rsvp: 'c', count: 3, delivery: 'opened', table: 5, notes: 'نفس رقم هند؟ تأكد' },
   { name: 'فيصل المطيري', phone: '+966532219904', max: 2, side: 'أصدقاء العريس', rsvp: 'c', count: 2, delivery: 'opened', table: 4 },
-  { name: 'عائلة البقمي', phone: '+966559081123', max: 4, side: 'أهل العروس', rsvp: 'c', count: 5, delivery: 'opened', table: 7, notes: 'خفّضنا العدد المسموح إلى 4' },
+  { name: 'عائلة البقمي', phone: '+966559081123', max: 4, side: 'أهل العروس', rsvp: 'c', count: 4, delivery: 'opened', table: 7, notes: 'اتفقنا على 4 بدل 5' },
   { name: 'ريم الجهني', phone: '+966548832270', max: 2, side: 'زميلات العروس', rsvp: 'c', count: 2, delivery: 'opened', table: 6 },
   { name: 'تركي الرشيد', phone: '+966503321187', max: 2, side: 'أصدقاء العريس', rsvp: 'c', count: 2, delivery: 'opened', table: 4 },
   { name: 'عائلة الفيفي', phone: '+966571120934', max: 5, side: 'أهل العريس', rsvp: 'c', count: 4, delivery: 'opened' },
@@ -108,6 +108,8 @@ const COMPLETED: Array<[string, number, 'c' | 'd', number, number]> = [
 function at(base: Date, minutesAgo: number) { return new Date(base.getTime() - minutesAgo * 60000).toISOString(); }
 
 export function buildSeed(now: Date, scenario: ScenarioId): DbShape {
+  // a brand-new account (sign-up): nothing but the account itself — no one else's wedding in «مناسباتي»
+  if (scenario === 'empty') return { version: 1, scenario, seededAt: now.toISOString(), events: [], designs: [], parties: [], responses: [], tables: [], checkIns: [], activity: [] };
   const rng: Rng = seededRng(20261004);
   const tz = 'Asia/Riyadh';
   const today = localDateOf(now, tz);

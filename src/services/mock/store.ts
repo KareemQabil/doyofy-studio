@@ -22,7 +22,8 @@ export interface DbShape {
   activity: EventActivity[];
 }
 
-export type ScenarioId = 'before' | 'event_day';
+/** 'empty': a fresh account starts with no events (sign-up); the two demo scenarios are seeded */
+export type ScenarioId = 'before' | 'event_day' | 'empty';
 
 export interface PrototypeSettings {
   latencyMs: number;

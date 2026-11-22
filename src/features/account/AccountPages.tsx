@@ -14,6 +14,10 @@ import { saveDemoAccount, useDemoAccount } from './session';
 import { CateringHome } from './CateringHome';
 import { canViewFood } from '../../domain/roles';
 import { paths } from '../../app/paths';
+import { ReceiptList } from '../billing/Receipt';
+import { allReceipts } from '../../domain/billing';
+import { useEvents } from '../shared/queries';
+import { useCapacityVersion } from '../billing/CapacityMeter';
 
 /** each account moment gets its own still life (A10) instead of one repeated hero; phones show it as a slim band */
 const AUTH_ART = {
@@ -21,19 +25,25 @@ const AUTH_ART = {
   collection: { src: 'occasion-collection', line: <>كل مناسبة<br />تبدأ بورقة بيضاء.</> },
   table: { src: 'celebration-table', line: <>المائدة جاهزة،<br />والضيوف قادمون.</> },
 } as const;
-function AuthLayout({ children, title, line, art = 'folds' }: { children: ReactNode; title: string; line: string; art?: keyof typeof AUTH_ART }) {
+/** the header's one link points to the OTHER door: sign-up ↔ log-in (never «into the platform» before an account exists) */
+function AuthLayout({ children, title, line, art = 'folds', other = { to: '/app/login', label: 'تسجيل الدخول' } }: { children: ReactNode; title: string; line: string; art?: keyof typeof AUTH_ART; other?: { to: string; label: string } }) {
   const a = AUTH_ART[art];
-  return <div className={`auth-page art-${art}`}><header className="auth-header"><Link to="/app/welcome" aria-label="ضيوفي"><Logo height={32} /></Link><Link to="/app/events">الدخول للمنصة<Icon name="forward" size="sm" /></Link></header><main className="auth-main"><section className="auth-copy"><p className="auth-kicker">كل فرحة تبدأ بدعوة.</p><h1>{title}</h1><p className="auth-line">{line}</p>{children}</section><aside className="auth-art" aria-label="خامات من هوية ضيوفي"><picture><source srcSet={`assets/editorial/${a.src}.avif`} type="image/avif" /><img src={`assets/editorial/${a.src}.webp`} alt="" width="1536" height="1024" decoding="async" /></picture><div className="auth-art-caption"><span className="auth-art-index">ضيوفي</span><p>{a.line}</p><span>دعوة · ضيوف · ردود · استقبال</span></div></aside></main><footer className="auth-footer">ضيوفي — من أول دعوة إلى آخر ضيف.<span>نسخة تجربة</span></footer></div>;
+  return <div className={`auth-page art-${art}`}><header className="auth-header"><Link to="/app/welcome" aria-label="ضيوفي"><Logo height={32} /></Link><Link to={other.to}>{other.label}<Icon name="forward" size="sm" /></Link></header><main className="auth-main"><section className="auth-copy"><p className="auth-kicker">كل فرحة تبدأ بدعوة.</p><h1>{title}</h1><p className="auth-line">{line}</p>{children}</section><aside className="auth-art" aria-label="خامات من هوية ضيوفي"><picture><source srcSet={`assets/editorial/${a.src}.avif`} type="image/avif" /><img src={`assets/editorial/${a.src}.webp`} alt="" width="1536" height="1024" decoding="async" /></picture><div className="auth-art-caption"><span className="auth-art-index">ضيوفي</span><p>{a.line}</p><span>دعوة · ضيوف · ردود · استقبال</span></div></aside></main><footer className="auth-footer">ضيوفي — من أول دعوة إلى آخر ضيف.<span>نسخة تجربة</span></footer></div>;
 }
 
 export { WelcomePage } from './Welcome';
 
 export function LoginPage({ signup = false }: { signup?: boolean }) {
-  const navigate = useNavigate(), loc = useLocation(); const a = useDemoAccount();
+  const navigate = useNavigate(), loc = useLocation(); const a = useDemoAccount(); const proto = usePrototype();
   const [name, setName] = useState(a.name || ''), [email, setEmail] = useState(a.email || ''), [error, setError] = useState('');
   const submit = (e: React.FormEvent) => { e.preventDefault(); if (!name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('اكتب اسمك وبريدًا إلكترونيًا صحيحًا.'); return; }
-    saveDemoAccount({ status: 'demo', name: name.trim(), email: email.trim() }); navigate(safeAccountReturn(loc.search.get('next')), { replace: true }); };
-  return <AuthLayout art={signup ? 'collection' : 'folds'} title={signup ? 'أول خطوة لفرحة مرتّبة.' : 'أهلًا بعودتك.'} line={signup ? 'مساحة لدعواتك ومناسباتك وكل من تحب.' : 'دعواتك وتفاصيل مناسباتك، في مكان واحد.'}><form className="auth-form" onSubmit={submit}><Field label="اسمك" required error={error && !name.trim() ? error : undefined}><Input autoComplete="name" value={name} maxLength={70} onChange={e => { setName(e.target.value); setError(''); }} placeholder="الاسم الذي تحب أن نناديك به" /></Field><Field label="البريد الإلكتروني" required error={error && !!name.trim() ? error : undefined}><Input type="email" ltr autoComplete="email" inputMode="email" value={email} maxLength={160} onChange={e => { setEmail(e.target.value); setError(''); }} placeholder="you@example.com" /></Field><Button type="submit" variant="primary" size="lg" block iconEnd="forward">{signup ? 'ابدأ التجربة' : 'دخول تجريبي'}</Button><p className="auth-demo-note"><Icon name="info" size="sm" />جلسة تجربة على هذا الجهاز. لا نطلب كلمة مرور ولا نرسل بريدًا فعليًا.</p></form><p className="auth-switch">{signup ? 'بدأت رحلتك من قبل؟' : 'أول مرة معنا؟'} <Link to={`${signup ? '/app/login' : '/app/signup'}?next=${encodeURIComponent(safeAccountReturn(loc.search.get('next')))}`}>{signup ? 'تسجيل الدخول' : 'ابدأ هنا'}</Link></p></AuthLayout>;
+    saveDemoAccount({ status: 'demo', name: name.trim(), email: email.trim() });
+    // a brand-new account (sign-up with nowhere to return to) starts empty and lands in its first event; a sign-up that
+    // returns to something on this device (?next=…) keeps it. The demo events stay one tap away on the welcome page.
+    const next = safeAccountReturn(loc.search.get('next'));
+    if (signup && next === '/app/events') { proto.reset('empty'); navigate(paths.newEvent, { replace: true, force: true }); }
+    else navigate(next, { replace: true }); };
+  return <AuthLayout art={signup ? 'collection' : 'folds'} other={signup ? { to: '/app/login', label: 'تسجيل الدخول' } : { to: '/app/signup', label: 'حساب جديد' }} title={signup ? 'أول خطوة لفرحة مرتّبة.' : 'أهلًا بعودتك.'} line={signup ? 'مساحة لدعواتك ومناسباتك وكل من تحب.' : 'دعواتك وتفاصيل مناسباتك، في مكان واحد.'}><form className="auth-form" onSubmit={submit}><Field label="اسمك" required error={error && !name.trim() ? error : undefined}><Input autoComplete="name" value={name} maxLength={70} onChange={e => { setName(e.target.value); setError(''); }} placeholder="الاسم الذي تحب أن نناديك به" /></Field><Field label="البريد الإلكتروني" required error={error && !!name.trim() ? error : undefined}><Input type="email" ltr autoComplete="email" inputMode="email" value={email} maxLength={160} onChange={e => { setEmail(e.target.value); setError(''); }} placeholder="you@example.com" /></Field><Button type="submit" variant="primary" size="lg" block iconEnd="forward">{signup ? 'ابدأ التجربة' : 'دخول تجريبي'}</Button><p className="auth-demo-note"><Icon name="info" size="sm" />جلسة تجربة على هذا الجهاز. لا نطلب كلمة مرور ولا نرسل بريدًا فعليًا.</p></form><p className="auth-switch">{signup ? 'بدأت رحلتك من قبل؟' : 'أول مرة معنا؟'} <Link to={`${signup ? '/app/login' : '/app/signup'}?next=${encodeURIComponent(safeAccountReturn(loc.search.get('next')))}`}>{signup ? 'تسجيل الدخول' : 'ابدأ هنا'}</Link></p></AuthLayout>;
 }
 
 export function LogoutPage() {
@@ -48,6 +58,7 @@ export function AccountPage() {
   const [saved, setSaved] = useState(false), [nameError, setNameError] = useState('');
   const [role, setRole] = useState<Role>(user.role), [preferenceSaved, setPreferenceSaved] = useState<'language' | 'role' | null>(null);
   useEffect(() => services.onChange(() => setRole(services.session.currentUser().role)), [services]);
+  const events = useEvents(); useCapacityVersion();
   return <AppShell right={<AccountMenu />}>
     <main id="main" className="account-page">
       <PageHeader title={t('account')} subtitle={t('accountSubtitle')} />
@@ -84,6 +95,8 @@ export function AccountPage() {
             {preferenceSaved === 'role' && <p role="status" className="account-saved">{t('roleSaved')}</p>}
           </Panel>
           <Panel title={t('appearance')}><p className="muted">{t('appearanceHint')}</p><AppearanceSwitch /></Panel>
+          {/* receipts live with each event's capacity; the account lists them all in one place too */}
+          <Panel title="المدفوعات"><ReceiptList receipts={allReceipts()} eventName={(id) => events.data?.find((e) => e.id === id)?.title} empty="لا مدفوعات بعد. كل مناسبة تبدأ بسعة 100 شخص مجانًا." /></Panel>
           <Panel title={t('demoSession')}><p className="muted">{t('demoSessionHint')}</p><LinkButton to="/app/logout" variant="secondary" icon="back">{t('logout')}</LinkButton></Panel>
         </div>
       </div>

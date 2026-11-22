@@ -5,7 +5,7 @@ import { normalisePhone } from '../../src/domain/phone';
 import { applyRsvp, countParties, duplicatePhoneIds, invitationStatus, searchParties, validateRsvp } from '../../src/domain/parties';
 import { checkAssign, occupancy, seatingWarnings } from '../../src/domain/seating';
 import { assessCheckIn, codeFromScan, expectedArrivals, statusAfter } from '../../src/domain/checkin';
-import { SAMPLE_IMPORT_CSV, guessMapping, parseDelimited, reviewImport, rowsToPartyInputs, summarise, toRawTable } from '../../src/domain/import';
+import { SAMPLE_IMPORT_CSV, guessMapping, importTables, matchTable, newTableName, parseDelimited, reviewImport, rowsToPartyInputs, summarise, toRawTable } from '../../src/domain/import';
 import { plural, pluralOf, P, people, peopleOf, countdownLabel, zonedToInstant, offsetString, initialOf } from '../../src/domain/format';
 import { publishState } from '../../src/domain/invitation';
 
@@ -227,4 +227,21 @@ test('avatar initial: the family name, not «عائلة»/«آل»/«أم» or t
   assert.equal(initialOf('العتيبي'), 'ع');
   assert.equal(initialOf('خالد السديري'), 'خ');
   assert.equal(initialOf('  '), '؟');
+});
+
+test('import: the «الطاولة» column maps to existing tables; missing ones only on request', () => {
+  const t = toRawTable(parseDelimited('الاسم,رقم الطاولة,العدد\nسارة,4,2\nأحمد,طاولة 1,1\nليلى,الشرفة,2\nمنى,9,1'));
+  assert.deepEqual(guessMapping(t), ['name', 'table', 'size'], '«رقم الطاولة» is a table, not a phone');
+  const rows = reviewImport({ table: t, mapping: guessMapping(t), edits: {}, decisions: {}, existing: [], defaultSize: 2 });
+  const tables = [{ id: 't1', name: 'طاولة 1 — كبار العائلة' }, { id: 't4', name: 'طاولة 4' }];
+  assert.equal(matchTable('٤', tables), 't4', 'Arabic-Indic digits match');
+  assert.equal(matchTable('طاولة 1', tables), 't1');
+  assert.equal(matchTable('الشرفة', tables), undefined);
+  const plan = importTables(rows, tables);
+  assert.deepEqual({ withTable: plan.withTable, matched: plan.matched, missing: plan.missing }, { withTable: 4, matched: 2, missing: ['الشرفة', 'طاولة 9'] });
+  const named = (cell: string) => tables.find((x) => x.id === matchTable(cell, tables))?.name;
+  const inputs = rowsToPartyInputs(rows, named);
+  assert.equal(inputs.find((i) => i.primaryGuestName === 'سارة')?.tableName, 'طاولة 4');
+  assert.equal(inputs.find((i) => i.primaryGuestName === 'ليلى')?.tableName, undefined, 'a missing table is not invented unless asked');
+  assert.equal(newTableName('9'), 'طاولة 9');
 });

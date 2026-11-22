@@ -226,8 +226,19 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
       guard(store, 'guests.add');
       findEvent(db, eventId);
       assertGuestCapacity(eventId, db.parties.filter((p) => p.eventId === eventId), inputs.reduce((n, p) => n + p.maxPartySize, 0));
+      // the file's «الطاولة» column: missing tables the organizer chose to create come with the same write (all or nothing)
+      const tableOf = new Map(db.tables.filter((t) => t.eventId === eventId).map((t) => [t.name.trim(), t.id]));
+      let order = Math.max(0, ...db.tables.filter((t) => t.eventId === eventId).map((t) => t.order));
+      for (const name of [...new Set((meta.newTables ?? []).map((n) => n.trim()).filter(Boolean))]) {
+        if (tableOf.has(name)) continue;
+        const t = { id: makeId('tbl'), eventId, name, capacity: 10, order: ++order };
+        db.tables.push(t); tableOf.set(name, t.id);
+      }
       const created = inputs.map((i) => {
         const p = newParty(db, eventId, cleanPartyInput(i) as PartyInput, 'import');
+        // a planned table from the file (seats count once the guest confirms, like any confirmed guest at a table)
+        const tableId = i.tableName ? tableOf.get(i.tableName.trim()) : undefined;
+        if (tableId) p.tableId = tableId;
         db.parties.push(p);
         return p;
       });

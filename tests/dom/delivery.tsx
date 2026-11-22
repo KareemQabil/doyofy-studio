@@ -60,6 +60,23 @@ export async function run() {
   await click(document.querySelector('.sq-missing-list button')); assert.equal(addPhone, missing.id);
   assert.equal(await status(missing.id), 'not_shared');
   console.log('PASS DOM WhatsApp queue: confirm + open next in one tap, n/N progress, no-number way out');
+  // reminders: the same queue in «remind» mode — reminder text, and a guest counts as reminded only after «أرسلت التذكير»
+  const r = await made.services.parties.create(event.id, { primaryGuestName: 'ضيف تذكير', phone: '+966550000009', maxPartySize: 1 });
+  await made.services.parties.markShared([r.id], 'manual');
+  const reminded = async () => (await made.services.parties.get(r.id)).delivery.reminderAt;
+  await render(<ShareQueue key="remind" mode="remind" event={event} parties={[r]} urlFor={() => undefined} linkFor={linkFor} onClose={() => {}} />);
+  assert.ok(document.querySelector('dialog[open]')?.textContent?.includes('تذكير بالرد'), 'the sheet says it is a reminder');
+  await click(button('واتساب'));
+  const remindOpen = document.querySelector<HTMLAnchorElement>('a.sq-open'); assert.ok(remindOpen);
+  assert.ok(decodeURIComponent(remindOpen!.href).includes('تذكير لطيف'), 'the reminder text, not the invitation');
+  remindOpen!.addEventListener('click', e => e.preventDefault()); await click(remindOpen); await settle();
+  assert.equal(await reminded(), undefined, 'opening WhatsApp is not a reminder');
+  assert.ok(document.body.textContent?.includes('هل أرسلت التذكير إلى'));
+  await click(button('أرسلت التذكير')); await settle();
+  assert.ok(await reminded(), 'recorded after the explicit confirmation');
+  assert.equal((await made.services.parties.get(r.id)).delivery.status, 'shared', 'delivery unchanged');
+  assert.ok(document.querySelector('.sq-done')?.textContent?.includes('ذكّرت'));
+  console.log('PASS DOM reminder queue: reminder text, explicit «أرسلت التذكير», no simulated reminder');
   await act(async () => root.unmount());
 
   const freshRoot = createRoot(document.getElementById('root')!);

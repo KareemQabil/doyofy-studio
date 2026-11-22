@@ -6,15 +6,15 @@ import { JourneyArtwork } from '../../../ui/primitives/JourneyArtwork';
  */
 import { useMemo, useRef, useState } from 'react';
 import type { Event } from '../../../domain/types';
-import { FIELD_LABEL, SAMPLE_IMPORT_CSV, guessMapping, mappingProblems, parseDelimited, reviewImport, rowsToPartyInputs, summarise, toRawTable, type ImportField, type ImportRow, type Mapping, type RawTable, type RowDecision, type RowEdit } from '../../../domain/import';
+import { FIELD_LABEL, SAMPLE_IMPORT_CSV, guessMapping, importTables, mappingProblems, matchTable, newTableName, parseDelimited, reviewImport, rowsToPartyInputs, summarise, toRawTable, type ImportField, type ImportRow, type Mapping, type RawTable, type RowDecision, type RowEdit } from '../../../domain/import';
 import { formatPhone, people, peopleOf, plural, pluralOf, P } from '../../../domain/format';
-import { Badge, Banner, Button, ErrorState, Field, FilterChips, FocusLayout, Icon, Input, LinkButton, Select, Textarea, PageLoader } from '../../../ui';
+import { Badge, Banner, Button, Checkbox, ErrorState, Field, FilterChips, FocusLayout, Icon, Input, LinkButton, Select, Textarea, PageLoader } from '../../../ui';
 import { useMutation } from '../../../app/data';
 import { useBlocker, useNavigate } from '../../../app/router';
 import { paths } from '../../../app/paths';
 import { readSpreadsheet } from '../../../services/files/spreadsheet';
 import { errorMessage } from '../../../services/errors';
-import { useEvent, useParties } from '../../shared/queries';
+import { useEvent, useParties, useTables } from '../../shared/queries';
 import { allocatedGuests, guestLimit, GuestLimitError } from '../../../domain/billing';
 import { useCapacityVersion } from '../../billing/CapacityMeter';
 
@@ -36,8 +36,12 @@ function Flow({ event, existing }: { event: Event; existing: NonNullable<ReturnT
   const [mapping, setMapping] = useState<Mapping>([]);
   const [edits, setEdits] = useState<Record<number, RowEdit>>({});
   const [decisions, setDecisions] = useState<Record<number, RowDecision>>({});
-  const [result, setResult] = useState<{ added: number; skipped: number; people: number } | null>(null);
-  const importing = useMutation((s, rows: ImportRow[], skipped: number) => s.parties.importMany(event.id, rowsToPartyInputs(rows), { skipped, source }));
+  const [result, setResult] = useState<{ added: number; skipped: number; people: number; seated: number; newTables: number } | null>(null);
+  // the file's «الطاولة» column: rows on an existing table keep it; missing tables are created only if the organizer asks
+  const tables = useTables(event.id).data ?? [];
+  const [createTables, setCreateTables] = useState(false);
+  const tableFor = (cell: string) => { const id = matchTable(cell, tables); return id ? tables.find((t) => t.id === id)!.name : createTables ? newTableName(cell) : undefined; };
+  const importing = useMutation((s, rows: ImportRow[], skipped: number) => s.parties.importMany(event.id, rowsToPartyInputs(rows, tableFor), { skipped, source, newTables: createTables ? importTables(rows, tables).missing : [] }));
   useBlocker(!!table && step !== 'done', 'لم يكتمل الاستيراد. إذا غادرت الآن لن يُضاف أي ضيف.');
 
   const rows = useMemo(() => (table ? reviewImport({ table, mapping, edits, decisions, existing, defaultSize: event.settings.defaultPartySize }) : []), [table, mapping, edits, decisions, existing, event.settings.defaultPartySize]);
@@ -52,7 +56,7 @@ function Flow({ event, existing }: { event: Event; existing: NonNullable<ReturnT
 
   const confirm = async () => {
     const created = await importing.run(rows, sum.skipped);
-    if (created) { setResult({ added: created.length, skipped: sum.skipped, people: sum.people }); setStep('done'); }
+    if (created) { setResult({ added: created.length, skipped: sum.skipped, people: sum.people, seated: created.filter((p) => p.tableId).length, newTables: createTables ? importTables(rows, tables).missing.length : 0 }); setStep('done'); }
   };
 
   const stepNo = { source: 1, map: 2, review: 3, done: 4 }[step];
@@ -73,6 +77,7 @@ function Flow({ event, existing }: { event: Event; existing: NonNullable<ReturnT
       {step === 'map' && table && <MapStep table={table} mapping={mapping} onChange={setMapping} source={source} />}
       {step === 'review' && (
         <ReviewStep rows={rows} sum={sum} error={importing.error} capacity={{ used: allocatedGuests(existing), limit: guestLimit(event.id) }}
+          tables={mapping.includes('table') ? importTables(rows, tables) : null} createTables={createTables} onCreateTables={setCreateTables}
           onEdit={(i, e) => setEdits((x) => ({ ...x, [i]: { ...x[i], ...e } }))}
           onDecide={(i, d) => setDecisions((x) => ({ ...x, [i]: d }))}
           onSkipBlocked={() => setDecisions((x) => ({ ...x, ...Object.fromEntries(rows.filter((r) => r.state === 'blocked').map((r) => [r.index, 'skip' as const])) }))} />
@@ -83,6 +88,7 @@ function Flow({ event, existing }: { event: Event; existing: NonNullable<ReturnT
           <div className="stack gap-2">
             <h2 className="t-xl">تمت إضافة {pluralOf(result.added, P.guest)}</h2>
             <p className="muted">{result.added ? `${plural(result.added, P.invitation)} تتسع لـ${peopleOf(result.people)}.` : ''} {result.skipped ? `وتخطّينا ${pluralOf(result.skipped, P.row)} كما اخترت.` : 'لم يُتخطَّ أي صف.'}</p>
+            {result.seated > 0 && <p className="muted">{plural(result.seated, P.invitation)} على طاولاتها من الملف{result.newTables ? `، مع ${plural(result.newTables, P.table)} جديدة` : ''}. تُحتسب المقاعد عندما يؤكدون الحضور.</p>}
           </div>
           <div className="row wrap gap-2">
             <Button variant="primary" size="lg" icon="share" onClick={() => navigate(paths.guests(event.id, { filter: 'not_shared' }))}>شارك الدعوات الجديدة</Button>
@@ -150,7 +156,7 @@ function SourceStep({ onLoad }: { onLoad: (cells: string[][], label: string) => 
 
 function MapStep({ table, mapping, onChange, source }: { table: RawTable; mapping: Mapping; onChange: (m: Mapping) => void; source: string }) {
   const problems = mappingProblems(mapping);
-  const fields: ImportField[] = ['name', 'phone', 'size', 'side', 'companions', 'notes', 'ignore'];
+  const fields: ImportField[] = ['name', 'phone', 'size', 'side', 'table', 'companions', 'notes', 'ignore'];
   return (
     <div className="stack gap-6">
       <header className="stack gap-2">
@@ -179,8 +185,9 @@ function MapStep({ table, mapping, onChange, source }: { table: RawTable; mappin
 
 type ReviewFilter = 'all' | 'blocked' | 'warning' | 'skipped';
 
-function ReviewStep({ rows, sum, error, capacity, onEdit, onDecide, onSkipBlocked }: {
+function ReviewStep({ rows, sum, error, capacity, tables, createTables, onCreateTables, onEdit, onDecide, onSkipBlocked }: {
   rows: ImportRow[]; sum: ReturnType<typeof summarise>; error: unknown; capacity: { used: number; limit: number };
+  tables: ReturnType<typeof importTables> | null; createTables: boolean; onCreateTables: (v: boolean) => void;
   onEdit: (i: number, e: RowEdit) => void; onDecide: (i: number, d: RowDecision) => void; onSkipBlocked: () => void;
 }) {
   const [f, setF] = useState<ReviewFilter>(sum.blocked ? 'blocked' : 'all');
@@ -201,6 +208,11 @@ function ReviewStep({ rows, sum, error, capacity, onEdit, onDecide, onSkipBlocke
       {!error && sum.people > left && <Banner tone="warning" compact title="الاستيراد أكبر من سعة مناسبتك">
         بعد الإضافة تصبح القائمة {plural(capacity.used + sum.people, P.person)} وحد مناسبتك {plural(capacity.limit, P.person)}. نعرض عليك زيادة السعة عند «أضف»، ولا يُضاف أحد قبلها.
       </Banner>}
+      {tables && tables.withTable > 0 && <div className="import-tables" role="group" aria-label="عمود الطاولة">
+        <p><Icon name="table" size="sm" />{tables.matched ? `${plural(tables.matched, P.invitation)} على طاولات موجودة في مناسبتك.` : 'لا تطابق الطاولات في الملف أي طاولة في مناسبتك بعد.'}
+          {tables.missingRows ? ` ${plural(tables.missingRows, P.invitation)} على طاولات غير موجودة (${tables.missing.slice(0, 4).join('، ')}${tables.missing.length > 4 ? '…' : ''}).` : ''}</p>
+        {tables.missing.length > 0 && <Checkbox checked={createTables} onChange={onCreateTables} label={`أنشئ الطاولات الناقصة (${tables.missing.length}) بسعة 10 لكل طاولة`} hint={createTables ? 'تُنشأ مع الإضافة فقط، ويمكنك تعديل سعتها من الطاولات.' : 'بدونها تُضاف هذه الدعوات بلا طاولة.'} />}
+      </div>}
       <div className="import-summary">
         <div className="is-ok"><strong className="num">{sum.toImport}</strong><span>ستُضاف</span></div>
         <div className="is-blocked"><strong className="num">{sum.blocked}</strong><span>تحتاج قرارك</span></div>

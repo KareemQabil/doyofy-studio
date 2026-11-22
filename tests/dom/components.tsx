@@ -82,7 +82,7 @@ export async function run(){
   link.addEventListener('click',e=>e.preventDefault());await click(link);
   assert.equal((await made.services.parties.get(p.id)).delivery.status,'not_shared');
   assert.ok(document.body.textContent?.includes('فتح واتساب يجهّز الرسالة فقط'));
-  await click(button('نعم، أرسلتها يدويًا'));
+  await click(button('نعم، أرسلتها'));
   assert.equal((await made.services.parties.get(p.id)).delivery.status,'shared');
  });
  await check('declined guest still at a table gets one «إزالة من الطاولة» action that frees the seats',async()=>{
@@ -579,6 +579,20 @@ export async function run(){
   await click(document.querySelector('.auth-switch a')!);await settle();assert.equal(location.pathname,'/app/signup');assert.equal(new URLSearchParams(location.search).get('next'),'/app/events/evt_wedding/invitation/design');
   await fill(document.querySelector('input[autocomplete="name"]')!,'ريم');await fill(document.querySelector('input[type="email"]')!,'reem@example.com');await act(async()=>{document.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});await settle();assert.equal(location.pathname,'/app/events/evt_wedding/invitation/design');assert.equal(api.session.currentUser().name,'ريم');assert.equal(api.session.currentUser().id,'usr_owner');assert.deepEqual((await api.invitations.get(event.id)).draft,before);
   await act(async()=>saveDemoAccount({status:'signed-out'}));history.pushState(null,'',`/i/${event.slug}`);window.dispatchEvent(new Event('popstate'));await settle();assert.ok(location.pathname.startsWith('/i/'));assert.equal(document.querySelector('.auth-form'),null);
+  await act(async()=>saveDemoAccount({status:'demo'}));
+ });
+ await check('a fresh sign-up starts with no events and lands in the wizard; the welcome demo brings the demo back',async()=>{
+  await act(async()=>saveDemoAccount({status:'signed-out'}));
+  history.replaceState(null,'','/app/signup');await render(<App mode="history"/>);await settle();
+  const header=document.querySelector('.auth-header')!;assert.ok(!header.textContent?.includes('الدخول للمنصة'),'no «into the platform» before an account exists');assert.ok(header.querySelector('a[href$="/app/login"]'),'the header points to log-in');
+  await fill(document.querySelector('input[autocomplete="name"]')!,'سلمى');await fill(document.querySelector('input[type="email"]')!,'salma@example.com');
+  await act(async()=>{document.querySelector('form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});await settle();
+  assert.equal(location.pathname,paths.newEvent,'a new account lands in the wizard');
+  const api=(window as unknown as {__doyofy:typeof made}).__doyofy;
+  assert.equal((await api.services.events.list()).length,0,'no one else\'s wedding in a new account');
+  history.pushState(null,'','/app/welcome');window.dispatchEvent(new Event('popstate'));await settle();
+  await click(document.querySelector('.wl-demo-link')!);await settle();
+  assert.ok((await api.services.events.list()).length>0,'the demo events come back on request');
   await act(async()=>saveDemoAccount({status:'demo'}));
  });
  await check('the home exposes account and logout',async()=>{

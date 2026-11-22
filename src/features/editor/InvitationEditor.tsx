@@ -342,7 +342,7 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
             <div><p className="ed-stage-kicker">{live ? 'التجربة الكاملة' : 'على طاولة التصميم'}</p><p className="ed-stage-caption">{live ? 'شاهد الدعوة كما تُفتح لضيوفكم' : 'دعوتك، بكل تفاصيلها'}</p></div>
             <Segmented label="عرض الاستوديو" value={mode} onChange={setMode} options={[{ value: 'edit', label: 'تعديل', icon: 'edit' }, { value: 'preview', label: 'معاينة', icon: 'play' }]} />
           </div>
-          {justPublished && <div className="ed-published" role="status"><Icon name="check-circle" size="sm" /><p><strong>دعوتك جاهزة للضيوف.</strong> ابدأ بقائمة الضيوف، ثم شارك رابط كل دعوة.</p><Button size="sm" onClick={() => navigate(paths.guests(event.id))}>أضف الضيوف</Button></div>}
+          {justPublished && <div className="ed-published" role="status"><Icon name="check-circle" size="sm" /><p><strong>دعوتك جاهزة للضيوف.</strong> تابع من «إلى الضيوف» بالأعلى: أضف قائمتك ثم شارك رابط كل دعوة.</p></div>}
           {!live ? <>
             <div className="ed-page-swipe" key={page} ref={pager.ref} data-pager="" data-enter={pager.enter} {...pager.gesture}>
               <EditorWorkbench event={shown} content={content} page={page} motion={cardMotion} />

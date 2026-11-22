@@ -40,14 +40,15 @@ export function ReceiptButton({ receipts, label }: { receipts: readonly Receipt[
   </>;
 }
 
-export function ReceiptList({ receipts }: { receipts: readonly Receipt[] }) {
+/** `eventName`: the account's list names each receipt's event (receipts of every event on one page) */
+export function ReceiptList({ receipts, eventName, empty }: { receipts: readonly Receipt[]; eventName?: (eventId: string) => string | undefined; empty?: string }) {
   const { t } = useCopy();
   const [open, setOpen] = useState<Receipt | null>(null);
-  if (!receipts.length) return <p className="faint t-sm">لا توجد مدفوعات لهذه المناسبة. أول {plural(100, P.person)} مجانًا.</p>;
+  if (!receipts.length) return <p className="faint t-sm">{empty ?? <>لا توجد مدفوعات لهذه المناسبة. أول {plural(100, P.person)} مجانًا.</>}</p>;
   return <>
     <ul className="capacity-receipts" aria-label="إيصالات زيادة السعة">
       {receipts.map(r => <li key={r.ref}>
-        <span className="grow"><strong>سعة {plural(r.limit, P.person)}</strong><span className="faint t-sm"> · {sar(r.charged)} تجريبي · {when(r.at)}</span></span>
+        <span className="grow"><strong>{eventName?.(r.eventId) ? `${eventName(r.eventId)} · ` : ''}سعة {plural(r.limit, P.person)}</strong><span className="faint t-sm"> · {sar(r.charged)} تجريبي · {when(r.at)}</span></span>
         <Button size="sm" variant="ghost" icon="file" onClick={() => setOpen(r)} aria-label={`${t('viewReceipt')}: سعة ${r.limit}`}>{t('viewReceipt')}</Button>
       </li>)}
     </ul>

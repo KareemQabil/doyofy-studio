@@ -195,6 +195,8 @@ export interface PartyInput {
   companionNames?: string[];
   notes?: string;
   side?: string;
+  /** import only: the guest file's planned table, by name (an existing table, or one created with the import) */
+  tableName?: string;
 }
 
 // ------------------------------------------------------------------ RSVP

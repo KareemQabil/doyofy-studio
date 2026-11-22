@@ -138,6 +138,10 @@
 /* review footer: the «resolve or skip» hint takes its own line above the two buttons */
 .focus-foot-inner:has(.import-foot-hint) { flex-wrap: wrap; row-gap: 4px; }
 .import-foot-hint { flex-basis: 100%; margin: 0; text-align: center; }
+/* the file's «الطاولة» column: what matched, what is missing, and the opt-in to create the missing tables */
+.import-tables { display: grid; gap: var(--s-2); padding: var(--s-3) var(--s-4); border: 1px solid var(--c-line); border-radius: var(--r-md); background: var(--c-surface); font-size: var(--fs-sm); }
+.import-tables > p { display: flex; gap: 8px; align-items: baseline; margin: 0; color: var(--c-text-2); }
+.import-tables > p .icon { flex: none; align-self: center; }
 @media (max-width: 380px) { .focus-foot-inner > .import-foot-btn { padding-inline: 12px; } .focus-foot-inner > .import-foot-btn.btn-ghost { padding-inline: 4px; } }
 /* one disclosure arrow: the chevron (rotates open), not the browser marker as well */
 .import-alternatives > summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }

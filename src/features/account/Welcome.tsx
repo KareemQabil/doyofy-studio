@@ -14,6 +14,7 @@ import { OCCASIONS_ORDERED, eventTypeInfo } from '../../domain/event';
 import { defaultDesign } from '../../domain/invitation';
 import { sealOpens } from '../../domain/gestures';
 import { Link, useNavigate } from '../../app/router';
+import { usePrototype } from '../../app/data';
 import { paths } from '../../app/paths';
 import { Logo } from '../../ui/brand';
 import { Icon, LinkButton } from '../../ui';
@@ -186,7 +187,9 @@ function GuestDemo() {
 /* ------------------------------------------------------------------ page */
 export function WelcomePage() {
   const navigate = useNavigate();
-  const demo = () => { saveDemoAccount({ status: 'demo' }); navigate('/app/events'); };
+  const proto = usePrototype();
+  // the demo is the seeded events; after a fresh (empty) sign-up on this device, bring them back first
+  const demo = () => { saveDemoAccount({ status: 'demo' }); if (proto.scenario() === 'empty') proto.reset('before'); navigate('/app/events'); };
   const jump = (id: string) => document.getElementById(id)?.closest('section')?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
   return (
     <div className="wl">

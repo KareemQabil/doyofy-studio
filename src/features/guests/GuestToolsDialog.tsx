@@ -9,11 +9,16 @@ import { errorMessage } from '../../services/errors';
 import { useCopy } from '../../ui/copy';
 import { plural, pluralOf, P } from '../../domain/format';
 
+/**
+ * Export (organizer review): one «طاولات وأقسام» scope lets tables AND sections go in one file (a guest is in when their
+ * table or section is ticked); rows come sorted by table then name with a totals line; a toast confirms the download.
+ */
 export function ExportGuestsDialog({ event, parties, tables, visibleIds, selectedIds, initialTable, onClose }: {
   event: Event; parties: InvitationParty[]; tables: Table[]; visibleIds: Set<string>; selectedIds: Set<string>; initialTable?: string; onClose: () => void;
 }) {
   const { t } = useCopy();
-  const [scope, setScope] = useState<GuestExportScope>(initialTable ? 'table' : selectedIds.size ? 'selected' : 'visible');
+  const toast = useToast();
+  const [scope, setScope] = useState<GuestExportScope>(initialTable ? 'pick' : selectedIds.size ? 'selected' : 'visible');
   // nothing is preselected unless the dialog was opened from that table's menu
   const [tableIds, setTableIds] = useState(new Set<string>(initialTable ? [initialTable] : []));
   const groups = [...new Set(parties.map((p) => p.side || ''))];
@@ -25,18 +30,20 @@ export function ExportGuestsDialog({ event, parties, tables, visibleIds, selecte
     const url = URL.createObjectURL(new Blob([guestsCsv(chosen, tables, phones)], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a'); a.href = url; a.download = `guests-${event.slug}-${scope}.csv`; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000); onClose();
+    toast({ tone: 'success', text: `نزّلنا ملف ${pluralOf(chosen.length, P.invitation)}${phones ? ' مع أرقام الجوال' : ''}. افتحه في Excel أو Google Sheets.` });
   };
   return <Dialog open onClose={onClose} title={t('exportFile')} description="اختر ما تحتاجه في ملف يفتح في Excel وGoogle Sheets."
     footer={<><Button variant="primary" icon="download" disabled={!chosen.length} onClick={download}>{chosen.length ? `تصدير ${pluralOf(chosen.length, P.invitation)}` : 'تصدير'}</Button><Button variant="ghost" onClick={onClose}>{t('cancel')}</Button></>}>
     <Field label="نطاق التصدير"><Select value={scope} onChange={(e) => setScope(e.target.value as GuestExportScope)}>
       <option value="visible">القائمة الظاهرة ({visibleIds.size})</option><option value="selected" disabled={!selectedIds.size}>المحدد ({selectedIds.size})</option>
-      <option value="table">طاولات محددة</option><option value="group">أقسام محددة</option><option value="all">كل الضيوف ({parties.length})</option>
+      <option value="pick">طاولات وأقسام محددة</option><option value="all">كل الضيوف ({parties.length})</option>
     </Select></Field>
-    {scope === 'table' && <fieldset className="guest-export-scope"><legend>اختر الطاولات ({tableIds.size})</legend><div className="stack gap-2">{[...tables.map((table) => ({ id: table.id, name: table.name })), { id: 'none', name: 'بلا طاولة' }].map((table) => <Checkbox key={table.id} label={table.name} checked={tableIds.has(table.id)} onChange={() => setTableIds(toggleValue(tableIds, table.id))} />)}</div></fieldset>}
-    {scope === 'group' && <fieldset className="guest-export-scope"><legend>اختر الأقسام ({groupNames.size})</legend><div className="stack gap-2">{groups.map((g) => <Checkbox key={g} label={g || 'بلا قسم'} checked={groupNames.has(g)} onChange={() => setGroupNames(toggleValue(groupNames, g))} />)}</div></fieldset>}
+    {scope === 'pick' && <p className="faint t-sm">اختر ما تريد من الطاولات والأقسام معًا؛ يدخل الضيف إذا كانت طاولته أو قسمه مختارًا.</p>}
+    {scope === 'pick' && tables.length > 0 && <fieldset className="guest-export-scope"><legend>الطاولات ({tableIds.size})</legend><div className="stack gap-2">{[...tables.map((table) => ({ id: table.id, name: table.name })), { id: 'none', name: 'بلا طاولة' }].map((table) => <Checkbox key={table.id} label={table.name} checked={tableIds.has(table.id)} onChange={() => setTableIds(toggleValue(tableIds, table.id))} />)}</div></fieldset>}
+    {scope === 'pick' && <fieldset className="guest-export-scope"><legend>الأقسام ({groupNames.size})</legend><div className="stack gap-2">{groups.map((g) => <Checkbox key={g} label={g || 'بلا قسم'} checked={groupNames.has(g)} onChange={() => setGroupNames(toggleValue(groupNames, g))} />)}</div></fieldset>}
     <Checkbox checked={phones} onChange={setPhones} label="تضمين أرقام الجوال" hint="الملف بدون أرقام افتراضيًا. لا يتضمن ملاحظاتك الخاصة أو بيانات الطعام." />
     <p role="status" className="muted t-sm">{chosen.length ? `جاهز لتصدير ${pluralOf(chosen.length, P.invitation)}، مع العدد المسموح وأسماء المرافقين.`
-      : scope === 'table' && !tableIds.size ? 'اختر طاولة واحدة على الأقل.' : scope === 'group' && !groupNames.size ? 'اختر قسمًا واحدًا على الأقل.' : 'لا توجد دعوات في هذا النطاق.'}</p>
+      : scope === 'pick' && !tableIds.size && !groupNames.size ? 'اختر طاولة أو قسمًا واحدًا على الأقل.' : 'لا توجد دعوات في هذا النطاق.'}</p>
   </Dialog>;
 }
 

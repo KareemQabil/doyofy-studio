@@ -9,6 +9,32 @@ beforeEach(() => {
   (globalThis as unknown as { window: unknown }).window = { localStorage: { getItem: (key: string) => memory.get(key) ?? null, setItem: (key: string, value: string) => void memory.set(key, value), removeItem: (key: string) => void memory.delete(key) }, addEventListener() {} };
 });
 
+test('guest export: tables and sections in one file, sorted by table then name, with a totals line', () => {
+  const tables = [{ id: 't2', eventId: 'e1', name: 'طاولة 2', capacity: 10, order: 2 }, { id: 't1', eventId: 'e1', name: 'طاولة 1', capacity: 10, order: 1 }];
+  const guests = [
+    party({ id: 'a', primaryGuestName: 'ياسر', tableId: 't2', rsvpStatus: 'confirmed', confirmedPartySize: 2, maxPartySize: 2, side: 'أهل العريس' }),
+    party({ id: 'b', primaryGuestName: 'بدر', tableId: 't1', rsvpStatus: 'confirmed', confirmedPartySize: 3, maxPartySize: 4, checkedInCount: 1 }),
+    party({ id: 'c', primaryGuestName: 'أحمد', tableId: 't2', rsvpStatus: 'confirmed', confirmedPartySize: 1, maxPartySize: 1 }),
+    party({ id: 'd', primaryGuestName: 'سعد', side: 'أهل العروس', maxPartySize: 3 }),
+    party({ id: 'e', primaryGuestName: 'خالد', side: 'زملاء', maxPartySize: 2 }),
+  ];
+  // multi-scope: table 1 OR the bride's family
+  const picked = scopedGuests(guests, 'pick', { tableIds: new Set(['t1']), groupNames: new Set(['أهل العروس']) });
+  assert.deepEqual(picked.map((p) => p.id).sort(), ['b', 'd']);
+  assert.equal(scopedGuests(guests, 'pick', { tableIds: new Set(), groupNames: new Set() }).length, 0);
+  assert.deepEqual(scopedGuests(guests, 'pick', { tableIds: new Set(['none']), groupNames: new Set(['أهل العريس']) }).map((p) => p.id).sort(), ['a', 'd', 'e']);
+  const lines = guestsCsv(guests, tables).replace(/^﻿/, '').split('\r\n');
+  // header, 5 rows in table order (t1, then t2 by name, then no table by name), a blank line, the totals
+  assert.deepEqual(lines.slice(1, 6).map((l) => l.split(',')[0]), ['بدر', 'أحمد', 'ياسر', 'خالد', 'سعد']);
+  assert.equal(lines[6], '');
+  const totals = lines[7]!.split(',');
+  assert.equal(totals[0], 'الإجمالي: 5 دعوة');
+  assert.equal(totals[2], '12', 'allowed seats summed');
+  assert.equal(totals[4], 'أكدوا: 3 دعوة');
+  assert.equal(totals[5], '6', 'confirmed people summed');
+  assert.equal(totals[8], '1', 'arrived summed');
+});
+
 const party = (patch: Partial<InvitationParty> = {}): InvitationParty => ({ id: 'p1', eventId: 'e1', code: 'AAAAA', primaryGuestName: 'آدم', maxPartySize: 2, delivery: { status: 'not_shared' }, rsvpStatus: 'pending', checkInStatus: 'not_arrived', checkedInCount: 0, source: 'manual', createdAt: '', updatedAt: '', ...patch });
 
 test('guest export respects selection/table/group scopes and prevents spreadsheet formula execution', () => {
@@ -22,11 +48,12 @@ test('guest export respects selection/table/group scopes and prevents spreadshee
   const csv = guestsCsv(guests, []);
   assert.ok(csv.includes("'=1+1"));
   assert.ok(!csv.includes('+966555123456') && !csv.includes('private') && !csv.includes('nuts'));
-  // phones: text-safe without a visible apostrophe — a left-to-right mark in front, never a leading + or '
+  // phones: spaced international format — text in every spreadsheet, no apostrophe, no invisible character
   const withPhones = guestsCsv(guests, [], true);
-  assert.ok(withPhones.includes(',‎+966555123456,'));
-  assert.ok(!withPhones.includes("'+966"));
-  assert.equal(phoneCell('+966555123456'), '‎+966555123456');
+  assert.ok(withPhones.includes(',+966 55 512 3456,'), 'spaced international phone');
+  assert.ok(!withPhones.includes("'+966") && !/[‎‏⁦-⁩]/.test(withPhones), 'no apostrophe, no bidi marks');
+  assert.equal(phoneCell('+966555123456'), '+966 55 512 3456');
+  assert.equal(phoneCell('0551234567'), '+966 55 123 4567', 'a local number is written in its international form');
   assert.equal(phoneCell('=HYPERLINK("x")'), '=HYPERLINK("x")', 'anything that is not a phone still goes through the formula guard');
   assert.ok(guestsCsv([party({ phone: '=cmd' })], [], true).includes("'=cmd"));
   // companions travel with the allowed seats

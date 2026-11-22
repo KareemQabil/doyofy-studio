@@ -112,7 +112,7 @@ export async function run() {
     const [first] = await made.services.parties.list(event.id);
     history.replaceState(null, '', `/app/events/evt_wedding/guests?party=${first!.id}`);
     await render(wrap(<GuestsPage event={event} />)); await settle();
-    const header = document.querySelector('.page-head')!;
+    const header = document.querySelector('.g2-head, .page-head')!;
     assert.ok([...header.querySelectorAll('button')].some((b) => b.textContent?.includes('إضافة ضيف') && !b.disabled), 'can add');
     const exportBtn = [...header.querySelectorAll('button')].find((b) => b.textContent?.includes('تصدير ملف'));
     assert.ok(exportBtn?.disabled, 'export is visible but disabled');
@@ -133,7 +133,7 @@ export async function run() {
     await act(async () => exp.click());
     assert.ok(!document.querySelector('dialog[open]'), 'the export dialog never opens');
     assert.ok(!items().some((i) => i.textContent?.includes('نقل')), 'no transfer between events');
-    assert.ok(items().some((i) => i.textContent?.includes('تذكير')), 'reminders stay');
+    assert.ok(items().some((i) => /تذكير|ذكّر/.test(i.textContent ?? '')), 'reminders stay');
   });
   await check('coordinator sees publish disabled with the reason; seating keeps auto-seat and order, export explained', async () => {
     await act(async () => made.prototype.update({ role: 'organizer' }));
@@ -168,7 +168,7 @@ export async function run() {
     const event = await made.services.events.get('evt_wedding');
     history.replaceState(null, '', '/app/events/evt_wedding/guests');
     await render(wrap(<GuestsPage event={event} />)); await settle();
-    const exportBtn = [...document.querySelectorAll('.page-head button')].find((b) => b.textContent?.includes('تصدير ملف')) as HTMLButtonElement;
+    const exportBtn = [...document.querySelectorAll('.g2-head button, .page-head button')].find((b) => b.textContent?.includes('تصدير ملف')) as HTMLButtonElement;
     assert.ok(exportBtn && !exportBtn.disabled && !exportBtn.closest('.owner-only'));
   });
   await check('coordinator at the gate: a declined guest never reads as expected, an undo names the family, a walk-in is logged', async () => {

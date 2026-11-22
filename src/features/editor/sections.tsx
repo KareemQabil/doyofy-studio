@@ -30,6 +30,9 @@ export function ContentSection({ event, content, update }: { event: Event; conte
   const info = eventTypeInfo(event.type);
   const dn = content.displayNames;
   const [en, setEn] = useState(!!(dn.aEn || dn.bEn));
+  // the English line is separate text: once the Arabic changes, say so where it is typed (it never silently goes stale)
+  const [arEdited, setArEdited] = useState(false);
+  const enStale = arEdited && !en && !!content.message.en.trim();
   const setName = (k: keyof typeof dn, v: string) => update({ displayNames: { ...dn, [k]: v.trim() ? v : undefined } });
   const prog = content.program;
   const setProg = (i: number, k: 'time' | 'ar' | 'en', v: string) => update({ program: prog.map((p, j) => (j === i ? { ...p, [k]: v } : p)) });
@@ -52,7 +55,9 @@ export function ContentSection({ event, content, update }: { event: Event; conte
 
       <section className="ed-group ed-content-message">
         <SecHead title="كلمة الدعوة" />
-        <Field label="بالعربية"><Textarea rows={3} value={content.message.ar} onChange={(e) => update({ message: { ...content.message, ar: e.target.value } })} /></Field>
+        <Field label="بالعربية"><Textarea rows={3} value={content.message.ar} onChange={(e) => { setArEdited(true); update({ message: { ...content.message, ar: e.target.value } }); }} /></Field>
+        {enStale && <p className="ed-en-stale" role="status"><Icon name="info" size="sm" /><span>السطر الإنجليزي على البطاقة لم يتغيّر: <bdi dir="ltr">«{content.message.en.length > 48 ? `${content.message.en.slice(0, 48)}…` : content.message.en}»</bdi></span>
+          <span className="ed-en-stale-actions"><button type="button" className="link-btn" onClick={() => setEn(true)}>عدّله</button><button type="button" className="link-btn" onClick={() => update({ message: { ...content.message, en: '' } })}>احذفه</button></span></p>}
         {en && <Field label="بالإنجليزية" optional><Textarea rows={3} dir="ltr" value={content.message.en} onChange={(e) => update({ message: { ...content.message, en: e.target.value } })} /></Field>}
         <button type="button" className="link-btn" aria-expanded={en} onClick={() => setEn((v) => !v)}>{en ? 'إخفاء النصوص الإنجليزية' : 'النصوص الإنجليزية'}</button>
       </section>
@@ -93,14 +98,14 @@ export function DesignSection({ event, content, invitation, update, onChangeTemp
         </div>
       </section>
 
-      <section className="ed-group"><SecHead title="مختارة لمناسبتك" hint="يتغيّر شكل البطاقة فقط. النص والأسماء تبقى كما كتبتها." /><div className="ed-picks ed-cards" role="radiogroup" aria-label="بطاقات مختارة">{cards.map(id => <button key={id} type="button" role="radio" aria-checked={content.cardId===id} className={`ed-pick${content.cardId===id?' is-on':''}`} onClick={()=>update({cardId:id})}><CardThumb event={event} content={{...content,cardId:id}} width={84} /><span className="ed-pick-name">{CARD_NAMES[id]}</span></button>)}</div></section>
-      <section className="ed-group ed-scene-selection"><SecHead title="الخلفية" hint="لون الخلفية ونقشها خلف البطاقة. يظهر للضيف عند فتح الدعوة." /><div className="ed-picks ed-scenes" role="radiogroup" aria-label="خلفيات مختارة">{recommendedScenes.map(id => <button key={id} type="button" role="radio" aria-checked={content.sceneId===id} className={`ed-pick${content.sceneId===id?' is-on':''}`} onClick={()=>update({sceneId:id})}><TemplateThumb preset={{id,name:'',line:'',styles:[],occasionTags:[],cardId:content.cardId,sceneId:id,experience:content.experience}} invitation={invitation} /><span className="ed-pick-name">{SCENE_NAMES[id]}</span></button>)}</div></section>
+      <section className="ed-group"><SecHead title="مختارة لمناسبتك" hint="يتغيّر شكل البطاقة فقط. النص والأسماء تبقى كما كتبتها." /><div className="ed-picks ed-cards" role="radiogroup" aria-label="بطاقات مختارة">{cards.map(id => <button key={id} type="button" role="radio" aria-label={CARD_NAMES[id]} aria-checked={content.cardId===id} className={`ed-pick${content.cardId===id?' is-on':''}`} onClick={()=>update({cardId:id})}><CardThumb event={event} content={{...content,cardId:id}} width={84} /><span className="ed-pick-name">{CARD_NAMES[id]}</span></button>)}</div></section>
+      <section className="ed-group ed-scene-selection"><SecHead title="الخلفية" hint="لون الخلفية ونقشها خلف البطاقة. يظهر للضيف عند فتح الدعوة." /><div className="ed-picks ed-scenes" role="radiogroup" aria-label="خلفيات مختارة">{recommendedScenes.map(id => <button key={id} type="button" role="radio" aria-label={SCENE_NAMES[id]} aria-checked={content.sceneId===id} className={`ed-pick${content.sceneId===id?' is-on':''}`} onClick={()=>update({sceneId:id})}><TemplateThumb preset={{id,name:'',line:'',styles:[],occasionTags:[],cardId:content.cardId,sceneId:id,experience:content.experience}} invitation={invitation} /><span className="ed-pick-name">{SCENE_NAMES[id]}</span></button>)}</div></section>
       <details className="ed-advanced"><summary>كل البطاقات والخلفيات <span>اختياري</span><Icon name="chevron-down" size="sm"/></summary>
       <section className="ed-group">
         <SecHead title="البطاقة" />
         <div className="ed-picks ed-cards" role="radiogroup" aria-label="البطاقة">
           {Object.keys(CARD_NAMES).map((id) => (
-            <button key={id} type="button" role="radio" aria-checked={content.cardId === id} className={`ed-pick${content.cardId === id ? ' is-on' : ''}`} onClick={() => update({ cardId: id })}>
+            <button key={id} type="button" role="radio" aria-label={CARD_NAMES[id]} aria-checked={content.cardId === id} className={`ed-pick${content.cardId === id ? ' is-on' : ''}`} onClick={() => update({ cardId: id })}>
               <CardThumb event={event} content={{ ...content, cardId: id }} width={84} />
               <span className="ed-pick-name">{CARD_NAMES[id]}</span>
             </button>
@@ -112,7 +117,7 @@ export function DesignSection({ event, content, invitation, update, onChangeTemp
         <SecHead title="الخلفية" />
         <div className="ed-picks ed-scenes" role="radiogroup" aria-label="الخلفية">
           {scenes.map((id) => (
-            <button key={id} type="button" role="radio" aria-checked={content.sceneId === id} className={`ed-pick${content.sceneId === id ? ' is-on' : ''}`} onClick={() => update({ sceneId: id })}>
+            <button key={id} type="button" role="radio" aria-label={SCENE_NAMES[id]} aria-checked={content.sceneId === id} className={`ed-pick${content.sceneId === id ? ' is-on' : ''}`} onClick={() => update({ sceneId: id })}>
               <TemplateThumb preset={{ id, name: '', line: '', styles: [], occasionTags: [], cardId: content.cardId, sceneId: id, experience: content.experience }} invitation={invitation} />
               <span className="ed-pick-name">{SCENE_NAMES[id]}</span>
             </button>

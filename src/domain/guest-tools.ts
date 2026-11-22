@@ -2,33 +2,54 @@ import type { Event, InvitationParty, PublishState, Table } from './types';
 import { csvCell } from './guest-experience';
 import { eventPhase } from './event';
 import { normalisePhone } from './phone';
+import { formatPhone } from './format';
 import { invitationStatus, RSVP_STATUS, CHECKIN_STATUS, normaliseForSearch } from './parties';
 
-export type GuestExportScope = 'visible' | 'selected' | 'table' | 'group' | 'all';
+/** `pick`: tables AND sections in one export — a guest is in when their table OR their section is ticked */
+export type GuestExportScope = 'visible' | 'selected' | 'table' | 'group' | 'pick' | 'all';
 export function scopedGuests(parties: readonly InvitationParty[], scope: GuestExportScope, options: {
   visibleIds?: ReadonlySet<string>; selectedIds?: ReadonlySet<string>; tableId?: string; group?: string; tableIds?: ReadonlySet<string>; groupNames?: ReadonlySet<string>;
 }): InvitationParty[] {
   return parties.filter((p) => scope === 'all' || scope === 'visible' && !!options.visibleIds?.has(p.id)
     || scope === 'selected' && !!options.selectedIds?.has(p.id)
     || scope === 'table' && (options.tableIds ? options.tableIds.has(p.tableId || 'none') : options.tableId === 'none' ? !p.tableId : p.tableId === options.tableId)
-    || scope === 'group' && (options.groupNames ? options.groupNames.has(p.side || '') : (p.side || '') === (options.group || '')));
+    || scope === 'group' && (options.groupNames ? options.groupNames.has(p.side || '') : (p.side || '') === (options.group || ''))
+    || scope === 'pick' && (!!options.tableIds?.has(p.tableId || 'none') || !!options.groupNames?.has(p.side || '')));
 }
 
+/** «+966 50 123 4567»: a plus, a country code and digit groups separated by single spaces — nothing else */
+const SPACED_PHONE = /^\+\d{1,3}( \d{1,4}){2,}$/;
 /**
- * A phone written as text that opens cleanly in Excel, Google Sheets and LibreOffice: a left-to-right mark (U+200E)
- * before the normalised number. The cell no longer starts with «+», so it is neither a formula nor a number
- * (no visible apostrophe, no 9.66E+11, no lost leading zero), and it reads left to right in an Arabic sheet.
- * Only «+» and digits pass, so nothing executable can follow the mark; anything else goes through csvCell's guard.
+ * A phone written the way people read it and spreadsheets keep it: spaced international format («+966 50 123 4567»).
+ * The spaces keep it text in Excel, Google Sheets and LibreOffice (never 9.66E+11, never a lost leading zero), with no
+ * apostrophe and no invisible mark, so it copies cleanly into WhatsApp or a dialer. Only «+», digits and single spaces
+ * pass; anything else is returned as is and goes through csvCell's formula guard.
  */
-export const phoneCell = (phone?: string) => phone && /^\+?\d{6,16}$/.test(phone) ? `‎${phone}` : phone || '';
+export const phoneCell = (phone?: string): string => {
+  if (!phone) return '';
+  const n = normalisePhone(phone);
+  const spaced = n.ok ? formatPhone(n.e164) : '';
+  return SPACED_PHONE.test(spaced) ? spaced : phone;
+};
 
-/** Food and private notes are intentionally excluded from a general guest export. */
+/**
+ * Food and private notes are intentionally excluded from a general guest export.
+ * Rows read like a seating sheet — by table in the hall's order («بلا طاولة» last), then by name — and a totals line closes it.
+ */
 export function guestsCsv(parties: readonly InvitationParty[], tables: readonly Table[], includePhones = false): string {
   const head = ['الضيف', ...(includePhones ? ['الجوال'] : []), 'القسم', 'العدد المسموح', 'المرافقون', 'الرد', 'العدد المؤكد', 'الطاولة', 'الوصول', 'عدد الواصلين'];
-  const rows = parties.map((p) => [p.primaryGuestName, ...(includePhones ? [phoneCell(p.phone)] : []), p.side || '', p.maxPartySize,
+  const order = new Map(tables.map((t) => [t.id, t.order]));
+  const rank = (p: InvitationParty) => p.tableId && order.has(p.tableId) ? order.get(p.tableId)! : Number.MAX_SAFE_INTEGER;
+  const sorted = [...parties].sort((a, b) => rank(a) - rank(b) || a.primaryGuestName.localeCompare(b.primaryGuestName, 'ar'));
+  // a validated spaced phone is written as is (it is text, not a formula); every other cell goes through the guard
+  const cell = (v: string | number | undefined) => typeof v === 'string' && SPACED_PHONE.test(v) ? v : csvCell(v);
+  const rows = sorted.map((p) => [p.primaryGuestName, ...(includePhones ? [phoneCell(p.phone)] : []), p.side || '', p.maxPartySize,
     (p.companionNames ?? []).filter(Boolean).join('، '), RSVP_STATUS[p.rsvpStatus].label, p.confirmedPartySize ?? '',
     tables.find((t) => t.id === p.tableId)?.name || '', CHECKIN_STATUS[p.checkInStatus].label, p.checkedInCount]);
-  return '\uFEFF' + [head, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n');
+  const sum = (f: (p: InvitationParty) => number) => parties.reduce((n, p) => n + f(p), 0);
+  const totals = [`الإجمالي: ${parties.length} دعوة`, ...(includePhones ? [''] : []), '', sum((p) => p.maxPartySize), '',
+    `أكدوا: ${parties.filter((p) => p.rsvpStatus === 'confirmed').length} دعوة`, sum((p) => p.rsvpStatus === 'confirmed' ? p.confirmedPartySize ?? 0 : 0), '', '', sum((p) => p.checkedInCount)];
+  return '﻿' + [...[head, ...rows].map((r) => r.map(cell).join(',')), '', totals.map(cell).join(',')].join('\r\n');
 }
 
 /** «not yet invited»: never shared, or the last attempt failed — the same set as the «لم تُشارك بعد» counter. */

@@ -3,7 +3,7 @@
  * duplicate detection (inside the file and against the current list) and resolution decisions.
  * Pure functions — the UI re-runs `reviewImport` after every edit/decision.
  */
-import type { InvitationParty, PartyInput } from './types';
+import type { InvitationParty, PartyInput, Table } from './types';
 import { normalisePhone } from './phone';
 import { toArabicDigitsSafe } from './format';
 import { normaliseForSearch } from './parties';
@@ -44,13 +44,14 @@ export function toRawTable(cells: string[][]): RawTable {
 }
 
 // ------------------------------------------------------------------ mapping
-export type ImportField = 'name' | 'phone' | 'size' | 'companions' | 'notes' | 'side' | 'ignore';
+export type ImportField = 'name' | 'phone' | 'size' | 'companions' | 'notes' | 'side' | 'table' | 'ignore';
 export const FIELD_LABEL: Record<ImportField, string> = {
-  name: 'اسم الضيف أو العائلة', phone: 'رقم الجوال', size: 'العدد المسموح', companions: 'أسماء المرافقين', notes: 'ملاحظات', side: 'الجهة', ignore: 'تجاهل هذا العمود',
+  name: 'اسم الضيف أو العائلة', phone: 'رقم الجوال', size: 'العدد المسموح', companions: 'أسماء المرافقين', notes: 'ملاحظات', side: 'الجهة', table: 'الطاولة', ignore: 'تجاهل هذا العمود',
 };
 export const REQUIRED_FIELDS: ImportField[] = ['name'];
 
 const SYNONYMS: Array<[ImportField, RegExp]> = [
+  ['table', /(طاولة|الطاولة|طاوله|ترابيزة|ترابيزه|table)/i], // before «phone»: «رقم الطاولة» is a table, not a number
   ['phone', /(جوال|هاتف|موبايل|تلفون|رقم|واتس|phone|mobile|tel|whats|number)/i],
   ['size', /(عدد|العدد|أشخاص|اشخاص|المسموح|size|count|guests|pax|seats|party)/i],
   ['companions', /(مرافق|المرافقين|companion|plus|with)/i],
@@ -108,6 +109,8 @@ export interface ImportRow {
   companions: string[];
   notes?: string;
   side?: string;
+  /** the file's table cell as written (matched to the event's tables at import) */
+  table?: string;
   issues: Issue[];
   decision: RowDecision;
   /** 'ok' = will import as is · 'warning' = will import, with a note · 'blocked' = needs a fix or skip · 'skipped' */
@@ -170,7 +173,7 @@ export function reviewImport(inp: ReviewInput): ImportRow[] {
     const companions = get(r, 'companions').split(/[،,;|\n]/).map((s) => s.trim()).filter(Boolean);
     return {
       index, name, phoneRaw, phone: dropPhone ? undefined : phone, size, companions,
-      notes: get(r, 'notes') || undefined, side: get(r, 'side') || undefined, issues, decision, state,
+      notes: get(r, 'notes') || undefined, side: get(r, 'side') || undefined, table: get(r, 'table') || undefined, issues, decision, state,
     };
   });
 }
@@ -187,10 +190,35 @@ export function summarise(rows: readonly ImportRow[]): ImportSummary {
   return s;
 }
 
-export function rowsToPartyInputs(rows: readonly ImportRow[]): PartyInput[] {
+/** `tableFor`: the file's table cell → the name of the table the guest is planned for (or nothing) */
+export function rowsToPartyInputs(rows: readonly ImportRow[], tableFor: (cell: string) => string | undefined = () => undefined): PartyInput[] {
   return rows
     .filter((r) => r.state === 'ok' || r.state === 'warning')
-    .map((r) => ({ primaryGuestName: r.name, phone: r.phone, maxPartySize: r.size, companionNames: r.companions.length ? r.companions : undefined, notes: r.notes, side: r.side }));
+    .map((r) => {
+      const tableName = r.table ? tableFor(r.table) : undefined;
+      return { primaryGuestName: r.name, phone: r.phone, maxPartySize: r.size, companionNames: r.companions.length ? r.companions : undefined, notes: r.notes, side: r.side, ...(tableName ? { tableName } : {}) };
+    });
+}
+
+// ------------------------------------------------------------------ the «الطاولة» column
+const tableNumber = (s: string) => toArabicDigitsSafe(s).match(/\d+/)?.[0];
+/** «4», «طاولة 4» or the table's exact name all find «طاولة 4» (and «طاولة 1 — كبار العائلة» answers to «1») */
+export function matchTable(cell: string, tables: readonly Pick<Table, 'id' | 'name'>[]): string | undefined {
+  const c = normaliseForSearch(cell.trim());
+  if (!c) return undefined;
+  const byName = tables.find((t) => normaliseForSearch(t.name) === c);
+  if (byName) return byName.id;
+  const n = tableNumber(cell);
+  return n ? tables.find((t) => tableNumber(t.name) === n)?.id : undefined;
+}
+/** the name a missing table gets when the organizer asks to create it: «4» → «طاولة 4», a name stays a name */
+export const newTableName = (cell: string) => /^\s*\d+\s*$/.test(toArabicDigitsSafe(cell)) ? `طاولة ${toArabicDigitsSafe(cell).trim()}` : cell.trim();
+/** the file's tables split into those that exist and the distinct names that would have to be created */
+export function importTables(rows: readonly ImportRow[], tables: readonly Pick<Table, 'id' | 'name'>[]) {
+  const live = rows.filter((r) => r.table && (r.state === 'ok' || r.state === 'warning'));
+  const matched = live.filter((r) => matchTable(r.table!, tables)).length;
+  const missing = [...new Set(live.filter((r) => !matchTable(r.table!, tables)).map((r) => newTableName(r.table!)))];
+  return { withTable: live.length, matched, missing, missingRows: live.length - matched };
 }
 
 /** the sample file offered in the import flow (also downloadable) — includes the states testers must handle */
