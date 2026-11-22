@@ -81,6 +81,7 @@ export class Studio {
     this.finale = FinaleRegistry.get('envelope');
     this.audio = new AudioEngine({ base: assetBase });
     this.audio.usePack(AudioRegistry.get('studio'));
+    this.audio.onChange = () => this.el && this._syncAudioPreference();
     this.audio.setPreference(invitation?.audio);
     this.rsvpAdapter = rsvp || new LocalRSVPAdapter();
     this.cleanups = [];
@@ -111,7 +112,7 @@ export class Studio {
       tilt: $('.st-tilt'), face: $('.st-face-slot'), back: $('.st-back'), cardBtn: $('.st-cardbtn'),
       edges: [...host.querySelectorAll('.st-edge')], sheet: $('.st-sheet'), page: $('.st-page'), dots: $('.st-dots'),
       mono: $('.st-sheet-mono'), env: $('.st-env'), credit: $('.st-credit'), done: $('.st-done'),
-      ctrls: $('.st-ctrls'), swSlot: $('.st-switch-slot'), soundBtn: $('[data-act="sound"]'), swBtn: $('[data-act="switcher"]'),
+      ctrls: $('.st-ctrls'), swSlot: $('.st-switch-slot'), soundBtn: $('[data-act="sound"]'), voiceBtn: $('[data-act="voice"]'), swBtn: $('[data-act="switcher"]'),
     };
     const c = this.data.c;
     $('.bar-date').textContent = c.dateNum;
@@ -221,6 +222,8 @@ export class Studio {
         this.el.sheet.inert = false;
         this._renderPage(false);
         this.audio.startMusic();
+        // the organizer's voice welcome speaks once, as the invitation opens (the guest can replay or stop it)
+        if (from === 'opening' && !this.audio.voicePlayed) void this.audio.playVoice();
         requestAnimationFrame(() => this.el.sheet.focus({ preventScroll: true }));
         break;
       case 'pack':
@@ -500,6 +503,7 @@ export class Studio {
       if (act === 'replay') { this.audio.emit('click'); return this.replay(); }
       if (act === 'done-action') { this.audio.emit('click'); return this.doneAction?.onClick(); }
       if (act === 'sound') return this.toggleSound();
+      if (act === 'voice') return this.toggleVoice();
       if (act === 'switcher') { this.audio.emit('click'); return this.swOpen ? this._closeSwitcher() : this._openSwitcher(); }
       if (t.dataset.go) return this.go(Number(t.dataset.go), t);
       if (t.dataset.attend) { this.audio.emit('choose'); this.rsvp.attending = t.dataset.attend; return this._syncRsvp(); }
@@ -606,7 +610,19 @@ export class Studio {
     b.setAttribute('aria-label', T.sound);
   }
 
+  /** the voice welcome's own control: replay it, or stop it while it speaks (an explicit tap also unmutes) */
+  toggleVoice() {
+    this.audio.unlock();
+    if (this.audio.voicePlaying) { this.audio.stopVoice(); return; }
+    if (!this.audio.enabled) this.toggleSound();
+    void this.audio.playVoice();
+  }
+
   _syncAudioPreference() {
+    const voice = this.el.voiceBtn, playing = this.audio.voicePlaying;
+    voice.hidden = !(this.audio.voiceTrack && this.audio.voiceReady);
+    voice.innerHTML = playing ? ICON.voiceStop : ICON.voice;
+    voice.setAttribute('aria-pressed', String(playing));
     const button = this.el.soundBtn;
     button.hidden = this.audio.preference.mode === 'off';
     if (this.audio.missingUpload && this.authorNotes) button.title = 'المقطع المرفوع غير متاح على هذا الجهاز؛ يعمل الصوت الأساسي.';
@@ -618,6 +634,7 @@ export class Studio {
     this.leaving = false;
     this.el.page.classList.remove('leaving');
     this.audio.stopMusic();
+    this.audio.stopVoice(); this.audio.voicePlayed = false;   // watching again opens with the welcome again
     this._closeSwitcher();
     // canonical: unmount for 40 ms, then restart at intro (CSS animations restart from frame 0)
     this.el.st.style.visibility = 'hidden';

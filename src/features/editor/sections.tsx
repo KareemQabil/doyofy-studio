@@ -12,6 +12,8 @@ import { CardThumb } from '../invitation/CardThumb';
 import { TemplateThumb } from '../templates/TemplateThumb';
 import { useAudioLibrary } from '../account/audio-state';
 import { Link } from '../../app/router';
+import { useCopy } from '../../ui/copy';
+import type { AudioSelection } from '../../domain/audio-library';
 
 type Update = (patch: Partial<InvitationDesignContent>) => void;
 
@@ -130,9 +132,9 @@ export function DesignSection({ event, content, invitation, update, onChangeTemp
 }
 
 // ------------------------------------------------------------------ الحركة والصوت
-function Option({ on, title, text, onClick, art }: { on: boolean; title: string; text: string; onClick: () => void; art?: ReactNode }) {
+function Option({ on, title, text, onClick, art, disabled }: { on: boolean; title: string; text: string; onClick: () => void; art?: ReactNode; disabled?: boolean }) {
   return (
-    <button type="button" role="radio" aria-checked={on} className={`ed-option${on ? ' is-on' : ''}`} onClick={onClick}>
+    <button type="button" role="radio" aria-checked={on} className={`ed-option${on ? ' is-on' : ''}`} onClick={onClick} disabled={disabled}>
       {art}
       <span className="ed-option-text"><span className="ed-option-title">{title}</span><span className="ed-option-d">{text}</span></span>
       <span className="ed-option-mark" aria-hidden="true"><Icon name="check" size="sm" /></span>
@@ -142,9 +144,6 @@ function Option({ on, title, text, onClick, art }: { on: boolean; title: string;
 
 export function MotionSection({ content, invitation, update, sound, onSound }: { content: InvitationDesignContent; invitation: unknown; update: Update; sound: boolean; onSound: (v: boolean) => void }) {
   const x = content.experience;
-  const library = useAudioLibrary();
-  const audio = content.audio ?? { mode: 'default' as const };
-  const selectedAudio = audio.mode === 'library' ? `track:${audio.trackId}` : audio.mode;
   const setX = (patch: Partial<InvitationDesignContent['experience']>) => update({ experience: { ...x, ...patch, dimension: '2d' } });
   return (
     <div className="ed-sec">
@@ -155,22 +154,55 @@ export function MotionSection({ content, invitation, update, sound, onSound }: {
           <Option on={x.motion === 'static'} title="ثابتة" text="تفتح مباشرة على البطاقة، بلا حركة." onClick={() => setX({ motion: 'static' })} />
         </div>
       </section>
-      <section className="ed-group">
-        <SecHead title="الصوت" hint="اختر صوت الدعوة. يبدأ بعد أول تفاعل ويمكن للضيف كتمه." />
-        <Field label="صوت الدعوة"><Select value={selectedAudio} onChange={e => {
-          const value = e.target.value;
-          if (value === 'off' || value === 'default') update({ audio: { mode: value } });
-          else { const track = library.tracks.find(t => t.id === value.slice(6)); if (track) update({ audio: { mode: 'library', trackId: track.id, trackName: track.name } }); }
-        }}>
-          <option value="default">{library.defaultTrackId ? `افتراضي الحساب · ${library.tracks.find(t => t.id === library.defaultTrackId)?.name}` : 'الصوت الأساسي'}</option>
-          {library.tracks.map(track => <option key={track.id} value={`track:${track.id}`}>{track.name}</option>)}
-          {audio.mode === 'library' && !library.tracks.some(t => t.id === audio.trackId) && <option value={selectedAudio}>المقطع غير متاح · سيعمل الصوت الأساسي</option>}
-          <option value="off">بدون صوت</option>
-        </Select></Field>
-        <p className="ed-sec-hint"><Link to="/app/account">إدارة مكتبتي الصوتية</Link> · المقاطع المرفوعة تعمل على هذا المتصفح فقط في التجربة.</p>
-        <Switch label="شغّل الصوت في المعاينة" hint="هنا فقط، لتسمعه كما سيسمعه الضيف. لا يغيّر الدعوة." checked={sound} onChange={onSound} />
-      </section>
+      <SoundGroup content={content} update={update} sound={sound} onSound={onSound} />
     </div>
+  );
+}
+
+/**
+ * One sound choice — none / built-in / my music (pick a track) — plus an optional voice welcome (r4-audio).
+ * `default` (nothing chosen yet) shows as the account default: its track when there is one, built-in otherwise.
+ * The device-only line is organizer UI; guests elsewhere just hear the built-in sound.
+ */
+function SoundGroup({ content, update, sound, onSound }: { content: InvitationDesignContent; update: Update; sound: boolean; onSound: (v: boolean) => void }) {
+  const { t } = useCopy();
+  const library = useAudioLibrary();
+  const audio: AudioSelection = content.audio ?? { mode: 'default' };
+  const music = library.tracks.filter(tr => tr.kind === 'music'), voices = library.tracks.filter(tr => tr.kind === 'voice');
+  const shown = audio.mode === 'default' ? (library.defaultTrackId ? 'library' : 'builtin') : audio.mode;
+  const trackId = audio.mode === 'library' ? audio.trackId : audio.mode === 'default' ? library.defaultTrackId : undefined;
+  const voice = audio.voiceId ? { voiceId: audio.voiceId, ...(audio.voiceName ? { voiceName: audio.voiceName } : {}) } : {};
+  const pickTrack = (id: string | undefined) => { const tr = music.find(m => m.id === id) ?? music[0]; if (tr) update({ audio: { mode: 'library', trackId: tr.id, trackName: tr.name, ...voice } }); };
+  const choose = (mode: 'off' | 'builtin' | 'library') => mode === 'library' ? pickTrack(trackId) : update({ audio: { mode, ...voice } });
+  const setVoice = (id: string | undefined) => {
+    const { voiceId: _v, voiceName: _n, ...rest } = audio;
+    const tr = voices.find(v => v.id === id);
+    update({ audio: { ...rest, ...(tr ? { voiceId: tr.id, voiceName: tr.name } : {}) } });
+  };
+  const trackMissing = shown === 'library' && !!trackId && !music.some(m => m.id === trackId);
+  const voiceMissing = !!audio.voiceId && !voices.some(v => v.id === audio.voiceId);
+  const uploaded = shown === 'library' || !!audio.voiceId;
+  return (
+    <section className="ed-group">
+      <SecHead title={t('audioSoundTitle')} hint={t('audioSoundHint')} />
+      <div className="ed-options is-text" role="radiogroup" aria-label={t('audioChoiceLabel')}>
+        <Option on={shown === 'off'} title={t('audioChoiceNone')} text={t('audioChoiceNoneD')} onClick={() => choose('off')} />
+        <Option on={shown === 'builtin'} title={t('audioChoiceBuiltin')} text={t('audioChoiceBuiltinD')} onClick={() => choose('builtin')} />
+        <Option on={shown === 'library'} disabled={!music.length && !trackMissing} title={t('audioChoiceMine')} text={music.length ? t('audioChoiceMineD') : t('audioChoiceMineEmpty')} onClick={() => choose('library')} />
+      </div>
+      {shown === 'library' && (music.length > 0 || trackMissing) && <Field label={t('audioPickTrack')}><Select data-audio-track value={trackId ?? ''} onChange={e => pickTrack(e.target.value)}>
+        {music.map(tr => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
+        {trackMissing && <option value={trackId}>{t('audioTrackMissing')}</option>}
+      </Select></Field>}
+      <Switch label={t('audioVoiceToggle')} hint={t('audioVoiceToggleHint')} checked={!!audio.voiceId} disabled={!voices.length && !audio.voiceId} onChange={on => setVoice(on ? (voices.find(v => v.id === audio.voiceId) ?? voices[0])?.id : undefined)} />
+      {audio.voiceId && (voices.length > 1 || voiceMissing) && <Field label={t('audioVoicePick')}><Select data-audio-voice value={audio.voiceId} onChange={e => setVoice(e.target.value)}>
+        {voices.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+        {voiceMissing && <option value={audio.voiceId}>{t('audioVoiceMissing')}</option>}
+      </Select></Field>}
+      {uploaded && <p className="ed-sec-hint" data-audio-device-note>{t('audioDeviceOnly')}</p>}
+      <p className="ed-sec-hint"><Link to="/app/account">{voices.length ? t('audioManage') : t('audioRecordInAccount')}</Link></p>
+      <Switch label={t('audioPreviewSound')} hint={t('audioPreviewSoundHint')} checked={sound} onChange={onSound} />
+    </section>
   );
 }
 

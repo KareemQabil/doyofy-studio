@@ -149,6 +149,7 @@ body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
    44px control would draw at 30–41 real px. Each control keeps its look and gets an invisible hit area of at least
    44 real px (44px / --s on the stage); page dots grow to 24px wide. Hints never draw under 12 real px. */
 .st-round, .st-icon, .st-dotbtn, .st-pill, .st-cta { position: relative; }
+.st-icon[hidden] { display: none; } /* the voice-welcome control exists only when a recording is on this device */
 .st-round::after, .st-icon::after, .st-dotbtn::after, .st-pill::after, .st-cta::after {
   content: ""; position: absolute; border-radius: inherit;
   inset-block: min(0px, calc(50% - 22px / var(--s, 1)));

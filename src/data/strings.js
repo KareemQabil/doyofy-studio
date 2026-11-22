@@ -44,7 +44,7 @@ export function setStringsVoice(dialect) { voice = dialect === 'ar-EG' || dialec
  */
 export function currentStrings(dialect = voice ?? currentDialect()) {
   const k = copyFor(dialect);
-  const base = { ...STRINGS, accept: { ...STRINGS.accept, ar: k.guestAccept }, decline: { ...STRINGS.decline, ar: k.guestDecline }, sealSend: { ...STRINGS.sealSend, ar: k.guestSendReply } };
+  const base = { ...STRINGS, accept: { ...STRINGS.accept, ar: k.guestAccept }, decline: { ...STRINGS.decline, ar: k.guestDecline }, sealSend: { ...STRINGS.sealSend, ar: k.guestSendReply }, voice: k.audioGuestVoice };
   if (dialect === 'ar-EG') return { ...base, tapToOpen: { ...STRINGS.tapToOpen, ar: 'دوسوا على الكارت وافتحوا الدعوة' }, watchAgain: { ...STRINGS.watchAgain, ar: 'شوفوها تاني' }, thanks: { yes: { ...STRINGS.thanks.yes, ar: 'مستنيينكم' }, no: { ...STRINGS.thanks.no, ar: 'هنفتقدكم' } }, need: { ...STRINGS.need, ar: 'اكتبوا الاسم واختاروا ردكم' } };
   if (dialect === 'ar-SA') return { ...base, tapToOpen: { ...STRINGS.tapToOpen, ar: 'اضغطوا على البطاقة وافتحوا الدعوة' }, watchAgain: { ...STRINGS.watchAgain, ar: 'شوفوها مرة ثانية' }, thanks: { yes: { ...STRINGS.thanks.yes, ar: 'بانتظاركم' }, no: { ...STRINGS.thanks.no, ar: 'بنفتقدكم' } }, need: { ...STRINGS.need, ar: 'اكتبوا الاسم واختاروا ردّكم' } };
   return base;

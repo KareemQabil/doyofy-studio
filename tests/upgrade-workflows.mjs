@@ -13,12 +13,13 @@ let browser;
 const watchdog = setTimeout(() => { console.error('Upgrade acceptance exceeded its 165-second budget.'); process.exit(1); }, 165000);
 const base = `http://localhost:${server.address().port}`;
 const { chromium } = need('playwright');
-const wav = () => {
-  const count = 4410, data = Buffer.alloc(44 + count * 2);
+/** a mono 16-bit sine WAV; 40 s at 8 kHz is ~640 KB — more than the old 300 KB cap, well inside the new 8 MB */
+const wav = (seconds = 40, rate = 8000) => {
+  const count = Math.round(seconds * rate), data = Buffer.alloc(44 + count * 2);
   data.write('RIFF'); data.writeUInt32LE(data.length - 8, 4); data.write('WAVEfmt ', 8); data.writeUInt32LE(16, 16);
-  data.writeUInt16LE(1, 20); data.writeUInt16LE(1, 22); data.writeUInt32LE(22050, 24); data.writeUInt32LE(44100, 28);
+  data.writeUInt16LE(1, 20); data.writeUInt16LE(1, 22); data.writeUInt32LE(rate, 24); data.writeUInt32LE(rate * 2, 28);
   data.writeUInt16LE(2, 32); data.writeUInt16LE(16, 34); data.write('data', 36); data.writeUInt32LE(count * 2, 40);
-  for (let i = 0; i < count; i++) data.writeInt16LE(Math.round(Math.sin(i * 2 * Math.PI * 440 / 22050) * 1500), 44 + i * 2);
+  for (let i = 0; i < count; i++) data.writeInt16LE(Math.round(Math.sin(i * 2 * Math.PI * 440 / rate) * 1500 * (0.4 + 0.6 * Math.abs(Math.sin(i / rate)))), 44 + i * 2);
   return data;
 };
 async function go(page, path) {
@@ -51,7 +52,7 @@ async function scenario(name, viewport, run) {
   } finally { await context.close(); }
 }
 try {
-  browser = await chromium.launch({ executablePath: chromiumPath(), timeout: 30000, args: ['--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
+  browser = await chromium.launch({ executablePath: chromiumPath(), timeout: 30000, args: ['--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 
   await scenario('01-phone-cards', { width: 390, height: 844 }, async page => {
     await go(page, '/app/events');
@@ -102,23 +103,33 @@ try {
     await page.getByRole('combobox', { name: 'طريقة الكلام', exact: true }).waitFor();
     assert.equal(await page.getByRole('combobox', { name: 'طريقة الكلام', exact: true }).inputValue(), 'ar-EG');
     await page.getByRole('combobox', { name: 'طريقة الكلام', exact: true }).selectOption('ar');
-    await page.getByLabel('اسم المقطع', { exact: false }).fill('صوت اختبار القبول');
+    await page.getByLabel('اسم المقطع', { exact: false }).first().fill('صوت اختبار القبول');
     await page.locator('input[type=file][accept*="audio/mpeg"]').setInputFiles({ name: 'acceptance.wav', mimeType: 'audio/wav', buffer: wav() });
-    const audio = page.locator('.audio-library-list audio'); await audio.waitFor();
+    // Web Audio decodes the upload into a waveform; the start handle is a left-to-right range over it
+    const start = page.getByRole('slider', { name: 'بداية الموسيقى', exact: true }); await start.waitFor();
+    assert.equal(await page.locator('.audio-wave').getAttribute('dir'), 'ltr');
+    await start.fill('12');
+    await page.getByText('تبدأ عند 0:12', { exact: true }).waitFor();
+    await page.getByRole('button', { name: 'احفظ المقطع', exact: true }).click();
+    const audio = page.locator('.audio-library-list audio').first(); await audio.waitFor();
     await page.waitForFunction(() => document.querySelector('.audio-library-list audio')?.readyState >= 1);
     const metadata = await audio.evaluate(el => ({ duration: el.duration, ready: el.readyState }));
-    assert.ok(metadata.duration > 0 && Number.isFinite(metadata.duration));
+    assert.ok(metadata.duration > 39 && Number.isFinite(metadata.duration), `40 s upload plays back: ${metadata.duration}`);
     // Explicitly request playback after a genuine page click; assert media state, not speaker audibility.
     await page.getByText('صوت اختبار القبول', { exact: true }).click();
     await audio.evaluate(el => el.play());
     await page.waitForFunction(() => document.querySelector('.audio-library-list audio')?.currentTime > 0);
     await audio.evaluate(el => el.pause());
-    await page.reload({ waitUntil: 'domcontentloaded' }); await page.locator('.audio-library-list audio').waitFor();
-    const track = await page.evaluate(() => JSON.parse(localStorage.getItem('doyofy:audio-library:v1')).tracks[0]);
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('doyofy:audio-library:v1')));
+    await page.reload({ waitUntil: 'domcontentloaded' }); await page.locator('.audio-library-list audio').first().waitFor();
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('doyofy:audio-library:v2')));
+    const track = saved.tracks[0];
     assert.equal(saved.defaultTrackId, track.id);
+    assert.equal(track.startSec, 12);
+    assert.ok(JSON.stringify(saved).length < 1000, 'localStorage keeps metadata only; the bytes are in IndexedDB');
+    const stored = await page.evaluate(id => new Promise(resolve => { const r = indexedDB.open('doyofy-audio'); r.onsuccess = () => { const q = r.result.transaction('blobs').objectStore('blobs').get(id); q.onsuccess = () => resolve(q.result?.data?.byteLength ?? 0); }; }), track.id);
+    assert.ok(stored > 300 * 1024, `IndexedDB holds the full upload: ${stored} bytes`);
     await go(page, '/app/events/evt_wedding/invitation/design?section=motion');
-    const select = page.getByRole('combobox', { name: 'صوت الدعوة', exact: true }); await select.selectOption(`track:${track.id}`);
+    const mine = page.getByRole('radio', { name: /موسيقاي/ }); await mine.click();
     const waitAudio = async (expected, persisted = false) => {
       try {
         // Keep the polled predicate synchronous. Playwright treats a returned Promise as
@@ -126,17 +137,18 @@ try {
         await page.waitForFunction(({ expected, persisted }) => {
           const store = JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}');
           const stored = store.designs?.find(d => d.eventId === 'evt_wedding')?.draft.audio;
-          const matches = audio => expected === 'off' ? audio?.mode === 'off' : audio?.mode === 'library' && `track:${audio.trackId}` === expected;
-          const control = document.querySelector('#ed-motion select');
-          return !!window.__doyofy && matches(stored) && control?.value === expected && (!persisted || document.querySelector('.save-state')?.classList.contains('is-saved'));
+          const matches = audio => expected === 'off' ? audio?.mode === 'off' : audio?.mode === 'library' && audio.trackId === expected;
+          const checked = document.querySelector('#ed-motion [role=radiogroup][aria-label="صوت الدعوة"] [aria-checked=true] .ed-option-title')?.textContent;
+          const control = expected === 'off' ? checked === 'بدون صوت' : checked === 'موسيقاي' && document.querySelector('#ed-motion select[data-audio-track]')?.value === expected;
+          return !!window.__doyofy && matches(stored) && control && (!persisted || document.querySelector('.save-state')?.classList.contains('is-saved'));
         }, { expected, persisted }, { timeout: 4500 });
         const savedAudio = await page.evaluate(async () => (await window.__doyofy.services.invitations.get('evt_wedding'))?.draft.audio);
-        assert.equal(expected === 'off' ? savedAudio?.mode : `track:${savedAudio?.trackId}`, expected, 'service agrees with the durable audio choice');
+        assert.equal(expected === 'off' ? savedAudio?.mode : savedAudio?.trackId, expected, 'service agrees with the durable audio choice');
       } catch (error) {
         const diagnostic = await page.evaluate(async () => ({
           persisted: JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}').designs?.find(d => d.eventId === 'evt_wedding')?.draft.audio,
           service: window.__doyofy ? (await window.__doyofy.services.invitations.get('evt_wedding'))?.draft.audio : null,
-          control: document.querySelector('#ed-motion select')?.value,
+          checked: document.querySelector('#ed-motion [role=radiogroup][aria-label="صوت الدعوة"] [aria-checked=true]')?.textContent,
           save: document.querySelector('.save-state')?.textContent,
         }));
         throw new Error(`Audio persistence expected ${expected}: ${JSON.stringify(diagnostic)}; ${error.message}`);
@@ -144,14 +156,33 @@ try {
     };
     // A repository read can settle before React paints the autosave completion. Wait for durable
     // storage and the visible saved signal before reloading, then require the exact restored choice.
-    await waitAudio(`track:${track.id}`, true);
-    await page.reload({ waitUntil: 'domcontentloaded' }); await waitAudio(`track:${track.id}`);
-    assert.equal(await select.inputValue(), `track:${track.id}`);
-    await select.selectOption('off');
+    await waitAudio(track.id, true);
+    assert.ok(await page.locator('#ed-motion [data-audio-device-note]').isVisible(), 'the editor says uploads play on this device only');
+    await page.reload({ waitUntil: 'domcontentloaded' }); await waitAudio(track.id);
+    await page.getByRole('radio', { name: /بدون صوت/ }).click();
     await waitAudio('off', true);
     await page.reload({ waitUntil: 'domcontentloaded' }); await waitAudio('off');
-    assert.equal(await select.inputValue(), 'off');
-    return `Egyptian dialect persisted; WAV metadata ${metadata.duration.toFixed(2)}s/playback; default, chosen track and silence survived reload`;
+    return `Egyptian dialect persisted; 40 s WAV (${Math.round(stored / 1024)} KB in IndexedDB) trimmed to 0:12 and played; chosen track and silence survived reload`;
+  });
+
+  await scenario('03b-voice-welcome', { width: 1440, height: 1000 }, async page => {
+    // Chromium's fake microphone (launch flags) answers the permission prompt and feeds a tone
+    await go(page, '/app/account');
+    await page.getByRole('button', { name: 'ابدأ التسجيل', exact: true }).click();
+    await page.locator('[data-recording] [role=timer]').waitFor();
+    await page.waitForFunction(() => /0:0[2-9]/.test(document.querySelector('[data-recording] [role=timer]')?.textContent || ''), null, { timeout: 6000 });
+    await page.getByRole('button', { name: 'أوقف التسجيل', exact: true }).click();
+    await page.getByRole('button', { name: 'احفظ الرسالة', exact: true }).click();
+    await page.waitForFunction(() => JSON.parse(localStorage.getItem('doyofy:audio-library:v2') || '{"tracks":[]}').tracks.some(t => t.kind === 'voice'));
+    const voice = await page.evaluate(() => JSON.parse(localStorage.getItem('doyofy:audio-library:v2')).tracks.find(t => t.kind === 'voice'));
+    assert.ok(voice.durationSec >= 2 && voice.durationSec <= 60, `recorded ${voice.durationSec}s`);
+    await go(page, '/app/events/evt_wedding/invitation/design?section=motion');
+    await page.getByRole('switch', { name: 'رسالة ترحيب صوتية', exact: true }).click();
+    await page.waitForFunction(id => JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}').designs?.find(d => d.eventId === 'evt_wedding')?.draft.audio?.voiceId === id, voice.id);
+    await page.getByRole('group', { name: 'عرض الاستوديو' }).getByRole('button', { name: 'معاينة' }).click();
+    // the organizer preview carries the voice: its replay/stop control appears once the bytes are found on this device
+    await page.waitForFunction(() => { const b = document.querySelector('.live-preview [data-act="voice"]'); return !!b && !b.hidden; }, null, { timeout: 6000 });
+    return `voice welcome recorded (${voice.durationSec.toFixed(1)} s, ${voice.mime}) and reached the preview engine`;
   });
 
   await scenario('04-table-order', { width: 1440, height: 1000 }, async page => {

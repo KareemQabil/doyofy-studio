@@ -1,66 +1,126 @@
+/**
+ * The account's sounds: upload music (≤ 8 MB, choose where it starts), record a voice welcome, preview, delete,
+ * account default. Bytes go through the AudioStore (IndexedDB here); the panel says plainly that they play on this
+ * device only until the server store is connected.
+ */
 import { useEffect, useRef, useState } from 'react';
-import { AUDIO_MIME, MAX_AUDIO_TRACKS, audioTrackBlob, readAudioLibrary, saveAudioLibrary, validateAudioFile, type AudioTrack } from '../../domain/audio-library';
+import {
+  AUDIO_MIME, AudioLibraryError, DEFAULT_FADE_IN_SEC, MAX_AUDIO_TRACKS, addAudioTrack, deleteAudioTrack, formatClock, inferAudioMime,
+  loadAudioTrackBlob, readAudioLibrary, saveAudioLibrary, updateAudioTrack, validateAudioFile, type AudioIssue, type AudioTrack,
+} from '../../domain/audio-library';
+import type { CopyKey } from '../../domain/copy';
 import { Banner, Button, Field, Input, Panel } from '../../ui';
-import { useAudioLibrary } from './audio-state';
+import { useCopy } from '../../ui/copy';
+import { useAudioLibrary, useTrackUrl } from './audio-state';
+import { AudioTrim } from './AudioTrim';
+import { VoiceRecorder } from './VoiceRecorder';
+import { audioMedia, type AudioSummary } from './audio-media';
+import { audioErrorKey } from './audio-errors';
 
-function AudioSample({ track }: { track: AudioTrack }) {
-  const [url, setUrl] = useState('');
-  useEffect(() => { const src = URL.createObjectURL(audioTrackBlob(track)); setUrl(src); return () => URL.revokeObjectURL(src); }, [track.id, track.dataUrl]);
-  return url ? <audio controls preload="metadata" src={url} aria-label={`معاينة ${track.name}`} /> : null;
-}
+const issueOf = (e: unknown): AudioIssue => e instanceof AudioLibraryError ? e.code : 'storage';
+/** a draft start point: a fresh upload (file) or an existing track being re-trimmed (trackId) */
+interface Draft { url: string; summary: AudioSummary; start: number; fadeIn: boolean; file?: File; trackId?: string }
 
-async function readPlayableAudio(file: File): Promise<string> {
-  const url = URL.createObjectURL(file);
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const audio = new Audio();
-      const finish = (error?: Error) => { clearTimeout(timer); audio.onloadedmetadata = null; audio.onerror = null; audio.removeAttribute('src'); audio.load(); error ? reject(error) : resolve(); };
-      const timer = setTimeout(() => finish(new Error('تعذّر قراءة المقطع. جرّب ملف MP3 آخر.')), 8000);
-      audio.onloadedmetadata = () => { audio.onloadedmetadata = null; audio.onerror = null; finish(); };
-      audio.onerror = () => { audio.onloadedmetadata = null; audio.onerror = null; finish(new Error('هذا الملف غير قابل للتشغيل. اختر ملفًا صوتيًا صالحًا.')); };
-      audio.preload = 'metadata'; audio.src = url;
-    });
-  } finally { URL.revokeObjectURL(url); }
-  return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error('تعذّر قراءة الملف. حاول مرة أخرى.')); reader.readAsDataURL(file); });
+function useDraftUrl(draft: Draft | null) { useEffect(() => () => { if (draft) URL.revokeObjectURL(draft.url); }, [draft?.url]); } // eslint-disable-line react-hooks/exhaustive-deps
+
+function TrackSample({ track }: { track: AudioTrack }) {
+  const { t } = useCopy();
+  const url = useTrackUrl(track.id);
+  if (url === null) return <p className="field-hint">{t('audioErrBytes')}</p>;
+  return url ? <audio controls preload="metadata" src={url} aria-label={t('audioPreviewOf').replace('{name}', track.name)} /> : null;
 }
 
 export function AudioLibrary() {
+  const { t } = useCopy();
   const library = useAudioLibrary();
   const input = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState(''), [notice, setNotice] = useState(''), [loading, setLoading] = useState(false), [name, setName] = useState('');
-  const upload = async (file?: File) => {
+  const [error, setError] = useState<CopyKey | ''>(''), [notice, setNotice] = useState(''), [busy, setBusy] = useState(''), [name, setName] = useState('');
+  const [draft, setDraft] = useState<Draft | null>(null);
+  useDraftUrl(draft);
+  const full = library.tracks.length >= MAX_AUDIO_TRACKS;
+  const say = (message: string) => { setError(''); setNotice(message); };
+  const fail = (e: unknown) => { setNotice(''); setError(audioErrorKey(issueOf(e))); };
+
+  const pickFile = async (file?: File) => {
+    if (input.current) input.current.value = '';
     if (!file) return;
     setError(''); setNotice('');
-    const invalid = validateAudioFile(file);
-    if (invalid) { setError(invalid); return; }
-    if (readAudioLibrary().tracks.length >= MAX_AUDIO_TRACKS) { setError('يمكن حفظ 3 مقاطع. احذف مقطعًا قبل إضافة آخر.'); return; }
-    setLoading(true);
+    const type = inferAudioMime(file), invalid = validateAudioFile({ type, size: file.size });
+    if (invalid) { setError(audioErrorKey(invalid)); return; }
+    if (readAudioLibrary().tracks.length >= MAX_AUDIO_TRACKS) { setError('audioErrFull'); return; }
+    setBusy('read');
     try {
-      const dataUrl = await readPlayableAudio(file), current = readAudioLibrary();
-      if (current.tracks.length >= MAX_AUDIO_TRACKS) throw new Error('المكتبة ممتلئة. احذف مقطعًا قبل إضافة آخر.');
-      const id = `audio_${crypto.randomUUID()}`;
-      const track: AudioTrack = { id, name: (name.trim() || file.name.replace(/\.[^.]+$/, '')).slice(0, 80), mime: file.type, bytes: file.size, dataUrl };
-      saveAudioLibrary({ tracks: [...current.tracks, track], defaultTrackId: current.defaultTrackId || id });
-      setName(''); setNotice('حُفظ المقطع في مكتبتك. يمكنك اختياره من محرر الدعوة.');
-    } catch (e) { setError(e instanceof Error ? e.message : 'تعذّر حفظ المقطع. حاول مرة أخرى.'); }
-    finally { setLoading(false); if (input.current) input.current.value = ''; }
+      const typed = file.type === type ? file : new File([file], file.name, { type });
+      const summary = await audioMedia.decode(typed);
+      setDraft({ url: URL.createObjectURL(typed), summary, start: 0, fadeIn: true, file: typed });
+      if (!name.trim()) setName(file.name.replace(/\.[^.]+$/, '').slice(0, 80));
+    } catch (e) { fail(e); }
+    finally { setBusy(''); }
   };
-  const change = (fn: () => void, message: string) => { setError(''); try { fn(); setNotice(message); } catch (e) { setError(e instanceof Error ? e.message : 'تعذّر حفظ التغيير.'); } };
-  return <Panel title="مكتبتي الصوتية">
-    <p className="muted">أضف صوتًا لدعواتك، واختره من «الحركة والصوت» داخل المحرر.</p>
-    <p className="field-hint">حتى 3 مقاطع، بحد 300 كيلوبايت للمقطع. الملفات محفوظة على هذا المتصفح فقط؛ مشاركتها مع أجهزة الضيوف تحتاج ربط تخزين لاحقًا.</p>
-    <div className="audio-library-upload stack gap-3">
-      <Field label="اسم المقطع" optional><Input value={name} maxLength={80} placeholder="مثلًا: موسيقى حفلنا" onChange={e => setName(e.target.value)} /></Field>
-      <input ref={input} className="sr-only" type="file" tabIndex={-1} aria-label="رفع مقطع صوتي" accept={AUDIO_MIME.join(',')} onChange={e => void upload(e.target.files?.[0])} />
-      <Button variant="secondary" loading={loading} disabled={library.tracks.length >= MAX_AUDIO_TRACKS} onClick={() => input.current?.click()}>إضافة مقطع صوتي</Button>
+  const retrim = async (track: AudioTrack) => {
+    setError(''); setNotice(''); setBusy(`trim:${track.id}`);
+    try {
+      const blob = await loadAudioTrackBlob(track.id);
+      if (!blob) { setError('audioErrBytes'); return; }
+      const summary = await audioMedia.decode(blob);
+      setDraft({ url: URL.createObjectURL(blob), summary, start: track.startSec, fadeIn: track.fadeInSec > 0, trackId: track.id });
+    } catch (e) { fail(e); }
+    finally { setBusy(''); }
+  };
+  const saveDraft = async () => {
+    if (!draft) return;
+    setBusy('save');
+    try {
+      const fadeInSec = draft.fadeIn ? DEFAULT_FADE_IN_SEC : 0;
+      if (draft.trackId) { updateAudioTrack(draft.trackId, { startSec: draft.start, fadeInSec, durationSec: draft.summary.duration }); say(t('audioStartSaved')); }
+      else if (draft.file) {
+        await addAudioTrack({ blob: draft.file, name: name.trim() || draft.file.name.replace(/\.[^.]+$/, ''), kind: 'music', durationSec: draft.summary.duration, startSec: draft.start, fadeInSec });
+        setName(''); say(t('audioSaved'));
+      }
+      setDraft(null);
+    } catch (e) { fail(e); }
+    finally { setBusy(''); }
+  };
+  const change = (fn: () => void | Promise<void>, message: string) => { void (async () => { try { await fn(); say(message); } catch (e) { fail(e); } })(); };
+
+  const trim = (d: Draft) => <div className="audio-draft stack gap-3">
+    <h3 className="audio-sub-title">{t('audioTrimTitle')}</h3>
+    <AudioTrim src={d.url} summary={d.summary} start={d.start} fadeIn={d.fadeIn} onStart={start => setDraft({ ...d, start })} onFadeIn={fadeIn => setDraft({ ...d, fadeIn })} />
+    <div className="row wrap gap-2">
+      <Button variant="primary" loading={busy === 'save'} onClick={() => void saveDraft()}>{d.trackId ? t('audioSaveStart') : t('audioSaveTrack')}</Button>
+      <Button variant="ghost" disabled={busy === 'save'} onClick={() => setDraft(null)}>{t('cancel')}</Button>
     </div>
-    {error && <Banner tone="danger" compact>{error}</Banner>}
+  </div>;
+
+  return <Panel title={t('audioTitle')}>
+    <p className="muted">{t('audioIntro')}</p>
+    <p className="field-hint">{t('audioLimits')}</p>
+    <p className="audio-device-note" data-audio-device-note>{t('audioDeviceOnly')}</p>
+    <div className="audio-library-upload stack gap-3">
+      <Field label={t('audioTrackName')} optional><Input value={name} maxLength={80} placeholder={t('audioTrackNamePh')} onChange={e => setName(e.target.value)} /></Field>
+      <input ref={input} className="sr-only" type="file" tabIndex={-1} aria-label={t('audioUploadLabel')} accept={[...AUDIO_MIME, '.mp3', '.m4a', '.wav', '.ogg', '.webm', '.aac'].join(',')} onChange={e => void pickFile(e.target.files?.[0])} />
+      {!(draft && !draft.trackId) && <div><Button variant="secondary" icon="upload" loading={busy === 'read'} disabled={full || !!busy} onClick={() => input.current?.click()}>{t('audioUpload')}</Button></div>}
+      {busy === 'read' && <p role="status" className="field-hint">{t('audioReading')}</p>}
+      {full && <p className="field-hint">{t('audioErrFull')}</p>}
+    </div>
+    {draft && !draft.trackId && trim(draft)}
+    {error && <Banner tone="danger" compact>{t(error)}</Banner>}
     {notice && <p role="status" className="field-hint">{notice}</p>}
-    {library.tracks.length > 0 && <ul className="audio-library-list">{library.tracks.map(track => <li key={track.id}>
-      <strong>{track.name}</strong>{library.defaultTrackId === track.id && <span className="field-hint">الافتراضي للدعوات</span>}
-      <AudioSample track={track} />
-      <div className="row wrap gap-2"><Button size="sm" variant="ghost" disabled={library.defaultTrackId === track.id} onClick={() => change(() => saveAudioLibrary({ ...readAudioLibrary(), defaultTrackId: track.id }), 'أصبح هذا المقطع هو الصوت الافتراضي.')}>اجعله الافتراضي</Button><Button size="sm" variant="ghost" onClick={() => change(() => { const current = readAudioLibrary(); saveAudioLibrary({ tracks: current.tracks.filter(t => t.id !== track.id), defaultTrackId: current.defaultTrackId === track.id ? undefined : current.defaultTrackId }); }, 'حُذف المقطع. الدعوات التي استخدمته تعود إلى الصوت الأساسي.')}>حذف المقطع</Button></div>
+    {library.tracks.length > 0 && <ul className="audio-library-list">{library.tracks.map(track => <li key={track.id} data-track-kind={track.kind}>
+      <div className="audio-track-head">
+        <strong>{track.name}</strong>
+        <span className="audio-track-kind">{track.kind === 'voice' ? t('audioKindVoice') : t('audioKindMusic')}</span>
+        {library.defaultTrackId === track.id && <span className="field-hint">{t('audioIsDefault')}</span>}
+        {track.kind === 'music' && track.startSec > 0 && <span className="field-hint">{t('audioStartAt').replace('{time}', formatClock(track.startSec))}</span>}
+      </div>
+      <TrackSample track={track} />
+      {draft?.trackId === track.id ? trim(draft) : <div className="row wrap gap-2">
+        {track.kind === 'music' && <Button size="sm" variant="ghost" loading={busy === `trim:${track.id}`} disabled={!!busy || !!draft} onClick={() => void retrim(track)}>{t('audioEditStart')}</Button>}
+        {track.kind === 'music' && <Button size="sm" variant="ghost" disabled={library.defaultTrackId === track.id} onClick={() => change(() => saveAudioLibrary({ ...readAudioLibrary(), defaultTrackId: track.id }), t('audioDefaultSaved'))}>{t('audioMakeDefault')}</Button>}
+        <Button size="sm" variant="ghost" disabled={!!draft} onClick={() => change(() => deleteAudioTrack(track.id), t('audioDeleted'))}>{t('audioDelete')}</Button>
+      </div>}
     </li>)}</ul>}
-    {library.defaultTrackId && <Button size="sm" variant="ghost" onClick={() => change(() => saveAudioLibrary({ ...readAudioLibrary(), defaultTrackId: undefined }), 'أصبح الصوت الأساسي هو الافتراضي.')}>استخدام الصوت الأساسي كافتراضي</Button>}
+    {library.defaultTrackId && <Button size="sm" variant="ghost" onClick={() => change(() => saveAudioLibrary({ ...readAudioLibrary(), defaultTrackId: undefined }), t('audioBuiltinDefaultSaved'))}>{t('audioUseBuiltinDefault')}</Button>}
+    <VoiceRecorder disabled={full} onSaved={say} />
   </Panel>;
 }
