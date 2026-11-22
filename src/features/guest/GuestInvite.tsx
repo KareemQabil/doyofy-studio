@@ -16,8 +16,9 @@ import { useLocation } from '../../app/router';
 import { loadEngine } from '../invitation/engine';
 import { GuestHub } from './GuestHub';
 import { SealCover } from '../signature/SealCover';
-import { asksAfterAttending } from '../../domain/guest-experience';
-import { ExtrasSheet, extrasPayload, type ExtrasValue } from './GuestExtras';
+import { FollowUpSheet, asksFollowUp, followUpPayload, type FollowUp } from './GuestExtras';
+import { DemoNote } from './DemoNote';
+import { useCopy } from '../../ui/copy';
 
 type EngineReply = { name: string; attending: boolean; guests: number };
 type EngineResult = { ok: true; id: string; demo?: boolean } | { ok: false; error: string };
@@ -74,7 +75,7 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
   }
   if (!view || mode === 'loading') return <main className="guest-page theme-guest guest-center"><PageLoader name="envelope" label="جارٍ فتح الدعوة" size={96} /></main>;
   if (mode === 'cover') return <SealCover view={view} onOpen={() => setMode('invitation')} onDetails={() => setMode('hub')} />;
-  if (mode === 'hub') return <GuestHub view={view} code={code ?? null} submission={submission} onView={setView} onReplay={() => setMode('invitation')} guestApi={guestApi} demo={!!portable} />;
+  if (mode === 'hub') return <GuestHub view={view} code={code ?? null} submission={submission} onView={setView} onReplay={() => { setSubmission(null); setMode('invitation'); }} guestApi={guestApi} demo={!!portable} />;
   return (
     <InvitationPlayer view={view} code={code ?? null} guestApi={guestApi} demo={!!portable}
       onSubmitted={(v, s) => { if (v) setView(v); setSubmission(s); }}
@@ -82,17 +83,22 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
   );
 }
 
+/** after the thank-you screen has had its moment, the cinematic path moves on to the same success page as the direct one */
+const DONE_HOLD_MS = 2800;
+
 function InvitationPlayer({ view, code, onSubmitted, onDone, guestApi, demo = false }: { view: GuestView; code: string | null; onSubmitted: (v: GuestView | null, s: Submission) => void; onDone: () => void; guestApi?: GuestApi; demo?: boolean }) {
   const services = useServices();
+  const { t } = useCopy();
   const host = useRef<HTMLDivElement>(null);
   const [err, setErr] = useState<unknown>(null);
-  // an attending reply waits here while the guest answers food; the engine keeps its "sending" state meanwhile
+  // the reply waits here while the guest answers the follow-up questions; the engine keeps its "sending" state meanwhile
   const [held, setHeld] = useState<{ r: EngineReply; settle: (res: EngineResult) => void } | null>(null);
   const cb = useRef({ onSubmitted, onDone });
   cb.current = { onSubmitted, onDone };
-  const send = async (r: EngineReply, extras?: ExtrasValue): Promise<EngineResult> => {
+  const send = async (r: EngineReply, more?: FollowUp): Promise<EngineResult> => {
+    const count = r.attending ? r.guests : 0;
     try {
-      const v = await (guestApi ?? services.guest).submitRsvp(view.event.slug, code, { name: r.name, attending: r.attending, count: r.attending ? r.guests : 0, ...(extras ? extrasPayload(view.experience, extras) : {}) });
+      const v = await (guestApi ?? services.guest).submitRsvp(view.event.slug, code, { name: r.name, attending: r.attending, count, ...(more ? followUpPayload(view, r.attending, count, more) : {}) });
       cb.current.onSubmitted(v, { ok: true, name: r.name });
       return { ok: true, id: v.responseId, ...(demo ? { demo: true } : {}) };
     } catch (e) {
@@ -114,10 +120,11 @@ function InvitationPlayer({ view, code, onSubmitted, onDone, guestApi, demo = fa
         card: view.design.cardId, scene: view.design.sceneId, experience: view.design.experience,
         showSwitcher: false, params: new URLSearchParams(),
         guest: p ? { name: p.name, nameLocked: true, maxGuests: p.maxPartySize, attending: p.rsvpStatus === 'confirmed' ? 'yes' : p.rsvpStatus === 'declined' ? 'no' : null, guests: p.confirmedPartySize || undefined } : { maxGuests: view.maxGuests },
-        doneAction: { ar: p ? 'تفاصيل حضوركم' : 'متابعة', en: p ? 'Your details' : 'Continue', onClick: () => cb.current.onDone() },
+        doneAction: { ar: p ? 'تفاصيل حضوركم' : 'متابعة', en: p ? 'Your details' : 'Continue', autoAfter: DONE_HOLD_MS, onClick: () => cb.current.onDone() },
         rsvp: {
+          // the same follow-up as the direct form (companions, food, message) before the one and only submit
           submit: (r) => {
-            if (r.attending && view.experience && asksAfterAttending(view.experience)) return new Promise<EngineResult>((settle) => setHeld({ r, settle }));
+            if (asksFollowUp(view, r.attending, r.attending ? r.guests : 0)) return new Promise<EngineResult>((settle) => setHeld({ r, settle }));
             return sendRef.current(r);
           },
         },
@@ -127,17 +134,20 @@ function InvitationPlayer({ view, code, onSubmitted, onDone, guestApi, demo = fa
     return () => { alive = false; studio?.destroy(); };
   }, [view.event.slug, code]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (err) return <main className="guest-page theme-guest guest-center"><EmptyState icon="alert" title="تعذر تشغيل الدعوة" action={<Button onClick={onDone}>الموعد وتأكيد الحضور</Button>}>{errorMessage(err)}</EmptyState></main>;
+  if (err) return <main className="guest-page theme-guest guest-center"><EmptyState icon="alert" title="تعذر تشغيل الدعوة" action={<Button onClick={onDone}>{t('guestFastTrack')}</Button>}>{errorMessage(err)}</EmptyState></main>;
   return (
     <>
-      <div ref={host} className="guest-studio" />
-      {demo && <p className="guest-demo-note" role="note">نسخة تجريبية — ردّك يُحفظ على جهازك ولا يصل للمنظّم.</p>}
-      <button type="button" className="guest-fast-track" onClick={onDone}>الموعد وتأكيد الحضور</button>
-      {held && view.experience && (
-        <ExtrasSheet x={view.experience} count={held.r.guests}
+      {/* one bar above the stage: nothing of ours ever sits on the invitation or its own controls */}
+      <header className="guest-bar theme-guest">
+        {demo && <DemoNote compact />}
+        <button type="button" className="guest-fast-track" onClick={onDone}>{t('guestFastTrack')}</button>
+      </header>
+      <div ref={host} className="guest-studio has-bar" />
+      {held && (
+        <FollowUpSheet view={view} attending={held.r.attending} count={held.r.attending ? held.r.guests : 0}
           onBack={() => { held.settle({ ok: false, error: 'لم يُرسل الرد بعد — أكملوا الخطوة الأخيرة متى شئتم.' }); setHeld(null); }}
-          onSend={async (extras) => {
-            const res = await sendRef.current(held.r, extras);
+          onSend={async (more) => {
+            const res = await sendRef.current(held.r, more);
             if (!res.ok) return res.error;
             held.settle(res); setHeld(null);
             return null;

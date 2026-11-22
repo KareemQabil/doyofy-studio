@@ -1,6 +1,71 @@
-.wallet-pass { display:grid; justify-items:center; gap:var(--s-3); padding:var(--s-6); border:1px solid var(--c-line); background:var(--c-surface); border-radius:var(--r-lg); text-align:center; }
-.wallet-pass-brand { display:flex; gap:var(--s-2); align-items:center; color:var(--c-primary-text); font-size:var(--fs-sm); }
-.wallet-pass h3 { font:600 var(--fs-lg)/1.5 var(--font-display); overflow-wrap:anywhere; }
-.wallet-disclosure { color:var(--c-text-2); font-size:var(--fs-sm); line-height:1.8; margin-block-start:var(--s-4); }
-.guest-demo-note { position:fixed; inset-block-start:var(--s-2); inset-inline:var(--s-3); z-index:50; inline-size:fit-content; max-inline-size:calc(100% - 24px); margin-inline:auto; padding:var(--s-2) var(--s-3); background:var(--c-surface); color:var(--c-text-2); border:1px solid var(--c-line); border-radius:var(--r-md); font-size:var(--fs-xs); text-align:center; }
-.hub-qr > .btn { margin-block-start:var(--s-4); }
+/* Guest journey after the link opens: the bar above the invitation, the demo note, the entry pass and Google Wallet.
+   Guest pages stay light in every appearance (tokens.css pins the whole .theme-guest set); raw colours live in tokens. */
+
+/* the page behind a guest page (overscroll, scrollbars) is the same paper in every appearance */
+html:root:has(body.dy-guest .guest-page) { color-scheme: light; background: var(--c-guest-page); }
+:root body.dy.dy-guest:has(.guest-page) { background: var(--c-guest-page); }
+
+/* ---- the bar above the cinematic invitation: our controls never sit on the stage or its own icons */
+.guest-bar, .guest-studio.has-bar { --guest-bar-h: calc(60px + env(safe-area-inset-top)); }
+.guest-bar { position: fixed; inset-block-start: 0; inset-inline: 0; z-index: 60; block-size: var(--guest-bar-h); padding: env(safe-area-inset-top) 12px 0; display: flex; align-items: center; gap: 8px; background: var(--c-stage); color: var(--c-stage-ink); border-block-end: 1px solid color-mix(in srgb, var(--c-stage-line) 45%, transparent); }
+.guest-studio.has-bar { inset-block-start: var(--guest-bar-h); }
+.guest-bar .guest-fast-track { position: static; margin-inline-start: auto; flex: none; box-shadow: none; white-space: nowrap; }
+@media (max-width: 360px) { .guest-bar .guest-fast-track { padding-inline: 12px; font-size: 13px; } }
+
+/* ---- the demo note: one calm line that opens to the full sentence */
+.guest-demo { border-radius: var(--r-md); background: var(--c-info-soft); color: var(--c-text); }
+.guest-demo > summary { display: flex; align-items: center; gap: var(--s-2); min-block-size: 44px; padding-inline: var(--s-3); cursor: pointer; list-style: none; font-size: var(--fs-sm); border-radius: inherit; }
+.guest-demo > summary::-webkit-details-marker { display: none; }
+.guest-demo > summary:focus-visible { outline: 2px solid var(--c-focus); outline-offset: 2px; }
+.guest-demo > summary > .icon:first-child { color: var(--c-info); flex: none; }
+.guest-demo-line { flex: 1; min-inline-size: 0; }
+.guest-demo-line strong { font-weight: var(--fw-bold); }
+.guest-demo-chev { flex: none; transition: transform var(--dur-fast) var(--ease); }
+.guest-demo[open] .guest-demo-chev { transform: rotate(180deg); }
+.guest-demo-more { padding: 0 var(--s-3) var(--s-3); padding-inline-start: calc(var(--s-3) + 16px + var(--s-2)); font-size: var(--fs-sm); line-height: 1.8; color: var(--c-text-2); }
+/* in the bar: a ghost chip on the stage; its sentence opens as a small card under the bar */
+.guest-demo.is-compact { position: relative; flex: 0 1 auto; min-inline-size: 0; background: transparent; color: var(--c-stage-ink); border: 1px solid var(--c-stage-line); border-radius: var(--r-pill); }
+.guest-demo.is-compact > summary { min-block-size: 44px; padding-inline: 12px 10px; white-space: nowrap; font-size: 13px; }
+.guest-demo.is-compact > summary > .icon:first-child { color: var(--c-stage-ink-2); }
+.guest-demo.is-compact > summary:focus-visible { outline-color: var(--c-stage-ink); }
+.guest-demo.is-compact .guest-demo-more { position: absolute; inset-block-start: calc(100% + 8px); inset-inline-start: 0; inline-size: min(300px, calc(100vw - 24px)); padding: var(--s-3); background: var(--c-surface); color: var(--c-text); border-radius: var(--r-md); box-shadow: var(--shadow-pop); white-space: normal; }
+
+/* ---- the entry pass: the success state of a confirmed personal reply, QR first */
+.hub-pass { align-items: center; text-align: center; gap: var(--s-2); border-block-start: 3px solid var(--c-accent); }
+.hub-pass-kicker { font-size: var(--fs-sm); color: var(--c-text-2); }
+.hub-pass-title { display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--fs-xl); line-height: 1.4; }
+.hub-pass-title > .icon { color: var(--c-success); inline-size: 26px; block-size: 26px; }
+.hub-pass-title:focus { outline: none; }
+.hub-pass-title:focus-visible { outline: 2px solid var(--c-focus); outline-offset: 4px; border-radius: var(--r-sm); }
+.hub-pass-who { color: var(--c-text-2); margin-block-end: var(--s-1); }
+.hub-pass .hub-code { margin-block-start: calc(var(--s-1) * -1); }
+.hub-qr > .btn { margin-block-start: var(--s-2); }
+/* the event band follows the pass mid-page, so it is rounded on every side */
+:root .hub .hub-pass ~ .hub-head { border-radius: var(--r-xl); }
+.hub-h[tabindex='-1']:focus { outline: none; }
+
+/* ---- «أضف إلى Google Wallet»: Google's button look (black pill, light outline, four-colour mark) */
+.gw-wrap { display: grid; justify-items: center; gap: 6px; inline-size: 100%; margin-block-start: var(--s-3); }
+.gw-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; inline-size: min(100%, 320px); min-block-size: 48px; padding: 0 24px; border-radius: 999px; background: var(--gw-bg); color: var(--gw-ink); border: 1px solid var(--gw-outline); font: 500 15px/1.2 var(--font-ui); cursor: pointer; transition: background-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
+.gw-btn:hover { background: color-mix(in srgb, var(--gw-bg) 86%, var(--gw-ink)); }
+.gw-btn:active { transform: scale(var(--press-scale)); }
+.gw-btn:focus-visible { outline: 2px solid var(--c-focus); outline-offset: 3px; }
+.gw-mark { flex: none; }
+.gw-mark .gw-c1 { fill: var(--gw-green); } .gw-mark .gw-c2 { fill: var(--gw-yellow); }
+.gw-mark .gw-c3 { fill: var(--gw-red); } .gw-mark .gw-c4 { fill: var(--gw-blue); }
+.gw-note { font-size: var(--fs-xs); color: var(--c-text-2); }
+
+/* ---- the Wallet preview: a pass in the guest brand colour, laid out like an event ticket in Google Wallet */
+.wpass { display: grid; gap: var(--s-4); padding: var(--s-4) var(--s-5) var(--s-5); border-radius: 20px; background: var(--c-pass-bg); color: var(--c-pass-ink); box-shadow: var(--shadow-2); text-align: start; }
+.wpass-top { display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-sm); }
+.wpass-logo { display: grid; place-items: center; inline-size: 34px; block-size: 34px; border-radius: 50%; background: var(--c-pass-ink); color: var(--c-pass-bg); flex: none; }
+.wpass-issuer { font-weight: var(--fw-bold); }
+.wpass-kind { margin-inline-start: auto; font-size: var(--fs-xs); color: var(--c-pass-accent); }
+.wpass .wpass-title { font: 600 var(--fs-xl)/1.4 var(--font-display); color: var(--c-pass-ink); overflow-wrap: anywhere; }
+.wpass-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-3) var(--s-4); margin: 0; }
+.wpass-fields .is-wide { grid-column: 1 / -1; }
+.wpass-fields dt { font-size: var(--fs-xs); color: var(--c-pass-ink-2); }
+.wpass-fields dd { margin: 0; font-size: var(--fs-sm); font-weight: var(--fw-bold); overflow-wrap: anywhere; }
+.wpass-code { display: grid; justify-items: center; gap: var(--s-1); padding: var(--s-4); border-radius: 14px; background: var(--c-qr-light); color: var(--c-qr-dark); }
+.wpass-code .num { font-weight: var(--fw-bold); letter-spacing: .24em; }
+.wallet-disclosure { display: flex; gap: var(--s-2); color: var(--c-text); font-size: var(--fs-sm); line-height: 1.8; margin-block-end: var(--s-4); padding: var(--s-2) var(--s-3); border-radius: var(--r-md); background: var(--c-info-soft); }

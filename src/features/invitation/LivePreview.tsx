@@ -40,7 +40,7 @@ export function LivePreview({ invitation, content, start, replayToken = 0, muted
       const { invitation: inv, content: c, start: st } = latest.current;
       s = new eng.Studio(el, {
         invitation: inv, card: c.cardId, scene: c.sceneId, experience: { ...c.experience },
-        assetBase: 'assets/', embedded: true, showSwitcher: false, muted, params: new URLSearchParams(), start: st,
+        assetBase: 'assets/', embedded: true, showSwitcher: false, muted, params: new URLSearchParams(), start: st, authorNotes: true,
       });
       studio.current = s;
       setState('ready');
