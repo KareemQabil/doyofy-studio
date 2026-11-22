@@ -1,4 +1,5 @@
 import type { EventActivity, Role } from './types';
+import { copyFor, type Dialect } from './copy';
 
 /**
  * Who may do what (owner decision, FINAL_POLISH_PLAN «الأدوار»):
@@ -53,6 +54,7 @@ export const canManageGuests = (role: Role): boolean => can(role, 'guests.edit')
 export const actorFor = (role: Role): EventActivity['actor'] => role;
 
 /** who did it, when it was not the owner: «المنسق» / «فريق الضيافة» (activity feed) */
-export function actorLabel(actor: EventActivity['actor']): string | null {
-  return actor === 'coordinator' ? 'المنسق' : actor === 'caterer' ? 'فريق الضيافة' : null;
+export function actorLabel(actor: EventActivity['actor'], dialect: Dialect = 'ar'): string | null {
+  const c = copyFor(dialect);
+  return actor === 'coordinator' ? c.acByCoordinator : actor === 'caterer' ? c.acByCaterer : null;
 }

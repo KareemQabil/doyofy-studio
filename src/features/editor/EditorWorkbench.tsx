@@ -15,15 +15,16 @@ export type WorkbenchPage = 'card' | 'message' | 'program';
 
 /** One page of the invitation at any width: the card face (real HTML from the engine), or the message / program paper. */
 function Paper({ event, content, page, width, motion = 0, label }: { event: Event; content: InvitationDesignContent; page: WorkbenchPage; width: number; motion?: number; label?: string }) {
-  if (page === 'card') return <CardThumb event={event} content={content} width={width} motion={motion} label={label ?? `معاينة البطاقة: ${CARD_NAMES[content.cardId] ?? 'دعوتك'}`} />;
+  const { t } = useCopy();
+  if (page === 'card') return <CardThumb event={event} content={content} width={width} motion={motion} label={label ?? t('shCardPreview', { name: CARD_NAMES[content.cardId] ?? t('edYourInvitation') })} />;
   const names = resolvedNames(event, content);
   const headingNames = isCoupleEvent(event.type) && names.b ? `${names.a} و${names.b}` : names.a;
   const k = width / 300;
   return <span className="ed-copy-frame" style={{ width, height: 420 * k }}>
-    <article className="ed-copy-paper" style={k === 1 ? undefined : { transform: `scale(${k})` }} aria-label={page === 'message' ? 'معاينة كلمة الدعوة' : 'معاينة البرنامج'}>
-      <LogoMark size={28} /><p className="ed-copy-names">{headingNames}</p><h2>{page === 'message' ? 'يسعدنا حضوركم.' : 'لحظات ننتظركم فيها.'}</h2>
+    <article className="ed-copy-paper" style={k === 1 ? undefined : { transform: `scale(${k})` }} aria-label={page === 'message' ? t('shMsgPreview') : t('shProgPreview')}>
+      <LogoMark size={28} /><p className="ed-copy-names">{headingNames}</p><h2>{page === 'message' ? t('shPaperMsg') : t('shPaperProg')}</h2>
       <div className="ed-copy-body">{page === 'message'
-        ? <><p className="ed-copy-message">{content.message.ar || 'اكتب كلمة دعوتك، وستظهر هنا.'}</p>{content.message.en && <p className="ed-copy-english" lang="en" dir="ltr">{content.message.en}</p>}</>
+        ? <><p className="ed-copy-message">{content.message.ar || t('shWriteMsg')}</p>{content.message.en && <p className="ed-copy-english" lang="en" dir="ltr">{content.message.en}</p>}</>
         : <ol className="ed-copy-program">{content.program.map((p, i) => <li key={i}><bdi className="num">{formatTime(p.time)}</bdi><span>{p.ar}{p.en && <small lang="en" dir="ltr">{p.en}</small>}</span></li>)}</ol>}</div>
       <span className="ed-copy-foot">ضيوفي · {event.venue.name}</span>
     </article>
@@ -76,11 +77,11 @@ export function ExpandedCard({ event, content, page, onClose }: { event: Event; 
     import('gsap').then(({ gsap }) => { if (alive && art.current) tween = gsap.from(art.current, { y: 28, scale: .94, opacity: 0, duration: .55, ease: 'power3.out', clearProps: 'all' }); }).catch(() => {});
     return () => { alive = false; tween?.kill(); };
   }, []);
-  return <Dialog open title="البطاقة بحجم أكبر" size="xl" className="ed-expanded-dialog" onClose={onClose}>
+  return <Dialog open title={t('shBigCard')} size="xl" className="ed-expanded-dialog" onClose={onClose}>
     <div className="ed-expanded-stage">
       <SceneBackdrop sceneId={content.sceneId} />
-      <div className="ed-expanded-scroll" data-zoom={zoom} tabIndex={zoom === 2 ? 0 : -1} aria-label={zoom === 2 ? 'البطاقة مكبّرة. مرّر للتنقل داخلها' : undefined}>
-        <div ref={art} className="ed-expanded-paper"><Paper event={event} content={content} page={page} width={Math.round(fit * zoom)} label="معاينة البطاقة بحجم أكبر" /></div>
+      <div className="ed-expanded-scroll" data-zoom={zoom} tabIndex={zoom === 2 ? 0 : -1} aria-label={zoom === 2 ? t('shZoomed') : undefined}>
+        <div ref={art} className="ed-expanded-paper"><Paper event={event} content={content} page={page} width={Math.round(fit * zoom)} label={t('shBigPreview')} /></div>
       </div>
       <div className="ed-expanded-tools">
         <Button size="sm" icon={zoom === 1 ? 'plus' : 'minus'} aria-pressed={zoom === 2} onClick={() => setZoom(zoom === 1 ? 2 : 1)}>{zoom === 1 ? t('editorZoomIn') : t('editorZoomOut')}</Button>

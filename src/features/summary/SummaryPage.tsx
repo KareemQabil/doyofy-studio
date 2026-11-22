@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { Event } from '../../domain/types';
 import { countParties } from '../../domain/parties';
 import { eventPhase } from '../../domain/event';
-import { formatEventDate, plural, P } from '../../domain/format';
+import { formatEventDate } from '../../domain/format';
 import { Banner, Button, ConfirmDialog, ErrorState, Icon, PageHeader, Panel, Textarea, Field, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
 import { useNavigate } from '../../app/router';
@@ -13,11 +13,14 @@ import { useParties } from '../shared/queries';
 import { copyText } from '../shared/CopyField';
 import { errorMessage } from '../../services/errors';
 import { useCan } from '../shared/OwnerOnly';
+import { useCopy } from '../../ui/copy';
 
 export function SummaryPage({ event }: { event: Event }) {
   const parties=useParties(event.id), now=useNow(), navigate=useNavigate();
+  const { t, n } = useCopy();
   const [thanked,setThanked]=useState(false), [archiving,setArchiving]=useState(false), [copied,setCopied]=useState(false), [copyFailed,setCopyFailed]=useState(false);
-  const [message,setMessage]=useState(`شكرًا لأنكم كنتم جزءًا من فرحتنا في ${event.title}. حضوركم جعلها أجمل، وذكراها تبقى معنا. بكل المحبة.`);
+  // the thank-you starts in the organizer's voice; once edited it is their own text
+  const [message,setMessage]=useState(()=>t('smThanks',{title:event.title}));
   const archive=useMutation(s=>s.events.archive(event.id),{onSuccess:()=>navigate(paths.events,{force:true})});
   const mayArchive=useCan('event.archive'); // owner only (domain/roles)
   if(parties.error)return <ErrorState error={parties.error} onRetry={parties.refetch}/>;
@@ -25,21 +28,21 @@ export function SummaryPage({ event }: { event: Event }) {
   const all=parties.data!,c=countParties(all),phase=eventPhase(event,now), completed=phase==='completed'||phase==='archived';
   const confirmedArrivals=all.reduce((n,p)=>n+(p.rsvpStatus==='confirmed'?Math.min(p.checkedInCount,p.confirmedPartySize??0):0),0);
   const remaining=Math.max(0,c.confirmedPeople-confirmedArrivals);
-  const bars=[{label:'المقاعد المتاحة للدعوات',value:c.maxSeats,tone:'neutral'},{label:'أكدوا الحضور',value:c.confirmedPeople,tone:'success'},{label:'سُجّل وصولهم',value:c.checkedInPeople,tone:'accent'}];
+  const bars=[{label:t('smSeats'),value:c.maxSeats,tone:'neutral'},{label:t('ovConfirmedFact'),value:c.confirmedPeople,tone:'success'},{label:t('smArrived'),value:c.checkedInPeople,tone:'accent'}];
   const max=Math.max(1,...bars.map(b=>b.value));
   return <>
-    <PageHeader title="ملخص المناسبة" subtitle={`${event.title} · ${formatEventDate(event.date)}`}/>
-    {!completed&&<Banner tone="info">المناسبة لم تنتهِ بعد. هذه أرقام اللحظة، ويكتمل الملخص بعد الاستقبال.</Banner>}
+    <PageHeader title={t('stepSummary')} subtitle={`${event.title} · ${formatEventDate(event.date)}`}/>
+    {!completed&&<Banner tone="info">{t('smNotYet')}</Banner>}
     {/* the brand's own closure block (colour field, pattern and the celebrate artwork) — no decorative photography */}
     <section className="summary-closure">
-      <div className="summary-closure-copy"><JourneyArtwork kind="celebrate"/><p className="eyebrow">{completed?'وتبقى المحبة':'لحظات تتشكّل'}</p><h2>{completed?'كل حضور، صنع ذكرى.':'فرحتك تكتمل بضيوفك.'}</h2><p>{c.checkedInPeople?<>شارككم <strong>{c.checkedInPeople}</strong> شخصًا بحسب سجل الاستقبال.</>:'لم تُسجّل عمليات وصول لهذه المناسبة.'}</p></div>
+      <div className="summary-closure-copy"><JourneyArtwork kind="celebrate"/><p className="eyebrow">{completed?t('smEyebrowDone'):t('smEyebrowLive')}</p><h2>{completed?t('smHeadDone'):t('smHeadLive')}</h2><p>{c.checkedInPeople?<>{t('smSharedPre')} <strong>{n(c.checkedInPeople,'person')}</strong> {t('smSharedPost')}</>:t('smNoArrivals')}</p></div>
     </section>
     <div className="summary-layout">
-      <section className="summary-outcome"><h2>كيف اجتمع الأحباب؟</h2><ul className="summary-bars">{bars.map(b=><li key={b.label}><span className="summary-label">{b.label}</span><span className="summary-track"><span className={`summary-fill tone-${b.tone}`} style={{width:`${b.value/max*100}%`}}/></span><span className="summary-value num">{b.value}</span></li>)}</ul><p className="faint t-sm">{plural(c.parties,P.invitation)} · {c.declinedParties} اعتذروا · {c.pendingParties} لم يردوا.</p>{c.confirmedPeople>0&&<p className="faint t-sm">{remaining?`${remaining} من الأشخاص المؤكدين لم يُسجّل وصولهم، ويشمل ذلك المرافقين الذين لم يصلوا.`:'سُجّل وصول كل الأشخاص المؤكدين.'}</p>}</section>
-      <section className="summary-thanks"><h2>كلمة أخيرة… من القلب.</h2><p className="muted t-sm">رسالة بسيطة تترك أثرًا جميلًا. انسخها وشاركها مع ضيوفك.</p><Field label="رسالة الشكر"><Textarea rows={4} value={message} onChange={e=>{setMessage(e.target.value);setCopied(false);}}/></Field><Button variant="primary" icon={copied?'check':'copy'} disabled={!message.trim()} onClick={async()=>{const ok=await copyText(message);setCopied(ok);setCopyFailed(!ok);}}>{copied?'تم نسخ الرسالة':'انسخ رسالة الشكر'}</Button>{copyFailed&&<p role="status" className="field-hint">تعذّر النسخ التلقائي. حدّد نص الرسالة وانسخه يدويًا.</p>}<details className="drawer-secondary"><summary>تجربة إرسال الشكر</summary><p className="faint t-sm">محاكاة فقط؛ لن تُرسل أي رسالة فعلية.</p><Button size="sm" disabled={thanked||!c.arrivedParties} onClick={()=>setThanked(true)}>{thanked?'اكتملت المحاكاة':`جرّب الإرسال إلى ${c.arrivedParties} دعوات`}</Button></details></section>
+      <section className="summary-outcome"><h2>{t('smHow')}</h2><ul className="summary-bars">{bars.map(b=><li key={b.label}><span className="summary-label">{b.label}</span><span className="summary-track"><span className={`summary-fill tone-${b.tone}`} style={{width:`${b.value/max*100}%`}}/></span><span className="summary-value num">{b.value}</span></li>)}</ul><p className="faint t-sm">{t('smCounts',{invitations:n(c.parties,'invitation'),declined:c.declinedParties,pending:c.pendingParties})}</p>{c.confirmedPeople>0&&<p className="faint t-sm">{remaining?t('smRemaining',{n:remaining}):t('smAllArrived')}</p>}</section>
+      <section className="summary-thanks"><h2>{t('smLastWord')}</h2><p className="muted t-sm">{t('smLastWordHint')}</p><Field label={t('smThanksLabel')}><Textarea rows={4} value={message} onChange={e=>{setMessage(e.target.value);setCopied(false);}}/></Field><Button variant="primary" icon={copied?'check':'copy'} disabled={!message.trim()} onClick={async()=>{const ok=await copyText(message);setCopied(ok);setCopyFailed(!ok);}}>{copied?t('smCopied'):t('smCopy')}</Button>{copyFailed&&<p role="status" className="field-hint">{t('smCopyFailed')}</p>}<details className="drawer-secondary"><summary>{t('smTry')}</summary><p className="faint t-sm">{t('smSimOnly')}</p><Button size="sm" disabled={thanked||!c.arrivedParties} onClick={()=>setThanked(true)}>{thanked?t('smSimDone'):t('smTrySend',{invitations:n(c.arrivedParties,'invitation',true)})}</Button></details></section>
     </div>
-    {!event.archivedAt&&mayArchive&&<div className="summary-archive"><div><h2>احتفظ بها ضمن ذكرياتك</h2><p>الأرشفة تحتفظ بالبيانات وتوقف رابط الدعوة. ويمكنك إعادتها لاحقًا.</p></div><Button icon="archive" onClick={()=>setArchiving(true)}>أرشفة المناسبة</Button></div>}
+    {!event.archivedAt&&mayArchive&&<div className="summary-archive"><div><h2>{t('smKeep')}</h2><p>{t('smKeepText')}</p></div><Button icon="archive" onClick={()=>setArchiving(true)}>{t('setArchive')}</Button></div>}
     {archive.error&&<Banner tone="danger">{errorMessage(archive.error)}</Banner>}
-    <ConfirmDialog open={archiving} tone="danger" title="أرشفة المناسبة؟" body="سيتوقف رابط الدعوة، وتبقى بيانات المناسبة محفوظة في هذا المتصفح." confirmLabel="أرشفة" loading={archive.pending} onCancel={()=>setArchiving(false)} onConfirm={()=>void archive.run()}/>
+    <ConfirmDialog open={archiving} tone="danger" title={t('setArchiveQ')} body={t('smArchiveBody')} confirmLabel={t('setArchiveShort')} loading={archive.pending} onCancel={()=>setArchiving(false)} onConfirm={()=>void archive.run()}/>
   </>;
 }

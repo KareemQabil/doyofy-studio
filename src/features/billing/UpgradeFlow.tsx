@@ -6,7 +6,6 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { GuestLimitError, GUEST_PLANS, PaymentDeclinedError, guestLimit, recommendedPlan, simulateCapacityPayment, upgradeQuote, type Receipt } from '../../domain/billing';
-import { plural, pluralOf, P } from '../../domain/format';
 import { Banner, Button, ChoiceGroup, Dialog, Icon } from '../../ui';
 import { useServices } from '../../app/data';
 import { useCopy } from '../../ui/copy';
@@ -48,7 +47,7 @@ function finish(paid: boolean) {
 type Step = 'plan' | 'checkout' | 'done' | 'not-allowed';
 export function UpgradeFlow() {
   const services = useServices();
-  const { t } = useCopy();
+  const { t, n } = useCopy();
   const [request, setRequest] = useState<Request | null>(active);
   const [step, setStep] = useState<Step>('plan');
   const [selected, setSelected] = useState(250);
@@ -94,8 +93,8 @@ export function UpgradeFlow() {
     }
   };
   const need = request.kind === 'resume'
-    ? <p data-step-focus tabIndex={-1}>هذه الإضافة تحتاج <strong>{plural(request.required, P.person)}</strong>، وحد مناسبتك الحالي <strong>{plural(request.limit, P.person)}</strong>. السعة تشمل الضيوف ومرافقيهم.</p>
-    : <p data-step-focus tabIndex={-1}>المستخدم الآن <strong className="num">{request.used}</strong> من <strong>{plural(current, P.person)}</strong>. السعة تشمل الضيوف ومرافقيهم.</p>;
+    ? <p data-step-focus tabIndex={-1}>{t('shUpNeed')} <strong>{n(request.required, 'person')}</strong>{t('shUpLimit')} <strong>{n(request.limit, 'person')}</strong>{t('shUpIncl')}</p>
+    : <p data-step-focus tabIndex={-1}>{t('shUpUsed')} <strong className="num">{request.used}</strong> {t('shUpOf')} <strong>{n(current, 'person')}</strong>{t('shUpIncl')}</p>;
   const demoNote = <p className="capacity-demo-note"><Icon name="info" size="sm" />{t('demoNoCharge')}</p>;
 
   const title = step === 'plan' ? (request.kind === 'resume' ? t('upResumeTitle') : t('upgradeCapacity'))
@@ -107,7 +106,7 @@ export function UpgradeFlow() {
   return <Dialog open onClose={close} title={title} size="sm" className="capacity-dialog" footer={footer}>
     <div ref={body} className="stack gap-4" data-capacity-flow data-step={step}>
       {step === 'not-allowed' && <p data-step-focus tabIndex={-1}>
-        هذه الإضافة تحتاج {plural(request.required, P.person)} وحد المناسبة {plural(request.limit, P.person)}. زيادة السعة والدفع متاحان لصاحب المناسبة فقط؛ اطلب منه زيادتها ثم أعد المحاولة.
+        {t('shUpOwnerOnly', { required: n(request.required, 'person'), limit: n(request.limit, 'person') })}
       </p>}
 
       {step === 'plan' && <>
@@ -116,23 +115,23 @@ export function UpgradeFlow() {
           options={plans.map(p => {
             const q = upgradeQuote(request.eventId, p.limit);
             return { value: String(p.limit), label: <span className="capacity-plan">
-              <span className="capacity-plan-name"><strong>{plural(p.limit, P.person)}</strong>{p.limit === suggested.limit && <span className="capacity-plan-tag">{t('upBest')}</span>}</span>
-              <span className="capacity-plan-price"><strong className="num">{sar(q.charge)}</strong>{q.credit > 0 && <span className="faint t-xs">الفرق · سعر الباقة {sar(q.price)}</span>}</span>
+              <span className="capacity-plan-name"><strong>{n(p.limit, 'person')}</strong>{p.limit === suggested.limit && <span className="capacity-plan-tag">{t('upBest')}</span>}</span>
+              <span className="capacity-plan-price"><strong className="num">{sar(q.charge)}</strong>{q.credit > 0 && <span className="faint t-xs">{t('shUpDiffPrice', { price: sar(q.price) })}</span>}</span>
             </span> };
           })} />
-        <p className="field-hint">{request.kind === 'resume' ? 'إلغاء الترقية يعيدك دون أي إضافة، وما كتبته يبقى كما هو.' : 'السعر دفعة واحدة لهذه المناسبة فقط.'} الأسعار للتجربة.</p>
+        <p className="field-hint">{request.kind === 'resume' ? t('shUpCancelHint') : t('shUpOnce')} {t('shUpDemoPrices')}</p>
         {demoNote}
       </>}
 
       {step === 'checkout' && <>
-        <h3 className="capacity-step-title" data-step-focus tabIndex={-1}>{t('upWillBe', { people: plural(plan.limit, P.person) })}</h3>
+        <h3 className="capacity-step-title" data-step-focus tabIndex={-1}>{t('upWillBe', { people: n(plan.limit, 'person') })}</h3>
         <dl className="capacity-summary">
-          <div><dt>{t('upCurrent')}</dt><dd>{plural(current, P.person)}</dd></div>
+          <div><dt>{t('upCurrent')}</dt><dd>{n(current, 'person')}</dd></div>
           <div><dt>{t('upPrice')}</dt><dd className="num">{sar(quote.price)}</dd></div>
           {quote.credit > 0 && <div><dt>{t('upPaidBefore')}</dt><dd className="num">− {sar(quote.credit)}</dd></div>}
           <div className="is-total"><dt>{t(quote.credit > 0 ? 'upDiff' : 'upDue')}</dt><dd className="num">{sar(quote.charge)}</dd></div>
         </dl>
-        {request.kind === 'resume' && <p className="muted t-sm">بعد التأكيد نكمل الإضافة المحفوظة تلقائيًا، مرة واحدة.</p>}
+        {request.kind === 'resume' && <p className="muted t-sm">{t('shUpResumeAfter')}</p>}
         {failed && <Banner tone="danger" title={t('upNotPaid')} reveal={failed.at}>{failed.message} {t('upTryAgain')}</Banner>}
         {demoNote}
       </>}
@@ -140,11 +139,11 @@ export function UpgradeFlow() {
       {step === 'done' && <>
         <div className="capacity-success" data-step-focus tabIndex={-1}>
           <Icon name="check-circle" size="lg" />
-          <p className="capacity-success-line">{t('upNewLimit', { people: plural(guestLimit(request.eventId), P.person) })}</p>
+          <p className="capacity-success-line">{t('upNewLimit', { people: n(guestLimit(request.eventId), 'person') })}</p>
         </div>
         {request.kind === 'resume' && <ResumeStatus request={request} limit={guestLimit(request.eventId)} />}
         {receipt ? <ReceiptDetails receipt={receipt} compact />
-          : <p className="muted t-sm">زادت السعة من جلسة أخرى قبل التأكيد، فلم نسجّل دفعًا جديدًا.</p>}
+          : <p className="muted t-sm">{t('shUpOtherSession')}</p>}
       </>}
     </div>
   </Dialog>;
@@ -152,7 +151,8 @@ export function UpgradeFlow() {
 
 function ResumeStatus({ request, limit }: { request: Request; limit: number }) {
   const r = request.resume ?? 'pending';
-  if (r === 'pending') return <p className="muted" role="status">نكمل الإضافة المحفوظة…</p>;
-  if (r === 'done') return <p className="capacity-resumed" role="status"><Icon name="check" size="sm" /><span>تمت إضافة {pluralOf(request.additional, P.person)}. المستخدم الآن <span className="num">{request.required}</span> من {plural(limit, P.person)}.</span></p>;
-  return <Banner tone="warning" title="السعة زادت، لكن الإضافة لم تكتمل">{r.failed}</Banner>;
+  const { t, n } = useCopy();
+  if (r === 'pending') return <p className="muted" role="status">{t('shUpResuming')}</p>;
+  if (r === 'done') return <p className="capacity-resumed" role="status"><Icon name="check" size="sm" /><span>{t('shUpResumed', { added: n(request.additional, 'person', true), used: request.required, limit: n(limit, 'person') })}</span></p>;
+  return <Banner tone="warning" title={t('shUpPartial')}>{r.failed}</Banner>;
 }

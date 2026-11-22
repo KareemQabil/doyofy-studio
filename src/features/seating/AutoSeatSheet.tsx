@@ -66,7 +66,7 @@ export function AutoSeatSheet({ event, tables, parties, onClose, onApplied }: {
   });
 
   const footer = party && placed.has(party.id) ? (
-    <div className="as-adjust" role="group" aria-label={`تعديل ${party.primaryGuestName}`}>
+    <div className="as-adjust" role="group" aria-label={t('shEditParty', { name: party.primaryGuestName })}>
       <p className="as-adjust-who"><span className={`as-dot grp-${tone(groupOf(party))}`} aria-hidden="true" /><b>{party.primaryGuestName}</b><span className="faint"> · {people(seatsFor(party))}</span></p>
       <label className="as-adjust-field">
         <span className="t-sm">{t('autoSeatMoveTo')}</span>
@@ -93,7 +93,7 @@ export function AutoSeatSheet({ event, tables, parties, onClose, onApplied }: {
   return (
     <Dialog open onClose={onClose} variant="drawer" title={t('autoSeatTitle')} description={t('autoSeatHint')} className="as-sheet" dismissible={!apply.pending} footer={footer}>
       <div className="as-body">
-        <Segmented label="نطاق التوزيع" size="sm" className="as-mode" value={mode} onChange={switchMode}
+        <Segmented label={t('shScope')} size="sm" className="as-mode" value={mode} onChange={switchMode}
           options={[{ value: 'keep', label: t('autoSeatKeep') }, { value: 'redistribute', label: t('autoSeatAll') }]} />
         {apply.error ? <Banner tone="danger" compact>{errorMessage(apply.error)}</Banner> : null}
 
@@ -118,8 +118,8 @@ export function AutoSeatSheet({ event, tables, parties, onClose, onApplied }: {
         )}
 
         {legend.length > 0 && (
-          <ul className="as-legend" aria-label="الجهات">
-            {legend.map((g) => <li key={g || '-'}><span className={`as-dot grp-${tone(g)}`} aria-hidden="true" />{g || 'بلا جهة'}</li>)}
+          <ul className="as-legend" aria-label={t('shSides')}>
+            {legend.map((g) => <li key={g || '-'}><span className={`as-dot grp-${tone(g)}`} aria-hidden="true" />{g || t('shNoSide')}</li>)}
           </ul>
         )}
 
@@ -157,6 +157,7 @@ function PlanTableCard({ x, byId, placed, moved, tone, selected, onSelect, newLa
   x: PlanTable; byId: Map<string, InvitationParty>; placed: Set<string>; moved: Set<string>; tone: (g: string) => number; selected: string | null;
   onSelect: (id: string) => void; newLabel: string; keptLabel: string;
 }) {
+  const { t } = useCopy();
   const fresh = x.partyIds.filter((id) => placed.has(id));
   // who already sat here (declined parties still on a table hold no seat, the page warns about them separately)
   const before = x.partyIds.filter((id) => !placed.has(id) && seatsFor(byId.get(id)!) > 0);
@@ -167,10 +168,10 @@ function PlanTableCard({ x, byId, placed, moved, tone, selected, onSelect, newLa
   return (
     <li className={`as-table${fresh.length ? '' : ' is-quiet'}${x.isNew ? ' is-new' : ''}${over ? ' is-over' : ''}`}>
       <header className="as-table-head">
-        <h3 className="as-table-name">{x.name}{x.isNew && <Badge tone="info">{newLabel}</Badge>}{over && <Badge tone="danger">فوق السعة</Badge>}</h3>
+        <h3 className="as-table-name">{x.name}{x.isNew && <Badge tone="info">{newLabel}</Badge>}{over && <Badge tone="danger">{t('shOverCapB')}</Badge>}</h3>
         <span className="as-table-count num">{x.used}/{x.capacity}{added > 0 && <span className="as-plus"> +{added}</span>}</span>
       </header>
-      <div className="as-bar" role="img" aria-label={`${x.name}: ${x.used} من ${x.capacity}${added ? `، منها ${added} مقترحة` : ''}${over ? `، فوق السعة بـ${x.used - x.capacity}` : ''}`}>
+      <div className="as-bar" role="img" aria-label={`${t('shTableUse', { name: x.name, used: x.used, cap: x.capacity })}${added ? t('shSuggestedOf', { n: added }) : ''}${over ? t('shOverByB', { n: x.used - x.capacity }) : ''}`}>
         <span className="as-bar-kept" style={{ width: pct(x.used - added) }} />
         <span className="as-bar-new" style={{ width: pct(added), insetInlineStart: pct(x.used - added) }} />
       </div>

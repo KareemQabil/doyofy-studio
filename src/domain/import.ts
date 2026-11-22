@@ -7,6 +7,7 @@ import type { InvitationParty, PartyInput, Table } from './types';
 import { normalisePhone } from './phone';
 import { toArabicDigitsSafe } from './format';
 import { normaliseForSearch } from './parties';
+import { copyFor, fill, type CopyKey, type Dialect } from './copy';
 
 export interface RawTable { headers: string[]; rows: string[][]; hadHeader: boolean }
 
@@ -45,9 +46,11 @@ export function toRawTable(cells: string[][]): RawTable {
 
 // ------------------------------------------------------------------ mapping
 export type ImportField = 'name' | 'phone' | 'size' | 'companions' | 'notes' | 'side' | 'table' | 'ignore';
-export const FIELD_LABEL: Record<ImportField, string> = {
-  name: 'اسم الضيف أو العائلة', phone: 'رقم الجوال', size: 'العدد المسموح', companions: 'أسماء المرافقين', notes: 'ملاحظات', side: 'الجهة', table: 'الطاولة', ignore: 'تجاهل هذا العمود',
-};
+const FIELD_KEY = {
+  name: 'imFieldName', phone: 'imFieldPhone', size: 'imFieldSize', companions: 'imFieldCompanions', notes: 'imFieldNotes', side: 'imFieldSide', table: 'imFieldTable', ignore: 'imFieldIgnore',
+} as const satisfies Record<ImportField, CopyKey>;
+/** the column's name in the organizer's voice («رقم الجوال» / «رقم الموبايل») */
+export const fieldLabel = (f: ImportField, dialect: Dialect = 'ar') => copyFor(dialect)[FIELD_KEY[f]];
 export const REQUIRED_FIELDS: ImportField[] = ['name'];
 
 const SYNONYMS: Array<[ImportField, RegExp]> = [
@@ -85,11 +88,11 @@ export function guessMapping(t: RawTable): Mapping {
   return m;
 }
 
-export function mappingProblems(m: Mapping): string[] {
-  const p: string[] = [];
-  if (!m.includes('name')) p.push('حدد العمود الذي فيه أسماء الضيوف.');
+export function mappingProblems(m: Mapping, dialect: Dialect = 'ar'): string[] {
+  const p: string[] = [], c = copyFor(dialect);
+  if (!m.includes('name')) p.push(c.imPickName);
   const dup = m.filter((f) => f !== 'ignore' && m.indexOf(f) !== m.lastIndexOf(f));
-  if (dup.length) p.push(`عمود «${FIELD_LABEL[dup[0]!]}» محدد أكثر من مرة.`);
+  if (dup.length) p.push(fill(c.imDupColumn, { field: fieldLabel(dup[0]!, dialect) }));
   return p;
 }
 
@@ -124,6 +127,8 @@ export interface ReviewInput {
   decisions: Record<number, RowDecision>;
   existing: readonly InvitationParty[];
   defaultSize: number;
+  /** the voice the issue lines are written in (the organizer's preference) */
+  dialect?: Dialect;
 }
 
 export function reviewImport(inp: ReviewInput): ImportRow[] {
@@ -132,6 +137,7 @@ export function reviewImport(inp: ReviewInput): ImportRow[] {
   const existingByPhone = new Map(inp.existing.filter((p) => p.phone).map((p) => [p.phone!, p]));
   const existingByName = new Map(inp.existing.map((p) => [normaliseForSearch(p.primaryGuestName), p]));
   const firstRowForPhone = new Map<string, number>();
+  const c = copyFor(inp.dialect ?? 'ar');
 
   return inp.table.rows.map((r, i) => {
     const index = i + 1;
@@ -144,25 +150,25 @@ export function reviewImport(inp: ReviewInput): ImportRow[] {
     const decision: RowDecision = inp.decisions[index] ?? 'import';
     const dropPhone = decision === 'import_without_phone';
 
-    if (!name) issues.push({ code: 'missing_name', blocking: true, text: 'الاسم فارغ' });
+    if (!name) issues.push({ code: 'missing_name', blocking: true, text: c.imIsNoName });
     let phone: string | undefined;
-    if (!phoneRes.ok && phoneRes.reason === 'malformed' && !dropPhone) issues.push({ code: 'malformed_phone', blocking: true, text: `رقم غير صحيح: ${phoneRaw}` });
+    if (!phoneRes.ok && phoneRes.reason === 'malformed' && !dropPhone) issues.push({ code: 'malformed_phone', blocking: true, text: fill(c.imIsBadPhone, { raw: phoneRaw }) });
     else if (phoneRes.ok && !dropPhone) phone = phoneRes.e164;
-    else if (!phoneRes.ok && phoneRes.reason === 'empty') issues.push({ code: 'missing_phone', blocking: false, text: 'بلا رقم جوال — لن تصله الدعوة عبر واتساب' });
+    else if (!phoneRes.ok && phoneRes.reason === 'empty') issues.push({ code: 'missing_phone', blocking: false, text: c.imIsNoPhone });
 
     if (phone) {
       const ex = existingByPhone.get(phone);
-      if (ex) issues.push({ code: 'duplicate_existing', blocking: true, text: `الرقم موجود في القائمة باسم «${ex.primaryGuestName}»`, withParty: ex.id });
-      else if (firstRowForPhone.has(phone) && decision !== 'skip') issues.push({ code: 'duplicate_in_file', blocking: true, text: `الرقم مكرر في الملف (صف ${firstRowForPhone.get(phone)})`, withRow: firstRowForPhone.get(phone) });
+      if (ex) issues.push({ code: 'duplicate_existing', blocking: true, text: fill(c.imIsDupList, { name: ex.primaryGuestName }), withParty: ex.id });
+      else if (firstRowForPhone.has(phone) && decision !== 'skip') issues.push({ code: 'duplicate_in_file', blocking: true, text: fill(c.imIsDupFile, { row: firstRowForPhone.get(phone)! }), withRow: firstRowForPhone.get(phone) });
       else if (decision !== 'skip') firstRowForPhone.set(phone, index);
     } else if (name && existingByName.has(normaliseForSearch(name))) {
       // same name, no phone to compare: a warning only (two people can share a name)
-      issues.push({ code: 'duplicate_existing', blocking: false, text: `يوجد في القائمة ضيف بنفس الاسم`, withParty: existingByName.get(normaliseForSearch(name))!.id });
+      issues.push({ code: 'duplicate_existing', blocking: false, text: c.imIsSameName, withParty: existingByName.get(normaliseForSearch(name))!.id });
     }
 
     let size = Number.parseInt(sizeRaw, 10);
     if (sizeRaw && (!Number.isFinite(size) || size < 1 || size > 20)) {
-      issues.push({ code: 'invalid_size', blocking: false, text: `عدد غير مفهوم «${sizeRaw}» — سيُستخدم ${inp.defaultSize}` });
+      issues.push({ code: 'invalid_size', blocking: false, text: fill(c.imIsBadSize, { raw: sizeRaw, n: inp.defaultSize }) });
       size = inp.defaultSize;
     } else if (!sizeRaw) size = inp.defaultSize;
 

@@ -6,10 +6,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { TemplatePreset } from '../../domain/templates';
 import { loadEngine } from '../invitation/engine';
+import { useCopy } from '../../ui/copy';
 
 const faces = new Map<string, string>();
 
 export function TemplateThumb({ preset, invitation, className = '' }: { preset: TemplatePreset; invitation: unknown; className?: string }) {
+  const { t } = useCopy();
   const frame = useRef<HTMLSpanElement>(null);
   const [art, setArt] = useState<{ scene: string; card: string } | null>(null);
   const [visible, setVisible] = useState(false);
@@ -52,7 +54,7 @@ export function TemplateThumb({ preset, invitation, className = '' }: { preset: 
 
   return (
     <span ref={frame} className={`tpl-thumb ${className}`} aria-hidden="true">
-      {failed ? <span className="tpl-fallback">افتح لمعاينة القالب</span> : !art ? <span className="tpl-skel" /> : (
+      {failed ? <span className="tpl-fallback">{t('shOpenDesign')}</span> : !art ? <span className="tpl-skel" /> : (
         <span className="tpl-media">
           <span className="tpl-stage" dangerouslySetInnerHTML={{ __html: art.scene }} />
           <span className="tpl-stage tpl-stage-card"><span className="tpl-mini-card" dangerouslySetInnerHTML={{ __html: art.card }} /></span>

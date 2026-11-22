@@ -27,6 +27,8 @@ type Submission = { ok: true; name?: string } | { ok: false; error: string } | n
 
 export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
   const services = useServices();
+  // before the invitation loads its voice is unknown: these few states use the device's preference
+  const { t } = useCopy();
   const loc = useLocation();
   const carried = loc.search.get('d');
   const portable = useMemo(() => {
@@ -61,19 +63,19 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
   useEffect(() => { if (carried && !portable && legacyCarried) location.replace(`${new URL('./', document.baseURI).href}?i=${encodeURIComponent(carried)}`); }, [carried, portable, legacyCarried]);
   useEffect(() => { if (carried && !portable) return; document.body.classList.add('dy-guest'); void load(); return () => document.body.classList.remove('dy-guest'); }, [load, carried, portable]);
 
-  if (carried && !portable) return <main className="guest-page theme-guest guest-center">{legacyCarried ? <PageLoader name="envelope" label="جارٍ فتح الدعوة" size={96} /> : <EmptyState icon="alert" title="الرابط غير مكتمل">اطلبوا رابط الدعوة مرة أخرى من صاحب المناسبة.</EmptyState>}</main>;
+  if (carried && !portable) return <main className="guest-page theme-guest guest-center">{legacyCarried ? <PageLoader name="envelope" label={t('shOpening')} size={96} /> : <EmptyState icon="alert" title={t('shLinkBroken')}>{t('shAskAgain')}</EmptyState>}</main>;
   if (error) {
     const notPublished = isAppError(error) && error.code === 'not_published';
     return (
       <main className="guest-page theme-guest guest-center">
-        <EmptyState icon={notPublished ? 'clock' : 'envelope'} title={notPublished ? 'الدعوة غير متاحة بعد' : 'لم نجد هذه الدعوة'}
-          action={isAppError(error) && error.code === 'network' ? <Button onClick={() => void load()}>أعد المحاولة</Button> : undefined}>
+        <EmptyState icon={notPublished ? 'clock' : 'envelope'} title={notPublished ? t('shNotYet') : t('shNotFound')}
+          action={isAppError(error) && error.code === 'network' ? <Button onClick={() => void load()}>{t('shRetryGuests')}</Button> : undefined}>
           {errorMessage(error)}
         </EmptyState>
       </main>
     );
   }
-  if (!view || mode === 'loading') return <main className="guest-page theme-guest guest-center"><PageLoader name="envelope" label="جارٍ فتح الدعوة" size={96} /></main>;
+  if (!view || mode === 'loading') return <main className="guest-page theme-guest guest-center"><PageLoader name="envelope" label={t('shOpening')} size={96} /></main>;
   // every guest page speaks the organizer's voice, carried with the invitation (GuestView.dialect), on any device
   return (
     <GuestVoice dialect={view.dialect}>
@@ -141,7 +143,7 @@ function InvitationPlayer({ view, code, onSubmitted, onDone, guestApi, demo = fa
     return () => { alive = false; studio?.destroy(); };
   }, [view.event.slug, code]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (err) return <main className="guest-page theme-guest guest-center"><EmptyState icon="alert" title="تعذر تشغيل الدعوة" action={<Button onClick={onDone}>{t('guestFastTrack')}</Button>}>{errorMessage(err)}</EmptyState></main>;
+  if (err) return <main className="guest-page theme-guest guest-center"><EmptyState icon="alert" title={t('shPlayFailed')} action={<Button onClick={onDone}>{t('guestFastTrack')}</Button>}>{errorMessage(err)}</EmptyState></main>;
   return (
     <>
       {/* one bar above the stage: nothing of ours ever sits on the invitation or its own controls */}

@@ -75,10 +75,10 @@ export function PartyDrawer({ event, party, all, tables, publish, startEditing =
           <p className="faint t-sm">
             {inv === 'draft' ? t('pdDraft')
               : inv === 'ready' ? t('pdReady')
-              : inv === 'opened' ? `${t('pdOpened', { when: party.delivery.openedAt ? relativeTime(party.delivery.openedAt, now) : '' })} · ${t(SOURCE_KEY.platform)}`
+              : inv === 'opened' ? `${t('pdOpened', { when: party.delivery.openedAt ? relativeTime(party.delivery.openedAt, now, dialect) : '' })} · ${t(SOURCE_KEY.platform)}`
               : inv === 'failed' ? `${t('pdFailed')}${party.delivery.failureReason === 'missing_phone' || party.delivery.failureReason === 'invalid_phone' ? t('pdBadPhone') : ''} · ${t(SOURCE_KEY[party.delivery.source ?? 'simulated'])}`
-              : `${t('pdSent', { when: party.delivery.at ? relativeTime(party.delivery.at, now) : '' })} · ${t(SOURCE_KEY[party.delivery.source ?? 'manual'])}`}
-            {party.delivery.reminderAt && t('pdLastReminder', { when: relativeTime(party.delivery.reminderAt, now) })}
+              : `${t('pdSent', { when: party.delivery.at ? relativeTime(party.delivery.at, now, dialect) : '' })} · ${t(SOURCE_KEY[party.delivery.source ?? 'manual'])}`}
+            {party.delivery.reminderAt && t('pdLastReminder', { when: relativeTime(party.delivery.reminderAt, now, dialect) })}
           </p>
           {published ? (
             <>
@@ -119,7 +119,7 @@ export function PartyDrawer({ event, party, all, tables, publish, startEditing =
           <KeyValue items={[
             { k: t('pdAllowed'), v: people(party.maxPartySize) },
             ...(party.rsvpStatus === 'confirmed' ? [{ k: t('pdWillCome'), v: <strong className={(party.confirmedPartySize ?? 0) > party.maxPartySize ? 'text-danger' : ''}>{people(party.confirmedPartySize ?? 0)}</strong> }] : []),
-            ...(party.respondedAt ? [{ k: t('pdReplyTime'), v: relativeTime(party.respondedAt, now) }] : []),
+            ...(party.respondedAt ? [{ k: t('pdReplyTime'), v: relativeTime(party.respondedAt, now, dialect) }] : []),
             ...(party.companionNames?.length ? [{ k: t('pdCompanions'), v: party.companionNames.join('، ') }] : []),
           ]} />
           {party.guestNote && <blockquote className="guest-note">«{party.guestNote}»</blockquote>}

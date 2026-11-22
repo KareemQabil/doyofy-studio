@@ -21,34 +21,36 @@ import { useCapacityVersion } from '../billing/CapacityMeter';
 
 /** each account moment gets its own still life (A10) instead of one repeated hero; phones show it as a slim band */
 const AUTH_ART = {
-  folds: { src: 'celebration-folds', line: <>فرحتك لها<br />شكلها الخاص.</> },
-  collection: { src: 'occasion-collection', line: <>كل مناسبة<br />تبدأ بورقة بيضاء.</> },
-  table: { src: 'celebration-table', line: <>المائدة جاهزة،<br />والضيوف قادمون.</> },
+  folds: { src: 'celebration-folds', line: ['auArtFolds1', 'auArtFolds2'] },
+  collection: { src: 'occasion-collection', line: ['auArtCollection1', 'auArtCollection2'] },
+  table: { src: 'celebration-table', line: ['auArtTable1', 'auArtTable2'] },
 } as const;
 /** the header's one link points to the OTHER door: sign-up ↔ log-in (never «into the platform» before an account exists) */
-function AuthLayout({ children, title, line, art = 'folds', other = { to: '/app/login', label: 'تسجيل الدخول' } }: { children: ReactNode; title: string; line: string; art?: keyof typeof AUTH_ART; other?: { to: string; label: string } }) {
-  const a = AUTH_ART[art];
-  return <div className={`auth-page art-${art}`}><header className="auth-header"><Link to="/app/welcome" aria-label="ضيوفي"><Logo height={32} /></Link><Link to={other.to}>{other.label}<Icon name="forward" size="sm" /></Link></header><main className="auth-main"><section className="auth-copy"><p className="auth-kicker">كل فرحة تبدأ بدعوة.</p><h1>{title}</h1><p className="auth-line">{line}</p>{children}</section><aside className="auth-art" aria-label="خامات من هوية ضيوفي"><picture><source srcSet={`assets/editorial/${a.src}.avif`} type="image/avif" /><img src={`assets/editorial/${a.src}.webp`} alt="" width="1536" height="1024" decoding="async" /></picture><div className="auth-art-caption"><span className="auth-art-index">ضيوفي</span><p>{a.line}</p><span>دعوة · ضيوف · ردود · استقبال</span></div></aside></main><footer className="auth-footer">ضيوفي — من أول دعوة إلى آخر ضيف.<span>نسخة تجربة</span></footer></div>;
+function AuthLayout({ children, title, line, art = 'folds', other }: { children: ReactNode; title: string; line: string; art?: keyof typeof AUTH_ART; other?: { to: string; label: string } }) {
+  const { t } = useCopy();
+  const a = AUTH_ART[art], door = other ?? { to: '/app/login', label: t('login') };
+  return <div className={`auth-page art-${art}`}><header className="auth-header"><Link to="/app/welcome" aria-label="ضيوفي"><Logo height={32} /></Link><Link to={door.to}>{door.label}<Icon name="forward" size="sm" /></Link></header><main className="auth-main"><section className="auth-copy"><p className="auth-kicker">{t('auKicker')}</p><h1>{title}</h1><p className="auth-line">{line}</p>{children}</section><aside className="auth-art" aria-label={t('auArtLabel')}><picture><source srcSet={`assets/editorial/${a.src}.avif`} type="image/avif" /><img src={`assets/editorial/${a.src}.webp`} alt="" width="1536" height="1024" decoding="async" /></picture><div className="auth-art-caption"><span className="auth-art-index">ضيوفي</span><p>{t(a.line[0])}<br />{t(a.line[1])}</p><span>{t('auArtSteps')}</span></div></aside></main><footer className="auth-footer">{t('auFooter')}<span>{t('auDemo')}</span></footer></div>;
 }
 
 export { WelcomePage } from './Welcome';
 
 export function LoginPage({ signup = false }: { signup?: boolean }) {
-  const navigate = useNavigate(), loc = useLocation(); const a = useDemoAccount(); const proto = usePrototype();
+  const navigate = useNavigate(), loc = useLocation(); const a = useDemoAccount(); const proto = usePrototype(); const { t } = useCopy();
   const [name, setName] = useState(a.name || ''), [email, setEmail] = useState(a.email || ''), [error, setError] = useState('');
-  const submit = (e: React.FormEvent) => { e.preventDefault(); if (!name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('اكتب اسمك وبريدًا إلكترونيًا صحيحًا.'); return; }
+  const submit = (e: React.FormEvent) => { e.preventDefault(); if (!name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError(t('auBadInput')); return; }
     saveDemoAccount({ status: 'demo', name: name.trim(), email: email.trim() });
     // a brand-new account (sign-up with nowhere to return to) starts empty and lands in its first event; a sign-up that
     // returns to something on this device (?next=…) keeps it. The demo events stay one tap away on the welcome page.
     const next = safeAccountReturn(loc.search.get('next'));
     if (signup && next === '/app/events') { proto.reset('empty'); navigate(paths.newEvent, { replace: true, force: true }); }
     else navigate(next, { replace: true }); };
-  return <AuthLayout art={signup ? 'collection' : 'folds'} other={signup ? { to: '/app/login', label: 'تسجيل الدخول' } : { to: '/app/signup', label: 'حساب جديد' }} title={signup ? 'أول خطوة لفرحة مرتّبة.' : 'أهلًا بعودتك.'} line={signup ? 'مساحة لدعواتك ومناسباتك وكل من تحب.' : 'دعواتك وتفاصيل مناسباتك، في مكان واحد.'}><form className="auth-form" onSubmit={submit}><Field label="اسمك" required error={error && !name.trim() ? error : undefined}><Input autoComplete="name" value={name} maxLength={70} onChange={e => { setName(e.target.value); setError(''); }} placeholder="الاسم الذي تحب أن نناديك به" /></Field><Field label="البريد الإلكتروني" required error={error && !!name.trim() ? error : undefined}><Input type="email" ltr autoComplete="email" inputMode="email" value={email} maxLength={160} onChange={e => { setEmail(e.target.value); setError(''); }} placeholder="you@example.com" /></Field><Button type="submit" variant="primary" size="lg" block iconEnd="forward">{signup ? 'ابدأ التجربة' : 'دخول تجريبي'}</Button><p className="auth-demo-note"><Icon name="info" size="sm" />جلسة تجربة على هذا الجهاز. لا نطلب كلمة مرور ولا نرسل بريدًا فعليًا.</p></form><p className="auth-switch">{signup ? 'بدأت رحلتك من قبل؟' : 'أول مرة معنا؟'} <Link to={`${signup ? '/app/login' : '/app/signup'}?next=${encodeURIComponent(safeAccountReturn(loc.search.get('next')))}`}>{signup ? 'تسجيل الدخول' : 'ابدأ هنا'}</Link></p></AuthLayout>;
+  return <AuthLayout art={signup ? 'collection' : 'folds'} other={signup ? { to: '/app/login', label: t('login') } : { to: '/app/signup', label: t('auNewAccount') }} title={signup ? t('auSignupTitle') : t('auLoginTitle')} line={signup ? t('auSignupLine') : t('auLoginLine')}><form className="auth-form" onSubmit={submit}><Field label={t('auYourName')} required error={error && !name.trim() ? error : undefined}><Input autoComplete="name" value={name} maxLength={70} onChange={e => { setName(e.target.value); setError(''); }} placeholder={t('auNamePh')} /></Field><Field label={t('email')} required error={error && !!name.trim() ? error : undefined}><Input type="email" ltr autoComplete="email" inputMode="email" value={email} maxLength={160} onChange={e => { setEmail(e.target.value); setError(''); }} placeholder="you@example.com" /></Field><Button type="submit" variant="primary" size="lg" block iconEnd="forward">{signup ? t('auStartDemo') : t('auDemoLogin')}</Button><p className="auth-demo-note"><Icon name="info" size="sm" />{t('auDemoNote')}</p></form><p className="auth-switch">{signup ? t('auHaveAccount') : t('auFirstTime')} <Link to={`${signup ? '/app/login' : '/app/signup'}?next=${encodeURIComponent(safeAccountReturn(loc.search.get('next')))}`}>{signup ? t('login') : t('auStartHere')}</Link></p></AuthLayout>;
 }
 
 export function LogoutPage() {
   useEffect(() => { saveDemoAccount({ status: 'signed-out' }); }, []);
-  return <AuthLayout art="table" title="نراك في فرحة قادمة." line="تم تسجيل الخروج من جلسة التجربة. مناسباتك ودعواتك المحفوظة على هذا الجهاز بقيت كما هي."><LinkButton to="/app/login" variant="primary" size="lg" iconEnd="forward">العودة لتسجيل الدخول</LinkButton><Link to="/app/welcome" className="auth-switch">إلى الصفحة الترحيبية</Link></AuthLayout>;
+  const { t } = useCopy();
+  return <AuthLayout art="table" title={t('auByeTitle')} line={t('auByeLine')}><LinkButton to="/app/login" variant="primary" size="lg" iconEnd="forward">{t('auBackToLogin')}</LinkButton><Link to="/app/welcome" className="auth-switch">{t('auToWelcome')}</Link></AuthLayout>;
 }
 
 export function AccountPage() {
@@ -96,7 +98,7 @@ export function AccountPage() {
           </Panel>
           <Panel title={t('appearance')}><p className="muted">{t('appearanceHint')}</p><AppearanceSwitch /></Panel>
           {/* receipts live with each event's capacity; the account lists them all in one place too */}
-          <Panel title="المدفوعات"><ReceiptList receipts={allReceipts()} eventName={(id) => events.data?.find((e) => e.id === id)?.title} empty="لا مدفوعات بعد. كل مناسبة تبدأ بسعة 100 شخص مجانًا." /></Panel>
+          <Panel title={t('auPayments')}><ReceiptList receipts={allReceipts()} eventName={(id) => events.data?.find((e) => e.id === id)?.title} empty={t('auNoPayments')} /></Panel>
           <Panel title={t('demoSession')}><p className="muted">{t('demoSessionHint')}</p><LinkButton to="/app/logout" variant="secondary" icon="back">{t('logout')}</LinkButton></Panel>
         </div>
       </div>
@@ -104,12 +106,15 @@ export function AccountPage() {
   </AppShell>;
 }
 
+const HELP_STEPS = [['01', 'hp1', 'hp1Line', '/app/events/new'], ['02', 'hp2', 'hp2Line', '/app/events'], ['03', 'hp3', 'hp3Line', '/app/events'], ['04', 'hp4', 'hp4Line', '/app/events']] as const;
 export function HelpPage() {
-  return <AppShell><main id="main" className="account-page"><PageHeader title="كل خطوة لها طريق واضح." subtitle="من اختيار المناسبة حتى استقبال آخر ضيف." /><div className="help-grid">{[['01','ابدأ بمناسبتك','اكتب الأسماء والموعد والمكان. نختار بداية مناسبة يمكنك تغييرها.','/app/events/new'],['02','دعوة تحمل لمستك','اختر البطاقة وأجواء الدعوة، ثم عدّل الكلمة والبرنامج.','/app/events'],['03','لكل ضيف دعوته','أضف ضيوفك وشارك الروابط بعد نشر الدعوة.','/app/events'],['04','استقبال على مهل','تابع الردود وجهّز فريق الاستقبال قبل يوم المناسبة.','/app/events']].map(([n,title,line,to]) => <Panel key={n}><span className="help-number">{n}</span><h2>{title}</h2><p>{line}</p><LinkButton to={to!} variant="ghost" iconEnd="forward">ابدأ الخطوة</LinkButton></Panel>)}</div><p className="auth-demo-note">هذه نسخة تجربة؛ إرسال الدعوات والمصادقة الحقيقيان يتطلبان ربط الخدمات.</p></main></AppShell>;
+  const { t } = useCopy();
+  return <AppShell><main id="main" className="account-page"><PageHeader title={t('hpTitle')} subtitle={t('hpSub')} /><div className="help-grid">{HELP_STEPS.map(([n, title, line, to]) => <Panel key={n}><span className="help-number">{n}</span><h2>{t(title)}</h2><p>{t(line)}</p><LinkButton to={to} variant="ghost" iconEnd="forward">{t('hpGo')}</LinkButton></Panel>)}</div><p className="auth-demo-note">{t('hpDemoNote')}</p></main></AppShell>;
 }
 
 export function OrganizerSessionGate({ children }: { children: ReactNode }) {
   const services = useServices();
+  const { t } = useCopy();
   const [role, setRole] = useState(services.session.currentUser().role);
   useEffect(() => services.onChange(() => setRole(services.session.currentUser().role)), [services]);
   const account = useDemoAccount(), loc = useLocation(); const open = ['/app/login','/app/signup','/app/logout','/app/welcome','/app/help'].includes(loc.pathname);
@@ -122,7 +127,7 @@ export function OrganizerSessionGate({ children }: { children: ReactNode }) {
     if (organizerRoute && !allowed) {
       const id = eventRoute?.[1] !== 'new' ? eventRoute?.[1] : undefined;
       const recovery = id ? `${paths.guests(id)}?view=food` : paths.events;
-      return <AppShell right={<AccountMenu />}><main id="main" className="account-page"><PageHeader title="مساحة الضيافة" subtitle="هذه الأدوات متاحة لفريق التنظيم. يمكنك متابعة الطعام والطاولات أو تغيير طريقة عرض الحساب." /><div className="row wrap gap-3"><LinkButton to={recovery} variant="primary" icon="sparkle">افتح الضيافة</LinkButton><LinkButton to="/app/account" icon="settings">طريقة عرض الحساب</LinkButton></div></main></AppShell>;
+      return <AppShell right={<AccountMenu />}><main id="main" className="account-page"><PageHeader title={t('auCatTitle')} subtitle={t('auCatSub')} /><div className="row wrap gap-3"><LinkButton to={recovery} variant="primary" icon="sparkle">{t('auCatOpen')}</LinkButton><LinkButton to="/app/account" icon="settings">{t('roleTitle')}</LinkButton></div></main></AppShell>;
     }
   }
   return <>{children}</>;

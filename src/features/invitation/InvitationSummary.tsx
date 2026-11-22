@@ -5,6 +5,8 @@
 import { useGuestLink } from '../shared/share-link';
 import type { Event } from '../../domain/types';
 import { CARD_NAMES, PUBLISH_LABEL, SCENE_NAMES, publishState, resolvedNames } from '../../domain/invitation';
+import { PUBLISH_KEY } from '../../domain/copy/activity';
+import { useCopy } from '../../ui/copy';
 import { relativeTime } from '../../domain/format';
 import { countParties } from '../../domain/parties';
 import { isCoupleEvent } from '../../domain/event';
@@ -25,9 +27,10 @@ export function InvitationSummary({ event }: { event: Event }) {
   const parties = useParties(event.id);
   const now = useNow();
   const toast = useToast();
+  const { t, dialect } = useCopy();
   const { absolute } = useRouter();
   const publish = useMutation((s) => s.invitations.publish(event.id), {
-    onSuccess: () => toast({ tone: 'success', text: 'تم نشر الدعوة. الضيوف يرون الآن هذه النسخة.', celebrate: true }),
+    onSuccess: () => toast({ tone: 'success', text: t('ivPublished'), celebrate: true }),
   });
 
   const guestLink = useGuestLink(event);
@@ -41,10 +44,10 @@ export function InvitationSummary({ event }: { event: Event }) {
   if (!d) {
     return (
       <>
-        <PageHeader title="الدعوة" status={<Badge tone="neutral" dot>{PUBLISH_LABEL.none.label}</Badge>} />
+        <PageHeader title={t('wsInvitation')} status={<Badge tone="neutral" dot>{t(PUBLISH_KEY.none)}</Badge>} />
         <Panel>
-          <EmptyState icon="sparkle" title="لنجهّز دعوتك" action={<LinkButton to={paths.design(event.id)} variant="primary" size="lg" icon="sparkle">راجع دعوتك</LinkButton>}>
-            نجهّز قالبًا مناسبًا لفرحتك، باسمك وموعدك ومكانك. راجعه وأضف لمستك، ثم انشره عندما يصبح جاهزًا.
+          <EmptyState icon="sparkle" title={t('ivEmptyTitle')} action={<LinkButton to={paths.design(event.id)} variant="primary" size="lg" icon="sparkle">{t('ivReview')}</LinkButton>}>
+            {t('ivEmptyText')}
           </EmptyState>
         </Panel>
       </>
@@ -54,62 +57,62 @@ export function InvitationSummary({ event }: { event: Event }) {
   const content = d.draft;
   const names = resolvedNames(event, content);
   if (!isCoupleEvent(event.type)) names.b = '';
-  const xLabel = content.experience.motion === 'animated' ? 'متحركة' : 'ثابتة';
+  const xLabel = content.experience.motion === 'animated' ? t('ivAnimated') : t('ivStatic');
   const generalLink = guestLink();
   const primary = (ps === 'draft' || ps === 'changed') && !mayPublish ? (
-    <OwnerOnly><Button variant="primary" size="lg" icon="send" disabled>{ps === 'draft' ? 'انشر الدعوة' : 'انشر التعديلات'}</Button></OwnerOnly>
+    <OwnerOnly><Button variant="primary" size="lg" icon="send" disabled>{ps === 'draft' ? t('ivPublish') : t('ivPublishChanges')}</Button></OwnerOnly>
   ) : ps === 'draft' ? (
-    <Button variant="primary" size="lg" icon="send" loading={publish.pending} onClick={() => publish.run()}>انشر الدعوة</Button>
+    <Button variant="primary" size="lg" icon="send" loading={publish.pending} onClick={() => publish.run()}>{t('ivPublish')}</Button>
   ) : ps === 'changed' ? (
-    <Button variant="primary" size="lg" icon="send" loading={publish.pending} onClick={() => publish.run()}>انشر التعديلات</Button>
+    <Button variant="primary" size="lg" icon="send" loading={publish.pending} onClick={() => publish.run()}>{t('ivPublishChanges')}</Button>
   ) : (
-    <LinkButton to={paths.guests(event.id, { filter: c && c.parties === 0 ? undefined : 'not_shared' })} variant="primary" size="lg" icon="share">{c && c.parties === 0 ? 'أضف الضيوف' : 'شارك مع الضيوف'}</LinkButton>
+    <LinkButton to={paths.guests(event.id, { filter: c && c.parties === 0 ? undefined : 'not_shared' })} variant="primary" size="lg" icon="share">{c && c.parties === 0 ? t('ovGuestsLabel') : t('ivShare')}</LinkButton>
   );
 
   return (
     <>
-      <PageHeader title="الدعوة" status={<Badge tone={PUBLISH_LABEL[ps].tone} dot>{PUBLISH_LABEL[ps].label}</Badge>}
-        subtitle={ps === 'draft' ? 'المسودة محفوظة. الضيوف لا يرون شيئًا حتى تنشرها.' : ps === 'changed' ? 'لديك تعديلات لم تُنشر بعد — الضيوف يرون النسخة السابقة.' : `نُشرت ${d.publishedAt ? relativeTime(d.publishedAt, now) : ''}. هذا ما يراه الضيوف.`} />
-      {publish.error ? <Banner tone="danger" title="لم تُنشر الدعوة">{errorMessage(publish.error)}</Banner> : null}
+      <PageHeader title={t('wsInvitation')} status={<Badge tone={PUBLISH_LABEL[ps].tone} dot>{t(PUBLISH_KEY[ps])}</Badge>}
+        subtitle={ps === 'draft' ? t('ivDraftSub') : ps === 'changed' ? t('ivChangedSub') : t('ivPublishedSub', { when: d.publishedAt ? relativeTime(d.publishedAt, now, dialect) : '' })} />
+      {publish.error ? <Banner tone="danger" title={t('ivNotPublished')}>{errorMessage(publish.error)}</Banner> : null}
 
       <div className="invite-layout">
         <Panel className="invite-card-panel">
           {/* the card stands on its own setting — what the guest sees around it — instead of a decorative photo */}
           <SceneBackdrop sceneId={content.sceneId} className="invite-scene" />
           <div className="invite-card">
-            <CardThumb event={event} content={content} width={240} label={`بطاقة ${CARD_NAMES[content.cardId] ?? ''} باسم ${names.a}${names.b ? ` و${names.b}` : ''}`} />
+            <CardThumb event={event} content={content} width={240} label={t('ivCardLabel', { card: CARD_NAMES[content.cardId] ?? '', names: `${names.a}${names.b ? ` و${names.b}` : ''}` })} />
             <div className="stack gap-2 invite-card-actions">
-              <LinkButton to={paths.design(event.id)} variant="secondary" icon="edit" block>عدّل التصميم</LinkButton>
-              <LinkButton to={paths.preview(event.id)} variant="ghost" icon="eye" block>اعرضها كما يراها الضيف</LinkButton>
+              <LinkButton to={paths.design(event.id)} variant="secondary" icon="edit" block>{t('ivEditDesign')}</LinkButton>
+              <LinkButton to={paths.preview(event.id)} variant="ghost" icon="eye" block>{t('ivAsGuest')}</LinkButton>
             </div>
           </div>
         </Panel>
 
         <div className="stack gap-6">
-          <Panel title="ما تحتاج معرفته">
+          <Panel title={t('ivKnow')}>
             <KeyValue items={[
-              { k: 'الحركة', v: xLabel, icon: 'sparkle' },
-              { k: 'البطاقة', v: CARD_NAMES[content.cardId] ?? content.cardId },
-              { k: 'الخلفية', v: SCENE_NAMES[content.sceneId] ?? content.sceneId },
-              { k: 'الأسماء على البطاقة', v: <>{names.a}{names.b ? ` و${names.b}` : ''} {names.fromEvent ? <Badge tone="neutral">من بيانات المناسبة</Badge> : <Badge tone="info">خاصة بالدعوة</Badge>}</> },
-              { k: 'آخر حفظ', v: relativeTime(d.draftSavedAt, now), icon: 'clock' },
+              { k: t('ivMotion'), v: xLabel, icon: 'sparkle' },
+              { k: t('ivCard'), v: CARD_NAMES[content.cardId] ?? content.cardId },
+              { k: t('ivScene'), v: SCENE_NAMES[content.sceneId] ?? content.sceneId },
+              { k: t('ivNames'), v: <>{names.a}{names.b ? ` و${names.b}` : ''} {names.fromEvent ? <Badge tone="neutral">{t('ivFromEvent')}</Badge> : <Badge tone="info">{t('ivOwn')}</Badge>}</> },
+              { k: t('ivLastSave'), v: relativeTime(d.draftSavedAt, now, dialect), icon: 'clock' },
             ]} />
             <div className="row wrap gap-2 invite-primary">{primary}</div>
           </Panel>
 
           {(ps === 'published' || ps === 'changed') && (
-            <Panel title="روابط الدعوة">
+            <Panel title={t('ivLinks')}>
               <div className="stack gap-4">
-                <p className="muted t-sm"><Icon name="user" size="sm" className="inline-icon" />لكل ضيف رابط شخصي يعرف اسمه وعدد المسموح له — تجده وتشاركه من صفحة الضيوف.</p>
+                <p className="muted t-sm"><Icon name="user" size="sm" className="inline-icon" />{t('ivPersonal')}</p>
                 {event.settings.allowGeneralLink ? (
-                  <CopyField label="الرابط العام (بدون اسم)" value={generalLink} hint="من يرد عبر هذا الرابط يظهر لك في الردود لتطابقه مع قائمة الضيوف." />
+                  <CopyField label={t('ivGeneral')} value={generalLink} hint={t('ivGeneralHint')} />
                 ) : (
-                  <p className="faint t-sm">الرابط العام مغلق. يمكنك تفعيله من الإعدادات إذا أردت رابطًا واحدًا للمجموعات.</p>
+                  <p className="faint t-sm">{t('ivGeneralOff')}</p>
                 )}
               </div>
             </Panel>
           )}
-          {ps === 'draft' && <Banner tone="warning" title="الدعوة غير منشورة">لن تعمل روابط الضيوف حتى تنشر الدعوة. يمكنك إضافة الضيوف الآن ومشاركة الروابط بعد النشر.</Banner>}
+          {ps === 'draft' && <Banner tone="warning" title={t('ivDraftTitle')}>{t('ivDraftText')}</Banner>}
         </div>
       </div>
     </>

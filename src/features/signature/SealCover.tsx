@@ -67,7 +67,7 @@ export function SealCover({ view, onOpen, onDetails }: { view: GuestView; onOpen
     <main className={`sig-cover${opening ? ' is-opening' : ''}`}>
       <Stage size="lg" tone="charcoal" pattern="field" className="sig-cover-stage" as="div">
         <header className="sig-cover-head">
-          <p className="sig-cover-kicker">{view.party ? <>دعوة خاصة إلى <bdi>{view.party.name}</bdi></> : 'دعوة لكم'}</p>
+          <p className="sig-cover-kicker">{view.party ? <>{t('shPrivateTo')} <bdi>{view.party.name}</bdi></> : t('shForYou')}</p>
           <h1>{ev.title}</h1>
           <p className="sig-cover-date">{N.join(N.date(ev.date), ev.venue.city)}</p>
         </header>

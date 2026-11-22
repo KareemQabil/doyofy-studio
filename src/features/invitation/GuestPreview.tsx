@@ -39,7 +39,7 @@ export function GuestPreview({ eventId }: { eventId: string }) {
         invitation: toInvitationData(event, content, event.settings.defaultPartySize),
         card: content.cardId, scene: content.sceneId, experience: content.experience, start: phase.start,
         embedded: true, showSwitcher: false, params: new URLSearchParams(),
-        guest: { name: 'اسم الضيف', nameLocked: true, maxGuests: event.settings.defaultPartySize },
+        guest: { name: t('shGuestName'), nameLocked: true, maxGuests: event.settings.defaultPartySize },
         rsvp: { submit: async () => ({ ok: true, id: 'preview' }) },
       });
       (window as unknown as { __studio?: unknown }).__studio = studio;
@@ -49,18 +49,18 @@ export function GuestPreview({ eventId }: { eventId: string }) {
 
   if (ev.error || design.error || err) return <ErrorState error={ev.error || design.error || err} onRetry={() => location.reload()} />;
   const view: GuestView | null = event && content ? { event, design: content, party: null, canEdit: true, maxGuests: event.settings.defaultPartySize, phase: 'before' } : null;
-  const note = publication === 'published' ? 'معاينة الدعوة المنشورة' : 'معاينة المسودة — هذه التعديلات ليست منشورة للضيوف';
+  const note = publication === 'published' ? t('shPreviewPublished') : t('shPreviewDraft');
   return (
     <div className="preview-page">
       <div className="preview-bar" role="note">
-        <span className="preview-bar-text"><Icon name="eye" size="sm" /><span><span className="preview-bar-long">{note}. لن يُسجل أي رد.</span><span className="preview-bar-short">{publication === 'published' ? 'معاينة' : 'معاينة المسودة'} · لن يُسجل أي رد</span></span></span>
+        <span className="preview-bar-text"><Icon name="eye" size="sm" /><span><span className="preview-bar-long">{note}. {t('shNoReply')}.</span><span className="preview-bar-short">{publication === 'published' ? t('shPreviewShort') : t('shDraftShort')} · {t('shNoReply')}</span></span></span>
         <span className="preview-bar-actions">
           {phase.at === 'invitation' && <button type="button" className="preview-restart" aria-label={t('previewRestart')} onClick={() => setPhase((p) => ({ at: 'cover', start: 'intro', run: p.run + 1 }))}><Icon name="refresh" size="sm" /><span className="preview-bar-long">{t('previewRestart')}</span></button>}
-          <Link to={back} className="preview-close" aria-label="إغلاق المعاينة"><Icon name="close" size="sm" /><span className="preview-bar-long">إغلاق المعاينة</span><span className="preview-bar-short">إغلاق</span></Link>
+          <Link to={back} className="preview-close" aria-label={t('shClosePreview')}><Icon name="close" size="sm" /><span className="preview-bar-long">{t('shClosePreview')}</span><span className="preview-bar-short">{t('close')}</span></Link>
         </span>
       </div>
       {content && <SceneBackdrop sceneId={content.sceneId} className="preview-backdrop" />}
-      {!view ? <div className="preview-loading"><PageLoader name="envelope" label="جارٍ تجهيز المعاينة" /></div>
+      {!view ? <div className="preview-loading"><PageLoader name="envelope" label={t('shPreparing')} /></div>
         : <div className="preview-device">
           {phase.at === 'cover'
             ? <SealCover key={phase.run} view={view} onOpen={() => setPhase((p) => ({ ...p, at: 'invitation', start: 'intro' }))} onDetails={() => setPhase((p) => ({ ...p, at: 'invitation', start: 'card' }))} />

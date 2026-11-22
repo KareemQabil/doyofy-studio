@@ -1,13 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { COPY_GROUPS, copyFor, countOf, fill, parseDialect, type CopyKey } from '../../src/domain/copy';
-import { formatTime } from '../../src/domain/format';
+import { countdownLabel, formatTime, relativeTime } from '../../src/domain/format';
+import { activityText } from '../../src/domain/activity';
+import { mappingProblems } from '../../src/domain/import';
+import { dietaryLabel } from '../../src/domain/guest-experience';
+import type { EventActivity } from '../../src/domain/types';
 import { currentStrings } from '../../src/data/strings.js';
 
 const groups = Object.entries(COPY_GROUPS);
 const DIALECTS = ['ar-EG', 'ar-SA'] as const;
 /** the screens a guest or a first-time organizer sees first: every key is spelled in every voice */
-const HIGH_VISIBILITY = ['home', 'create', 'guests', 'seating', 'guest', 'engine'] as const;
+const HIGH_VISIBILITY = ['home', 'create', 'guests', 'seating', 'guest', 'engine',
+  // r4-copy2: the remaining screens, the domain-built lines, and the groups upgraded from `partly`
+  'import', 'experienceSettings', 'auth', 'time', 'activity', 'overview', 'eventPages', 'food', 'shared', 'gate', 'settings', 'billing', 'replies'] as const;
 
 test('copy: every key has a modern value, keys are unique across groups, dialects only use known keys', () => {
   const seen = new Map<string, string>();
@@ -72,6 +78,30 @@ test('copy: guests are addressed in the plural; the reply words follow each voic
     const s = currentStrings(d);
     assert.equal(s.accept.ar, c.guestAccept); assert.equal((s.rsvpTitle as { ar: string }).ar, c.engRsvpTitle); assert.equal(s.thanks.no.ar, c.engThanksNo);
   }
+});
+
+test('copy: domain-built lines take the voice and stay pure (time, activity, import, dietary)', () => {
+  const now = new Date('2026-11-22T12:00:00Z');
+  const ago = (min: number) => new Date(now.getTime() - min * 60000);
+  assert.equal(relativeTime(ago(120), now), 'قبل ساعتين');
+  assert.equal(relativeTime(ago(120), now, 'ar-EG'), 'من ساعتين');
+  assert.equal(relativeTime(ago(5), now, 'ar-SA'), 'قبل 5 دقايق');
+  assert.equal(relativeTime(ago(0), now, 'ar-EG'), 'دلوقتي');
+  assert.equal(relativeTime(ago(0), now, 'ar-SA'), 'الحين');
+  assert.equal(relativeTime(ago(26 * 60), now, 'ar-EG'), 'امبارح');
+  assert.equal(countdownLabel('2026-11-23', '2026-11-22'), 'غدًا');
+  assert.equal(countdownLabel('2026-11-23', '2026-11-22', 'ar-EG'), 'بكرة');
+  assert.equal(countdownLabel('2026-11-22', '2026-11-22', 'ar-EG'), 'النهارده');
+  assert.equal(countdownLabel('2026-12-01', '2026-11-22', 'ar-SA'), 'بعد 9 أيام');
+  assert.equal(countdownLabel('2026-11-24', '2026-11-22', 'ar-EG'), 'بعد يومين');
+  const a = (kind: EventActivity['kind'], data: EventActivity['data']) => ({ id: 'a', eventId: 'e', kind, data, at: now.toISOString(), actor: 'organizer' }) as EventActivity;
+  assert.equal(activityText(a('rsvp_confirmed', { name: 'سارة', count: 2 })), 'سارة أكد الحضور — شخصان');
+  assert.equal(activityText(a('rsvp_confirmed', { name: 'سارة', count: 2 }), 'ar-EG'), 'سارة أكد إنه جاي — شخصين');
+  assert.equal(activityText(a('parties_imported', { count: 15, skipped: 2 }), 'ar-SA'), 'انضاف 15 ضيف من ملف (مع تخطي صفين)');
+  assert.equal(activityText(a('table_created', { name: 'طاولة 4', capacity: 10 }), 'ar-EG'), 'طاولة 4 اتضافت (10 كراسي)');
+  assert.deepEqual(mappingProblems(['ignore'], 'ar-EG'), ['حدد العمود اللي فيه أسامي الضيوف.']);
+  assert.equal(dietaryLabel({ answered: true, needs: ['dairy', 'halal'] }, 'ar-EG'), 'حساسية لبن ومنتجاته · حلال بس');
+  assert.equal(dietaryLabel({ answered: true, needs: ['dairy', 'halal'] }), 'حساسية حليب ومشتقاته · حلال فقط');
 });
 
 test('copy: slots fill, spoken counted nouns differ by voice, afternoon reads «عصرًا»', () => {

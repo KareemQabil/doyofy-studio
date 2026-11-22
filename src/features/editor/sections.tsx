@@ -147,14 +147,15 @@ function Option({ on, title, text, onClick, art, disabled }: { on: boolean; titl
 
 export function MotionSection({ content, invitation, update, sound, onSound }: { content: InvitationDesignContent; invitation: unknown; update: Update; sound: boolean; onSound: (v: boolean) => void }) {
   const x = content.experience;
+  const { t } = useCopy();
   const setX = (patch: Partial<InvitationDesignContent['experience']>) => update({ experience: { ...x, ...patch, dimension: '2d' } });
   return (
     <div className="ed-sec">
       <section className="ed-group">
-        <SecHead title="الحركة" />
-        <div className="ed-options is-text" role="radiogroup" aria-label="الحركة">
-          <Option on={x.motion === 'animated'} title="متحركة" text="افتتاحية سينمائية، وظرف يُختم ويطير بعد الرد." onClick={() => setX({ motion: 'animated' })} />
-          <Option on={x.motion === 'static'} title="ثابتة" text="تفتح مباشرة على البطاقة، بلا حركة." onClick={() => setX({ motion: 'static' })} />
+        <SecHead title={t('esMotion')} />
+        <div className="ed-options is-text" role="radiogroup" aria-label={t('esMotion')}>
+          <Option on={x.motion === 'animated'} title={t('ivAnimated')} text={t('esAnimatedD')} onClick={() => setX({ motion: 'animated' })} />
+          <Option on={x.motion === 'static'} title={t('ivStatic')} text={t('esStaticD')} onClick={() => setX({ motion: 'static' })} />
         </div>
       </section>
       <SoundGroup content={content} update={update} sound={sound} onSound={onSound} />

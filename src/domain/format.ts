@@ -3,6 +3,7 @@
  * phone numbers, counts and tables stay easy to compare and type. Plurals follow Arabic CLDR rules.
  */
 import type { ISODateTime, LocalDate, LocalTime } from './types';
+import { SPOKEN_TIME, TIME } from './copy/time';
 
 const LOCALE = 'ar-u-ca-gregory-nu-latn';
 
@@ -127,17 +128,25 @@ export function invitationNumbers(digits: 'arab' | 'latn') {
 }
 export type InvitationNumbers = ReturnType<typeof invitationNumbers>;
 
-/** "الآن" / "قبل 5 دقائق" / "قبل ساعتين" / "أمس 9:15 م" / date */
-export function relativeTime(at: ISODateTime | Date, now: Date): string {
+/** the time words of one voice (copy/time.ts); format sits below copy.ts, so it reads the group itself */
+type Voice = 'ar' | 'ar-EG' | 'ar-SA';
+const timeWords = (dialect: Voice) => (dialect === 'ar' ? TIME.modern : { ...TIME.modern, ...TIME[dialect] });
+const timeForms = (dialect: Voice, unit: 'minute' | 'hour' | 'day', ago: boolean): PluralForms =>
+  dialect === 'ar' ? (unit === 'day' ? (ago ? P.dayAgo : P.day) : P[unit]) : SPOKEN_TIME[dialect][unit];
+const slot = (template: string, value: string) => template.replace('{t}', value);
+
+/** "الآن" / "قبل 5 دقائق" / "قبل ساعتين" / "أمس" / date — «من ساعتين»، «امبارح» in Egyptian, «الحين» in Saudi */
+export function relativeTime(at: ISODateTime | Date, now: Date, dialect: Voice = 'ar'): string {
   const t = typeof at === 'string' ? new Date(at) : at;
+  const w = timeWords(dialect);
   const s = Math.round((now.getTime() - t.getTime()) / 1000);
-  if (s < 45) return 'الآن';
+  if (s < 45) return w.tmNow;
   const m = Math.round(s / 60);
-  if (m < 60) return `قبل ${plural(m, P.minute)}`;
+  if (m < 60) return slot(w.tmAgo, plural(m, timeForms(dialect, 'minute', true)));
   const h = Math.round(m / 60);
-  if (h < 24) return `قبل ${plural(h, P.hour)}`;
+  if (h < 24) return slot(w.tmAgo, plural(h, timeForms(dialect, 'hour', true)));
   const d = Math.round(h / 24);
-  if (d < 7) return d === 1 ? 'أمس' : `قبل ${plural(d, P.dayAgo)}`;
+  if (d < 7) return d === 1 ? w.tmYesterday : slot(w.tmAgo, plural(d, timeForms(dialect, 'day', true)));
   return new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'long' }).format(t);
 }
 
@@ -151,14 +160,15 @@ export function daysBetween(a: LocalDate, b: LocalDate): number {
   return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5);
 }
 
-/** "بعد 9 أيام" / "غدًا" / "اليوم" / "منذ 3 أيام" */
-export function countdownLabel(eventDate: LocalDate, today: LocalDate): string {
+/** "بعد 9 أيام" / "غدًا" / "اليوم" / "منذ 3 أيام" — «بكرة»، «النهارده» in Egyptian */
+export function countdownLabel(eventDate: LocalDate, today: LocalDate, dialect: Voice = 'ar'): string {
   const d = daysBetween(today, eventDate);
-  if (d === 0) return 'اليوم';
-  if (d === 1) return 'غدًا';
-  if (d === -1) return 'أمس';
-  if (d > 1) return `بعد ${pluralOf(d, P.day)}`;
-  return `منذ ${plural(-d, P.dayAgo)}`;
+  const w = timeWords(dialect);
+  if (d === 0) return w.tmToday;
+  if (d === 1) return w.tmTomorrow;
+  if (d === -1) return w.tmYesterday;
+  if (d > 1) return slot(w.tmIn, plural(d, timeForms(dialect, 'day', false), { oblique: true }));
+  return slot(w.tmSince, plural(-d, timeForms(dialect, 'day', true)));
 }
 
 export function addDays(date: LocalDate, n: number): LocalDate {

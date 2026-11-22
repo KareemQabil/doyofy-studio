@@ -55,7 +55,7 @@ export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragO
   const clearOrder = () => { touchOrder.current = null; setOrderSource(null); setOrderTarget(null); };
   const total = tables.reduce((n, o) => n + o.table.capacity, 0), used = tables.reduce((n, o) => n + o.used, 0);
   return (
-    <section className="hall seat-overview" aria-label="خريطة الطاولات وتصفية القائمة">
+    <section className="hall seat-overview" aria-label={t('shHallLabel')}>
       <header className="hall-head">
         <div>
           <p className="hall-kicker"><Icon name="table" size="sm" />{t('hallKicker')}</p>
@@ -73,7 +73,7 @@ export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragO
             data-order-table={o.table.id} data-table={orderMode ? undefined : o.table.id} draggable={orderMode} aria-describedby={orderMode ? 'hall-order-help' : undefined}
             className={`hall-table seat-overview-table${focus === o.table.id ? ' is-active' : ''}${o.over ? ' is-over' : o.remaining === 0 ? ' is-full' : ''}${dragOver === o.table.id || orderTarget === o.table.id ? ' is-drop-target' : ''}${orderSource === o.table.id ? ' is-order-source' : ''}`}
             aria-pressed={focus === o.table.id}
-            aria-label={`${o.table.name}: ${o.used} من ${o.table.capacity}${o.over ? `، زيادة ${-o.remaining}` : ''}${showFood && o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) ? '، عليها حساسية طعام' : ''}${orderMode ? `، الترتيب ${i + 1}` : ''}`}
+            aria-label={`${t('shTableUse', { name: o.table.name, used: o.used, cap: o.table.capacity })}${o.over ? t('shOverBy', { n: -o.remaining }) : ''}${showFood && o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) ? t('shHasAllergy') : ''}${orderMode ? t('shOrder', { n: i + 1 }) : ''}`}
             onClick={() => { if (!orderMode) { haptic('tick'); onFocus(o.table.id); } }}
             onDragStart={orderMode ? (e) => { e.dataTransfer.setData('application/x-doyofy-table', o.table.id); setOrderSource(o.table.id); } : undefined}
             onDragEnd={orderMode ? clearOrder : undefined}
@@ -107,12 +107,12 @@ export function SeatDock({ party, tables, hover, onPick, onCancel, onList }: {
   // keep the hovered destination in view while dragging along the strip
   useEffect(() => { if (hover) strip.current?.querySelector(`[data-table="${CSS.escape(hover)}"]`)?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' }); }, [hover]);
   return (
-    <div className="seat-dock" onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onCancel(); } }} role="dialog" aria-label={`اختر طاولة لـ${party.primaryGuestName}`}>
+    <div className="seat-dock" onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onCancel(); } }} role="dialog" aria-label={t('shPickTableFor', { name: party.primaryGuestName })}>
       <div className="seat-dock-head">
         <span className="seat-dock-chip"><b>{party.primaryGuestName}</b> · {n(need, 'person')}</span>
         <span className="seat-dock-hint">{t(hover ? 'dockDrop' : 'dockHint')}</span>
         <button type="button" className="seat-dock-list" onClick={onList}>{t('dockList')}</button>
-        <button type="button" className="seat-dock-cancel" onClick={onCancel} aria-label="إلغاء النقل"><Icon name="close" size="sm" /></button>
+        <button type="button" className="seat-dock-cancel" onClick={onCancel} aria-label={t('shCancelMove')}><Icon name="close" size="sm" /></button>
       </div>
       <div className="seat-dock-strip" ref={strip}>
         {tables.map((o) => {
@@ -122,7 +122,7 @@ export function SeatDock({ party, tables, hover, onPick, onCancel, onList }: {
           return (
             <button key={o.table.id} type="button" data-table={o.table.id} disabled={current}
               className={`seat-dock-table${hover === o.table.id ? ' is-hover' : ''}${!current && !check.ok ? ' is-tight' : ''}${current ? ' is-current' : ''}`}
-              aria-label={`${o.table.name}: ${current ? 'الطاولة الحالية' : `تصبح ${after} من ${o.table.capacity}${check.ok ? '' : '، فوق السعة'}`}`}
+              aria-label={`${o.table.name}: ${current ? t('shCurrentTable') : `${t('shBecomes', { after, cap: o.table.capacity })}${check.ok ? '' : t('shOverCap')}`}`}
               onClick={() => onPick(o)}>
               <span className="hall-table-art"><TableDisc o={o} preview={hover === o.table.id && !current ? after : undefined} /><strong className="hall-count num">{hover === o.table.id && !current ? after : o.used}<small>/{o.table.capacity}</small></strong></span>
               <span className="hall-name">{o.table.name}</span>

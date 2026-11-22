@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Event, EventType, UpdateEventInput } from '../../domain/types';
 import { EVENT_TYPES, isCoupleEvent, suggestTitle } from '../../domain/event';
 import { PUBLISH_LABEL, publishState } from '../../domain/invitation';
+import { PUBLISH_KEY } from '../../domain/copy/activity';
 import { Badge, Banner, Button, ConfirmDialog, Field, Input, LinkButton, PageHeader, Panel, Select, Stepper, Switch } from '../../ui';
 import { useMutation, useServices } from '../../app/data';
 import { useBlocker, useLocation, useNavigate } from '../../app/router';
@@ -141,7 +142,7 @@ export function SettingsPage({ event }: { event: Event }) {
 
         <Panel title={t('setInvitation')}>
           <div className="row wrap between gap-3">
-            <Badge tone={PUBLISH_LABEL[ps].tone} dot>{PUBLISH_LABEL[ps].label}</Badge>
+            <Badge tone={PUBLISH_LABEL[ps].tone} dot>{t(PUBLISH_KEY[ps])}</Badge>
             <LinkButton to={paths.invitation(event.id)} size="sm">{t('setManageInvitation')}</LinkButton>
           </div>
         </Panel>

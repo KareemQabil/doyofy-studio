@@ -6,8 +6,10 @@ import { JourneyArtwork } from '../../ui/primitives/JourneyArtwork';
 import type { Event } from '../../domain/types';
 import { countParties } from '../../domain/parties';
 import { eventPhase, todayFor } from '../../domain/event';
-import { EXCEPTION_TEXT, expectedArrivals } from '../../domain/checkin';
-import { clockTime, countdownLabel, people, peopleOf, plural, P, relativeTime } from '../../domain/format';
+import { expectedArrivals } from '../../domain/checkin';
+import { clockTime, countdownLabel, relativeTime } from '../../domain/format';
+import { EXCEPTION_KEY } from '../../domain/copy/event-pages';
+import { useCopy } from '../../ui/copy';
 import { Badge, Banner, EmptyState, ErrorState, LinkButton, PageHeader, Panel, ProgressBar, Stat, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
 import { Link, useRouter } from '../../app/router';
@@ -17,6 +19,7 @@ import { CopyField } from '../shared/CopyField';
 
 export function CheckInSetup({ event }: { event: Event }) {
   const now = useNow();
+  const { t, n, dialect } = useCopy();
   const parties = useParties(event.id);
   const records = useCheckIns(event.id);
   const activity = useActivity(event.id, 200);
@@ -37,60 +40,60 @@ export function CheckInSetup({ event }: { event: Event }) {
 
   return (
     <>
-      <PageHeader title="الاستقبال" status={phase === 'event_day' ? <Badge tone="accent" dot>اليوم</Badge> : undefined}
-        subtitle={phase === 'event_day' ? 'تابع الوصول لحظة بلحظة' : phase === 'completed' ? 'انتهت المناسبة' : `المناسبة ${countdownLabel(event.date, todayFor(event, now))} — جهّز فريق الاستقبال`}
-        actions={<LinkButton to={paths.gate(event.id)} variant="primary" icon="scan" onClick={() => void prepare.run()}>افتح الاستقبال</LinkButton>} />
+      <PageHeader title={t('wsCheckin')} status={phase === 'event_day' ? <Badge tone="accent" dot>{t('wsToday')}</Badge> : undefined}
+        subtitle={phase === 'event_day' ? t('csLive') : phase === 'completed' ? t('ovEnded') : t('csSoon', { when: countdownLabel(event.date, todayFor(event, now), dialect) })}
+        actions={<LinkButton to={paths.gate(event.id)} variant="primary" icon="scan" onClick={() => void prepare.run()}>{t('stepGate')}</LinkButton>} />
 
       <div className="stack gap-6">
         {(phase === 'event_day' || phase === 'completed' || c.checkedInPeople > 0) && <div className="counts">
           <div className="counts-checkin">
-            <Stat label="وصلوا" value={c.checkedInPeople} sub={`من ${peopleOf(c.confirmedPeople)} مؤكدين`} tone="accent" emphasis />
-            <ProgressBar value={c.checkedInPeople} max={Math.max(1, c.confirmedPeople)} tone="success" label="نسبة الوصول" />
+            <Stat label={t('ovArrived')} value={c.checkedInPeople} sub={t('csOfConfirmed', { people: n(c.confirmedPeople, 'person', true) })} tone="accent" emphasis />
+            <ProgressBar value={c.checkedInPeople} max={Math.max(1, c.confirmedPeople)} tone="success" label={t('csRate')} />
           </div>
-          <Stat label="دعوات وصلت" value={c.arrivedParties} sub={`من ${c.confirmedParties} مؤكدة`} />
-          <Stat label="وصل جزء منها" value={c.partialParties} sub="ينتظر الباقون" tone={c.partialParties ? 'warning' : undefined} />
-          <Stat label="لم تصل بعد" value={notArrived.length} sub="دعوات مؤكدة" />
+          <Stat label={t('csPartiesIn')} value={c.arrivedParties} sub={t('csOfConfirmedParties', { n: c.confirmedParties })} />
+          <Stat label={t('csPartial')} value={c.partialParties} sub={t('csOthersWaiting')} tone={c.partialParties ? 'warning' : undefined} />
+          <Stat label={t('csNotYet')} value={notArrived.length} sub={t('csConfirmedInv')} />
         </div>}
 
         {phase !== 'event_day' && phase !== 'completed' && (
-          <Panel title="جهّز الفريق، ثم افتح الاستقبال" subtitle="خطوة واحدة: أرسل الرابط لفريقك وجرّبه مرة." className="reception-prep">
-            <JourneyArtwork kind="reception" className="reception-art"/><div className="stack gap-4"><ol className="reception-steps"><li><strong>١</strong><span>ابحث عن الضيف أو أدخل رمز دعوته</span></li><li><strong>٢</strong><span>تأكد من العدد، والطاولة إن أضفتها</span></li><li><strong>٣</strong><span>سجّل الوصول، ويمكنك التراجع</span></li></ol>
-              <p className="muted">شاشة الاستقبال شاشة بسيطة لفريق الاستقبال: مسح رمز QR من دعوة الضيف، أو البحث بالاسم، ثم تسجيل الوصول كاملًا أو جزئيًا. لا يحتاج الفريق إلى صفحة المنظم.</p>
-              <CopyField label="رابط شاشة الاستقبال لفريق الاستقبال" value={absolute(paths.gate(event.id))} hint="في النسخة الحقيقية يحتاج الرابط رمز دخول للفريق." onCopied={() => void prepare.run()} />
-              {event.checkInPreparedAt ? <Banner tone="success" compact>تم تجهيز شاشة الاستقبال.</Banner> : <p className="faint t-sm">جرّبه الآن مرة واحدة لتطمئن — يمكنك التراجع عن أي تسجيل تجريبي.</p>}
+          <Panel title={t('csPrepTitle')} subtitle={t('csPrepSub')} className="reception-prep">
+            <JourneyArtwork kind="reception" className="reception-art"/><div className="stack gap-4"><ol className="reception-steps"><li><strong>١</strong><span>{t('csStep1')}</span></li><li><strong>٢</strong><span>{t('csStep2')}</span></li><li><strong>٣</strong><span>{t('csStep3')}</span></li></ol>
+              <p className="muted">{t('csExplain')}</p>
+              <CopyField label={t('csLinkLabel')} value={absolute(paths.gate(event.id))} hint={t('csLinkHint')} onCopied={() => void prepare.run()} />
+              {event.checkInPreparedAt ? <Banner tone="success" compact>{t('csReady')}</Banner> : <p className="faint t-sm">{t('csTryOnce')}</p>}
             </div>
           </Panel>
         )}
 
         {(phase === 'event_day' || phase === 'completed' || live.length > 0) && <><div className="overview-grid">
-          <Panel title={`دخول باستثناء (${exceptions.length + walkIns.length})`} subtitle="سمح بها فريق الاستقبال بعد التأكد — راجعها">
-            {exceptions.length + walkIns.length === 0 ? <p className="faint t-sm">لا استثناءات.</p> : (
+          <Panel title={t('csExceptions', { n: exceptions.length + walkIns.length })} subtitle={t('csExceptionsSub')}>
+            {exceptions.length + walkIns.length === 0 ? <p className="faint t-sm">{t('csNoExceptions')}</p> : (
               <ul className="plain-list">
                 {walkIns.map((a) => (
                   <li key={a.id} className="plain-row">
                     <span className="grow">
                       <span className="row-title">{String(a.data.name ?? '')}</span>
-                      <span className="row-sub"><Badge tone="warning">من خارج القائمة</Badge><span>{people(Number(a.data.count) || 1)}</span></span>
+                      <span className="row-sub"><Badge tone="warning">{t('csWalkIn')}</Badge><span>{n(Number(a.data.count) || 1, 'person')}</span></span>
                       {a.data.note && <span className="row-note t-sm">«{String(a.data.note)}»</span>}
                     </span>
-                    <time className="faint t-xs">{relativeTime(a.at, now)}</time>
+                    <time className="faint t-xs">{relativeTime(a.at, now, dialect)}</time>
                   </li>
                 ))}
                 {exceptions.map((r) => (
                   <li key={r.id} className="plain-row">
                     <span className="grow">
                       <Link to={paths.guests(event.id, { party: r.partyId })} className="row-title">{name(r.partyId)}</Link>
-                      <span className="row-sub">{r.exceptions.filter((e) => e !== 'no_table').map((e) => <Badge key={e} tone="warning">{EXCEPTION_TEXT[e].title}</Badge>)}<span>{people(r.count)} · {r.by}</span></span>
+                      <span className="row-sub">{r.exceptions.filter((e) => e !== 'no_table').map((e) => <Badge key={e} tone="warning">{t(EXCEPTION_KEY[e].title)}</Badge>)}<span>{n(r.count, 'person')} · {r.by}</span></span>
                       {r.staffNote && <span className="row-note t-sm">«{r.staffNote}»</span>}
                     </span>
-                    <time className="faint t-xs">{relativeTime(r.at, now)}</time>
+                    <time className="faint t-xs">{relativeTime(r.at, now, dialect)}</time>
                   </li>
                 ))}
               </ul>
             )}
           </Panel>
-          <Panel title={`ينتظر وصول الباقين (${partial.length})`}>
-            {partial.length === 0 ? <p className="faint t-sm">لا توجد دعوات وصل جزء منها.</p> : (
+          <Panel title={t('csWaiting', { n: partial.length })}>
+            {partial.length === 0 ? <p className="faint t-sm">{t('csNoPartial')}</p> : (
               <ul className="plain-list">
                 {partial.map((p) => <li key={p.id} className="plain-row"><span className="grow t-bold">{p.primaryGuestName}</span><span className="num t-sm">{p.checkedInCount} / {expectedArrivals(p)}</span></li>)}
               </ul>
@@ -98,18 +101,18 @@ export function CheckInSetup({ event }: { event: Event }) {
           </Panel>
         </div>
 
-        <Panel title="آخر عمليات الدخول">
-          {live.length === 0 ? <EmptyState compact icon="door" title="لم يصل أحد بعد">تظهر هنا كل عملية دخول مع وقتها.</EmptyState> : (
+        <Panel title={t('csLatest')}>
+          {live.length === 0 ? <EmptyState compact icon="door" title={t('csNobody')}>{t('csNobodyHint')}</EmptyState> : (
             <ul className="plain-list">
               {live.slice(0, 20).map((r) => (
                 <li key={r.id} className="plain-row">
-                  <span className="grow"><span className="row-title">{name(r.partyId)}</span><span className="row-sub">{people(r.count)} · {r.method === 'qr' ? 'بالرمز' : 'بالبحث'}</span></span>
+                  <span className="grow"><span className="row-title">{name(r.partyId)}</span><span className="row-sub">{n(r.count, 'person')} · {r.method === 'qr' ? t('csByCode') : t('csBySearch')}</span></span>
                   <time className="faint t-xs num">{clockTime(r.at, event.timeZone)}</time>
                 </li>
               ))}
             </ul>
           )}
-          {live.length > 20 && <p className="faint t-sm">و{plural(live.length - 20, P.invitation)} أخرى</p>}
+          {live.length > 20 && <p className="faint t-sm">{t('csMore', { invitations: n(live.length - 20, 'invitation') })}</p>}
         </Panel></>}
       </div>
     </>

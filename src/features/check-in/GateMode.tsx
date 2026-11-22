@@ -6,10 +6,11 @@
  */
 import { useMemo, useRef, useState } from 'react';
 import type { CheckInRecord, Event, InvitationParty } from '../../domain/types';
-import { assessCheckIn, BLOCKING, codeFromScan, EXCEPTION_TEXT, expectedArrivals } from '../../domain/checkin';
+import { assessCheckIn, BLOCKING, codeFromScan, expectedArrivals } from '../../domain/checkin';
 import { countParties, searchParties } from '../../domain/parties';
 import { eventPhase, todayFor } from '../../domain/event';
-import { countdownLabel, people, peopleOf } from '../../domain/format';
+import { countdownLabel } from '../../domain/format';
+import { EXCEPTION_KEY } from '../../domain/copy/event-pages';
 import { useCopy } from '../../ui/copy';
 import { Button, Checkbox, Dialog, ErrorState, Icon, Input, Stepper, Textarea, PageLoader, Lottie } from '../../ui';
 import { useMutation, useNow, useServices } from '../../app/data';
@@ -32,7 +33,7 @@ export function GateMode({ eventId }: { eventId: string }) {
 function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: boolean; event: Event; parties: InvitationParty[]; tableName: (id?: string) => string | undefined }) {
   const now = useNow();
   const services = useServices();
-  const { t } = useCopy();
+  const { t, n, dialect } = useCopy();
   const [view, setView] = useState<View>({ kind: 'search' });
   const [q, setQ] = useState('');
   const [scanning, setScanning] = useState(false);
@@ -68,7 +69,7 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
       </header>
 
       {phase !== 'event_day' && (
-        <p className="gate-note" role="note">{phase === 'completed' ? t('gtEnded') : t('gtWhen', { when: countdownLabel(event.date, todayFor(event, now)) })} {t('gtCounts')}</p>
+        <p className="gate-note" role="note">{phase === 'completed' ? t('gtEnded') : t('gtWhen', { when: countdownLabel(event.date, todayFor(event, now), dialect) })} {t('gtCounts')}</p>
       )}
 
       <main className="gate-main" id="main">
@@ -96,7 +97,7 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
                     <li key={p.id}>
                       <button type="button" className="gate-result" onClick={() => setView({ kind: 'party', id: p.id, method: 'search' })}>
                         <span className="grow"><span className="gate-result-name">{p.primaryGuestName}</span>
-                          <span className="gate-result-sub">{p.rsvpStatus === 'confirmed' ? t('gtConfirmedN', { people: peopleOf(p.confirmedPartySize ?? 0) }) : t(p.rsvpStatus === 'declined' ? 'gtDeclined' : 'gtNoReply')}{tableName(p.tableId) ? ` · ${tableName(p.tableId)}` : ''}</span></span>
+                          <span className="gate-result-sub">{p.rsvpStatus === 'confirmed' ? t('gtConfirmedN', { people: n(p.confirmedPartySize ?? 0, 'person', true) }) : t(p.rsvpStatus === 'declined' ? 'gtDeclined' : 'gtNoReply')}{tableName(p.tableId) ? ` · ${tableName(p.tableId)}` : ''}</span></span>
                         {/* the pill says what the gate needs: arrival for those expected, the reply for those who are not */}
                         <span className={`gate-pill is-${p.checkedInCount === 0 && p.rsvpStatus !== 'confirmed' ? p.rsvpStatus : p.checkInStatus}`}>{p.checkInStatus === 'checked_in' ? t('gtPillIn') : p.checkInStatus === 'partial' ? t('gtPillPartial', { n: p.checkedInCount }) : t(p.rsvpStatus === 'declined' ? 'gtPillDeclined' : p.rsvpStatus === 'pending' ? 'gtPillPending' : 'gtPillNotYet')}</span>
                       </button>
@@ -117,7 +118,7 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
           // the mutation's party is fresh; the list catches up a moment later — show whichever is newer
           const listed = parties.find((x) => x.id === view.party.id);
           const party = listed && listed.updatedAt > view.party.updatedAt ? listed : view.party;
-          return <DoneCard seatingEnabled={seatingEnabled} record={view.record} party={party} table={tableName(party.tableId)} onNext={() => back()} onUndone={() => back(t('gtUndone', { name: party.primaryGuestName, people: people(view.record.count) }))} />;
+          return <DoneCard seatingEnabled={seatingEnabled} record={view.record} party={party} table={tableName(party.tableId)} onNext={() => back()} onUndone={() => back(t('gtUndone', { name: party.primaryGuestName, people: n(view.record.count, 'person') }))} />;
         })()}
 
         {view.kind === 'walk-in' && <WalkIn eventId={event.id} initialName={view.name} onBack={() => back()} onDone={(name) => back(t('gtWalkedIn', { name }))} />}
@@ -157,47 +158,48 @@ function PartyCheckIn({ party, method, table, onBack, onDone, seatingEnabled }: 
   const save = useMutation((s) => s.checkIn.checkIn(party.id, count, { method, by: 'الاستقبال', exceptions: a.exceptions, staffNote: note.trim() || undefined }), {
     onSuccess: (r) => onDone(r.record, r.party),
   });
+  const { t, n } = useCopy();
   const confirmedSize = party.rsvpStatus === 'confirmed' ? expectedArrivals(party) : 0;
   const total = party.checkedInCount + count;
-  const label = needsDecision ? `سجّل دخول ${peopleOf(count)} رغم ذلك` : total < a.expected ? `دخول جزئي: ${people(count)} الآن` : `تسجيل دخول ${peopleOf(count)}`;
+  const label = needsDecision ? t('gtForce', { people: n(count, 'person', true) }) : total < a.expected ? t('gtPartialIn', { people: n(count, 'person') }) : t('gtCheckIn', { people: n(count, 'person', true) });
 
   return (
     <div className="gate-card">
-      <button type="button" className="gate-back" onClick={onBack}><Icon name="back" size="sm" />رجوع للبحث</button>
+      <button type="button" className="gate-back" onClick={onBack}><Icon name="back" size="sm" />{t('gtBack')}</button>
       <h2 className="gate-name">{party.primaryGuestName}</h2>
       <div className="gate-facts">
         <div>{party.rsvpStatus === 'confirmed'
-          ? <><span className="gate-k">أكدوا</span><span className="gate-v num">{confirmedSize}</span></>
-          : <><span className="gate-k">الرد</span><span className="gate-v">{party.rsvpStatus === 'declined' ? 'اعتذروا' : 'لم يردوا'}</span></>}</div>
-        <div><span className="gate-k">وصل</span><span className="gate-v num">{party.checkedInCount}</span></div>
-        <div><span className="gate-k">{seatingEnabled?'الطاولة':'الدعوة'}</span><span className="gate-v">{seatingEnabled?table??'—':'دون توزيع مقاعد'}</span></div>
+          ? <><span className="gate-k">{t('gtConfirmedK')}</span><span className="gate-v num">{confirmedSize}</span></>
+          : <><span className="gate-k">{t('gtReplyK')}</span><span className="gate-v">{party.rsvpStatus === 'declined' ? t('gtPillDeclined') : t('gtNoReplyShort')}</span></>}</div>
+        <div><span className="gate-k">{t('gtArrivedK')}</span><span className="gate-v num">{party.checkedInCount}</span></div>
+        <div><span className="gate-k">{seatingEnabled?t('gtTableK'):t('gtInvitationK')}</span><span className="gate-v">{seatingEnabled?table??'—':t('gtNoSeating')}</span></div>
       </div>
       {party.notes && <p className="gate-notes"><Icon name="info" size="sm" />{party.notes}</p>}
 
       {a.exceptions.map((e) => (
         <div key={e} className={`gate-ex${BLOCKING.has(e) ? ' is-blocking' : ''}`} role={BLOCKING.has(e) ? 'alert' : 'status'}>
           <Icon name="alert" size="sm" />
-          <div><p className="t-bold">{EXCEPTION_TEXT[e].title}</p><p className="t-sm">{EXCEPTION_TEXT[e].body}</p></div>
+          <div><p className="t-bold">{t(EXCEPTION_KEY[e].title)}</p><p className="t-sm">{t(EXCEPTION_KEY[e].body)}</p></div>
         </div>
       ))}
 
       <div className="gate-count">
-        <Stepper label="كم شخصًا يدخل الآن؟" value={count} min={1} max={20} onChange={(n) => { setCount(n); setConfirmed(false); }} />
-        {a.remaining > 0 && count < a.remaining && <p className="gate-hint">الباقون يصلون لاحقًا: {people(a.remaining - count)}</p>}
+        <Stepper label={t('gtHowMany')} value={count} min={1} max={20} onChange={(v) => { setCount(v); setConfirmed(false); }} />
+        {a.remaining > 0 && count < a.remaining && <p className="gate-hint">{t('gtLater', { people: n(a.remaining - count, 'person') })}</p>}
       </div>
 
       {needsDecision && (
         <div className="gate-decision">
-          <Checkbox checked={confirmed} onChange={setConfirmed} label="تأكدت من المنظم أو من صاحب الدعوة" />
-          <label className="gate-label" htmlFor="gate-note">ملاحظة للمنظم (اختياري)</label>
-          <Textarea id="gate-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="مثال: قالوا إن ظروفهم تغيرت" />
+          <Checkbox checked={confirmed} onChange={setConfirmed} label={t('gtChecked')} />
+          <label className="gate-label" htmlFor="gate-note">{t('gtNote')}</label>
+          <Textarea id="gate-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('gtNotePh')} />
         </div>
       )}
       {save.error ? <p className="gate-error" role="alert">{errorMessage(save.error)}</p> : null}
       {/* stays at the bottom of the screen while the card scrolls, so the decision is always one tap away */}
       <div className="gate-actions is-dock">
         <Button variant={needsDecision ? 'danger' : 'primary'} size="lg" block disabled={needsDecision && !confirmed} loading={save.pending} onClick={() => void save.run()}>{label}</Button>
-        {!needsDecision && a.remaining > 1 && count !== a.remaining && <Button size="lg" block onClick={() => setCount(a.remaining)}>الكل ({people(a.remaining)})</Button>}
+        {!needsDecision && a.remaining > 1 && count !== a.remaining && <Button size="lg" block onClick={() => setCount(a.remaining)}>{t('gtAll', { people: n(a.remaining, 'person') })}</Button>}
       </div>
     </div>
   );
@@ -205,7 +207,7 @@ function PartyCheckIn({ party, method, table, onBack, onDone, seatingEnabled }: 
 
 function DoneCard({ record, party, table, onNext, onUndone, seatingEnabled }: { seatingEnabled: boolean; record: CheckInRecord; party: InvitationParty; table?: string; onNext: () => void; onUndone: () => void }) {
   const undo = useMutation((s) => s.checkIn.undo(record.id), { onSuccess: onUndone });
-  const { t } = useCopy();
+  const { t, n } = useCopy();
   const expected = expectedArrivals(party);
   const partial = party.checkedInCount < expected;
   return (
@@ -213,8 +215,8 @@ function DoneCard({ record, party, table, onNext, onUndone, seatingEnabled }: { 
       {record.exceptions.some((e) => BLOCKING.has(e))
         ? <span className="gate-done-mark" aria-hidden="true"><Icon name="check" size="lg" /></span>
         : <Lottie name="success" size={96} className="gate-done-seal" />}
-      <h2 className="gate-h">{partial ? t('gtEntered', { people: people(record.count) }) : t('gtWelcome')}</h2>
-      <p className="gate-done-line">{party.primaryGuestName} · {expected > 0 ? <>وصل <strong className="num">{party.checkedInCount}</strong> من <span className="num">{expected}</span>{partial ? ' — الباقون لاحقًا' : ''}</> : <>دخل <strong className="num">{party.checkedInCount}</strong> باستثناء</>}</p>
+      <h2 className="gate-h">{partial ? t('gtEntered', { people: n(record.count, 'person') }) : t('gtWelcome')}</h2>
+      <p className="gate-done-line">{party.primaryGuestName} · {expected > 0 ? <>{t('gtDoneArrived')} <strong className="num">{party.checkedInCount}</strong> {t('gtDoneOf')} <span className="num">{expected}</span>{partial ? t('gtDoneLater') : ''}</> : <>{t('gtDoneIn')} <strong className="num">{party.checkedInCount}</strong> {t('gtDoneExcept')}</>}</p>
       {table && <p className="gate-table"><Icon name="table" />{table}</p>}
       {seatingEnabled && !table && party.rsvpStatus === 'confirmed' && <p className="gate-hint">{t('gtNoTable')}</p>}
       {undo.error ? <p className="gate-error">{errorMessage(undo.error)}</p> : null}
@@ -233,21 +235,22 @@ function WalkIn({ eventId, initialName, onBack, onDone }: { eventId: string; ini
   const [note, setNote] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const save = useMutation((s) => s.checkIn.recordWalkIn(eventId, { name, count, note: note.trim() || undefined }), { onSuccess: () => onDone(name.trim()) });
+  const { t, n } = useCopy();
   return (
     <div className="gate-card">
-      <button type="button" className="gate-back" onClick={onBack}><Icon name="back" size="sm" />رجوع للبحث</button>
-      <h2 className="gate-h">ضيف من خارج القائمة</h2>
-      <div className="gate-ex is-blocking" role="note"><Icon name="alert" size="sm" /><div><p className="t-bold">لا توجد له دعوة</p><p className="t-sm">لا تسمح بالدخول قبل التأكد من المنظم. لن نضيفه إلى قائمة الضيوف — تصل ملاحظتك للمنظم فقط.</p></div></div>
-      <div><label className="gate-label" htmlFor="gate-walk-name">الاسم كما قاله الضيف</label><Input id="gate-walk-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" /></div>
-      <div className="gate-count"><Stepper label="كم شخصًا؟" value={count} min={1} max={20} onChange={setCount} /></div>
+      <button type="button" className="gate-back" onClick={onBack}><Icon name="back" size="sm" />{t('gtBack')}</button>
+      <h2 className="gate-h">{t('gtWalkTitle')}</h2>
+      <div className="gate-ex is-blocking" role="note"><Icon name="alert" size="sm" /><div><p className="t-bold">{t('gtNoInvite')}</p><p className="t-sm">{t('gtNoInviteText')}</p></div></div>
+      <div><label className="gate-label" htmlFor="gate-walk-name">{t('gtSaidName')}</label><Input id="gate-walk-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" /></div>
+      <div className="gate-count"><Stepper label={t('gtHowManyShort')} value={count} min={1} max={20} onChange={setCount} /></div>
       <div className="gate-decision">
-        <Checkbox checked={confirmed} onChange={setConfirmed} label="تأكدت من المنظم أو من صاحب الدعوة" />
-        <label className="gate-label" htmlFor="gate-walk-note">ملاحظة للمنظم (اختياري)</label>
-        <Textarea id="gate-walk-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="مثال: من طرف العريس، اسمه سقط من القائمة" />
+        <Checkbox checked={confirmed} onChange={setConfirmed} label={t('gtChecked')} />
+        <label className="gate-label" htmlFor="gate-walk-note">{t('gtNote')}</label>
+        <Textarea id="gate-walk-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('gtWalkPh')} />
       </div>
       {save.error ? <p className="gate-error" role="alert">{errorMessage(save.error)}</p> : null}
       <div className="gate-actions is-dock">
-        <Button variant="danger" size="lg" block disabled={!confirmed || !name.trim()} loading={save.pending} onClick={() => void save.run()}>سجّل دخول {peopleOf(count)}</Button>
+        <Button variant="danger" size="lg" block disabled={!confirmed || !name.trim()} loading={save.pending} onClick={() => void save.run()}>{t('gtCheckIn', { people: n(count, 'person', true) })}</Button>
       </div>
     </div>
   );
@@ -260,18 +263,18 @@ function ScanSimulator({ parties, onClose, onScan, eventSlug }: { parties: Invit
   const { t } = useCopy();
   const pick = (f: (p: InvitationParty) => boolean) => parties.find(f);
   const samples = [
-    { label: 'دعوة مؤكدة لم تصل', p: pick((p) => p.rsvpStatus === 'confirmed' && p.checkedInCount === 0 && !!p.tableId) },
-    { label: 'دعوة وصل جزء منها', p: pick((p) => p.checkInStatus === 'partial') ?? pick((p) => p.rsvpStatus === 'confirmed' && p.confirmedPartySize! > 2 && p.checkedInCount === 0) },
-    { label: 'رمز استُخدم بالكامل', p: pick((p) => p.checkInStatus === 'checked_in') },
-    { label: 'ضيف معتذر', p: pick((p) => p.rsvpStatus === 'declined' && p.checkedInCount === 0) },
-    { label: 'ضيف لم يرد', p: pick((p) => p.rsvpStatus === 'pending') },
-    { label: 'مؤكد بلا طاولة', p: pick((p) => p.rsvpStatus === 'confirmed' && !p.tableId && p.checkedInCount === 0) },
+    { label: t('gtCase1'), p: pick((p) => p.rsvpStatus === 'confirmed' && p.checkedInCount === 0 && !!p.tableId) },
+    { label: t('gtCase2'), p: pick((p) => p.checkInStatus === 'partial') ?? pick((p) => p.rsvpStatus === 'confirmed' && p.confirmedPartySize! > 2 && p.checkedInCount === 0) },
+    { label: t('gtCase3'), p: pick((p) => p.checkInStatus === 'checked_in') },
+    { label: t('gtCase4'), p: pick((p) => p.rsvpStatus === 'declined' && p.checkedInCount === 0) },
+    { label: t('gtCase5'), p: pick((p) => p.rsvpStatus === 'pending') },
+    { label: t('gtCase6'), p: pick((p) => p.rsvpStatus === 'confirmed' && !p.tableId && p.checkedInCount === 0) },
   ].filter((s) => s.p);
   return (
     <Dialog open onClose={onClose} title={t('gtScanTitle')} description={t('gtScanHint')}>
       <div className="scan-frame" aria-hidden="true"><span /><Icon name="qr" size="lg" /></div>
       <form className="row gap-2" onSubmit={(e) => { e.preventDefault(); if (value.trim()) onScan(value); }}>
-        <Input ltr value={value} onChange={(e) => setValue(e.target.value)} placeholder="رمز من 5 أحرف أو رابط الدعوة" aria-label="الرمز أو الرابط" data-autofocus />
+        <Input ltr value={value} onChange={(e) => setValue(e.target.value)} placeholder={t('gtCodePh')} aria-label={t('gtCodeLabel')} data-autofocus />
         <Button type="submit" variant="primary" disabled={!value.trim()}>{t('gtVerify')}</Button>
       </form>
       <div className="stack gap-2">

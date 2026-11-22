@@ -113,8 +113,8 @@ export function RsvpPage({ event }: { event: Event }) {
                               <span className="row-sub">
                                 <Badge tone={INVITATION_STATUS[inv].tone}>{INVITATION_STATUS[inv].label}</Badge>
                                 <span>{t('rpAllowed', { people: people(p.maxPartySize) })}</span>
-                                {p.delivery.openedAt && <span>{t('rpOpenedAt', { when: relativeTime(p.delivery.openedAt, now) })}</span>}
-                                {p.delivery.reminderAt && <span>{t('rpRemindedAt', { when: relativeTime(p.delivery.reminderAt, now) })}</span>}
+                                {p.delivery.openedAt && <span>{t('rpOpenedAt', { when: relativeTime(p.delivery.openedAt, now, dialect) })}</span>}
+                                {p.delivery.reminderAt && <span>{t('rpRemindedAt', { when: relativeTime(p.delivery.reminderAt, now, dialect) })}</span>}
                               </span>
                             </span>
                             <span className="row gap-2 row-actions">
@@ -145,7 +145,7 @@ export function RsvpPage({ event }: { event: Event }) {
                         {r.note && <span className="row-note">«{r.note}»</span>}
                       </span>
                     </span>
-                    <time className="faint t-xs" dateTime={r.at}>{relativeTime(r.at, now)}</time>
+                    <time className="faint t-xs" dateTime={r.at}>{relativeTime(r.at, now, dialect)}</time>
                   </li>
                 ))}
               </ul>
@@ -162,7 +162,7 @@ export function RsvpPage({ event }: { event: Event }) {
                     <div className="unmatched">
                       <div className="grow stack gap-1">
                         <p className="t-bold">{r.name}</p>
-                        <p className="t-sm muted">{r.attending ? t('rpWillCome', { people: people(r.count) }) : t('rpDeclinedOne')} · {relativeTime(r.at, now)}</p>
+                        <p className="t-sm muted">{r.attending ? t('rpWillCome', { people: people(r.count) }) : t('rpDeclinedOne')} · {relativeTime(r.at, now, dialect)}</p>
                         {r.note && <p className="t-sm row-note">«{r.note}»</p>}
                       </div>
                       <div className="row wrap gap-2">

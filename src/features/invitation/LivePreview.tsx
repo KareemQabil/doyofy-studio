@@ -6,11 +6,12 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { InvitationDesignContent } from '../../domain/types';
+import { useCopy } from '../../ui/copy';
 import { loadEngine } from './engine';
 import { Button } from '../../ui';
 import type { Studio } from '../../studio/Studio.js';
 
-export function LivePreview({ invitation, content, start, replayToken = 0, muted = true, className = '', label = 'معاينة حية للدعوة' }: {
+export function LivePreview({ invitation, content, start, replayToken = 0, muted = true, className = '', label }: {
   invitation: unknown;
   content: Pick<InvitationDesignContent, 'cardId' | 'sceneId' | 'experience'>;
   start?: 'intro' | 'card';
@@ -20,6 +21,7 @@ export function LivePreview({ invitation, content, start, replayToken = 0, muted
   className?: string;
   label?: string;
 }) {
+  const { t } = useCopy();
   const host = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<'loading'|'ready'|'error'>('loading');
   const [retry, setRetry] = useState(0);
@@ -57,5 +59,5 @@ export function LivePreview({ invitation, content, start, replayToken = 0, muted
   }, [invKey]);
   useEffect(() => { if (replayToken) studio.current?.replay(); }, [replayToken]);
 
-  return <div className={`live-preview ${className}`} role="region" aria-label={label}><div ref={host} />{state !== 'ready' && <div className="live-preview-status" role="status">{state === 'loading' ? 'تجهيز المعاينة…' : <><span>تعذّر فتح المعاينة.</span><Button size="sm" onClick={()=>setRetry(n=>n+1)}>أعد المحاولة</Button></>}</div>}</div>;
+  return <div className={`live-preview ${className}`} role="region" aria-label={label ?? t('shLiveLabel')}><div ref={host} />{state !== 'ready' && <div className="live-preview-status" role="status">{state === 'loading' ? t('shPreparingDots') : <><span>{t('shPreviewFailed')}</span><Button size="sm" onClick={()=>setRetry(n=>n+1)}>{t('retry')}</Button></>}</div>}</div>;
 }

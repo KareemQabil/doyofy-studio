@@ -1,7 +1,7 @@
 /** The replies page: who is pending, recent replies, and general-link replies to match. */
-import { partly } from './group';
+import { voiced } from './group';
 
-export const REPLIES = partly({
+export const REPLIES = voiced({
   gvLabel: 'عرض الضيوف', gvReplies: 'الردود والمتابعة',
   rpFromLink: 'من رابطه الشخصي', rpFromGeneral: 'من الرابط العام', rpByYou: 'سجّلتَه يدويًا', rpAdded: 'أضفنا {name} إلى القائمة بحالة «أكد الحضور»', rpDismissed: 'تجاهلنا الرد',
   rpOpened: 'فتحوا الدعوة ولم يردوا', rpOpenedHint: 'الأكثر احتمالًا للرد بعد تذكير لطيف', rpShared: 'أُرسلت ولم تُفتح بعد', rpSharedHint: 'ربما لم تصلهم الرسالة، فتأكد من الرقم', rpUnsent: 'لم تُرسل لهم الدعوة', rpUnsentHint: 'أرسلها أولًا من صفحة الضيوف',
@@ -14,15 +14,27 @@ export const REPLIES = partly({
   rpMatch: 'طابق مع ضيف', rpAddNew: 'أضفه كضيف جديد', rpDismiss: 'تجاهل', rpMatched: 'طابقنا رد {name}', rpMatchTitle: 'مطابقة رد «{name}»', rpMatchSub: '{reply} — اختر دعوته من القائمة',
   rpSearch: 'ابحث في الضيوف الذين لم يردوا', rpNoCandidate: 'لا يوجد ضيف بانتظار الرد يطابق البحث. يمكنك إضافته كضيف جديد.', rpOver: 'العدد أكبر من المسموح',
 }, {
-  gvReplies: 'الردود والمتابعة',
-  rpByYou: 'إنت سجّلته', rpAdded: 'ضفنا {name} للقايمة على إنه «أكّد حضوره»', rpDismissed: 'تجاهلنا الرد',
+  gvLabel: 'عرض الضيوف', gvReplies: 'الردود والمتابعة',
+  rpFromLink: 'من لينكه الخاص', rpFromGeneral: 'من اللينك العام', rpByYou: 'إنت سجّلته', rpAdded: 'ضفنا {name} للقايمة على إنه «أكّد حضوره»', rpDismissed: 'تجاهلنا الرد',
   rpOpened: 'فتحوا الدعوة ولسه ما ردّوش', rpOpenedHint: 'غالبًا هيردوا بعد تذكير لطيف', rpShared: 'اتبعتت ولسه ما اتفتحتش', rpSharedHint: 'يمكن الرسالة ما وصلتش، اتأكد من الرقم', rpUnsent: 'الدعوة لسه ما اتبعتتلهمش', rpUnsentHint: 'ابعتها الأول من صفحة الضيوف',
-  rpNone: 'لسه مفيش دعوات', rpNoReplies: 'لسه مفيش ردود', rpAddGuests: 'زوّد الضيوف', rpComing: 'جايين', rpPending: 'مستنيين ردهم', rpRecent: 'آخر الردود',
-  rpAllReplied: 'الكل ردّ', rpNobodyPending: 'مفيش حد مستني رد.', rpRemindThem: 'فكّرهم بالرد', rpRemind: 'فكّره', rpRecord: 'سجّل الرد', rpWillCome: 'جاي · {people}',
-  rpMatch: 'طابقه مع ضيف', rpAddNew: 'زوّده كضيف جديد', rpDismiss: 'تجاهله', rpMatched: 'طابقنا رد {name}', rpSearch: 'دوّر في الضيوف اللي لسه ما ردّوش',
+  rpSub: 'ردّت {n} من {all}', rpToMatch: '{n} من اللينك العام محتاجة مطابقة', rpNone: 'لسه مفيش دعوات', rpNoReplies: 'لسه مفيش ردود', rpAddGuests: 'زوّد الضيوف', rpNoRepliesHint: 'الردود هتظهر هنا لما الضيوف يردوا من لينكاتهم.',
+  rpComing: 'جايين', rpComingSub: 'شخص · من {n}', rpDeclined: 'اعتذروا', rpInvitations: 'دعوات', rpPending: 'مستنيين ردهم', rpRate: 'نسبة الرد', rpRateLine: 'نسبة الرد {pct}٪ · أقصى عدد لو الكل جه {people}',
+  rpShow: 'شوف', rpRecent: 'آخر الردود', rpNeedMatch: 'محتاجة مطابقة', rpAllReplied: 'الكل ردّ', rpNobodyPending: 'مفيش حد مستني رد.', rpCanRemind: '{n} ممكن تفكّرهم', rpRemindThem: 'فكّرهم بالرد',
+  rpRemindHow: 'هنفتحلك رسالة التذكير لكل ضيف على واتساب أو رسالة نصية، وتدوس «بعتّها» بعد ما تبعتها.', rpAllowed: '{people} مسموح', rpOpenedAt: 'فتحها {when}', rpRemindedAt: 'فكّرته {when}',
+  rpRemindName: 'فكّر {name} بالرد', rpRemind: 'فكّره', rpRecord: 'سجّل الرد', rpWillCome: 'جاي · {people}', rpDeclinedOne: 'اعتذر',
+  rpNoMatch: 'مفيش ردود محتاجة مطابقة', rpNoMatchHint: 'ردود اللينك العام بتظهر هنا عشان تربطها بضيف في القايمة.', rpMatchIntro: 'دي ردود جت من اللينك العام من غير اسم محدد. اربط كل رد بدعوة في القايمة، أو ضيفه كضيف جديد.',
+  rpMatch: 'طابقه مع ضيف', rpAddNew: 'زوّده كضيف جديد', rpDismiss: 'تجاهله', rpMatched: 'طابقنا رد {name}', rpMatchTitle: 'مطابقة رد «{name}»', rpMatchSub: '{reply} — اختار دعوته من القايمة',
+  rpSearch: 'دوّر في الضيوف اللي لسه ما ردّوش', rpNoCandidate: 'مفيش ضيف مستني رد بالاسم ده. تقدر تضيفه كضيف جديد.', rpOver: 'العدد أكبر من المسموح',
 }, {
-  rpByYou: 'أنت سجّلته', rpAdded: 'أضفنا {name} للقائمة على إنه «أكّد حضوره»',
+  gvLabel: 'عرض الضيوف', gvReplies: 'الردود والمتابعة',
+  rpFromLink: 'من رابطه الخاص', rpFromGeneral: 'من الرابط العام', rpByYou: 'أنت سجّلته', rpAdded: 'أضفنا {name} للقائمة على إنه «أكّد حضوره»', rpDismissed: 'تجاهلنا الرد',
   rpOpened: 'فتحوا الدعوة وما ردّوا', rpOpenedHint: 'غالبًا بيردون بعد تذكير لطيف', rpShared: 'انرسلت وما انفتحت للحين', rpSharedHint: 'يمكن ما وصلتهم الرسالة، تأكد من الرقم', rpUnsent: 'ما انرسلت لهم الدعوة', rpUnsentHint: 'أرسلها أول من صفحة الضيوف',
-  rpNone: 'ما فيه دعوات للحين', rpNoReplies: 'ما فيه ردود للحين', rpComing: 'بيحضرون', rpPending: 'ما ردّوا', rpAllReplied: 'الكل ردّ', rpNobodyPending: 'ما أحد ينتظر رد.',
-  rpRemindThem: 'ذكّرهم بالرد', rpRemind: 'ذكّره', rpWillCome: 'بيحضر · {people}', rpMatch: 'طابقه مع ضيف', rpAddNew: 'أضفه ضيف جديد', rpSearch: 'دوّر في الضيوف اللي ما ردّوا',
+  rpSub: 'ردّت {n} من {all}', rpToMatch: '{n} من الرابط العام تحتاج مطابقة', rpNone: 'ما فيه دعوات للحين', rpNoReplies: 'ما فيه ردود للحين', rpAddGuests: 'أضف الضيوف', rpNoRepliesHint: 'الردود تطلع هنا لما يرد الضيوف من روابطهم.',
+  rpComing: 'بيحضرون', rpComingSub: 'شخص · من {n}', rpDeclined: 'اعتذروا', rpInvitations: 'دعوات', rpPending: 'ما ردّوا', rpRate: 'نسبة الرد', rpRateLine: 'نسبة الرد {pct}٪ · أقصى عدد لو حضر الكل {people}',
+  rpShow: 'اعرض', rpRecent: 'آخر الردود', rpNeedMatch: 'تحتاج مطابقة', rpAllReplied: 'الكل ردّ', rpNobodyPending: 'ما أحد ينتظر رد.', rpCanRemind: '{n} تقدر تذكّرهم', rpRemindThem: 'ذكّرهم بالرد',
+  rpRemindHow: 'نفتح لك رسالة التذكير لكل ضيف في واتساب أو رسالة نصية، وتضغط «أرسلتها» بعد ما ترسلها.', rpAllowed: '{people} مسموح', rpOpenedAt: 'فتحها {when}', rpRemindedAt: 'ذكّرته {when}',
+  rpRemindName: 'ذكّر {name} بالرد', rpRemind: 'ذكّره', rpRecord: 'سجّل الرد', rpWillCome: 'بيحضر · {people}', rpDeclinedOne: 'اعتذر',
+  rpNoMatch: 'ما فيه ردود تحتاج مطابقة', rpNoMatchHint: 'ردود الرابط العام تطلع هنا عشان تربطها بضيف في القائمة.', rpMatchIntro: 'هذي ردود جت من الرابط العام بدون اسم محدد. اربط كل رد بدعوة في القائمة، أو أضفه ضيف جديد.',
+  rpMatch: 'طابقه مع ضيف', rpAddNew: 'أضفه ضيف جديد', rpDismiss: 'تجاهل', rpMatched: 'طابقنا رد {name}', rpMatchTitle: 'مطابقة رد «{name}»', rpMatchSub: '{reply} — اختر دعوته من القائمة',
+  rpSearch: 'دوّر في الضيوف اللي ما ردّوا', rpNoCandidate: 'ما فيه ضيف ينتظر رد بهالاسم. تقدر تضيفه ضيف جديد.', rpOver: 'العدد أكثر من المسموح',
 });

@@ -10,6 +10,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Event, EventType, InvitationDesignContent } from '../../domain/types';
 import { OCCASIONS_ORDERED, eventPhase, eventTypeInfo, PHASE_LABEL, todayFor } from '../../domain/event';
+import { PHASE_KEY } from '../../domain/copy/activity';
 import { countdownLabel, formatEventDate, formatTime } from '../../domain/format';
 import { defaultDesign, publishState } from '../../domain/invitation';
 import { applyPreset, presetsFor } from '../../domain/templates';
@@ -130,7 +131,7 @@ function HeroFan({ looks }: { looks: Look[] }) {
 }
 
 function Hero({ featured, loading }: { featured?: Event; loading: boolean }) {
-  const { t, copy } = useCopy();
+  const { t, copy, dialect } = useCopy();
   const now = useNow(60000);
   const design = useDesign(featured?.id ?? '');
   const looks = useLooks(featured, design.data?.draft);
@@ -146,7 +147,7 @@ function Hero({ featured, loading }: { featured?: Event; loading: boolean }) {
           <p className="sig-hero-sub">{t('homeSub')}</p>
           {loading ? <Skeleton lines={2} /> : featured && step ? (
             <div className="sig-hero-next">
-              <p className="sig-hero-next-label"><span>{t('homeNextLabel')}</span><Status tone={PHASE_LABEL[phase].tone}>{countdownLabel(featured.date, todayFor(featured, now))}</Status></p>
+              <p className="sig-hero-next-label"><span>{t('homeNextLabel')}</span><Status tone={PHASE_LABEL[phase].tone}>{countdownLabel(featured.date, todayFor(featured, now), dialect)}</Status></p>
               <p className="sig-hero-next-title">{featured.title}</p>
               <div className="sig-hero-actions">
                 <LinkButton to={step.to} variant="primary" size="lg" iconEnd="forward">{step.label}</LinkButton>
@@ -172,7 +173,7 @@ function Hero({ featured, loading }: { featured?: Event; loading: boolean }) {
 
 /* ------------------------------------------------------------------ white sections (C) */
 function EventTicket({ event }: { event: Event }) {
-  const { copy } = useCopy();
+  const { t, copy, dialect } = useCopy();
   const now = useNow();
   const design = useDesign(event.id);
   const phase = eventPhase(event, now);
@@ -182,7 +183,7 @@ function EventTicket({ event }: { event: Event }) {
     <article className={`sig-ticket${past ? ' is-past' : ''}`}>
       <span className={`sig-ticket-art tone-${toneOf(event.type)}`} aria-hidden="true">{design.data ? <CardThumb event={event} content={design.data.draft} width={84} /> : <OccasionGlyph type={event.type} />}</span>
       <div className="sig-ticket-body">
-        <p className="sig-ticket-kind"><span>{eventTypeInfo(event.type).label}</span><Status tone={PHASE_LABEL[phase].tone}>{past ? PHASE_LABEL[phase].label : countdownLabel(event.date, todayFor(event, now))}</Status></p>
+        <p className="sig-ticket-kind"><span>{eventTypeInfo(event.type).label}</span><Status tone={PHASE_LABEL[phase].tone}>{past ? t(PHASE_KEY[phase]) : countdownLabel(event.date, todayFor(event, now), dialect)}</Status></p>
         <h3><Link to={paths.overview(event.id)}>{event.title}</Link></h3>
         <p className="sig-ticket-meta"><Icon name="calendar" size="sm" />{formatEventDate(event.date)} · <bdi className="num">{formatTime(event.time)}</bdi></p>
         <p className="sig-ticket-meta"><Icon name="pin" size="sm" />{event.venue.name}، {event.venue.city}</p>

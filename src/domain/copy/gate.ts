@@ -1,7 +1,7 @@
 /** The reception screen on the event day (gate mode). Short, calm lines for staff working fast. */
-import { partly } from './group';
+import { voiced } from './group';
 
-export const GATE = partly({
+export const GATE = voiced({
   gtExit: 'خروج من الاستقبال', gtSub: 'مساحة فريق الاستقبال', gtArrived: '/ {n} وصلوا', gtEnded: 'انتهت المناسبة.', gtWhen: 'المناسبة {when}.', gtCounts: 'أي تسجيل الآن يُحتسب، ويمكن التراجع عنه.',
   gtScan: 'مسح رمز QR', gtSearchLabel: 'أو ابحث بالاسم أو الجوال أو الرمز', gtSearchPh: 'مثال: الشهري أو 0551…', gtClear: 'مسح', gtNoGuest: 'لا يوجد ضيف بهذا الاسم',
   gtNoGuestHint: 'جرّب جزءًا من الاسم أو رقم الجوال. إن لم يكن في القائمة، تواصل مع المنظم قبل السماح بالدخول.', gtWalkIn: 'سجّل ضيفًا من خارج القائمة', gtResults: 'نتائج البحث',
@@ -11,13 +11,51 @@ export const GATE = partly({
   gtVerifyFailed: 'تعذّر التحقق من الرمز', gtNothingRecorded: 'لم نسجّل وصولًا. احتفظ بالرمز وحاول مجددًا.', gtRetrySame: 'أعد المحاولة بالرمز نفسه',
   gtWelcome: 'أهلًا وسهلًا', gtEntered: 'دخل {people}', gtNextGuest: 'الضيف التالي', gtUndo: 'تراجع عن التسجيل', gtNoTable: 'لا توجد طاولة — وجّههم لمنسق القاعة.', gtBack: 'رجوع للبحث',
   gtScanTitle: 'مسح رمز QR', gtScanHint: 'الكاميرا تجريبية في هذا النموذج: أدخل الرمز أو اختر حالة تجريبية.', gtVerify: 'تحقق', gtDemoCases: 'حالات تجريبية', gtUnknown: 'رمز غير موجود',
+  // one party at the door
+  gtForce: 'سجّل دخول {people} رغم ذلك', gtPartialIn: 'دخول جزئي: {people} الآن', gtCheckIn: 'تسجيل دخول {people}', gtConfirmedK: 'أكدوا', gtReplyK: 'الرد', gtNoReplyShort: 'لم يردوا',
+  gtArrivedK: 'وصل', gtTableK: 'الطاولة', gtInvitationK: 'الدعوة', gtNoSeating: 'دون توزيع مقاعد', gtHowMany: 'كم شخصًا يدخل الآن؟', gtLater: 'الباقون يصلون لاحقًا: {people}',
+  gtChecked: 'تأكدت من المنظم أو من صاحب الدعوة', gtNote: 'ملاحظة للمنظم (اختياري)', gtNotePh: 'مثال: قالوا إن ظروفهم تغيرت', gtAll: 'الكل ({people})',
+  gtDoneArrived: 'وصل', gtDoneOf: 'من', gtDoneLater: ' — الباقون لاحقًا', gtDoneIn: 'دخل', gtDoneExcept: 'باستثناء',
+  // someone not on the list
+  gtWalkTitle: 'ضيف من خارج القائمة', gtNoInvite: 'لا توجد له دعوة', gtNoInviteText: 'لا تسمح بالدخول قبل التأكد من المنظم. لن نضيفه إلى قائمة الضيوف — تصل ملاحظتك للمنظم فقط.',
+  gtSaidName: 'الاسم كما قاله الضيف', gtHowManyShort: 'كم شخصًا؟', gtWalkPh: 'مثال: من طرف العريس، اسمه سقط من القائمة',
+  // the scan simulator's test cases
+  gtCase1: 'دعوة مؤكدة لم تصل', gtCase2: 'دعوة وصل جزء منها', gtCase3: 'رمز استُخدم بالكامل', gtCase4: 'ضيف معتذر', gtCase5: 'ضيف لم يرد', gtCase6: 'مؤكد بلا طاولة',
+  gtCodePh: 'رمز من 5 أحرف أو رابط الدعوة', gtCodeLabel: 'الرمز أو الرابط',
 }, {
-  gtSub: 'مساحة فريق الاستقبال', gtArrived: '/ {n} وصلوا', gtEnded: 'المناسبة خلصت.', gtCounts: 'أي تسجيل دلوقتي بيتحسب، وتقدر ترجع فيه.',
-  gtScan: 'امسح كود QR', gtSearchLabel: 'أو دوّر بالاسم أو الموبايل أو الكود', gtNoGuest: 'مفيش ضيف بالاسم ده', gtWalkIn: 'سجّل ضيف من برّه القايمة',
-  gtUndone: 'رجعنا في دخول {name} ({people}).', gtUnknownCode: 'ملقيناش الكود ده', gtSearchName: 'دوّر بالاسم', gtScanAgain: 'امسح تاني', gtVerifyFailed: 'ماقدرناش نتأكد من الكود',
-  gtWelcome: 'أهلًا وسهلًا', gtNextGuest: 'الضيف اللي بعده', gtUndo: 'ارجع في التسجيل', gtNoTable: 'مفيش ترابيزة — ودّيهم لمنسّق القاعة.', gtBack: 'ارجع للبحث', gtScanTitle: 'امسح كود QR', gtVerify: 'اتأكد',
+  gtExit: 'اخرج من الاستقبال', gtSub: 'مساحة فريق الاستقبال', gtArrived: '/ {n} وصلوا', gtEnded: 'المناسبة خلصت.', gtWhen: 'المناسبة {when}.', gtCounts: 'أي تسجيل دلوقتي بيتحسب، وتقدر ترجع فيه.',
+  gtScan: 'امسح كود QR', gtSearchLabel: 'أو دوّر بالاسم أو الموبايل أو الكود', gtSearchPh: 'مثلًا: الشهري أو 0100…', gtClear: 'امسح', gtNoGuest: 'مفيش ضيف بالاسم ده',
+  gtNoGuestHint: 'جرّب جزء من الاسم أو رقم الموبايل. لو مش في القايمة، كلّم المنظم قبل ما تدخّله.', gtWalkIn: 'سجّل ضيف من برّه القايمة', gtResults: 'نتايج البحث',
+  gtConfirmedN: 'أكدوا {people}', gtDeclined: 'اعتذروا', gtNoReply: 'ما ردّوش على الدعوة', gtPillIn: 'وصلوا', gtPillPartial: 'وصل {n}', gtPillDeclined: 'اعتذروا', gtPillPending: 'ما ردّوش', gtPillNotYet: 'لسه ما وصلوش',
+  gtUndone: 'رجعنا في دخول {name} ({people}).', gtWalkedIn: 'دخول {name} من برّه القايمة اتسجل، وملاحظتك وصلت للمنظم.',
+  gtUnknownCode: 'ملقيناش الكود ده', gtUnknownCodeText: 'الكود غلط أو الدعوة اتمسحت. ماتدخّلش حد قبل ما تتأكد: دوّر باسم الضيف، أو كلّم المنظم.', gtSearchName: 'دوّر بالاسم', gtScanAgain: 'امسح تاني',
+  gtVerifyFailed: 'ماقدرناش نتأكد من الكود', gtNothingRecorded: 'ما سجّلناش وصول. خلّي الكود معاك وجرّب تاني.', gtRetrySame: 'جرّب تاني بنفس الكود',
+  gtWelcome: 'أهلًا وسهلًا', gtEntered: 'دخل {people}', gtNextGuest: 'الضيف اللي بعده', gtUndo: 'ارجع في التسجيل', gtNoTable: 'مفيش ترابيزة — ودّيهم لمنسّق القاعة.', gtBack: 'ارجع للبحث',
+  gtScanTitle: 'امسح كود QR', gtScanHint: 'الكاميرا تجريبية في النسخة دي: اكتب الكود أو اختار حالة تجريبية.', gtVerify: 'اتأكد', gtDemoCases: 'حالات تجريبية', gtUnknown: 'كود مش موجود',
+  gtForce: 'سجّل دخول {people} برضه', gtPartialIn: 'دخول جزئي: {people} دلوقتي', gtCheckIn: 'سجّل دخول {people}', gtConfirmedK: 'أكدوا', gtReplyK: 'الرد', gtNoReplyShort: 'ما ردّوش',
+  gtArrivedK: 'وصل', gtTableK: 'الترابيزة', gtInvitationK: 'الدعوة', gtNoSeating: 'من غير ترابيزات', gtHowMany: 'كام واحد داخل دلوقتي؟', gtLater: 'الباقي جايين بعدين: {people}',
+  gtChecked: 'اتأكدت من المنظم أو من صاحب الدعوة', gtNote: 'ملاحظة للمنظم (اختياري)', gtNotePh: 'مثلًا: قالوا ظروفهم اتغيرت', gtAll: 'الكل ({people})',
+  gtDoneArrived: 'وصل', gtDoneOf: 'من', gtDoneLater: ' — الباقي جايين بعدين', gtDoneIn: 'دخل', gtDoneExcept: 'باستثناء',
+  gtWalkTitle: 'ضيف من برّه القايمة', gtNoInvite: 'معندوش دعوة', gtNoInviteText: 'ماتدخّلوش قبل ما تتأكد من المنظم. مش هنضيفه لقايمة الضيوف — ملاحظتك هتوصل للمنظم بس.',
+  gtSaidName: 'الاسم زي ما الضيف قاله', gtHowManyShort: 'كام واحد؟', gtWalkPh: 'مثلًا: من طرف العريس، واسمه وقع من القايمة',
+  gtCase1: 'دعوة مأكدة ولسه ما وصلتش', gtCase2: 'دعوة وصل جزء منها', gtCase3: 'كود اتستخدم بالكامل', gtCase4: 'ضيف معتذر', gtCase5: 'ضيف ما ردّش', gtCase6: 'مأكد ومن غير ترابيزة',
+  gtCodePh: 'كود من 5 حروف أو لينك الدعوة', gtCodeLabel: 'الكود أو اللينك',
 }, {
-  gtEnded: 'انتهت المناسبة.', gtCounts: 'أي تسجيل الحين ينحسب، وتقدر تتراجع عنه.', gtSearchLabel: 'أو دوّر بالاسم أو الجوال أو الرمز', gtNoGuest: 'ما فيه ضيف بهالاسم', gtWalkIn: 'سجّل ضيف من برّا القائمة',
-  gtUnknownCode: 'ما لقينا هالرمز', gtSearchName: 'دوّر بالاسم', gtScanAgain: 'امسح مرة ثانية', gtVerifyFailed: 'ما قدرنا نتأكد من الرمز', gtWelcome: 'حيّاكم الله',
-  gtNextGuest: 'الضيف اللي بعده', gtNoTable: 'ما فيه طاولة — وجّههم لمنسّق القاعة.', gtBack: 'ارجع للبحث', gtVerify: 'تأكّد',
+  gtExit: 'اطلع من الاستقبال', gtSub: 'مساحة فريق الاستقبال', gtArrived: '/ {n} وصلوا', gtEnded: 'انتهت المناسبة.', gtWhen: 'المناسبة {when}.', gtCounts: 'أي تسجيل الحين ينحسب، وتقدر تتراجع عنه.',
+  gtScan: 'امسح رمز QR', gtSearchLabel: 'أو دوّر بالاسم أو الجوال أو الرمز', gtSearchPh: 'مثلًا: الشهري أو 0551…', gtClear: 'امسح', gtNoGuest: 'ما فيه ضيف بهالاسم',
+  gtNoGuestHint: 'جرّب جزء من الاسم أو رقم الجوال. إذا مو في القائمة، كلّم المنظم قبل لا تدخّله.', gtWalkIn: 'سجّل ضيف من برّا القائمة', gtResults: 'نتائج البحث',
+  gtConfirmedN: 'أكدوا {people}', gtDeclined: 'اعتذروا عن الحضور', gtNoReply: 'ما ردّوا على الدعوة', gtPillIn: 'وصلوا', gtPillPartial: 'وصل {n}', gtPillDeclined: 'اعتذروا', gtPillPending: 'ما ردّوا', gtPillNotYet: 'ما وصلوا',
+  gtUndone: 'تراجعنا عن دخول {name} ({people}).', gtWalkedIn: 'تسجّل دخول {name} من برّا القائمة، ووصلت ملاحظتك للمنظم.',
+  gtUnknownCode: 'ما لقينا هالرمز', gtUnknownCodeText: 'الرمز غلط أو الدعوة انحذفت. لا تدخّل أحد قبل لا تتأكد: دوّر باسم الضيف، أو كلّم المنظم.', gtSearchName: 'دوّر بالاسم', gtScanAgain: 'امسح مرة ثانية',
+  gtVerifyFailed: 'ما قدرنا نتأكد من الرمز', gtNothingRecorded: 'ما سجّلنا وصول. خلّ الرمز معك وجرّب مرة ثانية.', gtRetrySame: 'جرّب مرة ثانية بنفس الرمز',
+  gtWelcome: 'حيّاكم الله', gtEntered: 'دخل {people}', gtNextGuest: 'الضيف اللي بعده', gtUndo: 'تراجع عن التسجيل', gtNoTable: 'ما فيه طاولة — وجّههم لمنسّق القاعة.', gtBack: 'ارجع للبحث',
+  gtScanTitle: 'امسح رمز QR', gtScanHint: 'الكاميرا تجريبية في هالنسخة: اكتب الرمز أو اختر حالة تجريبية.', gtVerify: 'تأكّد', gtDemoCases: 'حالات تجريبية', gtUnknown: 'رمز مو موجود',
+  gtForce: 'سجّل دخول {people} على كل حال', gtPartialIn: 'دخول جزئي: {people} الحين', gtCheckIn: 'سجّل دخول {people}', gtConfirmedK: 'أكدوا', gtReplyK: 'الرد', gtNoReplyShort: 'ما ردّوا',
+  gtArrivedK: 'وصل', gtTableK: 'الطاولة', gtInvitationK: 'الدعوة', gtNoSeating: 'بدون توزيع مقاعد', gtHowMany: 'كم شخص بيدخل الحين؟', gtLater: 'الباقين يوصلون بعدين: {people}',
+  gtChecked: 'تأكدت من المنظم أو من صاحب الدعوة', gtNote: 'ملاحظة للمنظم (اختياري)', gtNotePh: 'مثلًا: قالوا ظروفهم تغيّرت', gtAll: 'الكل ({people})',
+  gtDoneArrived: 'وصل', gtDoneOf: 'من', gtDoneLater: ' — الباقين بعدين', gtDoneIn: 'دخل', gtDoneExcept: 'باستثناء',
+  gtWalkTitle: 'ضيف من برّا القائمة', gtNoInvite: 'ما عنده دعوة', gtNoInviteText: 'لا تدخّله قبل لا تتأكد من المنظم. ما راح نضيفه لقائمة الضيوف — ملاحظتك توصل للمنظم بس.',
+  gtSaidName: 'الاسم مثل ما قاله الضيف', gtHowManyShort: 'كم شخص؟', gtWalkPh: 'مثلًا: من طرف المعرس، واسمه طاح من القائمة',
+  gtCase1: 'دعوة مؤكدة ما وصلت', gtCase2: 'دعوة وصل بعضها', gtCase3: 'رمز انستخدم بالكامل', gtCase4: 'ضيف معتذر', gtCase5: 'ضيف ما ردّ', gtCase6: 'مؤكد بدون طاولة',
+  gtCodePh: 'رمز من 5 حروف أو رابط الدعوة', gtCodeLabel: 'الرمز أو الرابط',
 });

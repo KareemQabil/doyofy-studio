@@ -14,6 +14,15 @@ import { SETTINGS } from './copy/settings';
 import { REPLIES } from './copy/replies';
 import { BILLING } from './copy/billing';
 import { GATE } from './copy/gate';
+import { IMPORT } from './copy/import';
+import { EXPERIENCE_SETTINGS } from './copy/experience-settings';
+import { AUTH } from './copy/auth';
+import { TIME } from './copy/time';
+import { ACTIVITY } from './copy/activity';
+import { OVERVIEW } from './copy/overview';
+import { EVENT_PAGES } from './copy/event-pages';
+import { FOOD } from './copy/food';
+import { SHARED } from './copy/shared';
 export type Dialect = 'ar' | 'ar-EG' | 'ar-SA';
 export const DIALECTS: Array<{ value: Dialect; label: string }> = [
   { value: 'ar', label: 'العربية المودرن' }, { value: 'ar-EG', label: 'المصري' }, { value: 'ar-SA', label: 'السعودي' },
@@ -92,6 +101,22 @@ const coreEgyptian: Variants<typeof coreModern> = {
   audioIntro: 'ضيف مزيكا من جهازك أو سجّل رسالة ترحيب بصوتك، وبعدين اختارها من «الحركة والصوت» في المحرر.', audioDeviceOnly: 'المزيكا والرسايل اللي بتضيفها بتشتغل على الجهاز ده بس لحد ما نربط السيرفر؛ ضيوفك على أجهزة تانية هيسمعوا الصوت الأساسي.',
   audioUpload: 'ارفع مزيكا', audioTrimTitle: 'المزيكا تبدأ منين؟', audioPreviewPlay: 'اسمع من البداية اللي اخترتها', audioPreviewStop: 'وقّف', audioEditStart: 'غيّر البداية', audioMakeDefault: 'خليه الافتراضي', audioDelete: 'امسح المقطع',
   audioRecord: 'سجّل دلوقتي', audioRecordStop: 'وقّف التسجيل', audioRerecord: 'سجّل تاني', audioSaveVoice: 'احفظ الرسالة', audioChoiceNone: 'من غير صوت', audioChoiceMine: 'المزيكا بتاعتي', audioRecordInAccount: 'سجّل رسالة من حسابي',
+  // r4-copy2: the rest of the sound library and the editor's sound choice
+  audioTitle: 'المزيكا والأصوات بتاعتي', audioLimits: 'لحد 5 مقاطع، كل مقطع لحد 8 ميجا. رسالة الترحيب لحد دقيقة.', audioTrackName: 'اسم المقطع', audioTrackNamePh: 'مثلًا: مزيكا فرحنا', audioUploadLabel: 'ارفع ملف صوت', audioReading: 'بنقرا الملف…',
+  audioTrimHint: 'اسحب المؤشر عشان تختار البداية. الوقت ماشي من الشمال لليمين، والجزء المظلّل هو أول 30 ثانية ضيوفك هيسمعوها.', audioTimeline: 'الوقت →', audioStartLabel: 'بداية الموسيقى', audioStartAt: 'تبدأ عند {time}',
+  audioFadeIn: 'دخول هادي', audioFadeInHint: 'الصوت بيعلى بهدوء في أول ثانية ونص.', audioSaveTrack: 'احفظ المقطع', audioSaveStart: 'احفظ البداية',
+  audioSaved: 'المقطع اتحفظ. اختاره من محرر الدعوة.', audioStartSaved: 'البداية اتحفظت.', audioIsDefault: 'الافتراضي للدعوات', audioDefaultSaved: 'المقطع ده بقى الصوت الافتراضي.',
+  audioDeleted: 'المقطع اتمسح. الدعوات اللي كانت مستخدماه هترجع للصوت الأساسي.', audioUseBuiltinDefault: 'خلّي الصوت الأساسي هو الافتراضي', audioBuiltinDefaultSaved: 'الصوت الأساسي بقى هو الافتراضي.',
+  audioPreviewOf: 'اسمع {name}', audioKindVoice: 'رسالة ترحيب', audioKindMusic: 'مزيكا',
+  audioVoiceTitle: 'رسالة ترحيب بصوتك', audioVoiceHint: 'سجّل ترحيب قصير لحد دقيقة. ضيوفك هيسمعوه مرة واحدة لما يفتحوا الدعوة، ويقدروا يعيدوه أو يوقّفوه.', audioMicAsk: 'المتصفح هيطلب إذن الميكروفون.',
+  audioRecording: 'بنسجّل', audioRecordLevel: 'مستوى الصوت', audioRecordOf: '{time} من 1:00', audioVoiceSaved: 'رسالتك اتحفظت. شغّلها من «الحركة والصوت» في المحرر.', audioVoiceDefaultName: 'رسالة ترحيب',
+  audioErrNoRecorder: 'المتصفح ده مش بيسجّل صوت. جرّب أحدث Chrome أو Safari، أو ارفع رسالتك كملف صوت.', audioErrMicDenied: 'الميكروفون مش مسموح. اسمح بيه من إعدادات الموقع في المتصفح وجرّب تاني.', audioErrNoMic: 'ملقيناش ميكروفون على الجهاز ده.', audioErrRecord: 'التسجيل ما نفعش. جرّب تاني.',
+  audioErrType: 'اختار ملف صوت MP3 أو WAV أو OGG أو M4A أو WebM.', audioErrEmpty: 'الملف فاضي. اختار ملف صوت تاني.', audioErrSize: 'المقطع أكبر من 8 ميجا. اختار مقطع أقصر أو مضغوط زي MP3.', audioErrFull: 'المكتبة مليانة (5 مقاطع). امسح مقطع الأول.',
+  audioErrStorage: 'ماقدرناش نحفظ على الجهاز ده. امسح مقطع قديم أو فضّي شوية مساحة في المتصفح.', audioErrDecode: 'الملف ده مش بيشتغل. اختار ملف صوت سليم.', audioErrVoiceLong: 'الرسالة أطول من دقيقة. سجّل رسالة أقصر.', audioErrBytes: 'ملف المقطع ده مش موجود على الجهاز ده.',
+  audioSoundTitle: 'الصوت', audioSoundHint: 'بيبدأ بعد أول لمسة، وضيوفك يقدروا يكتموه.', audioChoiceLabel: 'صوت الدعوة', audioChoiceNoneD: 'لا مزيكا ولا مؤثرات.', audioChoiceBuiltin: 'الصوت الأساسي', audioChoiceBuiltinD: 'مزيكا هادية ومؤثرات التصميم.',
+  audioChoiceMineD: 'مقطع من مكتبتك.', audioChoiceMineEmpty: 'ارفع مزيكا من حسابك الأول.', audioPickTrack: 'المقطع', audioTrackMissing: 'المقطع مش موجود على الجهاز ده · هيشتغل الصوت الأساسي',
+  audioVoiceToggle: 'رسالة ترحيب بالصوت', audioVoiceToggleHint: 'بتتسمع مرة واحدة لما الدعوة تتفتح، والمزيكا بتوطى وقتها.', audioVoicePick: 'الرسالة', audioVoiceMissing: 'الرسالة مش موجودة على الجهاز ده',
+  audioManage: 'المزيكا والأصوات بتاعتي', audioPreviewSound: 'شغّل الصوت في المعاينة', audioPreviewSoundHint: 'هنا بس، عشان تسمعه زي ضيوفك. مش بيغيّر الدعوة.', audioGuestVoice: 'رسالة ترحيب بالصوت',
   // ---- end r4-audio
 };
 const coreSaudi: Variants<typeof coreModern> = {
@@ -116,6 +141,22 @@ const coreSaudi: Variants<typeof coreModern> = {
   audioIntro: 'أضف موسيقى من جهازك أو سجّل رسالة ترحيب بصوتك، وبعدها اخترها من «الحركة والصوت» في المحرر.', audioDeviceOnly: 'الموسيقى والرسايل اللي تضيفها تشتغل على هالجهاز بس لين نربط الخادم؛ ضيوفك على أجهزة ثانية يسمعون الصوت الأساسي.',
   audioUpload: 'ارفع موسيقى', audioTrimTitle: 'من وين تبدأ الموسيقى؟', audioPreviewPlay: 'اسمع من البداية اللي اخترتها', audioPreviewStop: 'وقّف', audioEditStart: 'غيّر البداية', audioMakeDefault: 'خلّه الافتراضي', audioDelete: 'احذف المقطع',
   audioRecord: 'ابدأ التسجيل', audioRecordStop: 'وقّف التسجيل', audioRerecord: 'سجّل مرة ثانية', audioSaveVoice: 'احفظ الرسالة', audioChoiceNone: 'بدون صوت', audioChoiceMine: 'موسيقاي', audioRecordInAccount: 'سجّل رسالة من حسابي',
+  // r4-copy2: the rest of the sound library and the editor's sound choice
+  audioTitle: 'مكتبتي الصوتية', audioLimits: 'لين 5 مقاطع، كل مقطع لين 8 ميجا. رسالة الترحيب لين دقيقة.', audioTrackName: 'اسم المقطع', audioTrackNamePh: 'مثلًا: موسيقى حفلنا', audioUploadLabel: 'ارفع ملف صوتي', audioReading: 'نقرأ الملف…',
+  audioTrimHint: 'اسحب المؤشر عشان تختار البداية. الوقت يمشي من اليسار لليمين، والجزء المظلّل هو أول 30 ثانية يسمعها ضيوفك.', audioTimeline: 'الوقت →', audioStartLabel: 'بداية الموسيقى', audioStartAt: 'تبدأ عند {time}',
+  audioFadeIn: 'دخول هادي', audioFadeInHint: 'يرتفع الصوت بهدوء في أول ثانية ونص.', audioSaveTrack: 'احفظ المقطع', audioSaveStart: 'احفظ البداية',
+  audioSaved: 'حفظنا المقطع. اختره من محرر الدعوة.', audioStartSaved: 'حفظنا البداية.', audioIsDefault: 'الافتراضي للدعوات', audioDefaultSaved: 'صار هالمقطع هو الصوت الافتراضي.',
+  audioDeleted: 'انحذف المقطع. الدعوات اللي كانت تستخدمه ترجع للصوت الأساسي.', audioUseBuiltinDefault: 'خلّ الصوت الأساسي هو الافتراضي', audioBuiltinDefaultSaved: 'صار الصوت الأساسي هو الافتراضي.',
+  audioPreviewOf: 'اسمع {name}', audioKindVoice: 'رسالة ترحيب', audioKindMusic: 'موسيقى',
+  audioVoiceTitle: 'رسالة ترحيب بصوتك', audioVoiceHint: 'سجّل ترحيب قصير لين دقيقة. يسمعه ضيوفك مرة وحدة لما يفتحون الدعوة، ويقدرون يعيدونه أو يوقفونه.', audioMicAsk: 'بيطلب المتصفح إذن الميكروفون.',
+  audioRecording: 'نسجّل', audioRecordLevel: 'مستوى الصوت', audioRecordOf: '{time} من 1:00', audioVoiceSaved: 'حفظنا رسالتك. شغّلها من «الحركة والصوت» في المحرر.', audioVoiceDefaultName: 'رسالة ترحيب',
+  audioErrNoRecorder: 'هالمتصفح ما يسجّل صوت. جرّب آخر إصدار من Chrome أو Safari، أو ارفع رسالتك كملف صوتي.', audioErrMicDenied: 'الميكروفون مو مسموح. اسمح فيه من إعدادات الموقع في المتصفح وجرّب مرة ثانية.', audioErrNoMic: 'ما لقينا ميكروفون على هالجهاز.', audioErrRecord: 'ما زبط التسجيل. جرّب مرة ثانية.',
+  audioErrType: 'اختر ملف صوتي MP3 أو WAV أو OGG أو M4A أو WebM.', audioErrEmpty: 'الملف فاضي. اختر ملف صوتي ثاني.', audioErrSize: 'المقطع أكبر من 8 ميجا. اختر مقطع أقصر أو مضغوط مثل MP3.', audioErrFull: 'المكتبة مليانة (5 مقاطع). احذف مقطع أول.',
+  audioErrStorage: 'ما قدرنا نحفظ على هالجهاز. احذف مقطع قديم أو فضّ شوي مساحة في المتصفح.', audioErrDecode: 'هالملف ما يشتغل. اختر ملف صوتي سليم.', audioErrVoiceLong: 'الرسالة أطول من دقيقة. سجّل رسالة أقصر.', audioErrBytes: 'ملف هالمقطع مو موجود على هالجهاز.',
+  audioSoundTitle: 'الصوت', audioSoundHint: 'يبدأ بعد أول لمسة، ويقدر ضيوفك يكتمونه.', audioChoiceLabel: 'صوت الدعوة', audioChoiceNoneD: 'لا موسيقى ولا مؤثرات.', audioChoiceBuiltin: 'الصوت الأساسي', audioChoiceBuiltinD: 'موسيقى هادية ومؤثرات التصميم.',
+  audioChoiceMineD: 'مقطع من مكتبتك الصوتية.', audioChoiceMineEmpty: 'ارفع موسيقى من حسابك أول.', audioPickTrack: 'المقطع', audioTrackMissing: 'المقطع مو موجود على هالجهاز · بيشتغل الصوت الأساسي',
+  audioVoiceToggle: 'رسالة ترحيب صوتية', audioVoiceToggleHint: 'تنسمع مرة وحدة لما تنفتح الدعوة، وتوطى الموسيقى وقتها.', audioVoicePick: 'الرسالة', audioVoiceMissing: 'الرسالة مو موجودة على هالجهاز',
+  audioManage: 'إدارة مكتبتي الصوتية', audioPreviewSound: 'شغّل الصوت في المعاينة', audioPreviewSoundHint: 'هنا بس، عشان تسمعه مثل ضيوفك. ما يغيّر الدعوة.', audioGuestVoice: 'رسالة ترحيب صوتية',
   // ---- end r4-audio
 };
 const CORE = partly(coreModern, coreEgyptian, coreSaudi);
@@ -126,10 +167,12 @@ const CORE = partly(coreModern, coreEgyptian, coreSaudi);
  */
 export const COPY_GROUPS = {
   core: CORE, home: HOME, homeMore: HOME_MORE, create: CREATE, createMore: CREATE_MORE, guests: GUESTS, guestTools: GUEST_TOOLS, seating: SEATING, guest: GUEST, engine: ENGINE, editor: EDITOR, editorSections: EDITOR_SECTIONS, settings: SETTINGS, replies: REPLIES, billing: BILLING, gate: GATE,
+  import: IMPORT, experienceSettings: EXPERIENCE_SETTINGS, auth: AUTH, time: TIME, activity: ACTIVITY, overview: OVERVIEW, eventPages: EVENT_PAGES, food: FOOD, shared: SHARED,
 } as const;
 
 const modern = {
   ...CORE.modern, ...HOME.modern, ...HOME_MORE.modern, ...CREATE.modern, ...CREATE_MORE.modern, ...GUESTS.modern, ...GUEST_TOOLS.modern, ...SEATING.modern, ...GUEST.modern, ...ENGINE.modern, ...EDITOR.modern, ...EDITOR_SECTIONS.modern, ...SETTINGS.modern, ...REPLIES.modern, ...BILLING.modern, ...GATE.modern,
+  ...IMPORT.modern, ...EXPERIENCE_SETTINGS.modern, ...AUTH.modern, ...TIME.modern, ...ACTIVITY.modern, ...OVERVIEW.modern, ...EVENT_PAGES.modern, ...FOOD.modern, ...SHARED.modern,
 };
 export type CopyKey = keyof typeof modern;
 export type Copy = { readonly [K in CopyKey]: string };
@@ -147,7 +190,7 @@ export function fill(template: string, vars?: Readonly<Record<string, string | n
  * Counted nouns in each voice. Modern Arabic keeps the classical forms (domain/format P); the dialects use the
  * spoken dual and the bare noun after numbers («ضيفين»، «15 ضيف»), and Egyptian says «ترابيزة» and «كرسي».
  */
-export type Noun = 'guest' | 'person' | 'invitation' | 'seat' | 'table';
+export type Noun = 'guest' | 'person' | 'invitation' | 'seat' | 'table' | 'row';
 const SPOKEN: Record<'ar-EG' | 'ar-SA', Record<Noun, PluralForms>> = {
   'ar-EG': {
     guest: { zero: 'مفيش ضيوف', one: 'ضيف واحد', two: 'ضيفين', few: '# ضيوف', many: '# ضيف', other: '# ضيف' },
@@ -155,6 +198,7 @@ const SPOKEN: Record<'ar-EG' | 'ar-SA', Record<Noun, PluralForms>> = {
     invitation: { zero: 'مفيش دعوات', one: 'دعوة واحدة', two: 'دعوتين', few: '# دعوات', many: '# دعوة', other: '# دعوة' },
     seat: { zero: 'مفيش كراسي', one: 'كرسي واحد', two: 'كرسيين', few: '# كراسي', many: '# كرسي', other: '# كرسي' },
     table: { zero: 'مفيش ترابيزات', one: 'ترابيزة واحدة', two: 'ترابيزتين', few: '# ترابيزات', many: '# ترابيزة', other: '# ترابيزة' },
+    row: { zero: 'مفيش صفوف', one: 'صف واحد', two: 'صفين', few: '# صفوف', many: '# صف', other: '# صف' },
   },
   'ar-SA': {
     guest: { zero: 'ما فيه ضيوف', one: 'ضيف واحد', two: 'ضيفين', few: '# ضيوف', many: '# ضيف', other: '# ضيف' },
@@ -162,6 +206,7 @@ const SPOKEN: Record<'ar-EG' | 'ar-SA', Record<Noun, PluralForms>> = {
     invitation: { zero: 'ما فيه دعوات', one: 'دعوة وحدة', two: 'دعوتين', few: '# دعوات', many: '# دعوة', other: '# دعوة' },
     seat: { zero: 'ما فيه مقاعد', one: 'مقعد واحد', two: 'مقعدين', few: '# مقاعد', many: '# مقعد', other: '# مقعد' },
     table: { zero: 'ما فيه طاولات', one: 'طاولة وحدة', two: 'طاولتين', few: '# طاولات', many: '# طاولة', other: '# طاولة' },
+    row: { zero: 'ما فيه صفوف', one: 'صف واحد', two: 'صفين', few: '# صفوف', many: '# صف', other: '# صف' },
   },
 };
 export const nounForms = (dialect: Dialect, noun: Noun): PluralForms => (dialect === 'ar' ? P[noun] : SPOKEN[dialect][noun]);

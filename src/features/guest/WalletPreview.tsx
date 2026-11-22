@@ -49,7 +49,7 @@ export function WalletPreview({ view, value, demo = false }: { view: GuestView; 
     <Dialog open={open} title={t('gwTitle')} description={t('gwHint')} onClose={() => setOpen(false)} size="sm" className="theme-guest wallet-dialog"
       footer={<Button variant="primary" onClick={() => setOpen(false)}>{t('gwBack')}</Button>}>
       <p className="wallet-disclosure" role="note">{t('gwOnly')}{demo ? t('gwDemoCode') : ''}</p>
-      <article className="wpass" aria-label={`بطاقة دخول ${p.name}`}>
+      <article className="wpass" aria-label={t('shPassFor', { name: p.name })}>
         <header className="wpass-top">
           <span className="wpass-logo"><LogoMark size={20} /></span>
           <span className="wpass-issuer">ضيوفي</span>
@@ -65,7 +65,7 @@ export function WalletPreview({ view, value, demo = false }: { view: GuestView; 
           {p.tableName && <div className="is-wide"><dt>{t('gwTable')}</dt><dd>{p.tableName}</dd></div>}
         </dl>
         <div className="wpass-code">
-          <QrCode value={value} size={168} label={`رمز QR لدخول ${p.name}`} />
+          <QrCode value={value} size={168} label={t('shQrFor', { name: p.name })} />
           <bdi className="num" dir="ltr">{p.code}</bdi>
         </div>
       </article>

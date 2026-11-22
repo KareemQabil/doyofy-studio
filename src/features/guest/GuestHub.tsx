@@ -35,7 +35,7 @@ const mapUrl = (v: GuestView) => v.event.venue.mapUrl || `https://www.google.com
 
 export function GuestHub({ view, code, submission, onView, onReplay, guestApi, demo = false }: { view: GuestView; code: string | null; submission: Submission; onView: (v: GuestView) => void; onReplay: () => void; guestApi?: GuestApi; demo?: boolean }) {
   const now = useNow(60000);
-  const { t, n } = useCopy();
+  const { t, n, dialect } = useCopy();
   const p = view.party;
   const names = resolvedNames(view.event, view.design);
   const today = localDateOf(now, view.event.timeZone);
@@ -71,7 +71,7 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
       <p className="hub-kicker">{view.event.title}</p>
       <h1 className="hub-names">{names.a}{isCoupleEvent(view.event.type) && names.b ? <> <span className="hub-amp">و</span> {names.b}</> : null}</h1>
       <p className="hub-date">{N.join(N.date(view.event.date), N.time(view.event.time))}</p>
-      {view.phase !== 'after' && <p className="hub-count">{days > 0 ? N.text(countdownLabel(view.event.date, today)) : days === 0 ? t('ghToday') : ''}</p>}
+      {view.phase !== 'after' && <p className="hub-count">{days > 0 ? N.text(countdownLabel(view.event.date, today, dialect)) : days === 0 ? t('ghToday') : ''}</p>}
     </header>
   );
 
@@ -91,8 +91,8 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
             <p className="hub-code num" dir="ltr">{p.code}</p>
             <p className="muted t-sm">{t('guestShowCode')}</p>
             {p.tableName && <p className="hub-table"><Icon name="table" size="sm" />{t('ghYourTable')} <strong>{p.tableName}</strong></p>}
-            {view.experience && p.meals?.length ? <p className="gx-mine">{t('ghDinner', { meals: N.text(mealSummary(view.experience, p.meals, sep)) })}</p> : null}
-            {p.dietary?.needs.length ? <p className="gx-mine">{t('ghWeCare', { needs: dietaryLabel(p.dietary) })}</p> : null}
+            {view.experience && p.meals?.length ? <p className="gx-mine">{t('ghDinner', { meals: N.text(mealSummary(view.experience, p.meals, sep, dialect)) })}</p> : null}
+            {p.dietary?.needs.length ? <p className="gx-mine">{t('ghWeCare', { needs: dietaryLabel(p.dietary, dialect) })}</p> : null}
             {p.companionNames?.length ? <p className="faint t-sm">{t('ghCompanions', { names: p.companionNames.join('، ') })}</p> : null}
             <WalletPreview view={view} value={`DOYOFY:${p.code}`} demo={demo} />
             {view.canEdit && <Button variant="ghost" size="sm" icon="edit" onClick={() => setEditing(true)}>{t('guestEditReply')}</Button>}
@@ -110,7 +110,7 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
               (submission?.ok || generalSubmitted) && !editingGeneral ? (
                 <div className="stack gap-2">
                   <h2 id="hub-status" ref={result} tabIndex={-1} className="hub-h">{t('ghThanks')}{submission?.ok && submission.name ? <> <bdi>{submission.name}</bdi></> : generalSubmitted ? <> <bdi>{generalSubmitted}</bdi></> : ''}، {demo ? t('ghSaved') : t('guestReplyArrived')}</h2>
-                  {generalReply && <p className="muted">{generalReply.attending ? `${t('guestAccept')}${sep}${N.people(generalReply.count)}` : t('guestDecline')}</p>}
+                  {generalReply && <p className="muted">{generalReply.attending ? `${t('guestAccept')}${sep}${N.text(n(generalReply.count, 'person'))}` : t('guestDecline')}</p>}
                   <p className="muted">{t(demo ? 'ghSavedHere' : 'ghReview')}</p>
                   {generalReply && view.canEdit && <div><Button variant="secondary" icon="edit" onClick={() => setEditingGeneral(true)}>{t('guestEditReply')}</Button></div>}
                 </div>
@@ -128,9 +128,9 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
             ) : p.rsvpStatus === 'confirmed' ? (
               <div className="hub-status is-yes">
                 <Icon name="check-circle" size="lg" />
-                <div><h2 id="hub-status" ref={result} tabIndex={-1} className="hub-h">{t('guestConfirmed')}</h2><p className="muted"><bdi>{p.name}</bdi>{sep}{N.people(p.confirmedPartySize ?? 1)}</p>
-                  {view.experience && p.meals?.length ? <p className="gx-mine">{t('ghDinner', { meals: N.text(mealSummary(view.experience, p.meals, sep)) })}</p> : null}
-                  {p.dietary?.needs.length ? <p className="gx-mine">{t('ghWeCare', { needs: dietaryLabel(p.dietary) })}</p> : null}</div>
+                <div><h2 id="hub-status" ref={result} tabIndex={-1} className="hub-h">{t('guestConfirmed')}</h2><p className="muted"><bdi>{p.name}</bdi>{sep}{N.text(n(p.confirmedPartySize ?? 1, 'person'))}</p>
+                  {view.experience && p.meals?.length ? <p className="gx-mine">{t('ghDinner', { meals: N.text(mealSummary(view.experience, p.meals, sep, dialect)) })}</p> : null}
+                  {p.dietary?.needs.length ? <p className="gx-mine">{t('ghWeCare', { needs: dietaryLabel(p.dietary, dialect) })}</p> : null}</div>
               </div>
             ) : p.rsvpStatus === 'declined' ? (
               <div className="hub-status is-no">

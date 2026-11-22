@@ -5,6 +5,7 @@
 import type { ReactNode } from 'react';
 import type { Event } from '../../domain/types';
 import { eventPhase, PHASE_LABEL } from '../../domain/event';
+import { PHASE_KEY } from '../../domain/copy/activity';
 import { countdownLabel, formatEventDate } from '../../domain/format';
 import { countParties } from '../../domain/parties';
 import { todayFor } from '../../domain/event';
@@ -32,7 +33,7 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
   const ev = useEvent(eventId);
   const parties = useParties(eventId);
   const now = useNow();
-  const { t } = useCopy();
+  const { t, dialect } = useCopy();
 
   if (ev.error && isAppError(ev.error) && ev.error.code === 'not_found') return <NotFound message={ev.error.message} />;
 
@@ -41,23 +42,23 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
   const c = parties.data ? countParties(parties.data) : null;
   const id = eventId;
   const nav: NavItem[] = [
-    { to: paths.overview(id), label: t('wsOverview'), icon: 'home', active: section === 'overview', group: 'تجهيز المناسبة' },
-    { to: paths.invitation(id), label: t('wsInvitation'), icon: 'envelope', active: section === 'invitation', group: 'تجهيز المناسبة' },
-    { to: paths.guests(id), label: t('wsGuestsReplies'), icon: 'users', active: section === 'guests' || section === 'rsvp', badge: c?.parties, group: 'تجهيز المناسبة' },
-    { to: paths.seating(id), label: t('wsTables'), icon: 'table', active: section === 'seating', group: 'خيارات إضافية' },
-    { to: paths.checkin(id), label: t('wsCheckin'), icon: 'door', active: section === 'checkin', badge: phase === 'event_day' ? t('wsToday') : undefined, tone: 'accent', group: 'يوم المناسبة' },
-    { to: paths.settings(id), label: t('wsSettings'), icon: 'settings', active: section === 'settings', group: 'خيارات إضافية' },
+    { to: paths.overview(id), label: t('wsOverview'), icon: 'home', active: section === 'overview', group: t('wsGroupPrep') },
+    { to: paths.invitation(id), label: t('wsInvitation'), icon: 'envelope', active: section === 'invitation', group: t('wsGroupPrep') },
+    { to: paths.guests(id), label: t('wsGuestsReplies'), icon: 'users', active: section === 'guests' || section === 'rsvp', badge: c?.parties, group: t('wsGroupPrep') },
+    { to: paths.seating(id), label: t('wsTables'), icon: 'table', active: section === 'seating', group: t('wsGroupMore') },
+    { to: paths.checkin(id), label: t('wsCheckin'), icon: 'door', active: section === 'checkin', badge: phase === 'event_day' ? t('wsToday') : undefined, tone: 'accent', group: t('phEventDay') },
+    { to: paths.settings(id), label: t('wsSettings'), icon: 'settings', active: section === 'settings', group: t('wsGroupMore') },
   ];
-  if (phase === 'completed' || phase === 'archived') nav.push({ to: paths.summary(id), label: t('wsSummary'), icon: 'flag', active: section === 'summary', group: 'خيارات إضافية' });
+  if (phase === 'completed' || phase === 'archived') nav.push({ to: paths.summary(id), label: t('wsSummary'), icon: 'flag', active: section === 'summary', group: t('wsGroupMore') });
   const mobile: NavItem[] = [
     { ...nav[0]!, label: t('wsEvent') }, nav[1]!, { ...nav[2]!, label: t('wsGuests') },
     nav[4]!,
     { to: `/app/events/${encodeURIComponent(id)}/more`, label: t('wsMore'), icon: 'menu', active: ['settings','summary','more','seating'].includes(section) },
   ];
   const cateringNav: NavItem[] = [
-    { to: `${paths.guests(id)}?view=food`, label: 'الضيافة', icon: 'sparkle', active: section === 'guests', group: 'فريق الضيافة' },
-    { to: paths.seating(id), label: t('wsTables'), icon: 'table', active: section === 'seating', group: 'فريق الضيافة' },
-    { to: paths.settings(id), label: 'قائمة الطعام', icon: 'settings', active: section === 'settings', group: 'فريق الضيافة' },
+    { to: `${paths.guests(id)}?view=food`, label: t('glCatering'), icon: 'sparkle', active: section === 'guests', group: t('acByCaterer') },
+    { to: paths.seating(id), label: t('wsTables'), icon: 'table', active: section === 'seating', group: t('acByCaterer') },
+    { to: paths.settings(id), label: t('xsFoodTitle'), icon: 'settings', active: section === 'settings', group: t('acByCaterer') },
   ];
   const cateringAllowed = ['guests', 'seating', 'settings'].includes(section);
 
@@ -66,8 +67,8 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
       <span className="ws-event-art" aria-hidden="true"><OccasionGlyph type={e.type} /></span>
       <Link to={paths.events} className="ws-allevents"><Icon name="back" size="sm" />{t('wsAllEvents')}</Link>
       <p className="ws-event-title">{e.title}</p>
-      <p className="ws-event-meta"><span>{formatEventDate(e.date, { year: false })}</span><span aria-hidden="true">·</span><span>{countdownLabel(e.date, todayFor(e, now))}</span></p>
-      <Badge tone={PHASE_LABEL[phase].tone} dot>{PHASE_LABEL[phase].label}</Badge>
+      <p className="ws-event-meta"><span>{formatEventDate(e.date, { year: false })}</span><span aria-hidden="true">·</span><span>{countdownLabel(e.date, todayFor(e, now), dialect)}</span></p>
+      <Badge tone={PHASE_LABEL[phase].tone} dot>{t(PHASE_KEY[phase])}</Badge>
     </div>
   ) : <Skeleton lines={3} />;
 
@@ -76,7 +77,7 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
       <Link to={paths.events} className="btn btn-ghost btn-icon" aria-label={t('wsAllEvents')}><Icon name="back" /></Link>
       <span className="ws-mobile-head">
         <span className="ws-mobile-title truncate">{e?.title ?? ''}</span>
-        {e && <span className="ws-mobile-meta"><span className={`ws-mobile-phase tone-${PHASE_LABEL[phase].tone}`} aria-hidden="true" />{PHASE_LABEL[phase].label} · {countdownLabel(e.date, todayFor(e, now))}</span>}
+        {e && <span className="ws-mobile-meta"><span className={`ws-mobile-phase tone-${PHASE_LABEL[phase].tone}`} aria-hidden="true" />{t(PHASE_KEY[phase])} · {countdownLabel(e.date, todayFor(e, now), dialect)}</span>}
       </span>
     </>
   );
@@ -87,10 +88,10 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
         context={context}
         nav={catering ? cateringNav : nav}
         mobileNav={catering ? cateringNav : mobile}
-        footer={<><p className="ws-footer-note">{catering ? 'عرض لفريق الضيافة' : <>{t('wsFooterA')}<br />{t('wsFooterB')}</>}</p>{!catering && (phase === 'event_day' || section === 'checkin') && <LinkButton to={paths.gate(id)} variant="primary" icon="scan" block>{t('stepGate')}</LinkButton>}</>}
+        footer={<><p className="ws-footer-note">{catering ? t('wsCatFooter') : <>{t('wsFooterA')}<br />{t('wsFooterB')}</>}</p>{!catering && (phase === 'event_day' || section === 'checkin') && <LinkButton to={paths.gate(id)} variant="primary" icon="scan" block>{t('stepGate')}</LinkButton>}</>}
       >
         {ev.loading ? <PageLoader /> : ev.error ? <ErrorState error={ev.error} onRetry={ev.refetch} /> : e ? catering && !cateringAllowed
-          ? <section className="stack gap-3"><h1>مساحة الضيافة</h1><p>تابع الوجبات والاحتياجات والطاولات. إدارة الدعوات والضيوف متاحة لفريق التنظيم.</p><LinkButton to={`${paths.guests(id)}?view=food`} variant="primary" icon="sparkle">افتح الضيافة</LinkButton></section>
+          ? <section className="stack gap-3"><h1>{t('auCatTitle')}</h1><p>{t('wsCatText')}</p><LinkButton to={`${paths.guests(id)}?view=food`} variant="primary" icon="sparkle">{t('auCatOpen')}</LinkButton></section>
           : catering && section === 'settings' ? <GuestExperienceSettings event={e} foodOnly /> : children(e) : null}
       </WorkspaceLayout>
     </AppShell>

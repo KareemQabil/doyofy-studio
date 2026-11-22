@@ -318,7 +318,7 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
       <div className="ed-main">
         <aside ref={panel} inert={publishing} className="ed-panel" aria-label={t('edToolsLabel')}>
           <div className="ed-handle-row">
-            <button type="button" className="ed-handle" aria-label={`لوحة التعديل: ${sheet === 'full' ? 'مكبّرة' : sheet === 'peek' ? 'مصغّرة' : 'بالمنتصف'}. اسحب أو استخدم الأسهم للأعلى والأسفل`} aria-expanded={sheet !== 'peek'}
+            <button type="button" className="ed-handle" aria-label={t('shSheet', { state: t(sheet === 'full' ? 'shSheetFull' : sheet === 'peek' ? 'shSheetPeek' : 'shSheetHalf') })} aria-expanded={sheet !== 'peek'}
               data-gesture-surface data-stop={sheet}
               {...handleGesture} onKeyDown={sheetKeys} onClick={(e) => { if (e.detail === 0) setSheet((v) => v === 'full' ? 'half' : 'full'); }}>
               <span aria-hidden="true" />
