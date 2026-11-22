@@ -390,10 +390,10 @@ export async function run(){
     await click(button('مسح رمز QR'));
     await fill(document.querySelector<HTMLInputElement>('input[aria-label="الرمز أو الرابط"]')!,party.code);
     await click(button('تحقق'));await settle();
-    assert.ok(document.body.textContent?.includes('تعذر التحقق من الرمز'));
+    assert.ok(document.body.textContent?.includes('تعذّر التحقق من الرمز'));
     assert.ok(!document.body.textContent?.includes('الرمز غير صحيح أو أن الدعوة حُذفت'));
     made.services.checkIn.findByCode=original;
-    await click(button('أعد المحاولة بنفس الرمز'));await settle();
+    await click(button('أعد المحاولة بالرمز نفسه'));await settle();
     assert.ok(document.body.textContent?.includes('ضيف اختبار الشبكة'));
   } finally {made.services.checkIn.findByCode=original;}
  });

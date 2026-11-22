@@ -10,6 +10,7 @@ import { assessCheckIn, BLOCKING, codeFromScan, EXCEPTION_TEXT, expectedArrivals
 import { countParties, searchParties } from '../../domain/parties';
 import { eventPhase, todayFor } from '../../domain/event';
 import { countdownLabel, people, peopleOf } from '../../domain/format';
+import { useCopy } from '../../ui/copy';
 import { Button, Checkbox, Dialog, ErrorState, Icon, Input, Stepper, Textarea, PageLoader, Lottie } from '../../ui';
 import { useMutation, useNow, useServices } from '../../app/data';
 import { Link, useRouter } from '../../app/router';
@@ -31,6 +32,7 @@ export function GateMode({ eventId }: { eventId: string }) {
 function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: boolean; event: Event; parties: InvitationParty[]; tableName: (id?: string) => string | undefined }) {
   const now = useNow();
   const services = useServices();
+  const { t } = useCopy();
   const [view, setView] = useState<View>({ kind: 'search' });
   const [q, setQ] = useState('');
   const [scanning, setScanning] = useState(false);
@@ -57,16 +59,16 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
   return (
     <div className="gate theme-gate" dir="rtl">
       <header className="gate-bar">
-        <Link to={paths.checkin(event.id)} className="gate-exit" aria-label="خروج من الاستقبال"><Icon name="close" /></Link>
+        <Link to={paths.checkin(event.id)} className="gate-exit" aria-label={t('gtExit')}><Icon name="close" /></Link>
         <div className="grow">
           <h1 className="gate-title truncate">{event.title}</h1>
-          <p className="gate-sub">مساحة فريق الاستقبال</p>
+          <p className="gate-sub">{t('gtSub')}</p>
         </div>
-        <div className="gate-counter" aria-live="polite"><span className="num">{c.checkedInPeople}</span><span className="gate-counter-of">/ {c.confirmedPeople} وصلوا</span></div>
+        <div className="gate-counter" aria-live="polite"><span className="num">{c.checkedInPeople}</span><span className="gate-counter-of">{t('gtArrived', { n: c.confirmedPeople })}</span></div>
       </header>
 
       {phase !== 'event_day' && (
-        <p className="gate-note" role="note">{phase === 'completed' ? 'انتهت المناسبة.' : `المناسبة ${countdownLabel(event.date, todayFor(event, now))}.`} أي تسجيل الآن يُحتسب، ويمكن التراجع عنه.</p>
+        <p className="gate-note" role="note">{phase === 'completed' ? t('gtEnded') : t('gtWhen', { when: countdownLabel(event.date, todayFor(event, now)) })} {t('gtCounts')}</p>
       )}
 
       <main className="gate-main" id="main">
@@ -74,29 +76,29 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
           <div className="gate-home">
             {notice && <p className="gate-notice" role="status"><Icon name="check-circle" size="sm" />{notice}</p>}
             <button type="button" className="gate-scan" onClick={() => { setNotice(null); setScanning(true); }}>
-              <Icon name="scan" size="lg" /><span>مسح رمز QR</span>
+              <Icon name="scan" size="lg" /><span>{t('gtScan')}</span>
             </button>
             <div className="gate-search">
-              <label htmlFor="gate-q" className="gate-label">أو ابحث بالاسم أو الجوال أو الرمز</label>
+              <label htmlFor="gate-q" className="gate-label">{t('gtSearchLabel')}</label>
               <div className="gate-search-row">
                 <Icon name="search" />
-                <input id="gate-q" ref={searchRef} className="gate-input" value={q} onChange={(e) => { setNotice(null); setQ(e.target.value); }} placeholder="مثال: الشهري أو 0551…" autoComplete="off" />
-                {q && <button type="button" className="gate-clear" aria-label="مسح" onClick={() => setQ('')}><Icon name="close" /></button>}
+                <input id="gate-q" ref={searchRef} className="gate-input" value={q} onChange={(e) => { setNotice(null); setQ(e.target.value); }} placeholder={t('gtSearchPh')} autoComplete="off" />
+                {q && <button type="button" className="gate-clear" aria-label={t('gtClear')} onClick={() => setQ('')}><Icon name="close" /></button>}
               </div>
             </div>
             {q.trim().length >= 2 && (
               results.length === 0 ? (
-                <div className="gate-empty"><p className="t-bold">لا يوجد ضيف بهذا الاسم</p><p>جرّب جزءًا من الاسم أو رقم الجوال. إن لم يكن في القائمة، تواصل مع المنظم قبل السماح بالدخول.</p>
-                  <Button icon="edit" onClick={() => setView({ kind: 'walk-in', name: /\d/.test(q) ? '' : q.trim() })}>سجّل ضيفًا من خارج القائمة</Button></div>
+                <div className="gate-empty"><p className="t-bold">{t('gtNoGuest')}</p><p>{t('gtNoGuestHint')}</p>
+                  <Button icon="edit" onClick={() => setView({ kind: 'walk-in', name: /\d/.test(q) ? '' : q.trim() })}>{t('gtWalkIn')}</Button></div>
               ) : (
-                <ul className="gate-results" aria-label="نتائج البحث">
+                <ul className="gate-results" aria-label={t('gtResults')}>
                   {results.map((p) => (
                     <li key={p.id}>
                       <button type="button" className="gate-result" onClick={() => setView({ kind: 'party', id: p.id, method: 'search' })}>
                         <span className="grow"><span className="gate-result-name">{p.primaryGuestName}</span>
-                          <span className="gate-result-sub">{p.rsvpStatus === 'confirmed' ? `أكدوا ${peopleOf(p.confirmedPartySize ?? 0)}` : p.rsvpStatus === 'declined' ? 'اعتذروا عن الحضور' : 'لم يردوا على الدعوة'}{tableName(p.tableId) ? ` · ${tableName(p.tableId)}` : ''}</span></span>
+                          <span className="gate-result-sub">{p.rsvpStatus === 'confirmed' ? t('gtConfirmedN', { people: peopleOf(p.confirmedPartySize ?? 0) }) : t(p.rsvpStatus === 'declined' ? 'gtDeclined' : 'gtNoReply')}{tableName(p.tableId) ? ` · ${tableName(p.tableId)}` : ''}</span></span>
                         {/* the pill says what the gate needs: arrival for those expected, the reply for those who are not */}
-                        <span className={`gate-pill is-${p.checkedInCount === 0 && p.rsvpStatus !== 'confirmed' ? p.rsvpStatus : p.checkInStatus}`}>{p.checkInStatus === 'checked_in' ? 'وصلوا' : p.checkInStatus === 'partial' ? `وصل ${p.checkedInCount}` : p.rsvpStatus === 'declined' ? 'اعتذروا' : p.rsvpStatus === 'pending' ? 'بلا رد' : 'لم يصلوا'}</span>
+                        <span className={`gate-pill is-${p.checkedInCount === 0 && p.rsvpStatus !== 'confirmed' ? p.rsvpStatus : p.checkInStatus}`}>{p.checkInStatus === 'checked_in' ? t('gtPillIn') : p.checkInStatus === 'partial' ? t('gtPillPartial', { n: p.checkedInCount }) : t(p.rsvpStatus === 'declined' ? 'gtPillDeclined' : p.rsvpStatus === 'pending' ? 'gtPillPending' : 'gtPillNotYet')}</span>
                       </button>
                     </li>
                   ))}
@@ -115,25 +117,25 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
           // the mutation's party is fresh; the list catches up a moment later — show whichever is newer
           const listed = parties.find((x) => x.id === view.party.id);
           const party = listed && listed.updatedAt > view.party.updatedAt ? listed : view.party;
-          return <DoneCard seatingEnabled={seatingEnabled} record={view.record} party={party} table={tableName(party.tableId)} onNext={() => back()} onUndone={() => back(`تم التراجع عن دخول ${party.primaryGuestName} (${people(view.record.count)}).`)} />;
+          return <DoneCard seatingEnabled={seatingEnabled} record={view.record} party={party} table={tableName(party.tableId)} onNext={() => back()} onUndone={() => back(t('gtUndone', { name: party.primaryGuestName, people: people(view.record.count) }))} />;
         })()}
 
-        {view.kind === 'walk-in' && <WalkIn eventId={event.id} initialName={view.name} onBack={() => back()} onDone={(name) => back(`سُجّل دخول ${name} من خارج القائمة، ووصلت ملاحظتك للمنظم.`)} />}
+        {view.kind === 'walk-in' && <WalkIn eventId={event.id} initialName={view.name} onBack={() => back()} onDone={(name) => back(t('gtWalkedIn', { name }))} />}
 
         {view.kind === 'notfound' && (
           <div className="gate-card is-alert" role="alert">
             <Icon name="alert" size="lg" />
-            <h2 className="gate-h">لم نجد هذا الرمز</h2>
-            <p>الرمز غير صحيح أو أن الدعوة حُذفت. لا تسمح بالدخول قبل التأكد: ابحث باسم الضيف، أو تواصل مع المنظم.</p>
-            <div className="gate-actions"><Button variant="primary" size="lg" icon="search" onClick={() => back()}>ابحث بالاسم</Button><Button size="lg" icon="scan" onClick={() => setScanning(true)}>امسح مرة أخرى</Button></div>
+            <h2 className="gate-h">{t('gtUnknownCode')}</h2>
+            <p>{t('gtUnknownCodeText')}</p>
+            <div className="gate-actions"><Button variant="primary" size="lg" icon="search" onClick={() => back()}>{t('gtSearchName')}</Button><Button size="lg" icon="scan" onClick={() => setScanning(true)}>{t('gtScanAgain')}</Button></div>
           </div>
         )}
         {view.kind === 'lookup-error' && (
           <div className="gate-card is-alert" role="alert">
             <Icon name="alert" size="lg" />
-            <h2 className="gate-h">تعذر التحقق من الرمز</h2>
-            <p>{view.message} لم نسجّل وصولًا. احتفظ بالرمز وحاول مجددًا.</p>
-            <div className="gate-actions"><Button variant="primary" size="lg" onClick={() => void onScan(view.input)}>أعد المحاولة بنفس الرمز</Button><Button size="lg" icon="search" onClick={() => back()}>ابحث بالاسم</Button></div>
+            <h2 className="gate-h">{t('gtVerifyFailed')}</h2>
+            <p>{view.message} {t('gtNothingRecorded')}</p>
+            <div className="gate-actions"><Button variant="primary" size="lg" onClick={() => void onScan(view.input)}>{t('gtRetrySame')}</Button><Button size="lg" icon="search" onClick={() => back()}>{t('gtSearchName')}</Button></div>
           </div>
         )}
       </main>
@@ -203,6 +205,7 @@ function PartyCheckIn({ party, method, table, onBack, onDone, seatingEnabled }: 
 
 function DoneCard({ record, party, table, onNext, onUndone, seatingEnabled }: { seatingEnabled: boolean; record: CheckInRecord; party: InvitationParty; table?: string; onNext: () => void; onUndone: () => void }) {
   const undo = useMutation((s) => s.checkIn.undo(record.id), { onSuccess: onUndone });
+  const { t } = useCopy();
   const expected = expectedArrivals(party);
   const partial = party.checkedInCount < expected;
   return (
@@ -210,14 +213,14 @@ function DoneCard({ record, party, table, onNext, onUndone, seatingEnabled }: { 
       {record.exceptions.some((e) => BLOCKING.has(e))
         ? <span className="gate-done-mark" aria-hidden="true"><Icon name="check" size="lg" /></span>
         : <Lottie name="success" size={96} className="gate-done-seal" />}
-      <h2 className="gate-h">{partial ? `دخل ${people(record.count)}` : 'أهلًا وسهلًا'}</h2>
+      <h2 className="gate-h">{partial ? t('gtEntered', { people: people(record.count) }) : t('gtWelcome')}</h2>
       <p className="gate-done-line">{party.primaryGuestName} · {expected > 0 ? <>وصل <strong className="num">{party.checkedInCount}</strong> من <span className="num">{expected}</span>{partial ? ' — الباقون لاحقًا' : ''}</> : <>دخل <strong className="num">{party.checkedInCount}</strong> باستثناء</>}</p>
       {table && <p className="gate-table"><Icon name="table" />{table}</p>}
-      {seatingEnabled && !table && party.rsvpStatus === 'confirmed' && <p className="gate-hint">لا توجد طاولة — وجّههم لمنسق القاعة.</p>}
+      {seatingEnabled && !table && party.rsvpStatus === 'confirmed' && <p className="gate-hint">{t('gtNoTable')}</p>}
       {undo.error ? <p className="gate-error">{errorMessage(undo.error)}</p> : null}
       <div className="gate-actions">
-        <Button variant="primary" size="lg" block icon="scan" onClick={onNext}>الضيف التالي</Button>
-        <Button size="lg" block icon="undo" loading={undo.pending} onClick={() => void undo.run()}>تراجع عن التسجيل</Button>
+        <Button variant="primary" size="lg" block icon="scan" onClick={onNext}>{t('gtNextGuest')}</Button>
+        <Button size="lg" block icon="undo" loading={undo.pending} onClick={() => void undo.run()}>{t('gtUndo')}</Button>
       </div>
     </div>
   );
@@ -254,6 +257,7 @@ function WalkIn({ eventId, initialName, onBack, onDone }: { eventId: string; ini
 function ScanSimulator({ parties, onClose, onScan, eventSlug }: { parties: InvitationParty[]; onClose: () => void; onScan: (v: string) => void; eventSlug: string }) {
   const [value, setValue] = useState('');
   const { absolute } = useRouter();
+  const { t } = useCopy();
   const pick = (f: (p: InvitationParty) => boolean) => parties.find(f);
   const samples = [
     { label: 'دعوة مؤكدة لم تصل', p: pick((p) => p.rsvpStatus === 'confirmed' && p.checkedInCount === 0 && !!p.tableId) },
@@ -264,17 +268,17 @@ function ScanSimulator({ parties, onClose, onScan, eventSlug }: { parties: Invit
     { label: 'مؤكد بلا طاولة', p: pick((p) => p.rsvpStatus === 'confirmed' && !p.tableId && p.checkedInCount === 0) },
   ].filter((s) => s.p);
   return (
-    <Dialog open onClose={onClose} title="مسح رمز QR" description="الكاميرا محاكاة في هذا النموذج: أدخل الرمز أو اختر حالة تجريبية.">
+    <Dialog open onClose={onClose} title={t('gtScanTitle')} description={t('gtScanHint')}>
       <div className="scan-frame" aria-hidden="true"><span /><Icon name="qr" size="lg" /></div>
       <form className="row gap-2" onSubmit={(e) => { e.preventDefault(); if (value.trim()) onScan(value); }}>
         <Input ltr value={value} onChange={(e) => setValue(e.target.value)} placeholder="رمز من 5 أحرف أو رابط الدعوة" aria-label="الرمز أو الرابط" data-autofocus />
-        <Button type="submit" variant="primary" disabled={!value.trim()}>تحقق</Button>
+        <Button type="submit" variant="primary" disabled={!value.trim()}>{t('gtVerify')}</Button>
       </form>
       <div className="stack gap-2">
-        <p className="field-label">حالات تجريبية</p>
+        <p className="field-label">{t('gtDemoCases')}</p>
         <div className="scan-samples">
           {samples.map((s) => <Button key={s.label} size="sm" onClick={() => onScan(absolute(paths.guestLink(eventSlug, s.p!.code)))}>{s.label}</Button>)}
-          <Button size="sm" onClick={() => onScan('ZZZZ9')}>رمز غير موجود</Button>
+          <Button size="sm" onClick={() => onScan('ZZZZ9')}>{t('gtUnknown')}</Button>
         </div>
       </div>
     </Dialog>

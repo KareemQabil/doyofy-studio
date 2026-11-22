@@ -66,7 +66,7 @@ export const GUESTS = voiced({
   srcPlatform: 'المنصة سجّلته', srcManual: 'إنت حدّدته', srcSimulated: 'تجريبي', demoBadge: 'تجريبي',
   fAll: 'الكل', fPending: 'لسه ما ردّوش', fConfirmed: 'أكدوا', fDeclined: 'اعتذروا', fNotShared: 'متبعتتش', fUnassigned: 'من غير ترابيزة', fCheckedIn: 'وصلوا', fAttention: 'محتاجة متابعة',
   flagNoPhone: 'من غير رقم موبايل', flagDuplicate: 'رقم متكرر', flagFailed: 'الإرسال فشل', flagOpenedNoReply: 'فتح الدعوة ولسه ما ردّش', flagOver: 'العدد أكتر من المسموح', flagDeclinedSeated: 'اعتذر ولسه على ترابيزة',
-  glEmptySub: 'ضيف اللي هتعزمهم: واحد واحد أو من ملف', glImport: 'استيراد', glEmptyTitle: 'لسه مفيش ضيوف', glImportFile: 'استورد من ملف',
+  glEmptySub: 'زوّد اللي هتعزمهم: واحد واحد أو من ملف', glImport: 'استيراد', glEmptyTitle: 'لسه مفيش ضيوف', glImportFile: 'استورد من ملف',
   glEmptyText: 'كل دعوة ممكن تكون لشخص أو لعيلة. إنت تحدد العدد المسموح، والضيف يرد بالعدد الحقيقي.',
   glUnpublished: 'الدعوة لسه مش منشورة', glToInvitation: 'روح للدعوة', glUnpublishedText: 'رتّب القايمة دلوقتي، واللينكات هتشتغل بعد النشر.',
   glSearch: 'دوّر بالاسم أو الموبايل أو الكود', glList: 'قايمة', glFood: 'الأكل', glSelectedCount: '{n} متحددة', glPickInvitations: 'اختار الدعوات', glShownCount: ' · {n} ظاهرة',

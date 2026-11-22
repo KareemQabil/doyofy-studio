@@ -21,7 +21,7 @@ export const EDITOR = partly({
   edSaveFailed: 'الحفظ ما نفعش', edSaved: 'اتحفظ', edSaving: 'بنحفظ…', edPublished: 'منشورة', edChangedUnpublished: 'تعديلات لسه ما اتنشرتش', edDraft: 'مسودة لسه ما اتنشرتش', edPublishedChanged: 'منشورة · فيه تعديلات لسه ما اتنشرتش',
   edTitle: 'تصميم الدعوة', edJustPublished: 'دعوتك اتنشرت', edNotPublished: 'الدعوة ما اتنشرتش', edReadyTitle: 'دعوتك جاهزة تتعدّل.', edReadyText: 'راجع التفاصيل، وبعدين شوفها وانشرها.',
   edFullKicker: 'التجربة كاملة', edDeskKicker: 'على ترابيزة التصميم', edFullCaption: 'شوف الدعوة زي ما هتتفتح لضيوفك', edDeskCaption: 'دعوتك بكل تفاصيلها',
-  edModeEdit: 'تعديل', edModePreview: 'معاينة', edGuestsReady: 'دعوتك جاهزة للضيوف.', edGuestsReadyText: 'كمّل من «روح للضيوف» فوق: ضيف قايمتك وابعت لينك كل دعوة.',
+  edModeEdit: 'تعديل', edModePreview: 'معاينة', edGuestsReady: 'دعوتك جاهزة للضيوف.', edGuestsReadyText: 'كمّل من «روح للضيوف» فوق: زوّد قايمتك وابعت لينك كل دعوة.',
   edYourInvitation: 'دعوتك', edChangesAsYouType: 'بتتغيّر وإنت بتكتب', edReplayCard: 'شغّل حركة الكارت', edExpand: 'كبّر الكارت', edReplay: 'شغّلها تاني',
 }, {
   edContent: 'المحتوى', edDesign: 'التصميم', edPageCard: 'البطاقة',
