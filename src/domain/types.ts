@@ -271,7 +271,7 @@ export type ActivityKind =
   | 'party_added' | 'parties_imported' | 'party_updated' | 'party_removed'
   | 'invitation_shared' | 'invitation_opened' | 'invitation_failed' | 'reminder_sent'
   | 'rsvp_confirmed' | 'rsvp_declined' | 'rsvp_edited' | 'rsvp_unmatched' | 'rsvp_matched'
-  | 'table_created' | 'party_seated' | 'party_moved' | 'party_unseated'
+  | 'table_created' | 'party_seated' | 'party_moved' | 'party_unseated' | 'seating_auto_applied' | 'seating_auto_undone'
   | 'checked_in' | 'checked_in_partial' | 'check_in_exception' | 'check_in_undone'
   | 'event_archived';
 

@@ -21,13 +21,16 @@ import { errorMessage } from '../../services/errors';
 import { useParties, useTables } from '../shared/queries';
 import { HallMap, SeatDock, useLiftDrag } from './HallMap';
 import { useLocation } from '../../app/router';
+import { AutoSeatSheet, tableForms, type AutoSeatResult } from './AutoSeatSheet';
 
 export function SeatingPage({ event }: { event: Event }) {
   const loc=useLocation();
-  const { t } = useCopy();
-  const role = useServices().session.currentUser().role;
+  const { t, dialect } = useCopy();
+  const services = useServices();
+  const role = services.session.currentUser().role;
   const showFood = canViewFood(role), manage = canManageGuests(role);
   const [orderMode, setOrderMode] = useState(false);
+  const [autoSeat, setAutoSeat] = useState(false);
   const [exportTable, setExportTable] = useState<string | null>(null);
   const [tableFocus,setTableFocus]=useState(loc.search.get('table')??'');
   const parties = useParties(event.id);
@@ -45,7 +48,7 @@ export function SeatingPage({ event }: { event: Event }) {
   const [moving, setMoving] = useState<InvitationParty | null>(null);
   const [dockHover, setDockHover] = useState<string | null>(null);
   useEffect(() => {
-    if (!manage) { setOrderMode(false); setExportTable(null); setAssigning(null); setEditing(null); setDeleting(null); setMoving(null); setOverride(null); setDockHover(null); endDrag(); }
+    if (!manage) { setAutoSeat(false); setOrderMode(false); setExportTable(null); setAssigning(null); setEditing(null); setDeleting(null); setMoving(null); setOverride(null); setDockHover(null); endDrag(); }
   }, [manage]);
 
   const assign = useMutation((s, partyId: string, tableId: string | null) => s.seating.assign(partyId, tableId), {
@@ -96,6 +99,13 @@ export function SeatingPage({ event }: { event: Event }) {
     if (from < 0 || to < 0) return;
     ids.splice(from, 1); ids.splice(to, 0, source); void reorder.run(ids);
   };
+  // the suggestion is applied in one write; the toast offers to put back exactly what it changed
+  const autoApplied = ({ undo, seated, created }: AutoSeatResult) => {
+    setAutoSeat(false);
+    toast({ tone: 'success', text: `${t('autoSeatApplied')}: ${pluralOf(seated, P.invitation)}${created ? ` · +${plural(created, tableForms(dialect))}` : ''}`, action: { label: t('autoSeatUndo'), run: () => {
+      services.seating.undoAutoSeating(event.id, undo).then(() => toast({ tone: 'neutral', text: t('autoSeatUndone') }), (e) => toast({ tone: 'danger', text: errorMessage(e) }));
+    } } });
+  };
   const cap = totalCapacity(tables.data ?? []);
   const focus=q||tableFocus==='all'?'all':occ.some(o=>o.table.id===tableFocus)?tableFocus:occ[0]?.table.id??'';
   const shown=focus!=='all'?occ.filter(o=>o.table.id===focus):occ;
@@ -104,7 +114,7 @@ export function SeatingPage({ event }: { event: Event }) {
     <>
       <PageHeader title={t('tables')}
         subtitle={occ.length ? `${plural(occ.length, P.table)} · ${plural(cap, P.seat)} · ${people(c.confirmedPeople)} مؤكدون` : 'وزّع الضيوف المؤكدين على الطاولات'}
-        actions={occ.length && manage ? <><Button variant="primary" icon="plus" onClick={() => setEditing('new')}>أضف طاولة</Button><Button icon="move" aria-pressed={orderMode} onClick={() => setOrderMode((v) => !v)}>{orderMode ? 'إنهاء الترتيب' : 'ترتيب الطاولات'}</Button><Button icon="download" onClick={() => setExportTable('all')}>{t('exportFile')}</Button></> : undefined} />
+        actions={occ.length && manage ? <><Button variant={warn.unassigned.length ? 'primary' : 'secondary'} icon="sparkle" className="as-entry" onClick={() => setAutoSeat(true)}>{t('autoSeat')}</Button><Button variant={warn.unassigned.length ? 'secondary' : 'primary'} icon="plus" onClick={() => setEditing('new')}>أضف طاولة</Button><Button icon="move" aria-pressed={orderMode} onClick={() => setOrderMode((v) => !v)}>{orderMode ? 'إنهاء الترتيب' : 'ترتيب الطاولات'}</Button><Button icon="download" onClick={() => setExportTable('all')}>{t('exportFile')}</Button></> : undefined} />
 
       {occ.length === 0 ? manage ? <QuickSetup event={event} confirmedPeople={c.confirmedPeople} /> : <EmptyState icon="table" title="لم تُجهّز الطاولات بعد">يجهّز فريق التنظيم الطاولات لتظهر هنا.</EmptyState> : (
         <div className="stack gap-5">
@@ -183,6 +193,7 @@ export function SeatingPage({ event }: { event: Event }) {
         </div>
       )}
 
+      {autoSeat && manage && <AutoSeatSheet event={event} tables={tables.data ?? []} parties={all} onClose={() => setAutoSeat(false)} onApplied={autoApplied} />}
       {exportTable && <ExportGuestsDialog event={event} parties={all} tables={tables.data || []} visibleIds={new Set(all.map((p) => p.id))} selectedIds={new Set()} initialTable={exportTable === 'all' ? undefined : exportTable} onClose={() => setExportTable(null)} />}
       {moving && !override && !assigning && <SeatDock party={moving} tables={occ} hover={dockHover} onPick={(t) => tryAssign(moving, t)} onCancel={() => setMoving(null)} onList={() => setAssigning(moving)} />}
       {lift.ghost}

@@ -9,11 +9,12 @@ import type {
 import type { Event, InvitationParty, PartyInput } from '../../domain/types';
 import { makeCode, makeId, makeSlug, normaliseCode } from '../../domain/ids';
 import { defaultDesign, publishState } from '../../domain/invitation';
-import { applyRsvp, validateRsvp, RSVP_ERROR_TEXT } from '../../domain/parties';
+import { applyRsvp, seatsFor, validateRsvp, RSVP_ERROR_TEXT } from '../../domain/parties';
 import { eventPhase, eventStart, suggestTitle, validateEssentials, todayFor } from '../../domain/event';
 import { normalisePhone } from '../../domain/phone';
 import { statusAfter, EXCEPTION_TEXT } from '../../domain/checkin';
 import { validateTable } from '../../domain/seating';
+import { NEW_TABLE_PREFIX } from '../../domain/auto-seating';
 import { checkAnswers, cleanAnswers, experienceOf, safeExternalUrl, validatePolicy } from '../../domain/guest-experience';
 import type { GuestExperience, RsvpInput } from '../../domain/types';
 import { AppError } from '../errors';
@@ -401,6 +402,66 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       else if (to && !from) log(db, now(), p.eventId, 'party_seated', { name: p.primaryGuestName, table: to.name }, 'organizer', p.id);
       else if (!to && from) log(db, now(), p.eventId, 'party_unseated', { name: p.primaryGuestName, table: from.name }, 'organizer', p.id);
       return clone(p);
+    }), 'write'),
+    // Everything is checked against the live data before anything is written; store.write discards the draft on a throw.
+    applyAutoSeating: (eventId, plan) => store.request(() => store.write((db) => {
+      if (store.settings.role === 'caterer') throw new AppError('forbidden', 'التوزيع على الطاولات متاح لفريق التنظيم.');
+      findEvent(db, eventId);
+      const tables = db.tables.filter((t) => t.eventId === eventId);
+      const snapshot = new Map(plan.tables.map((t) => [t.id, t.capacity]));
+      if (snapshot.size !== tables.length || tables.some((t) => snapshot.get(t.id) !== t.capacity)) throw new AppError('conflict', 'تغيّرت الطاولات منذ عرض الاقتراح. راجع الاقتراح من جديد.');
+      for (const t of plan.newTables) { const e = Object.values(validateTable(t))[0]; if (e) throw new AppError('validation', e); }
+      if (new Set(plan.moves.map((m) => m.partyId)).size !== plan.moves.length) throw new AppError('validation', 'الاقتراح يكرر دعوة أكثر من مرة.');
+      let order = Math.max(0, ...tables.map((t) => t.order));
+      const made = plan.newTables.map((t) => ({ id: makeId('tbl'), eventId, name: t.name.trim(), capacity: t.capacity, order: ++order }));
+      const resolve = (id: string | null) => {
+        if (id == null) return null;
+        if (id.startsWith(NEW_TABLE_PREFIX)) { const t = made[Number(id.slice(NEW_TABLE_PREFIX.length))]; if (t) return t; }
+        const t = tables.find((x) => x.id === id);
+        if (!t) throw new AppError('conflict', 'تغيّرت الطاولات منذ عرض الاقتراح. راجع الاقتراح من جديد.');
+        return t;
+      };
+      const steps = plan.moves.map((m) => {
+        const p = db.parties.find((x) => x.id === m.partyId && x.eventId === eventId);
+        if (!p || (p.tableId ?? null) !== m.from) throw new AppError('conflict', 'تغيّر توزيع بعض الضيوف منذ عرض الاقتراح. راجع الاقتراح من جديد.');
+        const to = resolve(m.to);
+        if (to && (p.rsvpStatus !== 'confirmed' || seatsFor(p) !== m.seats)) throw new AppError('conflict', 'تغيّرت ردود بعض الضيوف منذ عرض الاقتراح. راجع الاقتراح من جديد.');
+        return { p, to };
+      });
+      const all = [...tables, ...made];
+      const after = new Map(db.parties.filter((p) => p.eventId === eventId).map((p) => [p.id, p.tableId ?? null]));
+      for (const s of steps) after.set(s.p.id, s.to?.id ?? null);
+      const receiving = new Set(steps.map((s) => s.to?.id).filter(Boolean));
+      for (const t of all) {
+        if (!receiving.has(t.id)) continue;
+        const used = db.parties.filter((p) => after.get(p.id) === t.id).reduce((n, p) => n + seatsFor(p), 0);
+        if (used > t.capacity) throw new AppError('conflict', `${t.name} ستتجاوز السعة بهذا الاقتراح. راجع الاقتراح من جديد.`);
+      }
+      // valid: write
+      db.tables.push(...made);
+      for (const s of steps) { if (s.to) s.p.tableId = s.to.id; else delete s.p.tableId; touch(s.p, now()); }
+      log(db, now(), eventId, 'seating_auto_applied', { count: steps.filter((s) => s.to).length, tables: made.length });
+      return {
+        parties: clone(steps.map((s) => s.p)), tables: clone(made),
+        undo: { moves: plan.moves.map((m, i) => ({ partyId: m.partyId, from: steps[i]!.to?.id ?? null, to: m.from })), deleteTableIds: made.map((t) => t.id) },
+      };
+    }), 'write'),
+    undoAutoSeating: (eventId, undo) => store.request(() => store.write((db) => {
+      findEvent(db, eventId);
+      const stale = () => new AppError('conflict', 'تغيّر التوزيع بعد اعتماده، فلم نتراجع حتى لا نلغي تعديلاتك.');
+      const steps = undo.moves.map((m) => {
+        const p = db.parties.find((x) => x.id === m.partyId && x.eventId === eventId);
+        if (!p || (p.tableId ?? null) !== m.from) throw stale();
+        if (m.to && !db.tables.some((t) => t.id === m.to && t.eventId === eventId)) throw stale();
+        return { p, to: m.to };
+      });
+      const gone = new Set(undo.deleteTableIds);
+      const moving = new Set(steps.map((s) => s.p.id));
+      if (undo.deleteTableIds.some((id) => !db.tables.some((t) => t.id === id && t.eventId === eventId))) throw stale();
+      if (db.parties.some((p) => p.tableId && gone.has(p.tableId) && !moving.has(p.id))) throw stale();
+      for (const s of steps) { if (s.to) s.p.tableId = s.to; else delete s.p.tableId; touch(s.p, now()); }
+      db.tables = db.tables.filter((t) => !gone.has(t.id));
+      log(db, now(), eventId, 'seating_auto_undone', { count: steps.length });
     }), 'write'),
   };
 }

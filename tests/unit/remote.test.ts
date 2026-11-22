@@ -246,6 +246,13 @@ test('[mocked] parties: list mapping, constraint errors → field-level validati
   assert.equal(calls.length, 2);
 });
 
+test('[mocked] automatic seating is refused honestly until the API has a transactional endpoint (no request sent)', async () => {
+  const { s, calls } = setup([]);
+  await rejectsWith(s.seating.applyAutoSeating(EVENT_ID, { moves: [{ partyId: PARTY_ID, from: null, to: 'tbl', seats: 2 }], newTables: [], tables: [] }), 'forbidden', /التجربة المحلية/);
+  await rejectsWith(s.seating.undoAutoSeating(EVENT_ID, { moves: [], deleteTableIds: [] }), 'forbidden', /التجربة المحلية/);
+  assert.equal(calls.length, 0);
+});
+
 test('[mocked] transport failures: offline/timeout → network, 401 → forbidden (session), 5xx → network, 403 RLS → forbidden', async () => {
   const hang = (c: Call) => new Promise<Response>((_, reject) => { void c; setTimeout(() => reject(new DOMException('aborted', 'AbortError')), 200); });
   const offline = setup([new TypeError('Failed to fetch')]);

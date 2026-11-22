@@ -29,6 +29,8 @@ export function activityText(a: EventActivity): string {
     case 'party_seated': return `تم توزيع ${s(d.name)} على ${s(d.table)}`;
     case 'party_moved': return `تم نقل ${s(d.name)} إلى ${s(d.table)}`;
     case 'party_unseated': return `تمت إزالة ${s(d.name)} من ${s(d.table)}`;
+    case 'seating_auto_applied': return `تم اعتماد التوزيع التلقائي: ${pluralOf(n(d.count), P.invitation)}${n(d.tables) ? `، مع إضافة ${pluralOf(n(d.tables), P.table)}` : ''}`;
+    case 'seating_auto_undone': return `تم التراجع عن التوزيع التلقائي (${pluralOf(n(d.count), P.invitation)})`;
     case 'checked_in': return `${s(d.name)} وصل — ${people(n(d.count))}`;
     case 'checked_in_partial': return `${s(d.name)}: وصل ${n(d.total)} من ${n(d.expected)}`;
     case 'check_in_exception': return `دخول باستثناء: ${s(d.name)} — ${s(d.reason)}`;

@@ -65,6 +65,15 @@
   --c-info: #1E6E70;    --c-info-soft: #DDEEEC;
   --c-neutral: #57514A; --c-neutral-soft: #EFE8DC;
 
+  /* ---- guest groups (side/section) in seating: a soft fill under --c-text + a strong edge ≥ 3:1 on surfaces.
+          The group name is always written next to the colour, so colour is never the only signal. */
+  --grp-1: #1E6E70; --grp-1-soft: #DDEEEC;
+  --grp-2: #A63E58; --grp-2-soft: #F6E1E6;
+  --grp-3: #7E5F25; --grp-3-soft: #F3EAD6;
+  --grp-4: #4A5A9C; --grp-4-soft: #E3E6F4;
+  --grp-5: #4F6B2F; --grp-5-soft: #E5ECD9;
+  --grp-6: #7A4A8C; --grp-6-soft: #EEE3F2;
+
   --c-stage: #0E0A08;             /* behind full-screen invitations */
   --c-qr-dark: #111111;           /* QR codes must stay black on white to scan */
   --c-qr-light: #FFFFFF;

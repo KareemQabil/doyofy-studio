@@ -90,3 +90,60 @@
   .hall .hall-table, .seat-dock, .lift-ghost, .hall-seat.is-new { animation: none; }
   .hall-disc-ring { transition: none; }
 }
+
+/* ---------------------------------------------------------------- automatic seating suggestion (AutoSeatSheet)
+ * Bottom sheet on phones, side panel on desktop (Dialog drawer). Group colours come from --grp-N tokens; the group
+ * name is always written in the legend and the chip's accessible name, so colour is never the only signal. */
+.as-sheet .dialog-desc { max-width: 52ch; }
+.as-body { display: grid; gap: var(--s-4); }
+.as-body :is(.as-legend, .as-tables, .as-chips, .as-list) { list-style: none; margin: 0; padding: 0; }
+.as-summary { font-size: var(--fs-md); line-height: var(--lh-body); color: var(--c-text); }
+.as-summary b { font-family: var(--font-display); }
+.as-empty, .as-note { display: flex; align-items: flex-start; gap: 8px; color: var(--c-text-2); line-height: var(--lh-body); }
+.as-empty .icon { color: var(--c-success); flex: none; margin-top: 3px; }
+.as-note { flex-wrap: wrap; align-items: center; }
+.as-link { min-height: 32px; padding: 0 6px; border: 0; background: none; color: var(--c-primary-text); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.as-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: var(--fs-sm); color: var(--c-text-2); }
+.as-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.as-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--grp, var(--c-text-3)); box-shadow: 0 0 0 1.5px var(--c-surface-elevated), 0 0 0 2.5px var(--grp, var(--c-text-3)); }
+.as-tables { display: grid; gap: 10px; }
+.as-table { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--c-hairline); border-radius: var(--r-lg); background: var(--c-surface); }
+.as-table.is-quiet { background: transparent; border-style: dashed; }
+.as-table.is-quiet .as-table-name { color: var(--c-text-2); }
+.as-table.is-new { border-color: var(--c-info); }
+.as-table-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.as-table-name { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font: 650 var(--fs-md)/1.3 var(--font-display); color: var(--c-text); overflow-wrap: anywhere; }
+.as-table-count { flex: none; font: 650 var(--fs-sm)/1 var(--font-display); color: var(--c-text-2); }
+.as-plus { color: var(--c-info); }
+.as-bar { position: relative; height: 8px; border-radius: var(--r-pill); background: var(--c-surface-subtle); box-shadow: inset 0 0 0 1px var(--c-hairline); overflow: hidden; }
+.as-bar span { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: inherit; transition: width var(--dur) var(--ease-out), inset-inline-start var(--dur) var(--ease-out); }
+.as-bar-kept { background: var(--c-text-3); }
+.as-bar-new { background: var(--c-info); }
+.as-kept { color: var(--c-text-3); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.as-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.as-chip { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; min-height: 36px; padding: 0 6px 0 12px; border: 1px solid var(--grp, var(--c-hairline-strong)); border-inline-start-width: 4px; border-radius: 12px; background: var(--grp-soft, var(--c-surface-subtle)); color: var(--c-text); font: 600 var(--fs-sm)/1.25 var(--font-display); cursor: pointer; transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); }
+.as-chip-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 22ch; }
+.as-chip-n { display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; border-radius: var(--r-pill); background: var(--c-surface-elevated); color: var(--c-text); font-size: var(--fs-xs); }
+.as-chip[aria-pressed='true'] { box-shadow: 0 0 0 2px var(--c-surface-elevated), 0 0 0 4px var(--grp, var(--c-focus)); transform: translateY(-1px); }
+.as-chip:active { transform: scale(var(--press-scale, .97)); }
+@media (pointer: coarse) { .as-chip, .as-mode .seg-btn { min-height: var(--touch, 44px); } }
+.grp-1 { --grp: var(--grp-1); --grp-soft: var(--grp-1-soft); }
+.grp-2 { --grp: var(--grp-2); --grp-soft: var(--grp-2-soft); }
+.grp-3 { --grp: var(--grp-3); --grp-soft: var(--grp-3-soft); }
+.grp-4 { --grp: var(--grp-4); --grp-soft: var(--grp-4-soft); }
+.grp-5 { --grp: var(--grp-5); --grp-soft: var(--grp-5-soft); }
+.grp-6 { --grp: var(--grp-6); --grp-soft: var(--grp-6-soft); }
+.as-section { display: grid; gap: 8px; }
+.as-h { font: 650 var(--fs-md)/1.3 var(--font-display); color: var(--c-text); }
+.as-list { display: grid; gap: 6px; }
+.as-list li { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: var(--r-md); background: var(--c-surface-subtle); }
+.as-reason { color: var(--c-warning); }
+/* the adjust bar replaces the footer actions while a chip is selected: within thumb reach on phones */
+.as-adjust { flex: 1 1 100%; display: grid; gap: 10px; }
+.as-adjust-who { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--fs-md); }
+.as-adjust-who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); }
+.as-adjust-field { display: grid; gap: 4px; color: var(--c-text-2); }
+.as-adjust-field .select { width: 100%; min-height: var(--touch, 44px); }
+.as-adjust-actions { display: flex; gap: var(--s-2); }
+.as-adjust-actions .btn { flex: 1 1 0; }
+@media (prefers-reduced-motion: reduce) { .as-bar span, .as-chip { transition: none; } }
