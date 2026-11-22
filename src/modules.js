@@ -10,7 +10,9 @@ import { RevealRegistry, MotionRegistry, InteractionRegistry, CameraRegistry, FX
 RevealRegistry.register({
   id: 'depth-arrival', name: 'Cinematic depth arrival (canonical)',
   tags: ['cinematic', 'dark', 'canonical'],
-  timing: { intro: 4700 },   // black 0–3.2 s, credit 0.3–2.8 s, card flies in 2.2–4.8 s, bars lift at 3.8 s
+  // black 0–2.6 s, credit 0.25–2.1 s, card flies in 1.6–3.7 s (its face starts drawing in at 2.1 s), bars lift 3.0–3.7 s;
+  // opening: the card turns and fades by 0.65 s, then the sheet rises (styles/studio.css)
+  timing: { intro: 3700, opening: 700 },
   css: ['.st-intro', '.st-credit', '.st-black', '.st-bar'],
   reducedMotion: 'static',   // starts settled on the card (no-intro), no fly-in
 });
