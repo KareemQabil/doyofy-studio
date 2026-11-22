@@ -14,7 +14,7 @@ const { chromium } = need('playwright');
 const which = process.argv[2] ?? 'all';
 const OUT = `${ROOT}/review/screenshots-or-captures/journey`;
 fs.mkdirSync(OUT, { recursive: true });
-const server = await startServer(5381);
+const server = await startServer(Number(process.env.JOURNEY_PORT) || 5381); // JOURNEY_PORT: parallel worktrees
 const BASE = `http://localhost:${server.address().port}`;
 const browser = await chromium.launch({ executablePath: chromiumPath(), args: ['--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
 const VPS = { phone: { width: 390, height: 844 }, tab: { width: 768, height: 1024 }, desk: { width: 1440, height: 900 } };

@@ -1,7 +1,7 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import type { InvitationParty } from '../../src/domain/types';
-import { duplicateDestinationNames, guestNextAction, guestsCsv, scopedGuests } from '../../src/domain/guest-tools';
+import { arrivalOpen, duplicateDestinationNames, guestNextAction, guestsCsv, isUnsent, phoneCell, scopedGuests } from '../../src/domain/guest-tools';
 import { canViewFood } from '../../src/domain/roles';
 
 beforeEach(() => {
@@ -22,17 +22,42 @@ test('guest export respects selection/table/group scopes and prevents spreadshee
   const csv = guestsCsv(guests, []);
   assert.ok(csv.includes("'=1+1"));
   assert.ok(!csv.includes('+966555123456') && !csv.includes('private') && !csv.includes('nuts'));
-  assert.ok(guestsCsv(guests, [], true).includes("'+966555123456"));
+  // phones: text-safe without a visible apostrophe — a left-to-right mark in front, never a leading + or '
+  const withPhones = guestsCsv(guests, [], true);
+  assert.ok(withPhones.includes(',‎+966555123456,'));
+  assert.ok(!withPhones.includes("'+966"));
+  assert.equal(phoneCell('+966555123456'), '‎+966555123456');
+  assert.equal(phoneCell('=HYPERLINK("x")'), '=HYPERLINK("x")', 'anything that is not a phone still goes through the formula guard');
+  assert.ok(guestsCsv([party({ phone: '=cmd' })], [], true).includes("'=cmd"));
+  // companions travel with the allowed seats
+  const companions = guestsCsv([party({ maxPartySize: 3, companionNames: ['سارة', 'ليان'] })], []);
+  assert.ok(companions.split('\r\n')[0]!.includes('العدد المسموح,المرافقون'));
+  assert.ok(companions.includes('3,سارة، ليان,'));
 });
 
-test('next guest action follows reply/delivery/seating state; food is caterer-only', () => {
+test('next guest action follows reply/delivery/seating state and the event clock; food is caterer-only', () => {
+  const phone = '+966555123456';
   assert.equal(guestNextAction(party(), 'draft', true), 'publish');
   assert.equal(guestNextAction(party(), 'published', true), 'phone');
-  assert.equal(guestNextAction(party({ phone: '+966555123456' }), 'published', true), 'share');
-  assert.equal(guestNextAction(party({ phone: '+966555123456', delivery: { status: 'shared' } }), 'published', true), 'remind');
+  assert.equal(guestNextAction(party({ phone: '12' }), 'published', true), 'phone', 'an invalid number cannot be shared');
+  assert.equal(guestNextAction(party({ phone }), 'published', true), 'share');
+  assert.equal(guestNextAction(party({ phone, delivery: { status: 'shared' } }), 'published', true), 'remind');
   assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed' }), 'published', true), 'seat');
-  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed', tableId: 't1' }), 'published', true), 'arrival');
+  // before the event day a confirmed, seated guest needs nothing extra; arrival opens on the day
+  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed', tableId: 't1' }), 'published', true), 'details');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed', tableId: 't1' }), 'published', true, true), 'arrival');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed' }), 'published', false), 'details');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed' }), 'published', false, true), 'arrival');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed', checkInStatus: 'checked_in', checkedInCount: 2, tableId: 't1' }), 'published', true, true), 'details');
   assert.equal(guestNextAction(party({ rsvpStatus: 'declined' }), 'published', true), 'details');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'declined', tableId: 't1' }), 'published', true), 'unseat');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'declined', tableId: 't1' }), 'published', true, true), 'unseat');
+  assert.equal(isUnsent(party()), true); assert.equal(isUnsent(party({ delivery: { status: 'failed' } })), true); assert.equal(isUnsent(party({ delivery: { status: 'shared' } })), false);
+  const ev = { date: '2026-12-01', time: '20:00', timeZone: 'Asia/Riyadh', durationHours: 5 } as Parameters<typeof arrivalOpen>[0];
+  assert.equal(arrivalOpen(ev, new Date('2026-11-22T12:00:00Z')), false, 'nine days before: no arrival yet');
+  assert.equal(arrivalOpen(ev, new Date('2026-11-30T20:30:00Z')), false, 'the evening before (23:30 Riyadh)');
+  assert.equal(arrivalOpen(ev, new Date('2026-11-30T21:30:00Z')), true, 'just after midnight in Riyadh on the day');
+  assert.equal(arrivalOpen(ev, new Date('2026-12-03T12:00:00Z')), true, 'after the event: late arrivals can still be recorded');
   assert.equal(canViewFood('organizer'), false); assert.equal(canViewFood('coordinator'), false); assert.equal(canViewFood('caterer'), true);
   assert.deepEqual(duplicateDestinationNames([party({ primaryGuestName: 'ادم' })], [party()]), ['ادم']);
 });
