@@ -11,9 +11,20 @@ export interface CheckInAssessment {
   exceptions: CheckInException[];
 }
 
+/**
+ * How many people the gate waits for. Confirmed: what they confirmed, but never more than the invitation now allows
+ * (the organizer may lower the allowance after the reply). Not replied: the allowance. Declined: nobody — whoever the
+ * staff let in after checking is an exception, and the invitation never waits for «the rest».
+ */
+export function expectedArrivals(p: InvitationParty): number {
+  if (p.rsvpStatus === 'declined') return 0;
+  if (p.rsvpStatus === 'confirmed') return Math.min(p.confirmedPartySize ?? p.maxPartySize, p.maxPartySize);
+  return p.maxPartySize;
+}
+
 export function assessCheckIn(p: InvitationParty, arrivingNow?: number): CheckInAssessment {
-  const confirmed = p.rsvpStatus === 'confirmed' ? p.confirmedPartySize ?? p.maxPartySize : 0;
-  const expected = p.rsvpStatus === 'confirmed' ? confirmed : p.maxPartySize;
+  const expected = expectedArrivals(p);
+  const confirmed = p.rsvpStatus === 'confirmed' ? expected : 0;
   const remaining = Math.max(0, expected - p.checkedInCount);
   const n = arrivingNow ?? (remaining || 1);
   const ex: CheckInException[] = [];
@@ -41,8 +52,7 @@ export const EXCEPTION_TEXT: Record<CheckInException, { title: string; body: str
 
 export function statusAfter(p: InvitationParty, newTotal: number): CheckInStatus {
   if (newTotal <= 0) return 'not_arrived';
-  const expected = p.rsvpStatus === 'confirmed' ? p.confirmedPartySize ?? p.maxPartySize : p.maxPartySize;
-  return newTotal >= expected ? 'checked_in' : 'partial';
+  return newTotal >= expectedArrivals(p) ? 'checked_in' : 'partial';
 }
 
 /** QR payload → party code. Accepts the personal link (…/i/<slug>/<CODE>), "DOYOFY:<CODE>" or a bare code. */

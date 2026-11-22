@@ -147,3 +147,13 @@
 .as-adjust-actions { display: flex; gap: var(--s-2); }
 .as-adjust-actions .btn { flex: 1 1 0; }
 @media (prefers-reduced-motion: reduce) { .as-bar span, .as-chip { transition: none; } }
+
+/* ---------------------------------------------------------------- page header and order mode (ops review) */
+.seat-head-actions { display: flex; align-items: center; gap: var(--s-2); }
+.seat-head-actions .as-entry { flex: 1 1 auto; }
+.hall-order-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+/* «بالكيبورد…» only where a keyboard is likely */
+@media (hover: none), (pointer: coarse) { .hall-order-keys { display: none; } }
+.as-table.is-over { border-color: var(--c-danger); }
+.as-table.is-over .as-table-count { color: var(--c-danger); }
+.as-table.is-over .as-bar-kept { background: var(--c-danger); }

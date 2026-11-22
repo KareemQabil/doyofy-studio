@@ -272,7 +272,7 @@ export type ActivityKind =
   | 'invitation_shared' | 'invitation_opened' | 'invitation_failed' | 'reminder_sent'
   | 'rsvp_confirmed' | 'rsvp_declined' | 'rsvp_edited' | 'rsvp_unmatched' | 'rsvp_matched'
   | 'table_created' | 'party_seated' | 'party_moved' | 'party_unseated' | 'seating_auto_applied' | 'seating_auto_undone'
-  | 'checked_in' | 'checked_in_partial' | 'check_in_exception' | 'check_in_undone'
+  | 'checked_in' | 'checked_in_partial' | 'check_in_exception' | 'check_in_undone' | 'check_in_walk_in'
   | 'event_archived';
 
 export interface EventActivity {
@@ -280,7 +280,8 @@ export interface EventActivity {
   eventId: string;
   kind: ActivityKind;
   at: ISODateTime;
-  actor: 'organizer' | 'guest' | 'gate' | 'system';
+  /** who did it: the owner, a team member by role, the guest, the reception gate, or the system */
+  actor: 'organizer' | 'coordinator' | 'caterer' | 'guest' | 'gate' | 'system';
   partyId?: string;
   data: Record<string, string | number | boolean | undefined>;
 }

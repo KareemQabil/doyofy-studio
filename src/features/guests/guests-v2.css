@@ -193,6 +193,8 @@
      selector outranks it so the bar never stretches from the header to the tab bar and covers the list. */
   :root[data-theme] .g2 .g2-bulk { position: fixed; top: auto; bottom: calc(var(--mobile-nav-h, calc(56px + env(safe-area-inset-bottom))) + 8px); inset-inline: 8px; max-width: 560px; margin-inline: auto; }
   .g2-body:has(.g2-bulk) { padding-bottom: 136px; }
+  /* the bar sits at the bottom here, so its «more» menu opens upward instead of under the tab bar (fix-ops) */
+  :root[data-theme] .g2 .g2-bulk .menu-list { top: auto; bottom: calc(100% + 4px); }
   html:has(.g2-bulk) { scroll-padding-bottom: calc(var(--mobile-nav-h, 56px) + 136px); }
   .g2-bulk-close { flex: none; }
   .g2-bulk-actions .btn { flex: 1 1 auto; justify-content: center; min-height: 44px; }

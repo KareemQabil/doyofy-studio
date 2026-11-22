@@ -208,7 +208,7 @@ export function buildSeed(now: Date, scenario: ScenarioId): DbShape {
     const w = parties.find((x) => x.id === 'pty_w24')!;
     const when = at(now, 12);
     checkIns.push({ id: 'chk_wx', eventId: e1.id, partyId: w.id, count: 1, method: 'search', at: when, by: 'الاستقبال — بوابة 1', exceptions: ['declined_arrived'], staffNote: 'قالت إن ظروفها تغيرت — سمحنا بالدخول' });
-    w.checkedInCount = 1; w.checkInStatus = 'partial';
+    w.checkedInCount = 1; w.checkInStatus = statusAfter(w, 1);
     activity.push({ id: makeId('act', rng), eventId: e1.id, kind: 'check_in_exception', at: when, actor: 'gate', partyId: w.id, data: { name: w.primaryGuestName, reason: 'هذا الضيف اعتذر عن الحضور' } });
   }
 

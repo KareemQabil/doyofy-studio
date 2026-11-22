@@ -6,7 +6,7 @@
  */
 import { useMemo, useRef, useState } from 'react';
 import type { CheckInRecord, Event, InvitationParty } from '../../domain/types';
-import { assessCheckIn, BLOCKING, codeFromScan, EXCEPTION_TEXT } from '../../domain/checkin';
+import { assessCheckIn, BLOCKING, codeFromScan, EXCEPTION_TEXT, expectedArrivals } from '../../domain/checkin';
 import { countParties, searchParties } from '../../domain/parties';
 import { eventPhase, todayFor } from '../../domain/event';
 import { countdownLabel, people, peopleOf } from '../../domain/format';
@@ -17,7 +17,7 @@ import { paths } from '../../app/paths';
 import { errorMessage } from '../../services/errors';
 import { useEvent, useParties, useTables } from '../shared/queries';
 
-type View = { kind: 'search' } | { kind: 'party'; id: string; method: 'qr' | 'search' } | { kind: 'done'; record: CheckInRecord; party: InvitationParty } | { kind: 'notfound'; input: string } | { kind: 'lookup-error'; input: string; message: string };
+type View = { kind: 'search' } | { kind: 'walk-in'; name: string } | { kind: 'party'; id: string; method: 'qr' | 'search' } | { kind: 'done'; record: CheckInRecord; party: InvitationParty } | { kind: 'notfound'; input: string } | { kind: 'lookup-error'; input: string; message: string };
 
 export function GateMode({ eventId }: { eventId: string }) {
   const ev = useEvent(eventId);
@@ -34,11 +34,13 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
   const [view, setView] = useState<View>({ kind: 'search' });
   const [q, setQ] = useState('');
   const [scanning, setScanning] = useState(false);
+  // a one-line confirmation on the search screen after an undo or a walk-in, naming the family
+  const [notice, setNotice] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const c = countParties(parties);
   const phase = eventPhase(event, now);
   const results = useMemo(() => (q.trim().length >= 2 ? searchParties(parties, q).slice(0, 12) : []), [parties, q]);
-  const back = () => { setView({ kind: 'search' }); setQ(''); setTimeout(() => searchRef.current?.focus(), 50); };
+  const back = (message?: string) => { setNotice(message ?? null); setView({ kind: 'search' }); setQ(''); setTimeout(() => searchRef.current?.focus(), 50); };
 
   const onScan = async (payload: string) => {
     setScanning(false);
@@ -70,28 +72,31 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
       <main className="gate-main" id="main">
         {view.kind === 'search' && (
           <div className="gate-home">
-            <button type="button" className="gate-scan" onClick={() => setScanning(true)}>
+            {notice && <p className="gate-notice" role="status"><Icon name="check-circle" size="sm" />{notice}</p>}
+            <button type="button" className="gate-scan" onClick={() => { setNotice(null); setScanning(true); }}>
               <Icon name="scan" size="lg" /><span>مسح رمز QR</span>
             </button>
             <div className="gate-search">
               <label htmlFor="gate-q" className="gate-label">أو ابحث بالاسم أو الجوال أو الرمز</label>
               <div className="gate-search-row">
                 <Icon name="search" />
-                <input id="gate-q" ref={searchRef} className="gate-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="مثال: الشهري أو 0551…" autoComplete="off" />
+                <input id="gate-q" ref={searchRef} className="gate-input" value={q} onChange={(e) => { setNotice(null); setQ(e.target.value); }} placeholder="مثال: الشهري أو 0551…" autoComplete="off" />
                 {q && <button type="button" className="gate-clear" aria-label="مسح" onClick={() => setQ('')}><Icon name="close" /></button>}
               </div>
             </div>
             {q.trim().length >= 2 && (
               results.length === 0 ? (
-                <div className="gate-empty"><p className="t-bold">لا يوجد ضيف بهذا الاسم</p><p>جرّب جزءًا من الاسم أو رقم الجوال. إن لم يكن في القائمة، تواصل مع المنظم قبل السماح بالدخول.</p></div>
+                <div className="gate-empty"><p className="t-bold">لا يوجد ضيف بهذا الاسم</p><p>جرّب جزءًا من الاسم أو رقم الجوال. إن لم يكن في القائمة، تواصل مع المنظم قبل السماح بالدخول.</p>
+                  <Button icon="edit" onClick={() => setView({ kind: 'walk-in', name: /\d/.test(q) ? '' : q.trim() })}>سجّل ضيفًا من خارج القائمة</Button></div>
               ) : (
                 <ul className="gate-results" aria-label="نتائج البحث">
                   {results.map((p) => (
                     <li key={p.id}>
                       <button type="button" className="gate-result" onClick={() => setView({ kind: 'party', id: p.id, method: 'search' })}>
                         <span className="grow"><span className="gate-result-name">{p.primaryGuestName}</span>
-                          <span className="gate-result-sub">{p.rsvpStatus === 'confirmed' ? `أكدوا ${peopleOf(p.confirmedPartySize ?? 0)}` : p.rsvpStatus === 'declined' ? 'اعتذروا' : 'لم يردوا'}{tableName(p.tableId) ? ` · ${tableName(p.tableId)}` : ''}</span></span>
-                        <span className={`gate-pill is-${p.checkInStatus}`}>{p.checkInStatus === 'checked_in' ? 'وصلوا' : p.checkInStatus === 'partial' ? `وصل ${p.checkedInCount}` : 'لم يصلوا'}</span>
+                          <span className="gate-result-sub">{p.rsvpStatus === 'confirmed' ? `أكدوا ${peopleOf(p.confirmedPartySize ?? 0)}` : p.rsvpStatus === 'declined' ? 'اعتذروا عن الحضور' : 'لم يردوا على الدعوة'}{tableName(p.tableId) ? ` · ${tableName(p.tableId)}` : ''}</span></span>
+                        {/* the pill says what the gate needs: arrival for those expected, the reply for those who are not */}
+                        <span className={`gate-pill is-${p.checkedInCount === 0 && p.rsvpStatus !== 'confirmed' ? p.rsvpStatus : p.checkInStatus}`}>{p.checkInStatus === 'checked_in' ? 'وصلوا' : p.checkInStatus === 'partial' ? `وصل ${p.checkedInCount}` : p.rsvpStatus === 'declined' ? 'اعتذروا' : p.rsvpStatus === 'pending' ? 'بلا رد' : 'لم يصلوا'}</span>
                       </button>
                     </li>
                   ))}
@@ -103,22 +108,24 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
 
         {view.kind === 'party' && (() => {
           const p = parties.find((x) => x.id === view.id);
-          return p ? <PartyCheckIn seatingEnabled={seatingEnabled} key={p.id + p.checkedInCount} party={p} method={view.method} table={tableName(p.tableId)} onBack={back} onDone={(record, party) => setView({ kind: 'done', record, party })} /> : null;
+          return p ? <PartyCheckIn seatingEnabled={seatingEnabled} key={p.id + p.checkedInCount} party={p} method={view.method} table={tableName(p.tableId)} onBack={() => back()} onDone={(record, party) => setView({ kind: 'done', record, party })} /> : null;
         })()}
 
         {view.kind === 'done' && (() => {
           // the mutation's party is fresh; the list catches up a moment later — show whichever is newer
           const listed = parties.find((x) => x.id === view.party.id);
           const party = listed && listed.updatedAt > view.party.updatedAt ? listed : view.party;
-          return <DoneCard seatingEnabled={seatingEnabled} record={view.record} party={party} table={tableName(party.tableId)} onNext={back} onUndone={back} />;
+          return <DoneCard seatingEnabled={seatingEnabled} record={view.record} party={party} table={tableName(party.tableId)} onNext={() => back()} onUndone={() => back(`تم التراجع عن دخول ${party.primaryGuestName} (${people(view.record.count)}).`)} />;
         })()}
+
+        {view.kind === 'walk-in' && <WalkIn eventId={event.id} initialName={view.name} onBack={() => back()} onDone={(name) => back(`سُجّل دخول ${name} من خارج القائمة، ووصلت ملاحظتك للمنظم.`)} />}
 
         {view.kind === 'notfound' && (
           <div className="gate-card is-alert" role="alert">
             <Icon name="alert" size="lg" />
             <h2 className="gate-h">لم نجد هذا الرمز</h2>
             <p>الرمز غير صحيح أو أن الدعوة حُذفت. لا تسمح بالدخول قبل التأكد: ابحث باسم الضيف، أو تواصل مع المنظم.</p>
-            <div className="gate-actions"><Button variant="primary" size="lg" icon="search" onClick={back}>ابحث بالاسم</Button><Button size="lg" icon="scan" onClick={() => setScanning(true)}>امسح مرة أخرى</Button></div>
+            <div className="gate-actions"><Button variant="primary" size="lg" icon="search" onClick={() => back()}>ابحث بالاسم</Button><Button size="lg" icon="scan" onClick={() => setScanning(true)}>امسح مرة أخرى</Button></div>
           </div>
         )}
         {view.kind === 'lookup-error' && (
@@ -126,7 +133,7 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
             <Icon name="alert" size="lg" />
             <h2 className="gate-h">تعذر التحقق من الرمز</h2>
             <p>{view.message} لم نسجّل وصولًا. احتفظ بالرمز وحاول مجددًا.</p>
-            <div className="gate-actions"><Button variant="primary" size="lg" onClick={() => void onScan(view.input)}>أعد المحاولة بنفس الرمز</Button><Button size="lg" icon="search" onClick={back}>ابحث بالاسم</Button></div>
+            <div className="gate-actions"><Button variant="primary" size="lg" onClick={() => void onScan(view.input)}>أعد المحاولة بنفس الرمز</Button><Button size="lg" icon="search" onClick={() => back()}>ابحث بالاسم</Button></div>
           </div>
         )}
       </main>
@@ -148,7 +155,7 @@ function PartyCheckIn({ party, method, table, onBack, onDone, seatingEnabled }: 
   const save = useMutation((s) => s.checkIn.checkIn(party.id, count, { method, by: 'الاستقبال', exceptions: a.exceptions, staffNote: note.trim() || undefined }), {
     onSuccess: (r) => onDone(r.record, r.party),
   });
-  const confirmedSize = party.rsvpStatus === 'confirmed' ? party.confirmedPartySize ?? party.maxPartySize : 0;
+  const confirmedSize = party.rsvpStatus === 'confirmed' ? expectedArrivals(party) : 0;
   const total = party.checkedInCount + count;
   const label = needsDecision ? `سجّل دخول ${peopleOf(count)} رغم ذلك` : total < a.expected ? `دخول جزئي: ${people(count)} الآن` : `تسجيل دخول ${peopleOf(count)}`;
 
@@ -157,7 +164,9 @@ function PartyCheckIn({ party, method, table, onBack, onDone, seatingEnabled }: 
       <button type="button" className="gate-back" onClick={onBack}><Icon name="back" size="sm" />رجوع للبحث</button>
       <h2 className="gate-name">{party.primaryGuestName}</h2>
       <div className="gate-facts">
-        <div><span className="gate-k">أكدوا</span><span className="gate-v num">{party.rsvpStatus === 'confirmed' ? confirmedSize : party.rsvpStatus === 'declined' ? 'اعتذروا' : 'لم يردوا'}</span></div>
+        <div>{party.rsvpStatus === 'confirmed'
+          ? <><span className="gate-k">أكدوا</span><span className="gate-v num">{confirmedSize}</span></>
+          : <><span className="gate-k">الرد</span><span className="gate-v">{party.rsvpStatus === 'declined' ? 'اعتذروا' : 'لم يردوا'}</span></>}</div>
         <div><span className="gate-k">وصل</span><span className="gate-v num">{party.checkedInCount}</span></div>
         <div><span className="gate-k">{seatingEnabled?'الطاولة':'الدعوة'}</span><span className="gate-v">{seatingEnabled?table??'—':'دون توزيع مقاعد'}</span></div>
       </div>
@@ -183,7 +192,8 @@ function PartyCheckIn({ party, method, table, onBack, onDone, seatingEnabled }: 
         </div>
       )}
       {save.error ? <p className="gate-error" role="alert">{errorMessage(save.error)}</p> : null}
-      <div className="gate-actions">
+      {/* stays at the bottom of the screen while the card scrolls, so the decision is always one tap away */}
+      <div className="gate-actions is-dock">
         <Button variant={needsDecision ? 'danger' : 'primary'} size="lg" block disabled={needsDecision && !confirmed} loading={save.pending} onClick={() => void save.run()}>{label}</Button>
         {!needsDecision && a.remaining > 1 && count !== a.remaining && <Button size="lg" block onClick={() => setCount(a.remaining)}>الكل ({people(a.remaining)})</Button>}
       </div>
@@ -193,7 +203,7 @@ function PartyCheckIn({ party, method, table, onBack, onDone, seatingEnabled }: 
 
 function DoneCard({ record, party, table, onNext, onUndone, seatingEnabled }: { seatingEnabled: boolean; record: CheckInRecord; party: InvitationParty; table?: string; onNext: () => void; onUndone: () => void }) {
   const undo = useMutation((s) => s.checkIn.undo(record.id), { onSuccess: onUndone });
-  const expected = party.rsvpStatus === 'confirmed' ? party.confirmedPartySize ?? party.maxPartySize : party.maxPartySize;
+  const expected = expectedArrivals(party);
   const partial = party.checkedInCount < expected;
   return (
     <div className={`gate-card gate-done${record.exceptions.some((e) => BLOCKING.has(e)) ? ' is-exception' : ''}`} role="status">
@@ -201,13 +211,40 @@ function DoneCard({ record, party, table, onNext, onUndone, seatingEnabled }: { 
         ? <span className="gate-done-mark" aria-hidden="true"><Icon name="check" size="lg" /></span>
         : <Lottie name="success" size={96} className="gate-done-seal" />}
       <h2 className="gate-h">{partial ? `دخل ${people(record.count)}` : 'أهلًا وسهلًا'}</h2>
-      <p className="gate-done-line">{party.primaryGuestName} · وصل <strong className="num">{party.checkedInCount}</strong> من <span className="num">{expected}</span>{partial ? ' — الباقون لاحقًا' : ''}</p>
+      <p className="gate-done-line">{party.primaryGuestName} · {expected > 0 ? <>وصل <strong className="num">{party.checkedInCount}</strong> من <span className="num">{expected}</span>{partial ? ' — الباقون لاحقًا' : ''}</> : <>دخل <strong className="num">{party.checkedInCount}</strong> باستثناء</>}</p>
       {table && <p className="gate-table"><Icon name="table" />{table}</p>}
       {seatingEnabled && !table && party.rsvpStatus === 'confirmed' && <p className="gate-hint">لا توجد طاولة — وجّههم لمنسق القاعة.</p>}
       {undo.error ? <p className="gate-error">{errorMessage(undo.error)}</p> : null}
       <div className="gate-actions">
         <Button variant="primary" size="lg" block icon="scan" onClick={onNext}>الضيف التالي</Button>
         <Button size="lg" block icon="undo" loading={undo.pending} onClick={() => void undo.run()}>تراجع عن التسجيل</Button>
+      </div>
+    </div>
+  );
+}
+
+/** Someone at the door who is not on the list: staff note who it was and why they were let in; the organizer sees it in the activity log. */
+function WalkIn({ eventId, initialName, onBack, onDone }: { eventId: string; initialName: string; onBack: () => void; onDone: (name: string) => void }) {
+  const [name, setName] = useState(initialName);
+  const [count, setCount] = useState(1);
+  const [note, setNote] = useState('');
+  const [confirmed, setConfirmed] = useState(false);
+  const save = useMutation((s) => s.checkIn.recordWalkIn(eventId, { name, count, note: note.trim() || undefined }), { onSuccess: () => onDone(name.trim()) });
+  return (
+    <div className="gate-card">
+      <button type="button" className="gate-back" onClick={onBack}><Icon name="back" size="sm" />رجوع للبحث</button>
+      <h2 className="gate-h">ضيف من خارج القائمة</h2>
+      <div className="gate-ex is-blocking" role="note"><Icon name="alert" size="sm" /><div><p className="t-bold">لا توجد له دعوة</p><p className="t-sm">لا تسمح بالدخول قبل التأكد من المنظم. لن نضيفه إلى قائمة الضيوف — تصل ملاحظتك للمنظم فقط.</p></div></div>
+      <div><label className="gate-label" htmlFor="gate-walk-name">الاسم كما قاله الضيف</label><Input id="gate-walk-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" /></div>
+      <div className="gate-count"><Stepper label="كم شخصًا؟" value={count} min={1} max={20} onChange={setCount} /></div>
+      <div className="gate-decision">
+        <Checkbox checked={confirmed} onChange={setConfirmed} label="تأكدت من المنظم أو من صاحب الدعوة" />
+        <label className="gate-label" htmlFor="gate-walk-note">ملاحظة للمنظم (اختياري)</label>
+        <Textarea id="gate-walk-note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="مثال: من طرف العريس، اسمه سقط من القائمة" />
+      </div>
+      {save.error ? <p className="gate-error" role="alert">{errorMessage(save.error)}</p> : null}
+      <div className="gate-actions is-dock">
+        <Button variant="danger" size="lg" block disabled={!confirmed || !name.trim()} loading={save.pending} onClick={() => void save.run()}>سجّل دخول {peopleOf(count)}</Button>
       </div>
     </div>
   );

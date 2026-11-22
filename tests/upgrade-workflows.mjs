@@ -156,7 +156,7 @@ try {
 
   await scenario('04-table-order', { width: 1440, height: 1000 }, async page => {
     await go(page, '/app/events/evt_wedding/seating');
-    await page.getByRole('button', { name: 'ترتيب الطاولات', exact: true }).click();
+    await page.locator('.seat-head-actions .menu-trigger').click(); await page.getByRole('menuitem', { name: 'ترتيب الطاولات', exact: true }).click();
     const tables = page.locator('[data-order-table]'); assert.ok(await tables.count() >= 2);
     const initial = await tables.evaluateAll(nodes => nodes.map(n => n.dataset.orderTable));
     await tables.first().focus(); await page.keyboard.press('ArrowDown');
@@ -165,7 +165,7 @@ try {
     assert.equal(afterKey[1], initial[0]);
     await page.reload({ waitUntil: 'domcontentloaded' }); await tables.first().waitFor();
     assert.deepEqual(await tables.evaluateAll(nodes => nodes.map(n => n.dataset.orderTable)), afterKey);
-    await page.getByRole('button', { name: 'ترتيب الطاولات', exact: true }).click();
+    await page.locator('.seat-head-actions .menu-trigger').click(); await page.getByRole('menuitem', { name: 'ترتيب الطاولات', exact: true }).click();
     await tables.nth(1).dragTo(tables.first());
     await page.waitForFunction(id => document.querySelector('[data-order-table]')?.getAttribute('data-order-table') === id, initial[0]);
     const afterDrag = await tables.evaluateAll(nodes => nodes.map(n => n.dataset.orderTable));

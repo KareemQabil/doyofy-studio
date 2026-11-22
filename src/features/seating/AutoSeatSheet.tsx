@@ -62,7 +62,8 @@ export function AutoSeatSheet({ event, tables, parties, onClose, onApplied }: {
   const switchMode = (m: AutoSeatMode) => { setMode(m); setPinned(new Map()); setExcluded(new Set()); setSelected(null); };
 
   const apply = useMutation((s) => s.seating.applyAutoSeating(event.id, applyInput(plan, tables)), {
-    onSuccess: (r) => onApplied({ undo: r.undo, seated: r.parties.filter((p) => p.tableId).length, created: r.tables.length }),
+    // the toast repeats the number the summary promised («سنوزّع 21 دعوة»), not only the parties whose table changed
+    onSuccess: (r) => onApplied({ undo: r.undo, seated: placed.size, created: r.tables.length }),
   });
 
   const footer = party && placed.has(party.id) ? (
@@ -162,13 +163,15 @@ function PlanTableCard({ x, byId, placed, moved, tone, selected, onSelect, newLa
   const before = x.partyIds.filter((id) => !placed.has(id) && seatsFor(byId.get(id)!) > 0);
   const added = fresh.filter((id) => moved.has(id)).reduce((n, id) => n + seatsFor(byId.get(id)!), 0);
   const pct = (n: number) => `${Math.min(100, (n / Math.max(1, x.capacity)) * 100)}%`;
+  // «غير الموزعين فقط» keeps a table that is already over capacity as it is: say so instead of a quiet 13/12
+  const over = x.used > x.capacity;
   return (
-    <li className={`as-table${fresh.length ? '' : ' is-quiet'}${x.isNew ? ' is-new' : ''}`}>
+    <li className={`as-table${fresh.length ? '' : ' is-quiet'}${x.isNew ? ' is-new' : ''}${over ? ' is-over' : ''}`}>
       <header className="as-table-head">
-        <h3 className="as-table-name">{x.name}{x.isNew && <Badge tone="info">{newLabel}</Badge>}</h3>
+        <h3 className="as-table-name">{x.name}{x.isNew && <Badge tone="info">{newLabel}</Badge>}{over && <Badge tone="danger">فوق السعة</Badge>}</h3>
         <span className="as-table-count num">{x.used}/{x.capacity}{added > 0 && <span className="as-plus"> +{added}</span>}</span>
       </header>
-      <div className="as-bar" role="img" aria-label={`${x.name}: ${x.used} من ${x.capacity}${added ? `، منها ${added} مقترحة` : ''}`}>
+      <div className="as-bar" role="img" aria-label={`${x.name}: ${x.used} من ${x.capacity}${added ? `، منها ${added} مقترحة` : ''}${over ? `، فوق السعة بـ${x.used - x.capacity}` : ''}`}>
         <span className="as-bar-kept" style={{ width: pct(x.used - added) }} />
         <span className="as-bar-new" style={{ width: pct(added), insetInlineStart: pct(x.used - added) }} />
       </div>

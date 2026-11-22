@@ -147,3 +147,15 @@ export function formatPhone(e164?: string): string {
   const groups = cc === '20' ? [rest.slice(0, 3), rest.slice(3, 6), rest.slice(6)] : [rest.slice(0, 2), rest.slice(2, 5), rest.slice(5)];
   return `+${cc} ${groups.filter(Boolean).join(' ')}`;
 }
+
+/**
+ * The letter on a guest's avatar: the family name, not the word «عائلة» — «عائلة الشهري» → «ش», «آل سعود» → «س»,
+ * «أم خالد» → «خ», «العتيبي» → «ع». Falls back to the first letter, or «؟» for an empty name.
+ */
+export function initialOf(name: string): string {
+  const clean = name.replace(/\s+/g, ' ').trim();
+  const rest = clean.replace(/^(?:ال)?(?:عائلة|أسرة|آل|أم|أبو|أبا|بيت)\s+/, '');
+  const word = rest.split(' ')[0] ?? '';
+  const core = word.startsWith('ال') && word.length > 3 ? word.slice(2) : word;
+  return [...(core || clean)][0] ?? '؟';
+}

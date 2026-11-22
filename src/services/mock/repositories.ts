@@ -12,7 +12,7 @@ import { defaultDesign, publishState } from '../../domain/invitation';
 import { applyRsvp, seatsFor, validateRsvp, RSVP_ERROR_TEXT } from '../../domain/parties';
 import { eventPhase, eventStart, suggestTitle, validateEssentials, todayFor } from '../../domain/event';
 import { normalisePhone } from '../../domain/phone';
-import { statusAfter, EXCEPTION_TEXT } from '../../domain/checkin';
+import { expectedArrivals, statusAfter, EXCEPTION_TEXT } from '../../domain/checkin';
 import { validateTable } from '../../domain/seating';
 import { NEW_TABLE_PREFIX } from '../../domain/auto-seating';
 import { checkAnswers, cleanAnswers, experienceOf, safeExternalUrl, validatePolicy } from '../../domain/guest-experience';
@@ -20,9 +20,18 @@ import type { GuestExperience, RsvpInput } from '../../domain/types';
 import { AppError } from '../errors';
 import { duplicateDestinationNames } from '../../domain/guest-tools';
 import { assertGuestCapacity } from '../../domain/billing';
-import { findEvent, findParty, log, touch, type Ctx } from './helpers';
+import { findEvent, findParty, log as baseLog, touch, type Ctx } from './helpers';
+import { actorFor, can, FORBIDDEN_TEXT, type Permission } from '../../domain/roles';
+import type { MockStore } from './store';
 
 const clone = <T>(v: T): T => structuredClone(v);
+
+/** activity entries name who really did it: the signed-in role for staff actions; guest/gate entries pass their own actor */
+const logger = (store: MockStore): typeof baseLog => (db, at, eventId, kind, data = {}, actor, partyId) => baseLog(db, at, eventId, kind, data, actor ?? actorFor(store.settings.role), partyId);
+/** the role table (domain/roles) enforced where the data changes, not only in the UI */
+const guard = (store: MockStore, action: Permission) => {
+  if (!can(store.settings.role, action)) throw new AppError('forbidden', FORBIDDEN_TEXT[action]);
+};
 
 function cleanPartyInput(input: Partial<PartyInput>): Partial<PartyInput> {
   const out: Partial<PartyInput> = { ...input };
@@ -47,6 +56,7 @@ function cleanPartyInput(input: Partial<PartyInput>): Partial<PartyInput> {
 
 // ------------------------------------------------------------------ events
 export function mockEvents({ store, now }: Ctx): EventRepository {
+  const log = logger(store);
   return {
     list: () => store.request(() => clone(store.read().events).sort((a, b) => a.date.localeCompare(b.date))),
     get: (id) => store.request(() => clone(findEvent(store.read(), id))),
@@ -121,6 +131,7 @@ export function mockEvents({ store, now }: Ctx): EventRepository {
       return clone(ev);
     }), 'write'),
     archive: (id) => store.request(() => store.write((db) => {
+      guard(store, 'event.archive');
       const t = now();
       const ev = findEvent(db, id);
       ev.archivedAt = t.toISOString(); touch(ev, t);
@@ -128,6 +139,7 @@ export function mockEvents({ store, now }: Ctx): EventRepository {
       return clone(ev);
     }), 'write'),
     restore: (id) => store.request(() => store.write((db) => {
+      guard(store, 'event.archive');
       const ev = findEvent(db, id);
       delete ev.archivedAt; touch(ev, now());
       return clone(ev);
@@ -137,6 +149,7 @@ export function mockEvents({ store, now }: Ctx): EventRepository {
 
 // ------------------------------------------------------------------ invitation design
 export function mockInvitations({ store, now }: Ctx): InvitationRepository {
+  const log = logger(store);
   return {
     get: (eventId) => store.request(() => clone(store.read().designs.find((d) => d.eventId === eventId) ?? null)),
     saveDraft: (eventId, content) => store.request(() => store.write((db) => {
@@ -148,6 +161,7 @@ export function mockInvitations({ store, now }: Ctx): InvitationRepository {
       return clone(d);
     }), 'write'),
     publish: (eventId) => store.request(() => store.write((db) => {
+      guard(store, 'invitation.publish');
       const ev = findEvent(db, eventId);
       const t = now();
       let d = db.designs.find((x) => x.eventId === eventId);
@@ -162,6 +176,7 @@ export function mockInvitations({ store, now }: Ctx): InvitationRepository {
 
 // ------------------------------------------------------------------ parties
 export function mockParties({ store, now }: Ctx): PartyRepository {
+  const log = logger(store);
   const newParty = (db: ReturnType<typeof store.read>, eventId: string, input: PartyInput, source: InvitationParty['source']): InvitationParty => {
     const t = now().toISOString();
     const taken = new Set(db.parties.filter((p) => p.eventId === eventId).map((p) => p.code));
@@ -176,6 +191,7 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
     list: (eventId) => store.request(() => clone(store.read().parties.filter((p) => p.eventId === eventId))),
     get: (id) => store.request(() => clone(findParty(store.read(), id))),
     create: (eventId, input) => store.request(() => {
+      guard(store, 'guests.add');
       const clean = cleanPartyInput(input) as PartyInput;
       if (!clean.primaryGuestName) throw new AppError('validation', 'اكتب اسم الضيف أو العائلة.', 'primaryGuestName');
       return store.write((db) => {
@@ -183,11 +199,12 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
         assertGuestCapacity(eventId, db.parties.filter((p) => p.eventId === eventId), clean.maxPartySize);
         const p = newParty(db, eventId, clean, 'manual');
         db.parties.push(p);
-        log(db, now(), eventId, 'party_added', { name: p.primaryGuestName }, 'organizer', p.id);
+        log(db, now(), eventId, 'party_added', { name: p.primaryGuestName }, undefined, p.id);
         return clone(p);
       });
     }, 'write'),
     update: (id, input) => store.request(() => {
+      guard(store, 'guests.edit');
       const clean = cleanPartyInput(input);
       return store.write((db) => {
         const p = findParty(db, id);
@@ -195,16 +212,18 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
         Object.assign(p, clean);
         if ('phone' in clean && !clean.phone) delete p.phone;
         touch(p, now());
-        log(db, now(), p.eventId, 'party_updated', { name: p.primaryGuestName }, 'organizer', p.id);
+        log(db, now(), p.eventId, 'party_updated', { name: p.primaryGuestName }, undefined, p.id);
         return clone(p);
       });
     }, 'write'),
     remove: (id) => store.request(() => store.write((db) => {
+      guard(store, 'guests.delete');
       const p = findParty(db, id);
       db.parties = db.parties.filter((x) => x.id !== id);
       log(db, now(), p.eventId, 'party_removed', { name: p.primaryGuestName });
     }), 'write'),
     importMany: (eventId, inputs, meta) => store.request(() => store.write((db) => {
+      guard(store, 'guests.add');
       findEvent(db, eventId);
       assertGuestCapacity(eventId, db.parties.filter((p) => p.eventId === eventId), inputs.reduce((n, p) => n + p.maxPartySize, 0));
       const created = inputs.map((i) => {
@@ -216,6 +235,7 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
       return clone(created);
     }), 'write'),
     transfer: ({ ids, targetEventId, mode }) => store.request(() => store.write((db) => {
+      guard(store, 'guests.transfer');
       if (!ids.length || new Set(ids).size !== ids.length) throw new AppError('validation', 'اختر ضيوفًا مختلفين أولًا.');
       const target = findEvent(db, targetEventId);
       if (target.archivedAt) throw new AppError('validation', 'اختر مناسبة نشطة لاستقبال الضيوف.');
@@ -244,6 +264,7 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
       return clone(made);
     }), 'write'),
     markShared: (ids, how) => store.request(() => store.write((db) => {
+      guard(store, 'guests.share');
       const t = now().toISOString();
       const ps = ids.map((id) => findParty(db, id));
       for (const p of ps) {
@@ -251,9 +272,10 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
         p.delivery = { ...p.delivery, status: 'shared', source: 'manual', at: t, failureReason: undefined };
         p.updatedAt = t;
       }
-      if (ps[0]) log(db, now(), ps[0].eventId, 'invitation_shared', { count: ps.length, name: ps[0].primaryGuestName, how: 'manual' }, 'organizer', ps.length === 1 ? ps[0].id : undefined);
+      if (ps[0]) log(db, now(), ps[0].eventId, 'invitation_shared', { count: ps.length, name: ps[0].primaryGuestName, how: 'manual' }, undefined, ps.length === 1 ? ps[0].id : undefined);
     }), 'write'),
     simulateSend: (ids) => store.request(() => store.write((db) => {
+      guard(store, 'guests.share');
       const t = now().toISOString();
       const sent: string[] = [], failed: string[] = [];
       for (const id of ids) {
@@ -269,6 +291,7 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
       return { sent, failed };
     }), 'write'),
     sendReminder: (ids) => store.request(() => store.write((db) => {
+      guard(store, 'guests.remind');
       const t = now().toISOString();
       const ps = ids.map((id) => findParty(db, id)).filter((p) => p.rsvpStatus === 'pending' && p.phone);
       for (const p of ps) { p.delivery = { ...p.delivery, reminderAt: t }; p.updatedAt = t; }
@@ -297,9 +320,11 @@ function publicExperience(ev: Event): GuestExperience | undefined {
 
 // ------------------------------------------------------------------ RSVP (organizer side)
 export function mockRsvp({ store, now }: Ctx): RsvpRepository {
+  const log = logger(store);
   return {
     listResponses: (eventId) => store.request(() => clone(store.read().responses.filter((r) => r.eventId === eventId)).sort((a, b) => b.at.localeCompare(a.at))),
     setByOrganizer: (partyId, input) => store.request(() => store.write((db) => {
+      guard(store, 'guests.edit');
       const p = findParty(db, partyId);
       const err = validateRsvp(input, p.maxPartySize);
       if (err) throw new AppError('validation', RSVP_ERROR_TEXT[err], 'count');
@@ -309,10 +334,11 @@ export function mockRsvp({ store, now }: Ctx): RsvpRepository {
       // a decline clears food (invariant 5); a changed headcount keeps the guest's answer and the report flags a misfit
       if (!input.attending) { p.meals = undefined; p.dietary = undefined; p.experienceRevision = undefined; }
       db.responses.push({ id: makeId('rsp'), eventId: p.eventId, partyId: p.id, name: p.primaryGuestName, attending: input.attending, count: input.attending ? input.count : 0, companionNames: input.companionNames, note: input.note, channel: 'organizer', at: t.toISOString() });
-      log(db, t, p.eventId, edited ? 'rsvp_edited' : input.attending ? 'rsvp_confirmed' : 'rsvp_declined', { name: p.primaryGuestName, count: input.count, attending: input.attending, by: 'organizer' }, 'organizer', p.id);
+      log(db, t, p.eventId, edited ? 'rsvp_edited' : input.attending ? 'rsvp_confirmed' : 'rsvp_declined', { name: p.primaryGuestName, count: input.count, attending: input.attending, by: 'organizer' }, undefined, p.id);
       return clone(p);
     }), 'write'),
     matchResponse: (responseId, partyId) => store.request(() => store.write((db) => {
+      guard(store, 'guests.edit');
       const r = db.responses.find((x) => x.id === responseId);
       if (!r) throw new AppError('not_found', 'لم نجد هذا الرد.');
       const p = findParty(db, partyId);
@@ -322,9 +348,10 @@ export function mockRsvp({ store, now }: Ctx): RsvpRepository {
       // the answers move with the reply (D10): the response is resolved, so they are counted once, on the party
       Object.assign(p, answersFrom(r));
       r.partyId = p.id; r.resolution = 'matched';
-      log(db, t, p.eventId, 'rsvp_matched', { name: r.name }, 'organizer', p.id);
+      log(db, t, p.eventId, 'rsvp_matched', { name: r.name }, undefined, p.id);
     }), 'write'),
     addPartyFromResponse: (responseId) => store.request(() => store.write((db) => {
+      guard(store, 'guests.add');
       const r = db.responses.find((x) => x.id === responseId);
       if (!r) throw new AppError('not_found', 'لم نجد هذا الرد.');
       const t = now();
@@ -339,10 +366,11 @@ export function mockRsvp({ store, now }: Ctx): RsvpRepository {
       Object.assign(p, answersFrom(r));
       db.parties.push(p);
       r.partyId = p.id; r.resolution = 'added';
-      log(db, t, r.eventId, 'party_added', { name: p.primaryGuestName }, 'organizer', p.id);
+      log(db, t, r.eventId, 'party_added', { name: p.primaryGuestName }, undefined, p.id);
       return clone(p);
     }), 'write'),
     dismissResponse: (responseId) => store.request(() => store.write((db) => {
+      guard(store, 'guests.edit');
       const r = db.responses.find((x) => x.id === responseId);
       if (r) r.resolution = 'dismissed';
     }), 'write'),
@@ -351,9 +379,11 @@ export function mockRsvp({ store, now }: Ctx): RsvpRepository {
 
 // ------------------------------------------------------------------ seating
 export function mockSeating({ store, now }: Ctx): SeatingRepository {
+  const log = logger(store);
   return {
     listTables: (eventId) => store.request(() => clone(store.read().tables.filter((t) => t.eventId === eventId)).sort((a, b) => a.order - b.order)),
     createTables: (eventId, tables) => store.request(() => {
+      guard(store, 'seating');
       for (const t of tables) { const e = Object.values(validateTable(t))[0]; if (e) throw new AppError('validation', e); }
       return store.write((db) => {
         findEvent(db, eventId);
@@ -366,6 +396,7 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       });
     }, 'write'),
     updateTable: (id, patch) => store.request(() => store.write((db) => {
+      guard(store, 'seating');
       const t = db.tables.find((x) => x.id === id);
       if (!t) throw new AppError('not_found', 'لم نجد هذه الطاولة.');
       const next = { name: patch.name ?? t.name, capacity: patch.capacity ?? t.capacity };
@@ -375,6 +406,7 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       return clone(t);
     }), 'write'),
     reorderTables: (eventId, ids) => store.request(() => store.write((db) => {
+      guard(store, 'seating');
       findEvent(db, eventId);
       const tables = db.tables.filter((t) => t.eventId === eventId);
       if (ids.length !== tables.length || new Set(ids).size !== ids.length || ids.some((id) => !tables.some((t) => t.id === id))) {
@@ -384,12 +416,14 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       return clone(tables.sort((a, b) => a.order - b.order));
     }), 'write'),
     deleteTable: (id) => store.request(() => store.write((db) => {
+      guard(store, 'seating');
       const t = db.tables.find((x) => x.id === id);
       if (!t) return;
       for (const p of db.parties) if (p.tableId === id) { delete p.tableId; touch(p, now()); }
       db.tables = db.tables.filter((x) => x.id !== id);
     }), 'write'),
     assign: (partyId, tableId) => store.request(() => store.write((db) => {
+      guard(store, 'seating');
       const p = findParty(db, partyId);
       const from = db.tables.find((t) => t.id === p.tableId);
       const to = tableId ? db.tables.find((t) => t.id === tableId) : undefined;
@@ -398,14 +432,14 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       if (to && p.rsvpStatus !== 'confirmed') throw new AppError('validation', 'يمكن توزيع الدعوات المؤكدة فقط.');
       if (to) p.tableId = to.id; else delete p.tableId;
       touch(p, now());
-      if (to && from && from.id !== to.id) log(db, now(), p.eventId, 'party_moved', { name: p.primaryGuestName, table: to.name }, 'organizer', p.id);
-      else if (to && !from) log(db, now(), p.eventId, 'party_seated', { name: p.primaryGuestName, table: to.name }, 'organizer', p.id);
-      else if (!to && from) log(db, now(), p.eventId, 'party_unseated', { name: p.primaryGuestName, table: from.name }, 'organizer', p.id);
+      if (to && from && from.id !== to.id) log(db, now(), p.eventId, 'party_moved', { name: p.primaryGuestName, table: to.name }, undefined, p.id);
+      else if (to && !from) log(db, now(), p.eventId, 'party_seated', { name: p.primaryGuestName, table: to.name }, undefined, p.id);
+      else if (!to && from) log(db, now(), p.eventId, 'party_unseated', { name: p.primaryGuestName, table: from.name }, undefined, p.id);
       return clone(p);
     }), 'write'),
     // Everything is checked against the live data before anything is written; store.write discards the draft on a throw.
     applyAutoSeating: (eventId, plan) => store.request(() => store.write((db) => {
-      if (store.settings.role === 'caterer') throw new AppError('forbidden', 'التوزيع على الطاولات متاح لفريق التنظيم.');
+      guard(store, 'seating');
       findEvent(db, eventId);
       const tables = db.tables.filter((t) => t.eventId === eventId);
       const snapshot = new Map(plan.tables.map((t) => [t.id, t.capacity]));
@@ -447,6 +481,7 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       };
     }), 'write'),
     undoAutoSeating: (eventId, undo) => store.request(() => store.write((db) => {
+      guard(store, 'seating');
       findEvent(db, eventId);
       const stale = () => new AppError('conflict', 'تغيّر التوزيع بعد اعتماده، فلم نتراجع حتى لا نلغي تعديلاتك.');
       const steps = undo.moves.map((m) => {
@@ -468,10 +503,12 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
 
 // ------------------------------------------------------------------ check-in
 export function mockCheckIn({ store, now }: Ctx): CheckInRepository {
+  const log = logger(store);
   return {
     list: (eventId) => store.request(() => clone(store.read().checkIns.filter((r) => r.eventId === eventId)).sort((a, b) => b.at.localeCompare(a.at))),
     findByCode: (eventId, code) => store.request(() => clone(store.read().parties.find((p) => p.eventId === eventId && p.code === normaliseCode(code)) ?? null)),
     checkIn: (partyId, count, ctx) => store.request(() => store.write((db) => {
+      guard(store, 'checkin');
       if (!Number.isInteger(count) || count < 1) throw new AppError('validation', 'اختر عدد القادمين الآن.');
       const p = findParty(db, partyId);
       const t = now();
@@ -480,7 +517,7 @@ export function mockCheckIn({ store, now }: Ctx): CheckInRepository {
       p.checkedInCount += count;
       p.checkInStatus = statusAfter(p, p.checkedInCount);
       touch(p, t);
-      const expected = p.rsvpStatus === 'confirmed' ? p.confirmedPartySize ?? p.maxPartySize : p.maxPartySize;
+      const expected = expectedArrivals(p);
       const real = ctx.exceptions.filter((e) => e !== 'no_table');
       if (real.length) log(db, t, p.eventId, 'check_in_exception', { name: p.primaryGuestName, reason: EXCEPTION_TEXT[real[0]!].title }, 'gate', p.id);
       else if (p.checkInStatus === 'partial') log(db, t, p.eventId, 'checked_in_partial', { name: p.primaryGuestName, total: p.checkedInCount, expected }, 'gate', p.id);
@@ -488,6 +525,7 @@ export function mockCheckIn({ store, now }: Ctx): CheckInRepository {
       return { party: clone(p), record: clone(record) };
     }), 'write'),
     undo: (recordId) => store.request(() => store.write((db) => {
+      guard(store, 'checkin');
       const r = db.checkIns.find((x) => x.id === recordId);
       if (!r || r.undone) throw new AppError('conflict', 'تم التراجع عن هذا التسجيل من قبل.');
       const p = findParty(db, r.partyId);
@@ -497,6 +535,14 @@ export function mockCheckIn({ store, now }: Ctx): CheckInRepository {
       touch(p, now());
       log(db, now(), p.eventId, 'check_in_undone', { name: p.primaryGuestName }, 'gate', p.id);
       return clone(p);
+    }), 'write'),
+    recordWalkIn: (eventId, input) => store.request(() => store.write((db) => {
+      guard(store, 'checkin');
+      findEvent(db, eventId);
+      const name = input.name.replace(/\s+/g, ' ').trim();
+      if (!name) throw new AppError('validation', 'اكتب اسم الضيف كما قاله.', 'name');
+      if (!Number.isInteger(input.count) || input.count < 1 || input.count > 20) throw new AppError('validation', 'العدد بين 1 و20.', 'count');
+      log(db, now(), eventId, 'check_in_walk_in', { name, count: input.count, note: input.note?.trim() || undefined }, 'gate');
     }), 'write'),
   };
 }
@@ -509,6 +555,7 @@ export function mockActivity({ store }: Ctx): ActivityRepository {
 
 // ------------------------------------------------------------------ public guest API
 export function mockGuest({ store, now }: Ctx): GuestApi {
+  const log = logger(store);
   const view = (slug: string, code: string | undefined | null, recordOpen: boolean): GuestView => {
     const db = store.read();
     const ev = db.events.find((e) => e.slug === slug && !e.archivedAt);

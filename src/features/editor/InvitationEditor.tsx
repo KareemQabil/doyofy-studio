@@ -40,6 +40,7 @@ import { useToast } from '../../ui/primitives/Feedback';
 import { useCopy } from '../../ui/copy';
 import { errorMessage } from '../../services/errors';
 import { useDesign, useEvent } from '../shared/queries';
+import { useCan } from '../shared/OwnerOnly';
 import { LivePreview } from '../invitation/LivePreview';
 import { ContentSection, DesignSection, EventSection, MotionSection, eventFields, previewEvent, validateEventFields, type EventDraft, type EventDraftErrors } from './sections';
 
@@ -76,6 +77,7 @@ export function InvitationEditor({ eventId }: { eventId: string }) {
 
 function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null }) {
   const services = useServices();
+  const mayPublish = useCan('invitation.publish'); // owner only (domain/roles)
   const navigate = useNavigate();
   const loc = useLocation();
   const toast = useToast();
@@ -238,7 +240,10 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   const changeTemplate = () => void flushThen(() => navigate(paths.templates(event.id), { force: !evDirty }));
   const close = () => void flushThen(() => navigate(paths.invitation(event.id), { force: !evDirty }));
 
-  const publishBtn = ps === 'published'
+  const publishBtn = ps !== 'published' && !mayPublish
+    // a team member sees where publishing lives and who does it, in the button's place (domain/roles)
+    ? <span className="ed-publish ed-publish-owner" role="note"><Icon name="lock" size="sm" />النشر لصاحب المناسبة</span>
+    : ps === 'published'
     ? <Button variant="secondary" className="ed-publish is-done" icon="users" onClick={() => void flushThen(() => navigate(paths.guests(event.id)))}>إلى الضيوف</Button>
     : <Button variant="primary" className="ed-publish" loading={publishing} icon="send" onClick={() => void doPublish()}>{ps === 'changed' ? 'انشر التعديلات' : 'انشر الدعوة'}</Button>;
 

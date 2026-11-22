@@ -1,6 +1,7 @@
 /** Data display primitives: panels, stats, filter chips, progress, key/value lists, overflow menu. */
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { Tone } from '../../domain/types';
+import { initialOf } from '../../domain/format';
 import { Icon, type IconName } from '../icons';
 
 export function Panel({ title, subtitle, actions, children, padded = true, as: As = 'section', id, className = '' }: { title?: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode; padded?: boolean; as?: 'section' | 'div' | 'article'; id?: string; className?: string }) {
@@ -66,7 +67,7 @@ export function KeyValue({ items }: { items: Array<{ k: ReactNode; v: ReactNode;
 }
 
 /** overflow menu: button + list of actions; keyboard (arrows, Escape) and click-outside */
-export function Menu({ label, items, icon = 'more', triggerLabel }: { label: string; icon?: IconName; triggerLabel?: ReactNode; items: Array<{ label: string; icon?: IconName; onSelect: () => void; danger?: boolean; disabled?: boolean } | null> }) {
+export function Menu({ label, items, icon = 'more', triggerLabel }: { label: string; icon?: IconName; triggerLabel?: ReactNode; items: Array<{ label: string; icon?: IconName; onSelect: () => void; danger?: boolean; disabled?: boolean; hint?: string } | null> }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const id = useId();
@@ -94,8 +95,9 @@ export function Menu({ label, items, icon = 'more', triggerLabel }: { label: str
       {open && (
         <div className="menu-list" role="menu" id={id} aria-label={label}>
           {list.map((it) => (
-            <button key={it.label} type="button" role="menuitem" disabled={it.disabled} className={`menu-item${it.danger ? ' is-danger' : ''}`} onClick={() => { setOpen(false); it.onSelect(); }}>
-              {it.icon && <Icon name={it.icon} size="sm" />}{it.label}
+            // an unavailable item that explains itself stays focusable (aria-disabled) so the reason is read out too
+            <button key={it.label} type="button" role="menuitem" disabled={it.disabled && !it.hint} aria-disabled={it.disabled && it.hint ? true : undefined} className={`menu-item${it.danger ? ' is-danger' : ''}${it.hint ? ' has-hint' : ''}`} onClick={() => { if (it.disabled) return; setOpen(false); it.onSelect(); }}>
+              {it.icon && <Icon name={it.icon} size="sm" />}{it.hint ? <span className="menu-item-text">{it.label}<small className="menu-hint">{it.hint}</small></span> : it.label}
             </button>
           ))}
         </div>
@@ -105,6 +107,6 @@ export function Menu({ label, items, icon = 'more', triggerLabel }: { label: str
 }
 
 export function Avatar({ name, tone = 'neutral' }: { name: string; tone?: Tone }) {
-  const letter = [...name.replace(/^(عائلة|أم|أبو|ال)\s*/, '').trim()][0] ?? '؟';
+  const letter = initialOf(name);
   return <span className={`avatar tone-${tone}`} aria-hidden="true">{letter}</span>;
 }

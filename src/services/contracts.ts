@@ -88,6 +88,8 @@ export interface CheckInRepository {
   findByCode(eventId: string, code: string): Promise<InvitationParty | null>;
   checkIn(partyId: string, count: number, ctx: CheckInContext): Promise<{ party: InvitationParty; record: CheckInRecord }>;
   undo(recordId: string): Promise<InvitationParty>;
+  /** someone at the door who is not on the list: no invitation is created; the staff note goes to the organizer's activity log */
+  recordWalkIn(eventId: string, input: { name: string; count: number; note?: string }): Promise<void>;
 }
 
 export interface ActivityRepository {
