@@ -30,10 +30,36 @@ export async function run() {
   await click(button('رسالة نصية'));
   const sms = document.querySelector<HTMLAnchorElement>('a[href^="sms:"]'); assert.ok(sms); sms.addEventListener('click', e => e.preventDefault());
   await click(sms); assert.equal((await made.services.parties.get(p.id)).delivery.status, 'not_shared');
-  await click(button('أرسلت الرسالة — التالي'));
+  await click(button('أرسلت الرسالة'));
   assert.equal((await made.services.parties.get(p.id)).delivery.status, 'shared');
   assert.equal((await made.services.parties.get(missing.id)).delivery.status, 'not_shared');
   console.log('PASS DOM selected sharing: channels, missing phone, SMS compose, explicit manual confirmation');
+
+  // WhatsApp queue: «أرسلتها، افتح التالي» records THIS guest (explicit) and opens the next composer in the same tap;
+  // the next guest is never marked because its composer opened. Guests without numbers get a way out at the end.
+  const q = await Promise.all(['أول', 'ثان', 'ثالث'].map((n, i) => made.services.parties.create(event.id, { primaryGuestName: `ضيف ${n}`, phone: `+96655000000${i}`, maxPartySize: 1 })));
+  const status = async (id: string) => (await made.services.parties.get(id)).delivery.status;
+  let addPhone = '';
+  await render(<ShareQueue key="whatsapp-chain" event={event} parties={[...q, missing]} urlFor={() => undefined} linkFor={linkFor} onClose={() => {}} onAddPhone={(id) => { addPhone = id; }} />);
+  await click(button('واتساب'));
+  assert.ok(document.body.textContent?.includes('1 / 3'), 'progress n/N');
+  const open = document.querySelector<HTMLAnchorElement>('a.sq-open'); assert.ok(open?.href.startsWith('https://wa.me/966550000000')); open!.addEventListener('click', e => e.preventDefault());
+  await click(open); assert.equal(await status(q[0]!.id), 'not_shared', 'opening a composer is not sending');
+  let chain = document.querySelector<HTMLAnchorElement>('a.sq-confirm'); assert.ok(chain?.href.startsWith('https://wa.me/966550000001'), 'confirm opens the NEXT guest');
+  chain!.addEventListener('click', e => e.preventDefault()); await click(chain); await settle();
+  assert.equal(await status(q[0]!.id), 'shared'); assert.equal(await status(q[1]!.id), 'not_shared');
+  assert.ok(document.body.textContent?.includes(`هل أرسلت الرسالة إلى ${q[1]!.primaryGuestName}`), 'the next guest asks for its own confirmation');
+  chain = document.querySelector<HTMLAnchorElement>('a.sq-confirm'); assert.ok(chain?.href.startsWith('https://wa.me/966550000002'));
+  chain!.addEventListener('click', e => e.preventDefault()); await click(chain); await settle();
+  assert.equal(await status(q[1]!.id), 'shared'); assert.equal(await status(q[2]!.id), 'not_shared');
+  assert.equal(document.querySelector('a.sq-confirm'), null, 'the last guest has no «next»');
+  await click(button('أرسلت الرسالة')); await settle();
+  assert.equal(await status(q[2]!.id), 'shared');
+  assert.ok(document.querySelector('.sq-done .sq-missing'), 'guests without numbers get a way out');
+  assert.ok(button('انسخ روابطها معًا'));
+  await click(document.querySelector('.sq-missing-list button')); assert.equal(addPhone, missing.id);
+  assert.equal(await status(missing.id), 'not_shared');
+  console.log('PASS DOM WhatsApp queue: confirm + open next in one tap, n/N progress, no-number way out');
   await act(async () => root.unmount());
 
   const freshRoot = createRoot(document.getElementById('root')!);

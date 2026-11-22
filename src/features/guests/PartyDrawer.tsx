@@ -20,15 +20,15 @@ import { inviteMessage, reminderMessage, smsUrl, whatsappUrl } from './share';
 import { normalisePhone } from '../../domain/phone';
 import { useCopy } from '../../ui/copy';
 
-export function PartyDrawer({ event, party, all, tables, publish, onClose }: {
-  event: Event; party: InvitationParty; all: readonly InvitationParty[]; tables: readonly Table[]; publish: PublishState; onClose: () => void;
+export function PartyDrawer({ event, party, all, tables, publish, startEditing = false, onClose }: {
+  event: Event; party: InvitationParty; all: readonly InvitationParty[]; tables: readonly Table[]; publish: PublishState; startEditing?: boolean; onClose: () => void;
 }) {
   const now = useNow();
   const toast = useToast();
   const { t, dialect } = useCopy();
   const guestLink = useGuestLink(event);
   const { absolute, navigate } = useRouter();
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startEditing); // «أضف رقمًا» opens the form directly
   const [recording, setRecording] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [copiedAsk, setCopiedAsk] = useState(false);
@@ -55,7 +55,7 @@ export function PartyDrawer({ event, party, all, tables, publish, onClose }: {
   return (
     <>
       <Dialog open={!editing && !recording && !confirmDelete} variant="drawer" onClose={onClose} title={party.primaryGuestName}
-        description={[party.side, party.phone ? formatPhone(party.phone) : 'بلا رقم جوال'].filter(Boolean).join(' · ')}
+        description={<>{party.side ? `${party.side} · ` : ''}{party.phone ? <bdi dir="ltr" className="num">{formatPhone(party.phone)}</bdi> : 'بلا رقم جوال'}</>}
         footer={<><Button variant="ghost" onClick={onClose}>رجوع إلى القائمة</Button><Menu label="خيارات الضيف" triggerLabel="المزيد" items={[{ label:'تعديل البيانات', icon:'edit', onSelect:()=>setEditing(true) },{ label:'حذف الضيف',icon:'trash',danger:true,onSelect:()=>setConfirmDelete(true) }]} /></>}>
         <div className="drawer-summary"><Status label="الرد" tone={party.rsvpStatus==='confirmed'?'success':'neutral'}>{RSVP_STATUS[party.rsvpStatus].label}</Status><p className="drawer-summary-count">{party.rsvpStatus==='confirmed'?`${people(party.confirmedPartySize??0)} سيحضرون`:party.rsvpStatus==='declined'?'نلتقي في مناسبة قادمة':`الدعوة تتسع لـ${people(party.maxPartySize)}`}</p><p className="t-sm muted">{table?.name??'لم تُحدد طاولة'}{party.checkedInCount?` · وصل ${party.checkedInCount}`:''}</p>
           {party.rsvpStatus==='pending' && ['shared','opened'].includes(inv) && <Button variant="primary" icon="check" onClick={()=>setRecording(true)}>سجّل رد الضيف</Button>}

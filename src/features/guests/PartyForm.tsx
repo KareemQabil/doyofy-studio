@@ -58,7 +58,7 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
         <Field label="اسم الضيف أو العائلة" required error={nameErr} hint="كما تريد أن يظهر في الدعوة، مثل: عائلة الحربي">
           <Input value={name} onChange={(e) => setName(e.target.value)} data-autofocus autoComplete="off" />
         </Field>
-        <Field label="رقم الجوال" optional error={phoneErr} hint={phoneRes?.ok ? `سيُحفظ: ${formatPhone(phoneRes.e164)}` : 'لإرسال الدعوة عبر واتساب. يمكنك إضافته لاحقًا.'}>
+        <Field label="رقم الجوال" optional error={phoneErr} hint={phoneRes?.ok ? <>سيُحفظ: <bdi dir="ltr" className="num">{formatPhone(phoneRes.e164)}</bdi></> :'لإرسال الدعوة عبر واتساب. يمكنك إضافته لاحقًا.'}>
           <Input ltr type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" autoComplete="off" />
         </Field>
         {dupe && <Banner tone="warning" compact title="هذا الرقم مسجل مسبقًا">باسم «{dupe.primaryGuestName}». تأكد أنها ليست نفس الدعوة قبل الإضافة.</Banner>}
