@@ -1,0 +1,48 @@
+/* Guest capacity meter, upgrade checkout and demo receipts (tokens only; dark mode follows the tokens). */
+.capacity-meter { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-3) var(--s-4); border: 1px solid var(--c-line); border-radius: var(--r-md); background: var(--c-surface); }
+.capacity-meter.is-near { border-color: var(--c-warning); background: var(--c-warning-soft); }
+.capacity-meter.is-full, .capacity-meter.is-over { border-color: var(--c-danger); background: var(--c-danger-soft); }
+.capacity-meter-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.capacity-meter-label { font-weight: var(--fw-bold); font-size: var(--fs-sm); }
+.capacity-meter-count { font-size: var(--fs-sm); color: var(--c-text-2); }
+.capacity-meter-count strong { color: var(--c-text); font-size: var(--fs-lg); }
+.capacity-meter-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-3); flex-wrap: wrap; }
+.capacity-meter-note { margin: 0; font-size: var(--fs-sm); color: var(--c-text-2); flex: 1 1 16rem; min-width: 0; }
+.is-near .capacity-meter-note, .is-full .capacity-meter-note, .is-over .capacity-meter-note { color: var(--c-text); }
+.capacity-meter-actions { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.capacity-receipt-link, .capacity-meter-actions .btn { min-height: 44px; }
+.g2 > .capacity-meter, .overview > .capacity-meter { margin-block: var(--s-3); }
+
+/* checkout */
+.capacity-dialog .choices-grid { gap: var(--s-2); }
+.capacity-dialog .choice { min-height: 56px; }
+.capacity-dialog .choice-text, .capacity-dialog .choice-label { flex: 1; min-width: 0; }
+.capacity-plan { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); width: 100%; }
+.capacity-plan-name { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; min-width: 0; }
+.capacity-plan-tag { font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--c-accent-strong); background: var(--c-accent-soft); border-radius: var(--r-pill); padding: 2px var(--s-2); }
+.capacity-plan-price { display: flex; flex-direction: column; align-items: flex-end; text-align: end; flex: none; }
+.capacity-plan-price strong { font-size: var(--fs-lg); }
+.capacity-step-title { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-bold); }
+.capacity-summary { margin: 0; display: flex; flex-direction: column; border: 1px solid var(--c-line); border-radius: var(--r-md); overflow: hidden; }
+.capacity-summary > div { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); padding: var(--s-2) var(--s-3); }
+.capacity-summary > div + div { border-top: 1px solid var(--c-line); }
+.capacity-summary dt { color: var(--c-text-2); font-size: var(--fs-sm); }
+.capacity-summary dd { margin: 0; text-align: end; }
+.capacity-summary .is-total { background: var(--c-surface-sunken); }
+.capacity-summary .is-total dt { color: var(--c-text); font-weight: var(--fw-bold); }
+.capacity-summary .is-total dd { font-weight: var(--fw-bold); font-size: var(--fs-lg); }
+.capacity-demo-note { margin: 0; display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--c-text); padding: var(--s-2) var(--s-3); border-radius: var(--r-md); background: var(--c-accent-soft); }
+.capacity-demo-note svg { flex: none; color: var(--c-accent-strong); }
+.capacity-success { display: flex; align-items: center; gap: var(--s-3); color: var(--c-success); }
+.capacity-success-line { margin: 0; font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--c-text); }
+.capacity-resumed { margin: 0; display: flex; align-items: flex-start; gap: var(--s-2); color: var(--c-text); }
+.capacity-resumed svg { flex: none; margin-top: 4px; color: var(--c-success); }
+[data-capacity-flow] [data-step-focus]:focus { outline: none; }
+[data-capacity-flow] [data-step-focus]:focus-visible { outline: 2px solid var(--c-focus); outline-offset: 4px; border-radius: var(--r-sm, 6px); }
+
+/* receipts */
+.capacity-receipt { display: flex; flex-direction: column; gap: var(--s-2); }
+.capacity-receipts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.capacity-receipts li { display: flex; align-items: center; gap: var(--s-3); padding-block: var(--s-2); flex-wrap: wrap; }
+.capacity-receipts li + li { border-top: 1px solid var(--c-line); }
+.capacity-form-hint { color: var(--c-text); }

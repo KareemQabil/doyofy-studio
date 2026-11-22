@@ -16,6 +16,7 @@ import { useActivity, useCheckIns, useDesign, useParties, useResponses, useTable
 import { DateSeal, Stage } from '../signature/SignatureArt';
 import { CardThumb } from '../invitation/CardThumb';
 import { defaultDesign } from '../../domain/invitation';
+import { CapacityMeter } from '../billing/CapacityMeter';
 
 export function Overview({ event }: { event: Event }) {
   const now = useNow();
@@ -47,6 +48,7 @@ export function Overview({ event }: { event: Event }) {
     <p className="optional-journey-note"><Icon name="table" size="sm"/>الطاولات اختيارية.<Link to={paths.seating(event.id)}>أضف توزيعًا لو تحتاجه</Link></p>
     {/* each count opens exactly the list it counts (F037) */}
     <dl className="event-facts is-linked">{facts.map(f=><div key={f.label}><dt>{f.label}</dt><dd className={`tone-text-${f.tone}`}><Link to={`${paths.guests(event.id)}${f.filter==='all'?'':`?filter=${f.filter}`}`} className="fact-link" aria-label={`${f.label}: ${f.value} ${f.unit} — اعرض القائمة`}><strong className="num">{f.value}</strong><span>{f.unit}</span><Icon name="forward" size="sm" /></Link></dd></div>)}</dl>
+    {parties.data!.length > 0 && <CapacityMeter eventId={event.id} parties={parties.data!} />}
     <JourneyBanner title="فرحتك مرتّبة، خطوة بخطوة." line="ابدأ بالدعوة، ثم الضيوف والردود، واترك يوم المناسبة للترحيب." />
     <div className="overview-columns">
       <div className="stack gap-6">

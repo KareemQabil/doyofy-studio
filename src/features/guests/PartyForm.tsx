@@ -2,14 +2,19 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import type { InvitationParty, PartyInput } from '../../domain/types';
 import { normalisePhone } from '../../domain/phone';
-import { formatPhone } from '../../domain/format';
+import { formatPhone, plural, pluralOf, P } from '../../domain/format';
+import { allocatedGuests, capacityLevel, guestLimit } from '../../domain/billing';
+import { useCapacityVersion } from '../billing/CapacityMeter';
 import { Banner, Button, Dialog, Field, Input, Stepper, Textarea } from '../../ui';
 import { errorMessage, isAppError } from '../../services/errors';
 
-export function PartyFormDialog({ open, onClose, initial, existing, defaultSize, onSubmit, pending, error, title }: {
+export function PartyFormDialog({ open, onClose, initial, existing, defaultSize, onSubmit, pending, error, title, eventId }: {
   open: boolean; onClose: () => void; initial?: InvitationParty | null; existing: readonly InvitationParty[]; defaultSize: number;
   onSubmit: (input: PartyInput) => void; pending: boolean; error: unknown; title: string;
+  /** shows the event's remaining guest capacity before the limit is reached */
+  eventId?: string;
 }) {
+  useCapacityVersion();
   const [name, setName] = useState(initial?.primaryGuestName ?? '');
   const [phone, setPhone] = useState(initial?.phone ?? '');
   const [size, setSize] = useState(initial?.maxPartySize ?? defaultSize);
@@ -25,6 +30,16 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
   const nameErr = tried && !name.trim() ? 'اكتب اسم الضيف أو العائلة' : null;
   const phoneErr = phoneRes && !phoneRes.ok ? 'الرقم غير صحيح. مثال: 0551234567 أو ‎+966551234567' : isAppError(error) && error.field === 'phone' ? error.message : null;
 
+  // Capacity counts allowed people (companions included); editing frees this party's current allowance first.
+  const limit = eventId ? guestLimit(eventId) : 0;
+  const usedElsewhere = allocatedGuests(existing) - (initial?.maxPartySize ?? 0);
+  const left = Math.max(0, limit - usedElsewhere), after = limit - usedElsewhere - size;
+  const growing = size > (initial?.maxPartySize ?? 0);
+  const capacityNote = !eventId || !growing ? null : after < 0
+    ? <Banner tone="warning" compact title="هذا العدد يتجاوز سعة مناسبتك">الدعوة لـ{pluralOf(size, P.person)} والمتبقي في السعة {plural(left, P.person)}. عند {initial ? 'الحفظ' : 'الإضافة'} نعرض عليك زيادة السعة، أو قلّل العدد.</Banner>
+    : capacityLevel(usedElsewhere + size, limit) !== 'ok' ? <p className="field-hint capacity-form-hint" role="status">بعد {initial ? 'الحفظ' : 'الإضافة'} يتبقى في سعة مناسبتك {plural(after, P.person)} من {plural(limit, P.person)}.</p>
+    : null;
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setTried(true);
@@ -39,7 +54,7 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
     <Dialog open={open} onClose={onClose} title={title} size="md"
       footer={<><Button variant="primary" type="submit" form="party-form" loading={pending}>{initial ? 'حفظ التعديلات' : 'إضافة'}</Button><Button variant="ghost" onClick={onClose}>إلغاء</Button></>}>
       <form id="party-form" className="stack gap-4" onSubmit={submit} noValidate>
-        {error && !(isAppError(error) && error.field) ? <Banner tone="danger">{errorMessage(error)}</Banner> : null}
+        {error && !(isAppError(error) && error.field) ? <Banner tone="danger" reveal={error}>{errorMessage(error)}</Banner> : null}
         <Field label="اسم الضيف أو العائلة" required error={nameErr} hint="كما تريد أن يظهر في الدعوة، مثل: عائلة الحربي">
           <Input value={name} onChange={(e) => setName(e.target.value)} data-autofocus autoComplete="off" />
         </Field>
@@ -49,6 +64,7 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
         {dupe && <Banner tone="warning" compact title="هذا الرقم مسجل مسبقًا">باسم «{dupe.primaryGuestName}». تأكد أنها ليست نفس الدعوة قبل الإضافة.</Banner>}
         <Stepper label="العدد المسموح" value={size} min={1} max={20} onChange={setSize} suffix={(n) => (n === 1 ? 'شخص' : n === 2 ? 'شخصان' : 'أشخاص')} />
         <p className="field-hint">كم شخصًا تشمل هذه الدعوة، بما فيهم صاحبها. يحدد الضيف العدد الفعلي عند الرد.</p>
+        {capacityNote}
         {!more ? (
           <button type="button" className="link-btn" onClick={() => setMore(true)}>+ أسماء المرافقين، الجهة، ملاحظة (اختياري)</button>
         ) : (

@@ -129,7 +129,7 @@ export function PartyDrawer({ event, party, all, tables, publish, onClose }: {
       </Dialog>
 
       {editing && (
-        <PartyFormDialog open key={party.id} title="تعديل بيانات الضيف" initial={party} existing={all} defaultSize={event.settings.defaultPartySize}
+        <PartyFormDialog open key={party.id} title="تعديل بيانات الضيف" eventId={event.id} initial={party} existing={all} defaultSize={event.settings.defaultPartySize}
           onClose={() => { setEditing(false); update.reset(); }} pending={update.pending} error={update.error} onSubmit={(input) => void update.run(input)} />
       )}
       {recording && <RecordRsvpDialog party={party} onClose={() => setRecording(false)} />}

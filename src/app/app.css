@@ -31,6 +31,7 @@
 @import '../features/guest/delivery.css';
 @import '../features/settings/guest-experience.css';
 @import '../features/guests/food.css';
+@import '../features/billing/billing.css';
 @import '../ui/styles/v2-craft.css';
 @import '../ui/styles/density.css';
 @import '../ui/styles/dark.css';

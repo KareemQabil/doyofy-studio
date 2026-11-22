@@ -15,6 +15,8 @@ import { paths } from '../../../app/paths';
 import { readSpreadsheet } from '../../../services/files/spreadsheet';
 import { errorMessage } from '../../../services/errors';
 import { useEvent, useParties } from '../../shared/queries';
+import { allocatedGuests, guestLimit } from '../../../domain/billing';
+import { useCapacityVersion } from '../../billing/CapacityMeter';
 
 type Step = 'source' | 'map' | 'review' | 'done';
 
@@ -71,7 +73,7 @@ function Flow({ event, existing }: { event: Event; existing: NonNullable<ReturnT
       {step === 'source' && <SourceStep onLoad={load} />}
       {step === 'map' && table && <MapStep table={table} mapping={mapping} onChange={setMapping} source={source} />}
       {step === 'review' && (
-        <ReviewStep rows={rows} sum={sum} error={importing.error}
+        <ReviewStep rows={rows} sum={sum} error={importing.error} capacity={{ used: allocatedGuests(existing), limit: guestLimit(event.id) }}
           onEdit={(i, e) => setEdits((x) => ({ ...x, [i]: { ...x[i], ...e } }))}
           onDecide={(i, d) => setDecisions((x) => ({ ...x, [i]: d }))}
           onSkipBlocked={() => setDecisions((x) => ({ ...x, ...Object.fromEntries(rows.filter((r) => r.state === 'blocked').map((r) => [r.index, 'skip' as const])) }))} />
@@ -178,19 +180,25 @@ function MapStep({ table, mapping, onChange, source }: { table: RawTable; mappin
 
 type ReviewFilter = 'all' | 'blocked' | 'warning' | 'skipped';
 
-function ReviewStep({ rows, sum, error, onEdit, onDecide, onSkipBlocked }: {
-  rows: ImportRow[]; sum: ReturnType<typeof summarise>; error: unknown;
+function ReviewStep({ rows, sum, error, capacity, onEdit, onDecide, onSkipBlocked }: {
+  rows: ImportRow[]; sum: ReturnType<typeof summarise>; error: unknown; capacity: { used: number; limit: number };
   onEdit: (i: number, e: RowEdit) => void; onDecide: (i: number, d: RowDecision) => void; onSkipBlocked: () => void;
 }) {
   const [f, setF] = useState<ReviewFilter>(sum.blocked ? 'blocked' : 'all');
   const list = rows.filter((r) => f === 'all' || r.state === f);
+  useCapacityVersion();
+  const left = Math.max(0, capacity.limit - capacity.used);
   return (
     <div className="stack gap-5">
       <header className="stack gap-2">
         <h2 className="t-xl">راجع قبل الإضافة</h2>
         <p className="muted">لن يُضاف أي ضيف حتى تضغط «أضف». يمكنك تصحيح الصفوف هنا أو تخطيها.</p>
       </header>
-      {error ? <Banner tone="danger" title="لم يكتمل الاستيراد">{errorMessage(error)} لم يُضف أي ضيف.</Banner> : null}
+      {error ? <Banner tone="danger" title="لم يكتمل الاستيراد" reveal={error}>{errorMessage(error)} لم يُضف أي ضيف.</Banner> : null}
+      {/* before the wall, not after: the limit counts allowed people, companions included */}
+      {!error && sum.people > left && <Banner tone="warning" compact title="الاستيراد أكبر من سعة مناسبتك">
+        الصفوف الجاهزة تضيف {plural(sum.people, P.person)} والمتبقي في السعة {plural(left, P.person)} من {plural(capacity.limit, P.person)}. عند الضغط على «أضف» نعرض عليك زيادة السعة، ولا يُضاف أحد قبل ذلك.
+      </Banner>}
       <div className="import-summary">
         <div className="is-ok"><strong className="num">{sum.toImport}</strong><span>ستُضاف</span></div>
         <div className="is-blocked"><strong className="num">{sum.blocked}</strong><span>تحتاج قرارك</span></div>

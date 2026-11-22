@@ -1,7 +1,7 @@
 /**
  * Prototype tools — for whoever runs usability tests, not for testers. A small corner button opens
  * a drawer: scenario (before the event / event day), reset data, role, simulated latency and
- * offline mode (to see error states), and quick links to guest-side views.
+ * offline mode (to see error states), a one-off declined demo payment, and quick links to guest-side views.
  * Hidden on guest pages and when the URL has ?tools=off.
  */
 import { useState } from 'react';
@@ -12,6 +12,7 @@ import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
 import { useParties } from '../shared/queries';
 import { APPEARANCE_LABEL, useAppearance, type Appearance } from '../../app/review';
+import { demoPaymentDeclineArmed, setDemoPaymentDecline } from '../../domain/billing';
 
 let toolsOff = (() => { try { return sessionStorage.getItem('doyofy:tools') !== 'on'; } catch { return true; } })();
 
@@ -87,6 +88,8 @@ function ToolsDrawer({ onClose }: { onClose: () => void }) {
         <section className="stack gap-2 drawer-section">
           <h3 className="drawer-h">حالات النظام</h3>
           <Switch label="محاكاة انقطاع الاتصال" hint="كل عملية تفشل برسالة واضحة — لاختبار حالات الخطأ" checked={s.offline} onChange={(v) => upd({ offline: v })} />
+          {/* decline tests live here (or ?pay=decline), never in the product checkout */}
+          <Switch label="رفض الدفعة التجريبية التالية" hint="أول تأكيد دفع بعدها يُرفض مرة واحدة — لاختبار تعذّر الدفع" checked={demoPaymentDeclineArmed()} onChange={(v) => { setDemoPaymentDecline(v); force((n) => n + 1); }} />
           <ChoiceGroup label="سرعة الاستجابة" columns={3} value={String(s.latencyMs) as '0' | '180' | '900'} onChange={(v) => upd({ latencyMs: Number(v) })}
             options={[{ value: '0', label: 'فورية' }, { value: '180', label: 'عادية' }, { value: '900', label: 'بطيئة' }]} />
           <ChoiceGroup label="الدور" columns={2} value={s.role} onChange={(v) => upd({ role: v })}
