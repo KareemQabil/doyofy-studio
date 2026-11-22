@@ -18,10 +18,10 @@ import { GuestHub } from './GuestHub';
 import { SealCover } from '../signature/SealCover';
 import { FollowUpSheet, asksFollowUp, followUpPayload, type FollowUp } from './GuestExtras';
 import { DemoNote } from './DemoNote';
-import { useCopy } from '../../ui/copy';
+import { GuestVoice, useCopy } from '../../ui/copy';
 
 type EngineReply = { name: string; attending: boolean; guests: number };
-type EngineResult = { ok: true; id: string; demo?: boolean } | { ok: false; error: string };
+type EngineResult = { ok: true; id: string; demo?: boolean } | { ok: false; error: string; notice?: boolean };
 
 type Submission = { ok: true; name?: string } | { ok: false; error: string } | null;
 
@@ -74,14 +74,20 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
     );
   }
   if (!view || mode === 'loading') return <main className="guest-page theme-guest guest-center"><PageLoader name="envelope" label="جارٍ فتح الدعوة" size={96} /></main>;
-  if (mode === 'cover') return <SealCover view={view} onOpen={() => setMode('invitation')} onDetails={() => setMode('hub')} />;
-  if (mode === 'hub') return <GuestHub view={view} code={code ?? null} submission={submission} onView={setView} onReplay={() => { setSubmission(null); setMode('invitation'); }} guestApi={guestApi} demo={!!portable} />;
+  // every guest page speaks the organizer's voice, carried with the invitation (GuestView.dialect), on any device
   return (
-    <InvitationPlayer view={view} code={code ?? null} guestApi={guestApi} demo={!!portable}
-      onSubmitted={(v, s) => { if (v) setView(v); setSubmission(s); }}
-      onDone={() => setMode('hub')} />
+    <GuestVoice dialect={view.dialect}>
+      {mode === 'cover' ? <SealCover view={view} onOpen={() => setMode('invitation')} onDetails={() => setMode('hub')} />
+        : mode === 'hub' ? <GuestHub view={view} code={code ?? null} submission={submission} onView={setView} onReplay={() => { setSubmission(null); setMode('invitation'); }} guestApi={guestApi} demo={!!portable} />
+        : <InvitationPlayer view={view} code={code ?? null} guestApi={guestApi} demo={!!portable}
+          onSubmitted={(v, s) => { if (v) setView(v); setSubmission(s); }}
+          onDone={() => setMode('hub')} />}
+    </GuestVoice>
   );
 }
+
+/** closing the follow-up sheet is a choice, not a failure: the reply page shows this calmly (not as an error) */
+export const NOT_SENT_YET = 'لم يُرسل الرد بعد. أكملوا الخطوة الأخيرة متى شئتم.';
 
 /** after the thank-you screen has had its moment, the cinematic path moves on to the same success page as the direct one */
 const DONE_HOLD_MS = 2800;
@@ -118,9 +124,9 @@ function InvitationPlayer({ view, code, onSubmitted, onDone, guestApi, demo = fa
       studio = new eng.Studio(host.current, {
         invitation: toInvitationData(view.event, view.design, view.maxGuests),
         card: view.design.cardId, scene: view.design.sceneId, experience: view.design.experience,
-        showSwitcher: false, params: new URLSearchParams(),
+        showSwitcher: false, params: new URLSearchParams(), voice: view.dialect ?? 'ar',
         guest: p ? { name: p.name, nameLocked: true, maxGuests: p.maxPartySize, attending: p.rsvpStatus === 'confirmed' ? 'yes' : p.rsvpStatus === 'declined' ? 'no' : null, guests: p.confirmedPartySize || undefined } : { maxGuests: view.maxGuests },
-        doneAction: { ar: p ? 'تفاصيل حضوركم' : 'متابعة', en: p ? 'Your details' : 'Continue', autoAfter: DONE_HOLD_MS, onClick: () => cb.current.onDone() },
+        doneAction: { ar: p ? t('guestYourDetails') : 'متابعة', en: p ? 'Your details' : 'Continue', autoAfter: DONE_HOLD_MS, onClick: () => cb.current.onDone() },
         rsvp: {
           // the same follow-up as the direct form (companions, food, message) before the one and only submit
           submit: (r) => {
@@ -130,6 +136,9 @@ function InvitationPlayer({ view, code, onSubmitted, onDone, guestApi, demo = fa
         },
       });
       (window as unknown as { __studio?: unknown }).__studio = studio;
+      // the cover that opened the invitation is gone: keyboard focus moves onto the card instead of dropping to the page
+      const active = document.activeElement;
+      if (!active || active === document.body || !active.isConnected) host.current.querySelector<HTMLButtonElement>('.st-cardbtn')?.focus({ preventScroll: true });
     }).catch(setErr);
     return () => { alive = false; studio?.destroy(); };
   }, [view.event.slug, code]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -145,7 +154,7 @@ function InvitationPlayer({ view, code, onSubmitted, onDone, guestApi, demo = fa
       <div ref={host} className="guest-studio has-bar" />
       {held && (
         <FollowUpSheet view={view} attending={held.r.attending} count={held.r.attending ? held.r.guests : 0}
-          onBack={() => { held.settle({ ok: false, error: 'لم يُرسل الرد بعد — أكملوا الخطوة الأخيرة متى شئتم.' }); setHeld(null); }}
+          onBack={() => { held.settle({ ok: false, error: NOT_SENT_YET, notice: true }); setHeld(null); }}
           onSend={async (more) => {
             const res = await sendRef.current(held.r, more);
             if (!res.ok) return res.error;

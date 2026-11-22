@@ -113,6 +113,8 @@
 .wz-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
 .wz-one { display: grid; gap: 12px; }
 .wz-tz { color: var(--c-text-2); font-size: 13px; }
+/* «تغيير» is a real target (44px tall, with room around the word), not a 23px inline link */
+.wz-tz-change { display: inline-flex; align-items: center; min-block-size: 44px; min-inline-size: 44px; padding-inline: 8px; justify-content: center; }
 .wz-aside { position: sticky; top: 76px; }
 .wz-preview { display: grid; justify-items: center; gap: 12px; padding: 22px 18px; border-radius: var(--r-lg); background: var(--c-surface-subtle); text-align: center; }
 .wz-preview-card { transform: perspective(900px) rotateY(var(--ry, 0deg)) rotateX(var(--rx, 0deg)); transition: transform 500ms var(--ease-out); }

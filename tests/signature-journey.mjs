@@ -247,7 +247,7 @@ async function run(vp) {
 
   await step(vp, 'couple guest cover → open → invitation plays', async () => {
     await go('/i/noura-faisal'); await page.locator('.sig-cover').waitFor(); await shot('28-couple-cover');
-    await page.getByRole('button', { name: 'افتح الدعوة', exact: true }).click(); await page.waitForTimeout(1600); await shot('29-couple-opened');
+    await page.getByRole('button', { name: 'افتحوا الدعوة', exact: true }).click(); await page.waitForTimeout(1600); await shot('29-couple-opened');
     return 'opened';
   });
 
@@ -256,7 +256,7 @@ async function run(vp) {
     await rm.route(/fonts\.(googleapis|gstatic)/, (r) => r.abort());
     const p = await rm.newPage();
     await p.goto(`${BASE}/i/noura-faisal?${T}`); await p.locator('.sig-cover').waitFor();
-    await p.getByRole('button', { name: 'افتح الدعوة', exact: true }).click(); await p.waitForTimeout(800);
+    await p.getByRole('button', { name: 'افتحوا الدعوة', exact: true }).click(); await p.waitForTimeout(800);
     await p.screenshot({ path: `${OUT}/${vp}-30-reduced-motion.png` }); await rm.close();
     return 'ok';
   });

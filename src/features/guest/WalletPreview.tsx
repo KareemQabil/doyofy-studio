@@ -6,7 +6,8 @@
  */
 import { useState } from 'react';
 import type { GuestView } from '../../services/contracts';
-import { formatEventDate, formatTime, people } from '../../domain/format';
+import { invitationNumbers } from '../../domain/format';
+import { faceDigits } from '../../domain/templates';
 import { Button, Dialog, LogoMark } from '../../ui';
 import { useCopy } from '../../ui/copy';
 import { QrCode } from './QrCode';
@@ -37,6 +38,8 @@ export function WalletPreview({ view, value, demo = false }: { view: GuestView; 
   if (!view.party || view.party.rsvpStatus !== 'confirmed') return null;
   const p = view.party;
   const ev = view.event;
+  // our own pass (not a copy of Google's layout), so it writes the invitation's numbers as its card does
+  const N = invitationNumbers(faceDigits(view.design.cardId));
   return <>
     <div className="gw-wrap">
       <GoogleWalletButton onClick={() => setOpen(true)} />
@@ -53,11 +56,11 @@ export function WalletPreview({ view, value, demo = false }: { view: GuestView; 
         </header>
         <h3 className="wpass-title">{ev.title}</h3>
         <dl className="wpass-fields">
-          <div><dt>التاريخ</dt><dd>{formatEventDate(ev.date)}</dd></div>
-          <div><dt>الوقت</dt><dd>{formatTime(ev.time)}</dd></div>
-          <div className="is-wide"><dt>المكان</dt><dd>{ev.venue.name} · {ev.venue.city}</dd></div>
+          <div><dt>التاريخ</dt><dd>{N.date(ev.date)}</dd></div>
+          <div><dt>الوقت</dt><dd>{N.time(ev.time)}</dd></div>
+          <div className="is-wide"><dt>المكان</dt><dd>{ev.venue.name}، {ev.venue.city}</dd></div>
           <div><dt>الضيف</dt><dd><bdi>{p.name}</bdi></dd></div>
-          <div><dt>العدد</dt><dd>{people(p.confirmedPartySize ?? 1)}</dd></div>
+          <div><dt>العدد</dt><dd>{N.people(p.confirmedPartySize ?? 1)}</dd></div>
           {p.tableName && <div className="is-wide"><dt>الطاولة</dt><dd>{p.tableName}</dd></div>}
         </dl>
         <div className="wpass-code">

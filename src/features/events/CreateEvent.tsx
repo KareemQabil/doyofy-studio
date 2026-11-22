@@ -68,10 +68,11 @@ function WizardSteps({ step, onGo, disabled }: { step: Step; onGo: (s: Step) => 
   return <nav className="wz-steps" aria-label="خطوات إنشاء المناسبة"><ol>
     {labels.map((label, i) => {
       const n = (i + 1) as Step, done = n < step, on = n === step;
-      const inner = <><span className="wz-step-n num" aria-hidden="true">{done ? '✓' : n}</span><span className="wz-step-label">{label}</span></>;
+      // the step's position and state are read as words; the numeral and tick are only drawn
+      const inner = <><span className="wz-step-n num" aria-hidden="true">{done ? '✓' : n}</span><span className="sr-only">{`الخطوة ${n} من 3: `}</span><span className="wz-step-label">{label}</span>{on && <span className="sr-only"> (الخطوة الحالية)</span>}</>;
       return <li key={n} className={`${done ? 'is-done' : ''}${on ? ' is-on' : ''}`} aria-current={on ? 'step' : undefined}>
         {done ? <button type="button" onClick={() => onGo(n)} disabled={disabled} aria-label={`الخطوة ${n} من 3: ${label} — رجوع إليها`}>{inner}</button>
-          : <span aria-label={`الخطوة ${n} من 3: ${label}`}>{inner}</span>}
+          : <span aria-current={on ? 'step' : undefined}>{inner}</span>}
       </li>;
     })}
   </ol></nav>;
@@ -190,7 +191,7 @@ export function CreateEvent() {
         {/* one slim line, only when something typed was restored */}
         {resumed && step !== 2 && <p className="wz-resume" role="status"><Icon name="info" size="sm" /><span>استعدنا ما كتبته سابقًا.</span>
           <button type="button" className="link-btn" onClick={() => { setD({ ...EMPTY, type: preset ?? d.type }); setErrors({}); setResumed(false); setSelectedTemplate(requestedTemplate); setBrowsed(requestedTemplate ?? null); }}>ابدأ من جديد</button></p>}
-        {step === 1 && <SignatureOccasions value={d.type} onChange={chooseType} onConfirm={(type) => { chooseType(type); setStep(2); }} />}
+        {step === 1 && <SignatureOccasions value={d.type} onChange={chooseType} onConfirm={(type) => { chooseType(type); go(2); }} />}
         {step === 2 && feedEvent && d.type && (
           <div className="wz-feed-page">
             <h2 className="sr-only">اختر تصميم دعوة {info?.label}</h2>
@@ -222,7 +223,7 @@ export function CreateEvent() {
                   <Field label="الوقت" required error={errors.time}><ArabicDateTime kind="time" value={d.time} onChange={(e) => set('time', e.target.value)} /></Field>
                 </div>
                 {!showTz ? (
-                  <p className="wz-tz">التوقيت: {TIME_ZONES.find(([z]) => z === d.timeZone)?.[1]} <button type="button" className="link-btn" onClick={() => setShowTz(true)}>تغيير</button></p>
+                  <p className="wz-tz">التوقيت: {TIME_ZONES.find(([z]) => z === d.timeZone)?.[1]} <button type="button" className="link-btn wz-tz-change" onClick={() => setShowTz(true)} aria-label="تغيير المنطقة الزمنية">تغيير</button></p>
                 ) : (
                   <Field label="المنطقة الزمنية"><Select value={d.timeZone} onChange={(e) => set('timeZone', e.target.value)}>{TIME_ZONES.map(([z, l]) => <option key={z} value={z}>{l}</option>)}</Select></Field>
                 )}

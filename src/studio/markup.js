@@ -46,7 +46,7 @@ export const studioMarkup = () => { const T = currentStrings(); return `
             <div class="st-edge st-el"></div><div class="st-edge st-er"></div><div class="st-edge st-et"></div><div class="st-edge st-eb"></div>
             <div class="st-face st-front"><div class="st-face-slot"></div><div class="st-glint"></div></div>
             <div class="st-face st-back"></div>
-            <button type="button" class="st-cardbtn" aria-label="افتح الدعوة"></button>
+            <button type="button" class="st-cardbtn" aria-label="افتحوا الدعوة"></button>
           </div>
         </div>
       </div>
@@ -98,7 +98,7 @@ export const studioMarkup = () => { const T = currentStrings(); return `
     <span class="fx-foil st-dl st-e2 done-ar" style="font-size: 60px; line-height: 1.5; margin-top: 10px"></span>
     <span class="st-dl st-e3 done-en" dir="ltr" style="font-size: 20px; font-style: italic; max-width: 290px; line-height: 1.35"></span>
     <span class="st-dl st-e4 done-demo" hidden style="font: 500 13px/1.6 'IBM Plex Sans Arabic', sans-serif; color: #F2EAD9; background: rgba(0,0,0,.35); padding: 6px 12px; border-radius: 999px; margin-top: 14px; max-width: 300px">نسخة تجريبية — ردّكم على هذا الجهاز فقط ولا يصل إلى صاحب المناسبة.</span>
-    <span class="st-dl st-e4 done-who" dir="ltr" style="font-size: 12.5px; letter-spacing: 0.3em; color: #E3C58C; margin-top: 18px"></span>
+    <span class="st-dl st-e4 done-who" dir="ltr" style="font-size: 12.5px; letter-spacing: 0.3em; color: #E3C58C; margin-top: 18px; max-width: 320px"></span>
     <button type="button" class="st-cta st-dl st-e5" data-act="replay" style="margin-top: 32px; border-color: rgba(227,197,140,.6); color: #F4EAE0; background: transparent">
       ${ICON.replay.replace('width="19" height="19"', 'width="16" height="16"')}
       <span class="ar" style="font-size: 15px">${T.watchAgain.ar}</span><span dir="ltr" style="font-size: 14px; font-style: italic">${T.watchAgain.en}</span>
@@ -117,7 +117,7 @@ export const studioMarkup = () => { const T = currentStrings(); return `
     </div>
     <div style="display: flex; gap: 8px">
       <button type="button" class="st-icon" data-act="replay" aria-label="إعادة العرض من البداية">${ICON.replay}</button>
-      <button type="button" class="st-icon" data-act="sound" aria-label="كتم الصوت" aria-pressed="true">${ICON.soundOn}</button>
+      <button type="button" class="st-icon" data-act="sound" aria-label="${T.sound}" aria-pressed="true">${ICON.soundOn}</button>
     </div>
   </div>
   <div class="st-switch-slot"></div>

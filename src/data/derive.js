@@ -22,6 +22,14 @@ export function localDigits(value, digits) {
   return digitsOf(digits) === 'arab' ? s.replace(/[0-9]/g, (n) => String.fromCharCode(0x0660 + Number(n))) : s;
 }
 
+/**
+ * Joins the parts of one Arabic date line. A middle dot beside Arabic-Indic digits reads as a zero («الثلاثاء · ١» looks
+ * like «١٠»), so faces that write ١٢٣ use the Arabic comma, and their numeric date uses slashes; Western digits keep the
+ * middle dot. domain/format.ts dateSeparator is the platform's copy of this rule (a unit test keeps the two equal).
+ */
+export const dateSep = (digits) => (digitsOf(digits) === 'arab' ? '، ' : ' · ');
+const numSep = (digits) => (digitsOf(digits) === 'arab' ? ' / ' : ' · ');
+
 function fmtTime12(hhmm, digits) {
   const [h, m] = hhmm.split(':').map(Number);
   const h12 = ((h + 11) % 12) + 1;
@@ -51,7 +59,8 @@ export function deriveContent(inv, opts = {}) {
     dateEn: disp.dateEn ?? `${Number(en.day)} ${en.month} ${en.year}`,
     // dayNum, yearAr, dateNum, dateShort follow the face's digits; `year` stays Latin for English lines
     dayNum: localDigits(Number(num.day), digits), monthAr: disp.monthAr ?? ar.month, monthEn: en.month, year: num.year, yearAr: localDigits(num.year, digits),
-    dateNum: localDigits(`${num.day} · ${num.month} · ${num.year}`, digits),
+    dateNum: localDigits([num.day, num.month, num.year].join(numSep(digits)), digits),
+    sep: dateSep(digits),
     dateShort: localDigits(`${num.day}.${num.month}.${num.year.slice(2)}`, digits),
     digits, numLang: digits === 'arab' ? 'ar' : 'en',
     timeAr: disp.timeAr ?? `${ar.hour}:${ar.minute} ${ar.dayPeriod || ''}`.trim(),

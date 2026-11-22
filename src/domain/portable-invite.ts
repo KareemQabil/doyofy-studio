@@ -8,6 +8,7 @@ import { EVENT_TYPES, eventEnd, eventStart } from './event';
 import { localDateOf } from './format';
 import { resolveAudioSelection } from './audio-library';
 import { AppError } from '../services/errors';
+import { parseDialect, type Dialect } from './copy';
 
 export type PortableParty = Pick<InvitationParty, 'code' | 'primaryGuestName' | 'maxPartySize'>;
 /** Version 2 avoids duplicating the full invitation as both engine data and platform data. */
@@ -21,12 +22,14 @@ export function decodePortableView(token: string, slug: string, code?: string): 
     return config.v === 2 || config.v === 1 ? readPortableView(config.platform, slug, code) : null;
   } catch { return null; }
 }
-export function portableView(event: Event, design: InvitationDesignContent, party?: PortableParty): GuestView {
+/** `dialect`: the organizer's voice, carried in the link so the guest's device speaks it (see GuestView.dialect) */
+export function portableView(event: Event, design: InvitationDesignContent, party?: PortableParty, dialect: Dialect = 'ar'): GuestView {
   const { id, slug, type, title, names, date, time, timeZone, durationHours, venue } = event;
   return {
     event: { id, slug, type, title, names, date, time, timeZone, durationHours, venue }, design: { ...design, audio: resolveAudioSelection(design.audio) },
     party: party ? { code: party.code, name: party.primaryGuestName, maxPartySize: party.maxPartySize, rsvpStatus: 'pending', checkedInCount: 0 } : null,
     maxGuests: party?.maxPartySize ?? event.settings.defaultPartySize, canEdit: true, phase: 'before',
+    ...(dialect !== 'ar' ? { dialect } : {}),
     experience: event.guestExperience ? { ...event.guestExperience, meals: { ...event.guestExperience.meals, options: event.guestExperience.meals.options.filter(x => !x.archived) }, gifts: { ...event.guestExperience.gifts, items: event.guestExperience.gifts.items.filter(x => !x.archived) } } : undefined,
   };
 }
@@ -44,6 +47,9 @@ export function readPortableView(raw: unknown, slug: string, code?: string): Gue
     const copy = structuredClone(v);
     if (copy.event.venue.mapUrl && !/^https?:\/\//i.test(copy.event.venue.mapUrl)) delete copy.event.venue.mapUrl;
     // Every newly shared snapshot starts pending. A reply is recovered only from this device's demo store.
+    // an unknown voice falls back to modern; modern itself is the default and is not stored
+    const dialect = parseDialect(copy.dialect);
+    if (dialect === 'ar') delete copy.dialect; else copy.dialect = dialect;
     if (copy.party) copy.party = { code: copy.party.code, name: copy.party.name, maxPartySize: copy.maxGuests, rsvpStatus: 'pending', checkedInCount: 0 };
     copy.phase = 'before'; copy.canEdit = true;
     return copy;

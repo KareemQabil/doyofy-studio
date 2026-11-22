@@ -415,10 +415,10 @@ export async function run(){
  await check('creation is a 3-step wizard: occasion (deck or search) → design feed → essentials with a live card',async()=>{
   window.localStorage.removeItem('doyofy:create-draft:v1:usr_owner');
   history.replaceState(null,'','/app/events/new');await render(<App mode="history"/>);await settle();
-  const current=()=>document.querySelector('.wz-steps [aria-current="step"]')?.textContent;
-  assert.equal(current(),'1المناسبة');assert.equal(document.querySelectorAll('.wz-steps li').length,3);
+  const current=()=>{const li=document.querySelector('.wz-steps li[aria-current="step"]');return li?`${li.querySelector('.wz-step-n')?.textContent}${li.querySelector('.wz-step-label')?.textContent}`:undefined;};
+  assert.equal(current(),'1المناسبة');assert.ok(document.querySelector('.wz-steps li[aria-current="step"]')?.textContent?.includes('الخطوة 1 من 3'),'the step position is read as words');assert.equal(document.querySelectorAll('.wz-steps li').length,3);
   assert.equal(document.querySelector('.sig-view-switch, .sig-occ-groups'),null,'one way to choose: no view toggle or category chips');
-  assert.ok(document.querySelector('.wz-head p')?.textContent?.includes('اسحب البطاقات'));
+  assert.ok(/اسحب البطاقات|تصفّح البطاقات بالأسهم/.test(document.querySelector('.wz-head p')?.textContent ?? ''),'the deck hint names the gesture this device has');
   await click(button('ابحث بالاسم'));assert.ok(document.querySelector('.wz-head p')?.textContent?.includes('اكتب اسم'));
   await fill(document.querySelector<HTMLInputElement>('.wz-search input')!,'تخرج');
   const options=Array.from(document.querySelectorAll('.wz-search-option'));assert.equal(options.length,1);await click(options[0]!);
@@ -444,7 +444,8 @@ export async function run(){
   await render(wrap(<GuestHub view={view} code={p.code} submission={null} onView={(v)=>{latest=v;}} onReplay={()=>{}}/>));
   assert.equal(document.querySelector('.gx'),null,'no food questions before attending');
   await click(document.querySelector('input[type=radio][value=yes]')!);
-  await click(document.querySelector('[aria-label="زيادة عدد الحضور"]')!);
+  assert.equal(document.querySelector('.stepper-value')?.textContent,'٤','a first reply starts at the whole allowance, in the card\'s digits');
+  await click(document.querySelector('[aria-label="إنقاص عدد الحضور"]')!);
   const plus=(label:string)=>document.querySelector<HTMLButtonElement>(`[aria-label="زيادة ${label}"]`)!;
   await click(plus('كبسة لحم'));await click(plus('كبسة لحم'));await click(plus('سمك هامور'));
   assert.equal(document.querySelectorAll('.gx-plate:not(.is-empty)').length,3);
@@ -604,7 +605,7 @@ export async function run(){
   history.replaceState(null,'',`${paths.newEvent}?type=graduation&template=${selected.id}&preview=1`);
   await render(<App mode="history"/>);await settle();
   assert.ok(document.querySelector('.tf-slide.is-active .card-thumb')?.getAttribute('aria-label')?.startsWith(selected.name),'a catalogue link opens step 2 on that design, without an existing event ID');
-  assert.equal(document.querySelector('.wz-steps [aria-current="step"]')?.textContent,'2التصميم');
+  assert.equal(document.querySelector('.wz-steps li[aria-current="step"] .wz-step-label')?.textContent,'التصميم');
   await click(button('اختر هذا التصميم'));await settle();
   await fill(document.querySelector<HTMLInputElement>('#create-event input')!,'خريجة المسودة');
   const saved=JSON.parse(window.localStorage.getItem('doyofy:create-draft:v1:usr_owner')!);assert.equal(saved.draft.a,'خريجة المسودة');assert.equal(saved.templateId,selected.id);

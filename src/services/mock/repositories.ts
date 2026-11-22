@@ -23,6 +23,7 @@ import { assertGuestCapacity } from '../../domain/billing';
 import { findEvent, findParty, log as baseLog, touch, type Ctx } from './helpers';
 import { actorFor, can, FORBIDDEN_TEXT, type Permission } from '../../domain/roles';
 import type { MockStore } from './store';
+import { currentDialect as organizerDialect } from '../../data/copy-preference.js';
 
 const clone = <T>(v: T): T => structuredClone(v);
 
@@ -600,6 +601,8 @@ export function mockGuest({ store, now }: Ctx): GuestApi {
       phase: phase === 'completed' || phase === 'archived' ? 'after' : phase === 'event_day' ? 'event_day' : 'before',
       maxGuests: party?.maxPartySize ?? ev.settings.defaultPartySize,
       experience: publicExperience(ev),
+      // the organizer's voice: in this prototype it is the account preference on the organizer's device
+      ...(organizerDialect() !== 'ar' ? { dialect: organizerDialect() } : {}),
     });
   };
   return {
@@ -628,8 +631,16 @@ export function mockGuest({ store, now }: Ctx): GuestApi {
         const err = validateRsvp(input, ev.settings.defaultPartySize);
         if (err) throw new AppError('validation', RSVP_ERROR_TEXT[err], 'count');
         const answers = guestAnswers(ev, input);
+        const reply = { name, attending: input.attending, count: input.attending ? input.count : 0, note: input.note, ...answers, channel: 'general_link' as const, at: t.toISOString() };
+        // a guest correcting their own general-link reply before the organizer handled it: one reply, updated in place
+        const earlier = input.replaces ? db.responses.find((r) => r.id === input.replaces && r.eventId === ev.id && !r.partyId && !r.resolution && r.channel === 'general_link') : undefined;
+        if (earlier) {
+          for (const k of ['note', 'meals', 'dietary', 'experienceRevision'] as const) delete earlier[k];
+          Object.assign(earlier, reply);
+          return { id: earlier.id };
+        }
         const id = makeId('rsp');
-        db.responses.push({ id, eventId: ev.id, name, attending: input.attending, count: input.attending ? input.count : 0, note: input.note, ...answers, channel: 'general_link', at: t.toISOString() });
+        db.responses.push({ id, eventId: ev.id, ...reply });
         log(db, t, ev.id, 'rsvp_unmatched', { name }, 'guest');
         return { id };
       });
