@@ -23,6 +23,9 @@ import { studioMarkup, ICON } from './markup.js';
 import { renderSwitcher } from './switcher.js';
 
 const STAGE_W = 390, STAGE_H = 844;
+/** seconds into the intro when the face's own entrance starts: the card is opaque and still flying in, so its frame
+ *  draws and its art settles as it lands (styles/studio.css: the card flies in 1.6–3.7 s) */
+const INTRO_FACE_AT = 2.1;
 const e = (v) => String(v ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 const mix = (hex, amt) => {
   const n = parseInt(hex.replace('#', ''), 16);
@@ -191,11 +194,13 @@ export class Studio {
       case 'intro':
         // the card is already a button while it flies in: the first tap fast-forwards and opens (see openCard)
         this.el.cardBtn.disabled = false;
+        this._playFace(INTRO_FACE_AT);
         this.el.sheet.inert = true;
         break;
       case 'card':
         this.el.cardBtn.disabled = false;
-        if (from !== 'pages') this._playFace();   // the face's entrance plays when the card is revealed, not on the way back
+        // the face's entrance plays when the card is revealed (already under way when the intro brought it), not on the way back
+        if (from !== 'pages' && from !== 'intro') this._playFace();
         this.el.sheet.inert = true;
         if (from === 'pages') { this.audio.stopMusic(); requestAnimationFrame(() => this.el.cardBtn.focus({ preventScroll: true })); }
         break;
@@ -236,9 +241,9 @@ export class Studio {
   get theme() { return CardRegistry.get(this.cardId).theme; }
 
   /** the face's own entrance (src/cards/card-motion.js); static experiences and reduced motion show it at rest */
-  _playFace() {
+  _playFace(delay = 0) {
     this.faceMotion?.revert();
-    this.faceMotion = playCardMotion(this.el.face, { reduced: this.quality.reducedMotion || this.quality.static });
+    this.faceMotion = playCardMotion(this.el.face, { reduced: this.quality.reducedMotion || this.quality.static, delay });
   }
 
   _applyCard() {
@@ -297,7 +302,7 @@ export class Studio {
       this.host.querySelector('.bar-date').textContent = this.data.c.dateNum;
     }
     this._applyCard();
-    if (this.sm?.state === 'card') this._playFace();
+    if (this.sm?.state === 'card' || this.sm?.state === 'intro') this._playFace();
     this._syncSwitcher();
     this.scene?.setCard?.(CardRegistry.get(id));
   }
@@ -545,6 +550,7 @@ export class Studio {
   skipIntro() {
     if (this.sm.state !== 'intro') return false;
     this.el.st.classList.add('no-intro'); this.host.classList.add('no-intro');
+    this.faceMotion?.finish();   // the card is complete before it opens
     this.sm.jump('card');
     return true;
   }
