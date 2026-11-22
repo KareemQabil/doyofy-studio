@@ -18,6 +18,7 @@ import { useDesign, useParties } from '../shared/queries';
 import { CardThumb } from './CardThumb';
 import { SceneBackdrop } from './SceneBackdrop';
 import { CopyField } from '../shared/CopyField';
+import { OwnerOnly, useCan } from '../shared/OwnerOnly';
 
 export function InvitationSummary({ event }: { event: Event }) {
   const design = useDesign(event.id);
@@ -30,6 +31,7 @@ export function InvitationSummary({ event }: { event: Event }) {
   });
 
   const guestLink = useGuestLink(event);
+  const mayPublish = useCan('invitation.publish');
   if (design.loading) return <PageLoader />;
   if (design.error) return <ErrorState error={design.error} onRetry={design.refetch} />;
   const d = design.data ?? null;
@@ -54,7 +56,9 @@ export function InvitationSummary({ event }: { event: Event }) {
   if (!isCoupleEvent(event.type)) names.b = '';
   const xLabel = content.experience.motion === 'animated' ? 'متحركة' : 'ثابتة';
   const generalLink = guestLink();
-  const primary = ps === 'draft' ? (
+  const primary = (ps === 'draft' || ps === 'changed') && !mayPublish ? (
+    <OwnerOnly><Button variant="primary" size="lg" icon="send" disabled>{ps === 'draft' ? 'انشر الدعوة' : 'انشر التعديلات'}</Button></OwnerOnly>
+  ) : ps === 'draft' ? (
     <Button variant="primary" size="lg" icon="send" loading={publish.pending} onClick={() => publish.run()}>انشر الدعوة</Button>
   ) : ps === 'changed' ? (
     <Button variant="primary" size="lg" icon="send" loading={publish.pending} onClick={() => publish.run()}>انشر التعديلات</Button>

@@ -117,4 +117,30 @@ export async function run() {
     assert.equal(sheet(), null);
     await act(async () => { made.prototype.update({ role: 'organizer' }); });
   });
+
+  await check('a seat from the dock can be undone from its toast: the family goes back to the waiting list', async () => {
+    const waiting = (await s.parties.list(event.id)).find((p) => p.rsvpStatus === 'confirmed' && !p.tableId)!;
+    const row = [...document.querySelectorAll('.pool-item')].find((li) => li.textContent?.includes(waiting.primaryGuestName))!;
+    await click(button('اختيار طاولة', row));
+    const dock = document.querySelector('.seat-dock')!;
+    await click([...dock.querySelectorAll<HTMLButtonElement>('.seat-dock-table')].find((b) => !b.disabled && !b.classList.contains('is-tight')));
+    const seatedAt = (await s.parties.get(waiting.id)).tableId;
+    assert.ok(seatedAt, 'seated');
+    const toast = [...document.querySelectorAll('.toast')].find((t) => t.textContent?.includes(waiting.primaryGuestName))!;
+    await click(toast.querySelector('.toast-action'));
+    assert.equal((await s.parties.get(waiting.id)).tableId, undefined, 'undo put the family back');
+    assert.ok([...document.querySelectorAll('.toast')].some((t) => t.textContent?.includes('قائمة الانتظار')), 'and said so');
+  });
+
+  await check('auto-seat keep mode flags a table that is already over capacity', async () => {
+    const [t] = await s.seating.listTables(event.id);
+    await act(async () => { await s.seating.updateTable(t!.id, { capacity: 1 }); });
+    await settle();
+    await click(document.querySelector('.as-entry'));
+    const card = [...document.querySelectorAll('.as-table')].find((li) => li.querySelector('.as-table-name')?.textContent?.includes(t!.name))!;
+    assert.ok(card.classList.contains('is-over'), 'over-capacity card is marked');
+    assert.match(card.textContent ?? '', /فوق السعة/);
+    await click(button('إلغاء', sheet()!));
+    await act(async () => { await s.seating.updateTable(t!.id, { capacity: t!.capacity }); });
+  });
 }

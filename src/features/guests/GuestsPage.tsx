@@ -36,8 +36,9 @@ import { ShareQueue } from './ShareQueue';
 import { inviteMessage, reminderMessage, whatsappUrl } from './share';
 import { arrivalOpen, guestNextAction, isUnsent, type GuestNextAction } from '../../domain/guest-tools';
 import { normalisePhone } from '../../domain/phone';
-import { canManageGuests, canViewFood } from '../../domain/roles';
+import { can, canManageGuests, canViewFood, OWNER_ONLY_NOTE } from '../../domain/roles';
 import { ExportGuestsDialog, TransferGuestsDialog } from './GuestToolsDialog';
+import { OwnerOnly } from '../shared/OwnerOnly';
 import { useCopy } from '../../ui/copy';
 import { CapacityMeter } from '../billing/CapacityMeter';
 import { mergeHandlers, useLongPress, useSwipeReveal } from '../../ui/hooks/useTouchGestures';
@@ -180,7 +181,8 @@ export function GuestsPage({ event }: { event: Event }) {
         {all.length > 0 && <div className="g2-head-actions">
           <Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!manage}>{t('addGuest')}</Button>
           {manage && <><LinkButton to={paths.importGuests(event.id)} icon="upload" className="g2-head-tool" aria-label="استيراد"><span className="g2-tool-label">استيراد</span></LinkButton>
-            <Button icon="download" className="g2-head-tool" aria-label={t('exportFile')} onClick={() => setExporting(true)}><span className="g2-tool-label">{t('exportFile')}</span></Button></>}
+            {can(role, 'guests.export') ? <Button icon="download" className="g2-head-tool" aria-label={t('exportFile')} onClick={() => setExporting(true)}><span className="g2-tool-label">{t('exportFile')}</span></Button>
+              : <OwnerOnly><Button icon="download" className="g2-head-tool" aria-label={t('exportFile')} disabled><span className="g2-tool-label">{t('exportFile')}</span></Button></OwnerOnly>}</>}
         </div>}
       </header>
 
@@ -238,8 +240,9 @@ export function GuestsPage({ event }: { event: Event }) {
                 <Menu label="إجراءات أخرى" items={[
                   { label: `${t('remindSelected')}${selRemindable.length ? ` (${selRemindable.length})` : ''}`, icon: 'bell', disabled: !published || !selRemindable.length, onSelect: () => setQueue({ ids: selRemindable, mode: 'remind' }) },
                   { label: 'تم التواصل يدويًا', icon: 'check', disabled: !published || !sel.length || bulkManual.pending, onSelect: () => void bulkManual.run(sel) },
-                  { label: t('exportSelected'), icon: 'download', disabled: !sel.length, onSelect: () => setExporting(true) },
-                  { label: t('moveGuests'), icon: 'move', disabled: !sel.length, onSelect: () => setTransferring(true) },
+                  // owner-only (domain/roles): export says why it is unavailable, moving between events is not offered
+                  { label: t('exportSelected'), icon: 'download', disabled: !sel.length || !can(role, 'guests.export'), hint: can(role, 'guests.export') ? undefined : OWNER_ONLY_NOTE, onSelect: () => setExporting(true) },
+                  can(role, 'guests.transfer') ? { label: t('moveGuests'), icon: 'move', disabled: !sel.length, onSelect: () => setTransferring(true) } : null,
                   { label: 'إرسال (محاكاة)', icon: 'send', disabled: !published || !sel.length, onSelect: () => void bulkSend.run(sel) },
                 ]} />
                 <button type="button" className="g2-bulk-close" onClick={clearSelection} aria-label="إنهاء التحديد"><Icon name="close" size="sm" /></button>
@@ -278,8 +281,8 @@ export function GuestsPage({ event }: { event: Event }) {
         </div>
       )}
 
-      {exporting && <ExportGuestsDialog event={event} parties={all} tables={tableList} visibleIds={new Set(visible.map((p) => p.id))} selectedIds={new Set(sel)} onClose={() => setExporting(false)} />}
-      {transferring && <TransferGuestsDialog event={event} parties={all.filter((p) => selected.has(p.id))} onClose={() => setTransferring(false)} onDone={clearSelection} />}
+      {exporting && can(role, 'guests.export') && <ExportGuestsDialog event={event} parties={all} tables={tableList} visibleIds={new Set(visible.map((p) => p.id))} selectedIds={new Set(sel)} onClose={() => setExporting(false)} />}
+      {transferring && can(role, 'guests.transfer') && <TransferGuestsDialog event={event} parties={all.filter((p) => selected.has(p.id))} onClose={() => setTransferring(false)} onDone={clearSelection} />}
       {adding && (
         <PartyFormDialog open key="new" title="إضافة ضيف" eventId={event.id} existing={all} defaultSize={event.settings.defaultPartySize}
           onClose={() => { setAdding(false); add.reset(); }} pending={add.pending} error={add.error} onSubmit={(input) => void add.run(input)} />

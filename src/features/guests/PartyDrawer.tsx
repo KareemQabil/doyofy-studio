@@ -7,7 +7,7 @@ import type { Event, InvitationParty, PublishState, Table } from '../../domain/t
 import { CHECKIN_STATUS, INVITATION_STATUS, RSVP_STATUS, SOURCE_LABEL, duplicatePhoneIds, invitationStatus, partyNeedsAttention } from '../../domain/parties';
 import { formatPhone, people, relativeTime } from '../../domain/format';
 import { Badge, Banner, Button, ConfirmDialog, Dialog, Icon, KeyValue, Menu, Status } from '../../ui';
-import { useMutation, useNow } from '../../app/data';
+import { useMutation, useNow, useServices } from '../../app/data';
 import { useGuestLink } from '../shared/share-link';
 import { useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -19,6 +19,7 @@ import { PartyFormDialog } from './PartyForm';
 import { inviteMessage, reminderMessage, smsUrl, whatsappUrl } from './share';
 import { normalisePhone } from '../../domain/phone';
 import { useCopy } from '../../ui/copy';
+import { can } from '../../domain/roles';
 
 export function PartyDrawer({ event, party, all, tables, publish, startEditing = false, onClose }: {
   event: Event; party: InvitationParty; all: readonly InvitationParty[]; tables: readonly Table[]; publish: PublishState; startEditing?: boolean; onClose: () => void;
@@ -49,6 +50,7 @@ export function PartyDrawer({ event, party, all, tables, publish, startEditing =
   const [remindAsk, setRemindAsk] = useState(false);
   const remind = useMutation((s) => s.parties.markReminded([party.id]), { onSuccess: () => { setRemindAsk(false); toast({ tone: 'success', text: 'سجّلنا التذكير' }); } });
   const update = useMutation((s, input: Parameters<typeof s.parties.update>[1]) => s.parties.update(party.id, input), { onSuccess: () => { setEditing(false); toast({ tone: 'success', text: 'تم حفظ التعديلات' }); } });
+  const mayDelete = can(useServices().session.currentUser().role, 'guests.delete'); // owner only
   const remove = useMutation((s) => s.parties.remove(party.id), { onSuccess: () => { toast({ tone: 'neutral', text: `تم حذف ${party.primaryGuestName}` }); onClose(); } });
 
   const busy = markShared.pending || simulate.pending || remind.pending;
@@ -58,7 +60,7 @@ export function PartyDrawer({ event, party, all, tables, publish, startEditing =
     <>
       <Dialog open={!editing && !recording && !confirmDelete} variant="drawer" onClose={onClose} title={party.primaryGuestName}
         description={<>{party.side ? `${party.side} · ` : ''}{party.phone ? <bdi dir="ltr" className="num">{formatPhone(party.phone)}</bdi> : 'بلا رقم جوال'}</>}
-        footer={<><Button variant="ghost" onClick={onClose}>رجوع إلى القائمة</Button><Menu label="خيارات الضيف" triggerLabel="المزيد" items={[{ label:'تعديل البيانات', icon:'edit', onSelect:()=>setEditing(true) },{ label:'حذف الضيف',icon:'trash',danger:true,onSelect:()=>setConfirmDelete(true) }]} /></>}>
+        footer={<><Button variant="ghost" onClick={onClose}>رجوع إلى القائمة</Button><Menu label="خيارات الضيف" triggerLabel="المزيد" items={[{ label:'تعديل البيانات', icon:'edit', onSelect:()=>setEditing(true) },mayDelete ? { label:'حذف الضيف',icon:'trash',danger:true,onSelect:()=>setConfirmDelete(true) } : null]} /></>}>
         <div className="drawer-summary"><Status label="الرد" tone={party.rsvpStatus==='confirmed'?'success':'neutral'}>{RSVP_STATUS[party.rsvpStatus].label}</Status><p className="drawer-summary-count">{party.rsvpStatus==='confirmed'?`${people(party.confirmedPartySize??0)} سيحضرون`:party.rsvpStatus==='declined'?'نلتقي في مناسبة قادمة':`الدعوة تتسع لـ${people(party.maxPartySize)}`}</p><p className="t-sm muted">{table?.name??'لم تُحدد طاولة'}{party.checkedInCount?` · وصل ${party.checkedInCount}`:''}</p>
           {party.rsvpStatus==='pending' && ['shared','opened'].includes(inv) && <Button variant="primary" icon="check" onClick={()=>setRecording(true)}>سجّل رد الضيف</Button>}
           {party.rsvpStatus==='confirmed' && !table && <Button variant="primary" icon="table" onClick={()=>navigate(paths.seating(event.id))}>اختر لهم طاولة</Button>}
@@ -139,7 +141,7 @@ export function PartyDrawer({ event, party, all, tables, publish, startEditing =
           onClose={() => { setEditing(false); update.reset(); }} pending={update.pending} error={update.error} onSubmit={(input) => void update.run(input)} />
       )}
       {recording && <RecordRsvpDialog party={party} onClose={() => setRecording(false)} />}
-      <ConfirmDialog open={confirmDelete} tone="danger" title={`حذف ${party.primaryGuestName}؟`} confirmLabel="حذف الضيف" loading={remove.pending}
+      <ConfirmDialog open={confirmDelete && mayDelete} tone="danger" title={`حذف ${party.primaryGuestName}؟`} confirmLabel="حذف الضيف" loading={remove.pending}
         body={<>{party.rsvpStatus === 'confirmed' ? 'هذا الضيف أكد حضوره. سيُحذف رده ومكانه على الطاولة، ولن يعمل رابطه.' : 'لن يعمل رابطه الشخصي بعد الحذف.'}{remove.error ? <Banner tone="danger">{errorMessage(remove.error)}</Banner> : null}</>}
         onCancel={() => setConfirmDelete(false)} onConfirm={() => void remove.run()} />
     </>

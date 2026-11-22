@@ -6,19 +6,20 @@ import { JourneyArtwork } from '../../ui/primitives/JourneyArtwork';
 import type { Event } from '../../domain/types';
 import { countParties } from '../../domain/parties';
 import { eventPhase, todayFor } from '../../domain/event';
-import { EXCEPTION_TEXT } from '../../domain/checkin';
+import { EXCEPTION_TEXT, expectedArrivals } from '../../domain/checkin';
 import { clockTime, countdownLabel, people, peopleOf, plural, P, relativeTime } from '../../domain/format';
 import { Badge, Banner, EmptyState, ErrorState, LinkButton, PageHeader, Panel, ProgressBar, Stat, PageLoader } from '../../ui';
 import { useMutation, useNow } from '../../app/data';
 import { Link, useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
-import { useCheckIns, useParties } from '../shared/queries';
+import { useActivity, useCheckIns, useParties } from '../shared/queries';
 import { CopyField } from '../shared/CopyField';
 
 export function CheckInSetup({ event }: { event: Event }) {
   const now = useNow();
   const parties = useParties(event.id);
   const records = useCheckIns(event.id);
+  const activity = useActivity(event.id, 200);
   const { absolute } = useRouter();
   const prepare = useMutation((s) => s.events.markCheckInPrepared(event.id));
   const phase = eventPhase(event, now);
@@ -30,6 +31,8 @@ export function CheckInSetup({ event }: { event: Event }) {
   const exceptions = live.filter((r) => r.exceptions.some((e) => e !== 'no_table'));
   const partial = all.filter((p) => p.checkInStatus === 'partial');
   const notArrived = all.filter((p) => p.rsvpStatus === 'confirmed' && p.checkedInCount === 0);
+  // people let in who were not on the list (gate «ضيف من خارج القائمة»): no invitation, only the staff note
+  const walkIns = (activity.data ?? []).filter((a) => a.kind === 'check_in_walk_in');
   const name = (id: string) => all.find((p) => p.id === id)?.primaryGuestName ?? '—';
 
   return (
@@ -60,9 +63,19 @@ export function CheckInSetup({ event }: { event: Event }) {
         )}
 
         {(phase === 'event_day' || phase === 'completed' || live.length > 0) && <><div className="overview-grid">
-          <Panel title={`دخول باستثناء (${exceptions.length})`} subtitle="سمح بها فريق الاستقبال بعد التأكد — راجعها">
-            {exceptions.length === 0 ? <p className="faint t-sm">لا استثناءات.</p> : (
+          <Panel title={`دخول باستثناء (${exceptions.length + walkIns.length})`} subtitle="سمح بها فريق الاستقبال بعد التأكد — راجعها">
+            {exceptions.length + walkIns.length === 0 ? <p className="faint t-sm">لا استثناءات.</p> : (
               <ul className="plain-list">
+                {walkIns.map((a) => (
+                  <li key={a.id} className="plain-row">
+                    <span className="grow">
+                      <span className="row-title">{String(a.data.name ?? '')}</span>
+                      <span className="row-sub"><Badge tone="warning">من خارج القائمة</Badge><span>{people(Number(a.data.count) || 1)}</span></span>
+                      {a.data.note && <span className="row-note t-sm">«{String(a.data.note)}»</span>}
+                    </span>
+                    <time className="faint t-xs">{relativeTime(a.at, now)}</time>
+                  </li>
+                ))}
                 {exceptions.map((r) => (
                   <li key={r.id} className="plain-row">
                     <span className="grow">
@@ -79,7 +92,7 @@ export function CheckInSetup({ event }: { event: Event }) {
           <Panel title={`ينتظر وصول الباقين (${partial.length})`}>
             {partial.length === 0 ? <p className="faint t-sm">لا توجد دعوات وصل جزء منها.</p> : (
               <ul className="plain-list">
-                {partial.map((p) => <li key={p.id} className="plain-row"><span className="grow t-bold">{p.primaryGuestName}</span><span className="num t-sm">{p.checkedInCount} / {p.confirmedPartySize ?? p.maxPartySize}</span></li>)}
+                {partial.map((p) => <li key={p.id} className="plain-row"><span className="grow t-bold">{p.primaryGuestName}</span><span className="num t-sm">{p.checkedInCount} / {expectedArrivals(p)}</span></li>)}
               </ul>
             )}
           </Panel>

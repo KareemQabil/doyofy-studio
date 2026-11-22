@@ -289,6 +289,7 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
         const r = await db.rpc<GateResult>('undo_check_in', { p_check_in_id: requireId(recordId, 'check_in_not_found') });
         return changed(toParty(r.party));
       },
+      recordWalkIn: async () => { throw new AppError('forbidden', 'تسجيل الضيف غير المدرج متاح في التجربة المحلية. يحتاج الخادم إلى عملية آمنة قبل تفعيله.'); },
     },
 
     activity: {

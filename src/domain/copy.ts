@@ -8,9 +8,9 @@ const modern = {
   account: 'حسابي', accountSubtitle: 'ملفك الشخصي، وأسلوب اللغة، والصوت والمظهر.', profile: 'الملف الشخصي', name: 'الاسم', email: 'البريد الإلكتروني', saveProfile: 'حفظ الملف', profileSaved: 'تم حفظ ملفك', nameRequired: 'اكتب اسمًا قبل الحفظ.',
   languageStyle: 'أسلوب اللغة', languageHint: 'اختر أسلوب الكتابة الذي يناسبك. أسماء ضيوفك ونصوص دعوتك تبقى كما كتبتها.', languageSaved: 'تم تحديث أسلوب اللغة',
   appearance: 'المظهر', appearanceHint: 'فاتح أو داكن أو حسب جهازك. تصميم دعوتك يبقى كما اخترته.', demoSession: 'جلسة التجربة', demoSessionHint: 'بياناتك محفوظة على هذا الجهاز. يمكنك تجربة المسارات كاملة قبل ربط الخدمات.', logout: 'تسجيل الخروج', login: 'تسجيل الدخول', help: 'دليل ضيوفي', accountOptions: 'خيارات الحساب', resetDemo: 'ابدأ التجربة من جديد',
-  roleTitle: 'طريقة عرض الحساب', roleHint: 'جرّب الأدوات المناسبة لكل دور. يظهر الطعام لمزوّد الضيافة فقط.', organizer: 'صاحب المناسبة', coordinator: 'المنظّم', caterer: 'مزوّد الضيافة', roleSaved: 'تم تغيير طريقة العرض',
+  roleTitle: 'طريقة عرض الحساب', roleHint: 'جرّب الأدوات المناسبة لكل دور. المنسّق يدير الضيوف والطاولات والاستقبال، والحذف والتصدير والدفع والنشر لصاحب المناسبة. يظهر الطعام لمزوّد الضيافة فقط.', organizer: 'صاحب المناسبة', coordinator: 'المنسّق', caterer: 'مزوّد الضيافة', roleSaved: 'تم تغيير طريقة العرض',
   createEvent: 'إنشاء مناسبة', createTitle: 'مناسبة جديدة', createEssentials: 'اكتب الأسماء والموعد والمكان. يمكنك إكمال التفاصيل لاحقًا.', createContinue: 'متابعة إلى التفاصيل', prepareInvitation: 'جهّز دعوتي',
-  back: 'رجوع', next: 'التالي', cancel: 'إلغاء', save: 'حفظ', close: 'إغلاق', retry: 'إعادة المحاولة', done: 'تم',
+  back: 'رجوع', next: 'التالي', cancel: 'إلغاء', save: 'حفظ', close: 'إغلاق', retry: 'إعادة المحاولة', done: 'تم', undo: 'تراجع',
   // invitation editor and its guest preview
   editorPreview: 'معاينة كضيف', editorHideTools: 'إخفاء أدوات التعديل', editorZoomIn: 'تقريب', editorZoomOut: 'تصغير', editorBackToEdit: 'العودة للتعديل', previewRestart: 'من البداية',
   templatesTitle: 'تصاميم الدعوة', templateBrowse: 'استعراض التصاميم', templateSwipe: 'اسحب لأعلى للتصميم التالي', templateUse: 'استخدم التصميم', templateShare: 'مشاركة التصميم', previewInvitation: 'معاينة الدعوة',
@@ -32,6 +32,7 @@ const modern = {
 export type CopyKey = keyof typeof modern;
 export type Copy = { readonly [K in CopyKey]: string };
 const egyptian: Partial<Copy> = {
+  undo: 'رجّعه',
   account: 'حسابي', accountSubtitle: 'بياناتك، وطريقة الكلام، والصوت والشكل.', saveProfile: 'احفظ بياناتي', profileSaved: 'بياناتك اتحفظت', nameRequired: 'اكتب اسمك قبل الحفظ.', languageStyle: 'طريقة الكلام', languageHint: 'اختار الطريقة اللي تناسبك. أسماء الضيوف وكلام دعوتك هيفضلوا زي ما كتبتهم.', languageSaved: 'طريقة الكلام اتغيّرت',
   appearance: 'شكل المنصة', appearanceHint: 'فاتح أو غامق أو زي جهازك. تصميم دعوتك هيفضل زي ما اخترته.', demoSessionHint: 'بياناتك محفوظة على الجهاز ده. جرّب كل الخطوات قبل ربط الخدمات.', roleHint: 'جرّب الأدوات حسب كل دور. الأكل بيظهر لمزوّد الضيافة بس.', roleSaved: 'طريقة العرض اتغيّرت',
   editorPreview: 'شوفها كضيف', editorHideTools: 'اخفي أدوات التعديل', editorZoomIn: 'قرّب', editorZoomOut: 'بعّد', editorBackToEdit: 'ارجع للتعديل', previewRestart: 'من الأول',

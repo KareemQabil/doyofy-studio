@@ -42,10 +42,10 @@ export function TableDisc({ o, preview }: { o: TableOccupancy; preview?: number 
   );
 }
 
-export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragOverTable, showFood = false, orderMode = false, onReorder }: {
+export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragOverTable, showFood = false, orderMode = false, onReorder, onOrderDone }: {
   tables: TableOccupancy[]; focus: string; onFocus: (id: string) => void;
   onDropParty?: (t: TableOccupancy) => (e: React.DragEvent) => void; dragOver?: string | null; onDragOverTable?: (id: string | null) => void;
-  showFood?: boolean; orderMode?: boolean; onReorder?: (source: string, target: string) => void;
+  showFood?: boolean; orderMode?: boolean; onReorder?: (source: string, target: string) => void; onOrderDone?: () => void;
 }) {
   const [orderSource, setOrderSource] = useState<string | null>(null);
   const [orderTarget, setOrderTarget] = useState<string | null>(null);
@@ -62,7 +62,9 @@ export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragO
         <button type="button" className={`hall-all${focus === 'all' ? ' is-on' : ''}`} aria-pressed={focus === 'all'} onClick={() => onFocus('all')}>كل الطاولات</button>
       </header>
       <div className="hall-stage" aria-hidden="true"><span>المنصّة</span></div>
-      {orderMode && <p className="hall-order-hint" id="hall-order-help">اسحب طاولة لتغيير ترتيبها. بالكيبورد: استخدم الأسهم على الطاولة.</p>}
+      {/* the keyboard sentence only where a keyboard is likely (seating-v2.css hides it on touch screens) */}
+      {orderMode && <div className="hall-order-bar"><p className="hall-order-hint" id="hall-order-help">اسحب طاولة لتغيير ترتيبها.<span className="hall-order-keys"> بالكيبورد: استخدم الأسهم على الطاولة.</span></p>
+        {onOrderDone && <button type="button" className="hall-all is-on" onClick={onOrderDone}>إنهاء الترتيب</button>}</div>}
       <div className={`hall-floor${orderMode ? ' is-ordering' : ''}`} style={{ '--hall-n': tables.length } as CSSProperties}>
         {tables.map((o, i) => (
           <button key={o.table.id} type="button" style={{ '--hall-i': i } as CSSProperties}
@@ -146,13 +148,22 @@ export function useLiftDrag({ onLift, onHover, onDrop, onCancel }: {
   useEffect(() => {
     if (!ghost) return;
     const target = (x: number, y: number) => (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>('[data-table]:not(:disabled)')?.dataset.table ?? null;
-    const move = (e: PointerEvent) => {
-      if (live.current?.id !== e.pointerId) return;
-      setGhost((g) => g && { ...g, x: e.clientX, y: e.clientY });
-      const t = target(e.clientX, e.clientY);
+    const finger = { x: ghost.x, y: ghost.y };
+    const hover = () => {
+      const t = target(finger.x, finger.y);
       if (t !== hovered.current) { hovered.current = t; if (t) haptic('tick'); onHover(t); }
     };
-    const up = (e: PointerEvent) => { if (live.current?.id !== e.pointerId) return; const t = target(e.clientX, e.clientY); end(); onDrop(t); };
+    const move = (e: PointerEvent) => {
+      if (live.current?.id !== e.pointerId) return;
+      finger.x = e.clientX; finger.y = e.clientY;
+      setGhost((g) => g && { ...g, x: e.clientX, y: e.clientY });
+      hover();
+    };
+    // the dock strip scrolls itself to keep the hovered table in view: when the content slides under a still finger,
+    // the table under it changes, so the highlight follows the scroll too…
+    const scrolled = () => { if (live.current) hover(); };
+    // …and the drop commits to the table that is highlighted, never to one the user did not see light up
+    const up = (e: PointerEvent) => { if (live.current?.id !== e.pointerId) return; const t = hovered.current; end(); onDrop(t); };
     const cancel = (e: PointerEvent) => { if (live.current?.id !== e.pointerId) return; end(); onCancel(); };
     // once lifted, the finger drags the family — the page must not scroll underneath it
     const block = (e: TouchEvent) => { if (live.current) e.preventDefault(); };
@@ -160,7 +171,8 @@ export function useLiftDrag({ onLift, onHover, onDrop, onCancel }: {
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', cancel);
     window.addEventListener('touchmove', block, { passive: false });
-    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel); window.removeEventListener('touchmove', block); };
+    window.addEventListener('scroll', scrolled, { capture: true, passive: true });
+    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel); window.removeEventListener('touchmove', block); window.removeEventListener('scroll', scrolled, { capture: true }); };
   }, [ghost != null]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const end = () => { live.current = null; hovered.current = null; setGhost(null); onHover(null); };

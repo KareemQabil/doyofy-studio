@@ -36,13 +36,14 @@ export function activityText(a: EventActivity): string {
     case 'checked_in_partial': return `${s(d.name)}: وصل ${n(d.total)} من ${n(d.expected)}`;
     case 'check_in_exception': return `دخول باستثناء: ${s(d.name)} — ${s(d.reason)}`;
     case 'check_in_undone': return `تم التراجع عن تسجيل دخول ${s(d.name)}`;
+    case 'check_in_walk_in': return `دخول من خارج القائمة: ${s(d.name)} — ${people(n(d.count))}${d.note ? ` («${s(d.note)}»)` : ''}`;
     case 'event_archived': return 'تمت أرشفة المناسبة';
   }
 }
 
 export function activityTone(kind: ActivityKind): Tone {
   if (kind === 'rsvp_confirmed' || kind === 'checked_in' || kind === 'invitation_published') return 'success';
-  if (kind === 'invitation_failed' || kind === 'check_in_exception' || kind === 'rsvp_unmatched') return 'warning';
+  if (kind === 'invitation_failed' || kind === 'check_in_exception' || kind === 'check_in_walk_in' || kind === 'rsvp_unmatched') return 'warning';
   if (kind === 'rsvp_declined' || kind === 'party_removed') return 'neutral';
   if (kind === 'invitation_opened' || kind === 'checked_in_partial') return 'info';
   return 'neutral';

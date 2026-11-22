@@ -9,6 +9,8 @@ import { SeatingPage } from '../../src/features/seating/SeatingPage';
 import { GuestsPage } from '../../src/features/guests/GuestsPage';
 import { EventWorkspace } from '../../src/features/workspace/EventWorkspace';
 import { SettingsPage } from '../../src/features/settings/SettingsPage';
+import { InvitationSummary } from '../../src/features/invitation/InvitationSummary';
+import { GateMode } from '../../src/features/check-in/GateMode';
 
 export async function run() {
   let root: Root;
@@ -84,15 +86,16 @@ export async function run() {
   });
   await check('catering closes an open table editor and cannot act on declined-party warnings', async () => {
     const event = await made.services.events.get('evt_wedding');
+    await act(async () => made.prototype.update({ role: 'organizer' })); // the caterer could not prepare this data (services refuse)
     const party = await made.services.parties.create(event.id, { primaryGuestName: 'تحقق عرض الضيافة', maxPartySize: 1 });
     await made.services.rsvp.setByOrganizer(party.id, { attending: true, count: 1 });
     const [table] = await made.services.seating.listTables(event.id);
     await made.services.seating.assign(party.id, table!.id);
     await made.services.rsvp.setByOrganizer(party.id, { attending: false, count: 0 });
-    await act(async () => made.prototype.update({ role: 'organizer' }));
     history.replaceState(null, '', '/app/events/evt_wedding/seating');
     await render(wrap(<SeatingPage event={event} />)); await settle();
-    const addTable = [...document.querySelectorAll('button')].find(button => button.textContent === 'أضف طاولة')!;
+    await act(async () => document.querySelector<HTMLButtonElement>('.seat-head-actions .menu-trigger')!.click());
+    const addTable = [...document.querySelectorAll('[role="menuitem"]')].find(item => item.textContent === 'أضف طاولة') as HTMLButtonElement;
     await act(async () => addTable.click()); assert.ok(document.querySelector('dialog[open]'));
     await act(async () => made.prototype.update({ role: 'caterer' })); await settle();
     assert.ok(!document.querySelector('dialog[open]'), 'a role change closes the management dialog');
@@ -100,5 +103,113 @@ export async function run() {
     assert.ok(!document.querySelector('[aria-label^="خيارات "]'), 'unavailable management menus are hidden');
     assert.equal((await made.services.parties.get(party.id)).tableId, table!.id);
   });
-  console.log('5/5 role DOM tests passed');
+  // ------------------------------------------------------------------ coordinator (owner decision, domain/roles)
+  const items = () => [...document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')];
+  const openMenu = async (trigger: Element | null | undefined) => { assert.ok(trigger, 'menu trigger'); await act(async () => (trigger as HTMLButtonElement).click()); };
+  await check('coordinator works the guest list but cannot delete, transfer or export', async () => {
+    await act(async () => made.prototype.update({ role: 'coordinator' }));
+    const event = await made.services.events.get('evt_wedding');
+    const [first] = await made.services.parties.list(event.id);
+    history.replaceState(null, '', `/app/events/evt_wedding/guests?party=${first!.id}`);
+    await render(wrap(<GuestsPage event={event} />)); await settle();
+    const header = document.querySelector('.page-head')!;
+    assert.ok([...header.querySelectorAll('button')].some((b) => b.textContent?.includes('إضافة ضيف') && !b.disabled), 'can add');
+    const exportBtn = [...header.querySelectorAll('button')].find((b) => b.textContent?.includes('تصدير ملف'));
+    assert.ok(exportBtn?.disabled, 'export is visible but disabled');
+    assert.match(exportBtn!.closest('.owner-only')?.textContent ?? '', /متاح لصاحب المناسبة/, 'and says why');
+    // the guest drawer: edit yes, delete no
+    await openMenu(document.querySelector('dialog[open] .menu-trigger'));
+    assert.ok(items().some((i) => i.textContent === 'تعديل البيانات'));
+    assert.ok(!items().some((i) => i.textContent?.includes('حذف')), 'no delete for the coordinator');
+    // bulk actions: export explained, moving between events not offered, sharing kept
+    history.replaceState(null, '', '/app/events/evt_wedding/guests');
+    await render(wrap(<GuestsPage key="bulk" event={event} />)); await settle();
+    await act(async () => [...document.querySelectorAll('button')].find((b) => b.textContent?.includes('تحديد'))!.click());
+    await act(async () => document.querySelector<HTMLButtonElement>('.g2-bulk-pick')!.click());
+    await openMenu(document.querySelector('.g2-bulk .menu-trigger'));
+    const exp = items().find((i) => i.textContent?.includes('تصدير المحدد'))!;
+    assert.equal(exp.getAttribute('aria-disabled'), 'true');
+    assert.match(exp.textContent ?? '', /متاح لصاحب المناسبة/);
+    await act(async () => exp.click());
+    assert.ok(!document.querySelector('dialog[open]'), 'the export dialog never opens');
+    assert.ok(!items().some((i) => i.textContent?.includes('نقل')), 'no transfer between events');
+    assert.ok(items().some((i) => i.textContent?.includes('تذكير')), 'reminders stay');
+  });
+  await check('coordinator sees publish disabled with the reason; seating keeps auto-seat and order, export explained', async () => {
+    await act(async () => made.prototype.update({ role: 'organizer' }));
+    const fresh = await made.services.events.create({ type: 'birthday', names: { a: 'مسودة المنسق' }, date: '2027-06-20', time: '20:00', venue: { name: 'قاعة', city: 'الرياض' } });
+    const wedding = await made.services.invitations.get('evt_wedding');
+    await made.services.invitations.saveDraft(fresh.id, wedding!.draft);
+    await act(async () => made.prototype.update({ role: 'coordinator' }));
+    history.replaceState(null, '', `/app/events/${fresh.id}/invitation`);
+    await render(wrap(<InvitationSummary event={fresh} />)); await settle();
+    const publish = [...document.querySelectorAll('button')].find((b) => b.textContent === 'انشر الدعوة')!;
+    assert.ok(publish.disabled, 'publish is disabled');
+    assert.match(publish.closest('.owner-only')?.textContent ?? '', /متاح لصاحب المناسبة/);
+    await assert.rejects(made.services.invitations.publish(fresh.id), /صاحب المناسبة/, 'the service refuses too');
+
+    const event = await made.services.events.get('evt_wedding');
+    history.replaceState(null, '', '/app/events/evt_wedding/seating');
+    await render(wrap(<SeatingPage event={event} />)); await settle();
+    assert.ok(document.querySelector('.as-entry'), 'auto-seat is the primary action');
+    await openMenu(document.querySelector('.seat-head-actions .menu-trigger'));
+    assert.ok(items().some((i) => i.textContent === 'ترتيب الطاولات' && i.getAttribute('aria-disabled') !== 'true'), 'table order allowed');
+    const exp = items().find((i) => i.textContent?.includes('تصدير ملف'))!;
+    assert.equal(exp.getAttribute('aria-disabled'), 'true');
+    assert.match(exp.textContent ?? '', /متاح لصاحب المناسبة/);
+    await openMenu(document.querySelector('.table-card .table-head .menu-trigger'));
+    const tableMenu = document.querySelector('.table-card .menu-list')!;
+    assert.ok(tableMenu.textContent?.includes('تعديل الاسم والسعة'));
+    assert.ok(!tableMenu.textContent?.includes('تصدير'), 'per-table export is not offered');
+    await act(async () => made.prototype.update({ role: 'organizer' }));
+  });
+  await check('the owner keeps delete, transfer and export', async () => {
+    await act(async () => made.prototype.update({ role: 'organizer' }));
+    const event = await made.services.events.get('evt_wedding');
+    history.replaceState(null, '', '/app/events/evt_wedding/guests');
+    await render(wrap(<GuestsPage event={event} />)); await settle();
+    const exportBtn = [...document.querySelectorAll('.page-head button')].find((b) => b.textContent?.includes('تصدير ملف')) as HTMLButtonElement;
+    assert.ok(exportBtn && !exportBtn.disabled && !exportBtn.closest('.owner-only'));
+  });
+  await check('coordinator at the gate: a declined guest never reads as expected, an undo names the family, a walk-in is logged', async () => {
+    await act(async () => made.prototype.update({ role: 'coordinator' }));
+    const all = await made.services.parties.list('evt_wedding');
+    const declined = all.find((p) => p.rsvpStatus === 'declined' && p.checkedInCount === 0)!;
+    const confirmed = all.find((p) => p.rsvpStatus === 'confirmed' && p.checkedInCount === 0)!;
+    history.replaceState(null, '', '/check-in/evt_wedding');
+    await render(wrap(<GateMode eventId="evt_wedding" />)); await settle();
+    const type = async (text: string) => {
+      const input = document.querySelector<HTMLInputElement>('#gate-q')!;
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+      await act(async () => { setter.call(input, text); input.dispatchEvent(new Event('input', { bubbles: true })); }); await settle();
+    };
+    await type(declined.primaryGuestName);
+    const row = [...document.querySelectorAll('.gate-result')].find((b) => b.textContent?.includes(declined.primaryGuestName))!;
+    assert.equal(row.querySelector('.gate-pill')?.textContent, 'اعتذروا');
+    assert.ok(row.querySelector('.gate-pill.is-declined'));
+    await act(async () => (row as HTMLButtonElement).click()); await settle();
+    const facts = document.querySelector('.gate-facts')!.textContent ?? '';
+    assert.ok(facts.includes('الرد') && facts.includes('اعتذروا') && !facts.includes('أكدوا'), 'no «أكدوا: اعتذروا»');
+    await act(async () => document.querySelector<HTMLButtonElement>('.gate-back')!.click()); await settle();
+
+    await type(confirmed.primaryGuestName);
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('.gate-result')].find((b) => b.textContent?.includes(confirmed.primaryGuestName))!.click()); await settle();
+    await act(async () => document.querySelector<HTMLButtonElement>('.gate-actions.is-dock .btn-primary')!.click()); await settle();
+    assert.ok(document.querySelector('.gate-done'));
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('.gate-done button')].find((b) => b.textContent?.includes('تراجع'))!.click()); await settle();
+    assert.match(document.querySelector('.gate-notice')?.textContent ?? '', new RegExp(`تم التراجع عن دخول ${confirmed.primaryGuestName}`));
+    assert.equal((await made.services.parties.get(confirmed.id)).checkedInCount, 0);
+
+    await type('شخص غير مدعو');
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('.gate-empty button')].find((b) => b.textContent?.includes('من خارج القائمة'))!.click()); await settle();
+    const save = document.querySelector<HTMLButtonElement>('.gate-actions.is-dock button')!;
+    assert.ok(save.disabled, 'needs the staff confirmation first');
+    await act(async () => document.querySelector<HTMLInputElement>('.gate-decision input[type="checkbox"]')!.click()); await settle();
+    await act(async () => document.querySelector<HTMLButtonElement>('.gate-actions.is-dock button')!.click()); await settle();
+    assert.match(document.querySelector('.gate-notice')?.textContent ?? '', /شخص غير مدعو/);
+    const [last] = await made.services.activity.list('evt_wedding', 1);
+    assert.equal(last!.kind, 'check_in_walk_in');
+    await act(async () => made.prototype.update({ role: 'organizer' }));
+  });
+  console.log('9/9 role DOM tests passed');
 }

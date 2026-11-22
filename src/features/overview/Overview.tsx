@@ -8,6 +8,7 @@ import { checklist, needsAttention, nextAction, type OverviewInput } from '../..
 import { journeyStage, overviewFacts, rankAttention } from '../../domain/experience';
 import { publishState } from '../../domain/invitation';
 import { activityText, activityTone } from '../../domain/activity';
+import { actorLabel } from '../../domain/roles';
 import { Button, ErrorState, Icon, LinkButton, ProgressBar, Skeleton, Status, PageLoader } from '../../ui';
 import { Link } from '../../app/router';
 import { useNow } from '../../app/data';
@@ -58,7 +59,7 @@ export function Overview({ event }: { event: Event }) {
         </section>
         <details className="preparation-list" open={stage==='prepare'||undefined}><summary><span>خطوات التجهيز</span><span className="faint t-sm">{done} من {required.length} مكتملة</span><Icon name="chevron-down" size="sm"/></summary><ProgressBar value={done} max={required.length} label="تقدم التجهيز"/><ol className="checklist">{steps.map((s,n)=><li key={s.id} className={`check-item${s.done?' is-done':''}`}><Link to={targetPath(event.id,s.target)} className="check-link"><span className="check-num" aria-hidden="true">{s.done?<Icon name="check" size="sm"/>:n+1}</span><span className="grow"><span className="check-title">{s.label}{s.optional&&<span className="faint t-xs"> · اختياري</span>}{s.done&&<span className="sr-only">، مكتملة</span>}</span><span className="check-detail">{s.detail}</span></span><Icon name="forward" size="sm"/></Link></li>)}</ol></details>
       </div>
-      <section className="recent-section" aria-labelledby="recent-title"><div className="section-head"><h2 id="recent-title">آخر ما حدث</h2><span className="eyebrow">مع ضيوفك</span></div>{activity.loading?<Skeleton lines={4}/>:activity.error?<ErrorState error={activity.error} onRetry={activity.refetch}/>:!activity.data?.length?<p className="muted t-sm">هنا تظهر الردود وتفاصيل تجهيز مناسبتك، أولًا بأول.</p>:<ol className="timeline">{activity.data.map(a=><li key={a.id} className={`timeline-item tone-${activityTone(a.kind)}`}><span className="timeline-dot" aria-hidden="true"/><div><p>{activityText(a)}</p><time dateTime={a.at}>{relativeTime(a.at,now)}</time></div></li>)}</ol>}<Link to={paths.rsvp(event.id)} className="link-btn">كل الردود والمتابعة</Link></section>
+      <section className="recent-section" aria-labelledby="recent-title"><div className="section-head"><h2 id="recent-title">آخر ما حدث</h2><span className="eyebrow">مع ضيوفك</span></div>{activity.loading?<Skeleton lines={4}/>:activity.error?<ErrorState error={activity.error} onRetry={activity.refetch}/>:!activity.data?.length?<p className="muted t-sm">هنا تظهر الردود وتفاصيل تجهيز مناسبتك، أولًا بأول.</p>:<ol className="timeline">{activity.data.map(a=><li key={a.id} className={`timeline-item tone-${activityTone(a.kind)}`}><span className="timeline-dot" aria-hidden="true"/><div><p>{activityText(a)}{actorLabel(a.actor)&&<span className="timeline-actor"> — {actorLabel(a.actor)}</span>}</p><time dateTime={a.at}>{relativeTime(a.at,now)}</time></div></li>)}</ol>}<Link to={paths.rsvp(event.id)} className="link-btn">كل الردود والمتابعة</Link></section>
     </div>
   </div>;
 }

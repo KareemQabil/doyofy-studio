@@ -369,7 +369,7 @@
   .sig-rail-context .ws-event-title { font-size: 18px; }
   :root[data-theme='signature'] .ws-event-art { top: 16px; width: 32px; height: 32px; }
   .sig-content { padding: 18px 16px 44px; }
-  .sig-tabbar { position: fixed; inset-inline: 0; bottom: 0; z-index: 40; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px 6px max(6px, env(safe-area-inset-bottom)); background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(10px); border-top: 1px solid var(--c-hairline); }
+  .sig-tabbar { position: fixed; inset-inline: 0; bottom: 0; z-index: 40; display: grid; grid-template-columns: repeat(var(--tab-n, 5), minmax(0, 1fr)); /* --tab-n: the role decides how many tabs (caterer 3) */ padding: 6px 6px max(6px, env(safe-area-inset-bottom)); background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(10px); border-top: 1px solid var(--c-hairline); }
   .sig-tab { position: relative; display: grid; justify-items: center; gap: 3px; min-height: 56px; padding: 6px 2px; border-radius: 12px; color: var(--c-text-2); text-decoration: none; font: 500 11px/1.2 var(--font-display); }
   .sig-tab-icon { position: relative; display: grid; place-items: center; width: 48px; height: 30px; border-radius: 999px; }
   .sig-tab.is-active { color: var(--c-text); font-weight: 700; }
