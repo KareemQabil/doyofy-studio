@@ -24,6 +24,8 @@ const modern = {
   autoSeatKeep: 'غير الموزعين فقط', autoSeatAll: 'إعادة توزيع الجميع', autoSeatApply: 'اعتمد التوزيع', autoSeatApplied: 'تم اعتماد التوزيع', autoSeatUndo: 'تراجع', autoSeatUndone: 'أعدنا التوزيع كما كان',
   autoSeatExclude: 'استبعد من التوزيع', autoSeatInclude: 'أعده للتوزيع', autoSeatMoveTo: 'انقل إلى طاولة', autoSeatAddTables: 'أضف الطاولات المقترحة', autoSeatNewTable: 'جديدة',
   autoSeatTooBig: 'أكبر من أي طاولة. زِد سعة طاولة لتتسع لهم.', autoSeatNoRoom: 'لا توجد مقاعد كافية.', autoSeatNothing: 'كل الضيوف المؤكدين لهم طاولات. اختر «إعادة توزيع الجميع» لترتيبهم من جديد.', autoSeatUnplaced: 'بلا مكان', autoSeatExcluded: 'مستبعدون من التوزيع', autoSeatNewOnApply: 'تُنشأ مع اعتماد التوزيع فقط.', autoSeatKept: 'موزعون من قبل', autoSeatSuggest: 'نقترح إضافة {tables} بسعة {seats} لكلٍّ منها.',
+  // guest list: one primary action per guest, bulk sharing (r1-guests)
+  publishFirst: 'انشر الدعوة', addPhone: 'أضف رقمًا', shareWhatsapp: 'شارك عبر واتساب', remindReply: 'ذكّر بالرد', recordArrival: 'سجّل الوصول', removeFromTable: 'إزالة من الطاولة', shareSelected: 'مشاركة المحدد', selectUnsent: 'حدّد من لم تصلهم الدعوة', selectVisible: 'تحديد الظاهر', sentOpenNext: 'أرسلتها، افتح التالي', copyTheirLinks: 'انسخ روابطها معًا',
 } as const;
 export type CopyKey = keyof typeof modern;
 export type Copy = { readonly [K in CopyKey]: string };
@@ -40,6 +42,7 @@ const egyptian: Partial<Copy> = {
   autoSeatKeep: 'اللي لسه من غير ترابيزة', autoSeatAll: 'وزّع الكل من الأول', autoSeatApply: 'اعتمد التوزيع', autoSeatApplied: 'التوزيع اتعتمد', autoSeatUndo: 'رجّعه زي ما كان', autoSeatUndone: 'رجّعنا التوزيع زي ما كان',
   autoSeatExclude: 'شيله من التوزيع', autoSeatInclude: 'رجّعه للتوزيع', autoSeatMoveTo: 'انقله لترابيزة', autoSeatAddTables: 'زوّد الترابيزات المقترحة', autoSeatNewTable: 'جديدة',
   autoSeatTooBig: 'أكبر من أي ترابيزة. كبّر سعة ترابيزة عشان تساعهم.', autoSeatNoRoom: 'مفيش أماكن كفاية.', autoSeatNothing: 'كل الضيوف اللي أكدوا ليهم ترابيزات. اختار «وزّع الكل من الأول» لو عايز ترتبهم من جديد.', autoSeatUnplaced: 'من غير مكان', autoSeatExcluded: 'اللي شلتهم من التوزيع', autoSeatNewOnApply: 'هتتعمل لما تعتمد التوزيع بس.', autoSeatKept: 'متوزعين من قبل', autoSeatSuggest: 'نقترح تزوّد {tables}، كل واحدة {seats}.',
+  addPhone: 'ضيف رقم', shareWhatsapp: 'ابعت على واتساب', remindReply: 'فكّرهم بالرد', removeFromTable: 'شيلهم من الترابيزة', shareSelected: 'ابعت للمحددين', selectUnsent: 'حدد اللي لسه موصلتلهمش الدعوة', selectVisible: 'حدد الظاهر', sentOpenNext: 'بعتّها، افتح اللي بعدها', copyTheirLinks: 'انسخ لينكاتهم مع بعض',
 };
 const saudi: Partial<Copy> = {
   accountSubtitle: 'بياناتك، وأسلوب الكلام، والصوت والمظهر.', saveProfile: 'احفظ بياناتي', profileSaved: 'تم حفظ بياناتك', nameRequired: 'اكتب اسمك قبل الحفظ.', languageStyle: 'أسلوب الكلام', languageHint: 'اختر الأسلوب اللي يناسبك. أسماء ضيوفك وكلام دعوتك تبقى مثل ما كتبتها.', appearanceHint: 'فاتح أو داكن أو حسب جهازك. تصميم دعوتك يبقى مثل ما اخترته.', demoSessionHint: 'بياناتك محفوظة على هالجهاز. جرّب كل الخطوات قبل ربط الخدمات.', roleHint: 'جرّب الأدوات حسب كل دور. الأكل يظهر لمزوّد الضيافة فقط.',
@@ -53,6 +56,7 @@ const saudi: Partial<Copy> = {
   autoSeatKeep: 'اللي ما لهم طاولة', autoSeatAll: 'وزّع الكل من جديد', autoSeatApply: 'اعتمد التوزيع', autoSeatApplied: 'تم اعتماد التوزيع', autoSeatUndo: 'تراجع', autoSeatUndone: 'رجّعنا التوزيع مثل ما كان',
   autoSeatExclude: 'استبعده من التوزيع', autoSeatInclude: 'رجّعه للتوزيع', autoSeatMoveTo: 'انقله لطاولة', autoSeatAddTables: 'أضف الطاولات المقترحة',
   autoSeatTooBig: 'أكبر من أي طاولة. زِد سعة طاولة عشان تكفيهم.', autoSeatNoRoom: 'ما فيه مقاعد كافية.', autoSeatNothing: 'كل الضيوف المؤكدين لهم طاولات. اختر «وزّع الكل من جديد» لو تبي ترتبهم من جديد.', autoSeatUnplaced: 'بدون مكان', autoSeatExcluded: 'المستبعدين من التوزيع', autoSeatNewOnApply: 'تنضاف مع اعتماد التوزيع فقط.', autoSeatSuggest: 'نقترح تضيف {tables}، كل وحدة {seats}.',
+  addPhone: 'أضف رقم', shareWhatsapp: 'أرسل على واتساب', remindReply: 'ذكّرهم بالرد', removeFromTable: 'شيلهم من الطاولة', shareSelected: 'أرسل للمحددين', selectUnsent: 'حدّد اللي ما وصلتهم الدعوة', selectVisible: 'حدّد الظاهر', sentOpenNext: 'أرسلتها، افتح اللي بعدها', copyTheirLinks: 'انسخ روابطهم مع بعض',
 };
 const dictionaries: Record<Dialect, Copy> = { ar: modern, 'ar-EG': { ...modern, ...egyptian }, 'ar-SA': { ...modern, ...saudi } };
 export function copyFor(dialect: Dialect): Copy { return dictionaries[parseDialect(dialect)]; }

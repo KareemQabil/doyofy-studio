@@ -73,16 +73,30 @@ export async function run(){
   const link=document.querySelector('a[href^="https://wa.me"]')!;assert.ok(link);link.addEventListener('click',e=>e.preventDefault());await click(link);
   assert.equal((await made.services.parties.get(p.id)).delivery.status,'not_shared');await click(button('نعم، أرسلته'));assert.equal((await made.services.parties.get(p.id)).delivery.status,'shared');
  });
- await check('guest row places WhatsApp beside the name without assuming the message was sent',async()=>{
+ await check('guest row: one primary WhatsApp action under the name, never assuming the message was sent',async()=>{
   const p=await made.services.parties.create(event.id,{primaryGuestName:'ضيف مشاركة مباشرة',phone:'0559876544',maxPartySize:2});
   await render(wrap(<GuestsPage event={event}/>));await settle();
   const row=Array.from(document.querySelectorAll('.g2-row')).find(el=>el.textContent?.includes('ضيف مشاركة مباشرة'))!;
-  const link=row.querySelector<HTMLAnchorElement>('.g2-share-line .g2-wa[href^="https://wa.me/"]')!;assert.ok(link);
+  const link=row.querySelector<HTMLAnchorElement>('.g2-card a.g2-act.btn-primary[href^="https://wa.me/"]')!;assert.ok(link);
+  assert.equal(row.querySelectorAll('.g2-card a[href^="https://wa.me/"], .g2-card .g2-act').length,1,'exactly one action on the card');
   link.addEventListener('click',e=>e.preventDefault());await click(link);
   assert.equal((await made.services.parties.get(p.id)).delivery.status,'not_shared');
   assert.ok(document.body.textContent?.includes('فتح واتساب يجهّز الرسالة فقط'));
   await click(button('نعم، أرسلتها يدويًا'));
   assert.equal((await made.services.parties.get(p.id)).delivery.status,'shared');
+ });
+ await check('declined guest still at a table gets one «إزالة من الطاولة» action that frees the seats',async()=>{
+  const p=await made.services.parties.create(event.id,{primaryGuestName:'ضيف اعتذر متأخرًا',phone:'0559876545',maxPartySize:2});
+  await made.services.rsvp.setByOrganizer(p.id,{attending:true,count:2});
+  const [table]=await made.services.seating.listTables(event.id);await made.services.seating.assign(p.id,table!.id);
+  await made.services.rsvp.setByOrganizer(p.id,{attending:false});
+  assert.ok((await made.services.parties.get(p.id)).tableId,'declining keeps the table until the organizer frees it');
+  await render(wrap(<GuestsPage event={event}/>));await settle();
+  const row=Array.from(document.querySelectorAll('.g2-row')).find(el=>el.textContent?.includes('ضيف اعتذر متأخرًا'))!;
+  const acts=row.querySelectorAll<HTMLButtonElement>('.g2-card .g2-act');assert.equal(acts.length,1);assert.ok(acts[0]!.textContent?.includes('إزالة من الطاولة'));
+  assert.ok(!row.textContent?.includes('سجّل الوصول'),'no arrival nine days before the event');
+  await click(acts[0]!);await settle();
+  assert.equal((await made.services.parties.get(p.id)).tableId,undefined);
  });
  await check('guest editing replaces parent dialog instead of stacking modals',async()=>{
   const p=await made.services.parties.create(event.id,{primaryGuestName:'ضيف الحوار',maxPartySize:2});
