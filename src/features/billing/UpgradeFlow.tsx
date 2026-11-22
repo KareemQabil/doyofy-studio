@@ -90,7 +90,7 @@ export function UpgradeFlow() {
       setReceipt(enough ? null : simulateCapacityPayment(request.eventId, plan.limit, services.clock.now()));
       setFailed(null); done.current = true; setStep('done'); finish(true);
     } catch (e) {
-      setFailed({ message: e instanceof PaymentDeclinedError ? e.message : 'تعذّرت محاكاة الدفع. لم تتغير السعة أو قائمة الضيوف.', at: Date.now() });
+      setFailed({ message: e instanceof PaymentDeclinedError ? e.message : t('upFailed'), at: Date.now() });
     }
   };
   const need = request.kind === 'resume'
@@ -98,8 +98,8 @@ export function UpgradeFlow() {
     : <p data-step-focus tabIndex={-1}>المستخدم الآن <strong className="num">{request.used}</strong> من <strong>{plural(current, P.person)}</strong>. السعة تشمل الضيوف ومرافقيهم.</p>;
   const demoNote = <p className="capacity-demo-note"><Icon name="info" size="sm" />{t('demoNoCharge')}</p>;
 
-  const title = step === 'plan' ? (request.kind === 'resume' ? 'زِد السعة لإكمال الإضافة' : t('upgradeCapacity'))
-    : step === 'checkout' ? 'مراجعة الدفع' : step === 'done' ? 'تمت زيادة السعة' : 'السعة ممتلئة';
+  const title = step === 'plan' ? (request.kind === 'resume' ? t('upResumeTitle') : t('upgradeCapacity'))
+    : t(step === 'checkout' ? 'upCheckout' : step === 'done' ? 'upDone' : 'upFull');
   const footer = step === 'plan' ? <><Button variant="primary" onClick={() => setStep('checkout')}>{t('continueToPayment')}</Button><Button variant="ghost" onClick={close}>{t('cancelUpgrade')}</Button></>
     : step === 'checkout' ? <><Button variant="primary" onClick={pay}>{t('confirmDemoPayment')}</Button><Button variant="ghost" onClick={() => { setFailed(null); setStep('plan'); }}>{t('changePlan')}</Button></>
     : <Button variant="primary" onClick={close} data-autofocus>{step === 'done' ? t('done') : t('close')}</Button>;
@@ -112,11 +112,11 @@ export function UpgradeFlow() {
 
       {step === 'plan' && <>
         {need}
-        <ChoiceGroup label="اختر السعة" columns={1} value={String(plan.limit)} onChange={v => setSelected(Number(v))}
+        <ChoiceGroup label={t('upChoose')} columns={1} value={String(plan.limit)} onChange={v => setSelected(Number(v))}
           options={plans.map(p => {
             const q = upgradeQuote(request.eventId, p.limit);
             return { value: String(p.limit), label: <span className="capacity-plan">
-              <span className="capacity-plan-name"><strong>{plural(p.limit, P.person)}</strong>{p.limit === suggested.limit && <span className="capacity-plan-tag">الأنسب لك</span>}</span>
+              <span className="capacity-plan-name"><strong>{plural(p.limit, P.person)}</strong>{p.limit === suggested.limit && <span className="capacity-plan-tag">{t('upBest')}</span>}</span>
               <span className="capacity-plan-price"><strong className="num">{sar(q.charge)}</strong>{q.credit > 0 && <span className="faint t-xs">الفرق · سعر الباقة {sar(q.price)}</span>}</span>
             </span> };
           })} />
@@ -125,22 +125,22 @@ export function UpgradeFlow() {
       </>}
 
       {step === 'checkout' && <>
-        <h3 className="capacity-step-title" data-step-focus tabIndex={-1}>سعة مناسبتك ستصبح {plural(plan.limit, P.person)}</h3>
+        <h3 className="capacity-step-title" data-step-focus tabIndex={-1}>{t('upWillBe', { people: plural(plan.limit, P.person) })}</h3>
         <dl className="capacity-summary">
-          <div><dt>الحد الحالي</dt><dd>{plural(current, P.person)}</dd></div>
-          <div><dt>سعر الباقة</dt><dd className="num">{sar(quote.price)}</dd></div>
-          {quote.credit > 0 && <div><dt>مدفوع سابقًا لهذه المناسبة</dt><dd className="num">− {sar(quote.credit)}</dd></div>}
-          <div className="is-total"><dt>{quote.credit > 0 ? 'الفرق المستحق الآن' : 'المبلغ المستحق'}</dt><dd className="num">{sar(quote.charge)}</dd></div>
+          <div><dt>{t('upCurrent')}</dt><dd>{plural(current, P.person)}</dd></div>
+          <div><dt>{t('upPrice')}</dt><dd className="num">{sar(quote.price)}</dd></div>
+          {quote.credit > 0 && <div><dt>{t('upPaidBefore')}</dt><dd className="num">− {sar(quote.credit)}</dd></div>}
+          <div className="is-total"><dt>{t(quote.credit > 0 ? 'upDiff' : 'upDue')}</dt><dd className="num">{sar(quote.charge)}</dd></div>
         </dl>
         {request.kind === 'resume' && <p className="muted t-sm">بعد التأكيد نكمل الإضافة المحفوظة تلقائيًا، مرة واحدة.</p>}
-        {failed && <Banner tone="danger" title="لم ينجح الدفع" reveal={failed.at}>{failed.message} يمكنك المحاولة مرة أخرى أو تغيير الباقة.</Banner>}
+        {failed && <Banner tone="danger" title={t('upNotPaid')} reveal={failed.at}>{failed.message} {t('upTryAgain')}</Banner>}
         {demoNote}
       </>}
 
       {step === 'done' && <>
         <div className="capacity-success" data-step-focus tabIndex={-1}>
           <Icon name="check-circle" size="lg" />
-          <p className="capacity-success-line">أصبح حدّ مناسبتك {plural(guestLimit(request.eventId), P.person)}</p>
+          <p className="capacity-success-line">{t('upNewLimit', { people: plural(guestLimit(request.eventId), P.person) })}</p>
         </div>
         {request.kind === 'resume' && <ResumeStatus request={request} limit={guestLimit(request.eventId)} />}
         {receipt ? <ReceiptDetails receipt={receipt} compact />
