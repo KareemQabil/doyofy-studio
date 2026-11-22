@@ -127,7 +127,7 @@ const rsvp = {
         <button type="button" class="st-round" data-guests="1" aria-label="زيادة عدد الحاضرين"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
       </div>
     </div>
-    <p id="st-guests-h" class="ar rsvp-guests-row" style="margin: -12px 0 0; font-size: 12px; text-align: center; color: ${t.muted}">يشملك أنت والمرافقين</p>
+    <p id="st-guests-h" class="ar rsvp-guests-row" style="margin: -12px 0 0; font-size: 12px; text-align: center; color: ${t.muted}">يشملكم مع المرافقين</p>
     <button type="submit" class="st-cta fx-rise fx-d5 rsvp-submit" style="align-self: center; min-width: 220px; background: ${t.ink}; color: ${t.paper}; border-color: ${t.ink}">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M9 12.5l2 2 4-4.5"></path></svg>
       <span class="ar" style="font-size: 16px">${T.sealSend.ar}</span><span dir="ltr" style="font-size: 14px; font-style: italic">${T.sealSend.en}</span>

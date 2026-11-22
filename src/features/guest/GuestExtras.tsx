@@ -6,12 +6,14 @@
  */
 import { useId, useState, type ReactNode } from 'react';
 import type { DietaryAnswer, DietaryNeed, GiftItem, GiftKind, GuestExperience, MealAllocation, RsvpInput } from '../../domain/types';
+import type { GuestView } from '../../services/contracts';
 import {
-  DIETARY, DIETARY_ERROR_TEXT, DIETARY_ORDER, GIFT_KIND, MEAL_ERROR_TEXT, activeGifts, activeMeals, asksMeals, linkHost, mealSum, safeExternalUrl,
+  DIETARY, DIETARY_ERROR_TEXT, DIETARY_ORDER, GIFT_KIND, MEAL_ERROR_TEXT, activeGifts, activeMeals, asksAfterAttending, asksMeals, linkHost, mealSum, safeExternalUrl,
   validateDietary, validateMeals,
 } from '../../domain/guest-experience';
 import { people } from '../../domain/format';
-import { Banner, Button, Dialog, Field, Icon, Input } from '../../ui';
+import { Banner, Button, Dialog, Field, Icon, Input, Textarea } from '../../ui';
+import { useCopy } from '../../ui/copy';
 import { haptic } from '../../ui/motion/motion';
 
 export type ExtrasValue = { meals: MealAllocation[]; dietary?: DietaryAnswer };
@@ -166,14 +168,60 @@ function DietaryField({ count, value, onChange, error }: { count: number; value:
   );
 }
 
-// ------------------------------------------------------------------ the extras step for the cinematic invitation
-/** the invitation engine collects yes/count; this step adds food before the one and only submit */
-export function ExtrasSheet({ x, count, onSend, onBack }: { x: GuestExperience; count: number; onSend: (v: ExtrasValue) => Promise<string | null>; onBack: () => void }) {
-  const [value, setValue] = useState<ExtrasValue>(emptyExtras());
+// ------------------------------------------------------------------ follow-up questions: one set for every path
+/**
+ * What a reply asks after «حضور / اعتذار» and the headcount. The cinematic invitation and the direct form ask exactly
+ * this set, so both paths collect the same answers: companions' names (personal link, more than one person), food (when
+ * the host asks it after attending) and a message to the host (personal link).
+ */
+export type FollowUp = { extras: ExtrasValue; companions: string[]; note: string };
+export const emptyFollowUp = (p?: GuestView['party']): FollowUp => ({ extras: emptyExtras(p ?? undefined), companions: p?.companionNames ?? [], note: p?.guestNote ?? '' });
+export function followUpAsks(view: GuestView, attending: boolean, count: number) {
+  const x = view.experience;
+  return { companions: !!view.party && attending && count > 1, food: attending && !!x && asksAfterAttending(x), note: !!view.party };
+}
+export const asksFollowUp = (view: GuestView, attending: boolean, count: number) => Object.values(followUpAsks(view, attending, count)).some(Boolean);
+export function followUpError(view: GuestView, attending: boolean, count: number, v: FollowUp) {
+  return followUpAsks(view, attending, count).food ? extrasError(view.experience, v.extras, count) : null;
+}
+/** the follow-up part of an RSVP payload */
+export function followUpPayload(view: GuestView, attending: boolean, count: number, v: FollowUp): Partial<RsvpInput> {
+  const a = followUpAsks(view, attending, count);
+  return {
+    // a personal attending reply always restates its companions, so a smaller party drops the names that no longer apply
+    ...(view.party && attending ? { companionNames: v.companions.slice(0, Math.max(0, count - 1)).map((n) => n.trim()).filter(Boolean) } : {}),
+    ...(a.note ? { note: v.note.trim() || undefined } : {}),
+    ...(a.food ? extrasPayload(view.experience, v.extras) : {}),
+  };
+}
+
+export function FollowUpFields({ view, attending, count, value, onChange, error }: { view: GuestView; attending: boolean; count: number; value: FollowUp; onChange: (v: FollowUp) => void; error?: { field: 'meals' | 'dietary'; text: string } | null }) {
+  const a = followUpAsks(view, attending, count);
+  return (
+    <>
+      {a.companions && (
+        <fieldset className="form-group">
+          <legend className="field-label">أسماء المرافقين <span className="field-opt">(اختياري)</span></legend>
+          {Array.from({ length: count - 1 }, (_, i) => (
+            <Input key={i} aria-label={`اسم المرافق ${i + 1}`} placeholder={`المرافق ${i + 1}`} value={value.companions[i] ?? ''}
+              onChange={(e) => { const c = [...value.companions]; c[i] = e.target.value; onChange({ ...value, companions: c }); }} />
+          ))}
+        </fieldset>
+      )}
+      {a.food && view.experience && <GuestExtrasFields x={view.experience} count={count} value={value.extras} onChange={(extras) => onChange({ ...value, extras })} error={error} />}
+      {a.note && <Field label="رسالة لصاحب المناسبة" optional><Textarea rows={2} value={value.note} onChange={(e) => onChange({ ...value, note: e.target.value })} maxLength={240} /></Field>}
+    </>
+  );
+}
+
+/** the cinematic invitation collects the reply and headcount; this sheet asks the same follow-up before the one and only submit */
+export function FollowUpSheet({ view, attending, count, onSend, onBack }: { view: GuestView; attending: boolean; count: number; onSend: (v: FollowUp) => Promise<string | null>; onBack: () => void }) {
+  const { t } = useCopy();
+  const [value, setValue] = useState<FollowUp>(() => emptyFollowUp(view.party));
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const err = extrasError(x, value, count);
+  const err = followUpError(view, attending, count, value);
   const send = async () => {
     setTried(true);
     if (err) { haptic('warning'); return; }
@@ -183,10 +231,11 @@ export function ExtrasSheet({ x, count, onSend, onBack }: { x: GuestExperience; 
     if (problem) setFailure(problem);
   };
   return (
-    <Dialog open onClose={onBack} variant="drawer" size="md" className="gx-sheet theme-guest" title="خطوة أخيرة قبل الإرسال" description={`الحضور: ${people(count)} · لم يُرسل الرد بعد.`}
-      footer={<><Button variant="primary" loading={busy} onClick={() => void send()}>إرسال الرد</Button><Button variant="ghost" disabled={busy} onClick={onBack}>رجوع للدعوة</Button></>}>
+    <Dialog open onClose={onBack} variant="drawer" size="md" className="gx-sheet theme-guest" title="خطوة أخيرة قبل الإرسال"
+      description={attending ? `الحضور: ${people(count)} · لم يُرسل الرد بعد.` : 'الاعتذار · لم يُرسل الرد بعد.'}
+      footer={<><Button variant="primary" loading={busy} onClick={() => void send()}>{t('guestSendReply')}</Button><Button variant="ghost" disabled={busy} onClick={onBack}>رجوع للدعوة</Button></>}>
       {failure && <Banner tone="danger">{failure}</Banner>}
-      <GuestExtrasFields x={x} count={count} value={value} onChange={setValue} error={tried ? err : null} />
+      <div className="stack gap-4"><FollowUpFields view={view} attending={attending} count={count} value={value} onChange={setValue} error={tried ? err : null} /></div>
     </Dialog>
   );
 }
@@ -220,7 +269,7 @@ function WishCard({ g }: { g: GiftItem }) {
           </a>
           <span className="gx-wish-host" dir="ltr">{linkHost(url)}</span>
         </div>
-      ) : <p className="gx-wish-nolink">اسألوا أصحاب المناسبة عن التفاصيل</p>}
+      ) : <p className="gx-wish-nolink">اسألوا صاحب المناسبة عن التفاصيل</p>}
     </li>
   );
 }
@@ -247,7 +296,7 @@ export function Wishlist({ x, mode, children }: { x: GuestExperience; mode: 'hub
         </>
       )}
       <ul className="gx-wishes">{sorted.map((g) => <WishCard key={g.id} g={g} />)}</ul>
-      <p className="gx-wish-foot"><Icon name="info" size="sm" />الروابط تفتح مواقع خارجية اختارها أصحاب المناسبة. لا نسجّل دفعًا أو شراء، وردكم لا يتأثر بها.</p>
+      <p className="gx-wish-foot"><Icon name="info" size="sm" />الروابط تفتح مواقع خارجية اختارها صاحب المناسبة. لا نسجّل دفعًا أو شراء، وردكم لا يتأثر بها.</p>
       {children}
     </section>
   );

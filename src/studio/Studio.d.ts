@@ -21,8 +21,10 @@ export interface StudioOptions {
   muted?: boolean;
   params?: URLSearchParams;
   guest?: StudioGuest | null;
-  /** an extra button on the thank-you screen */
-  doneAction?: { ar: string; en?: string; onClick: () => void } | null;
+  /** an extra button on the thank-you screen; with autoAfter (ms) the screen moves on by itself */
+  doneAction?: { ar: string; en?: string; onClick: () => void; autoAfter?: number } | null;
+  /** organizer-only hints on controls (never on guest pages) */
+  authorNotes?: boolean;
 }
 export declare class Studio {
   constructor(host: HTMLElement, opts: StudioOptions);
@@ -32,5 +34,8 @@ export declare class Studio {
   setScene(id: string): void;
   setContent(invitation: unknown): void;
   replay(): void;
+  /** fast-forward the intro to the card at rest; false when the intro is not playing */
+  skipIntro(): boolean;
+  openCard(): void;
   destroy(): void;
 }

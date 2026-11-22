@@ -73,7 +73,7 @@ export function createPortableGuestApi(initial: GuestView, storage?: Pick<Storag
       if (!current.canEdit) throw new AppError('conflict', 'انتهت فترة تعديل الرد.');
       const error = validateRsvp(input, current.maxGuests);
       if (error) throw new AppError('validation', RSVP_ERROR_TEXT[error], 'count');
-      if (input.attending && !Number.isInteger(input.count)) throw new AppError('validation', 'اختر عددًا صحيحًا للحضور.', 'count');
+      if (input.attending && !Number.isInteger(input.count)) throw new AppError('validation', 'اختاروا عددًا صحيحًا للحضور.', 'count');
       if (!current.party && !input.name?.trim()) throw new AppError('validation', 'اكتبوا الاسم قبل إرسال الرد.', 'name');
       if (current.experience && input.attending) {
         const check = checkAnswers(current.experience, input);

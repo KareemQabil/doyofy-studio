@@ -45,9 +45,11 @@ export class Studio {
    *   muted       start with sound off (wizard preview)
    *   guest       (platform) the invitation party from a personal link: { name, nameLocked, maxGuests, attending, guests }
    *               — prefills the RSVP and bounds the guest count by the party's allowance
-   *   doneAction  (platform) an extra button on the thank-you screen: { ar, en, onClick }
+   *   doneAction  (platform) an extra button on the thank-you screen: { ar, en, onClick, autoAfter? } — with autoAfter (ms)
+   *               the thank-you screen moves on by itself, so the guest lands on the same page as every other path
+   *   authorNotes (platform) organizer-only hints on controls (e.g. an upload that is missing on this device); never for guests
    */
-  constructor(host, { invitation, card = 'kit-rose-garden', scene = 'silk', start = 'intro', assetBase = 'assets/', rsvp, experience = null, embedded = false, showSwitcher = true, muted = false, params = new URLSearchParams(location.search), guest = null, doneAction = null } = {}) {
+  constructor(host, { invitation, card = 'kit-rose-garden', scene = 'silk', start = 'intro', assetBase = 'assets/', rsvp, experience = null, embedded = false, showSwitcher = true, muted = false, params = new URLSearchParams(location.search), guest = null, doneAction = null, authorNotes = false } = {}) {
     this.host = host;
     this.params = params;
     this.quality = detectQuality(params);
@@ -59,6 +61,7 @@ export class Studio {
     this.embedded = embedded; this.showSwitcher = showSwitcher; this.startMuted = muted;
     this.guest = guest;
     this.doneAction = doneAction;
+    this.authorNotes = authorNotes;
     this.data = this._derive(invitation);
     this.assetBase = assetBase;
     this.cardId = CardRegistry.has(params.get('card')) ? params.get('card') : card;
@@ -181,9 +184,14 @@ export class Studio {
     this.host.dataset.state = state;
     if (state === 'intro') this.introT0 = performance.now();
     this.scene?.setStage?.(state, from);
-    clearInterval(this.clock); clearTimeout(this.sealTimer);
+    clearInterval(this.clock); clearTimeout(this.sealTimer); clearTimeout(this._doneTimer);
     if (state !== 'card' && state !== 'intro') this._setPointer(0, 0);
     switch (state) {
+      case 'intro':
+        // the card is already a button while it flies in: the first tap fast-forwards and opens (see openCard)
+        this.el.cardBtn.disabled = false;
+        this.el.sheet.inert = true;
+        break;
       case 'card':
         this.el.cardBtn.disabled = false;
         if (from !== 'pages') this._playFace();   // the face's entrance plays when the card is revealed, not on the way back
@@ -215,6 +223,7 @@ export class Studio {
         this._renderDone();
         this.audio.emit('done');
         setTimeout(() => this.host.querySelector('.st-done [data-act="replay"]')?.focus({ preventScroll: true }), 1950);
+        if (this.doneAction?.autoAfter != null) this._doneTimer = setTimeout(() => this.sm.state === 'done' && this.doneAction?.onClick(), this.doneAction.autoAfter);
         break;
       default:
         this.el.cardBtn.disabled = true;
@@ -405,7 +414,7 @@ export class Studio {
     const q = (s) => this.el.done.querySelector(s);
     q('.done-ar').textContent = th.ar; q('.done-ar').style.fontFamily = this.theme.fAr;
     const demo = !!r.receipt?.demo;   // never claim a reply reached the organizer when it did not
-    q('.done-en').textContent = demo ? 'A demo copy — your reply was not sent to the host.' : th.en;
+    q('.done-en').textContent = demo ? 'A demo copy — your reply stays on this device.' : th.en;
     q('.done-demo').hidden = !demo;
     const name = r.name.trim().toUpperCase();
     q('.done-who').textContent = name ? (declined ? name : `${name} · ${r.guests} ${r.guests === 1 ? 'GUEST' : 'GUESTS'}`) : `${[c.enAU, c.arB ? c.enBU : ''].filter(Boolean).join(' & ') || c.arA} · ${c.dateShort}`;
@@ -435,6 +444,8 @@ export class Studio {
     on(host, 'pointerleave', () => this._setPointer(0, 0));
 
     on(host, 'click', (ev) => {
+      // during the intro any tap on the stage (not on its controls) counts: skip ahead and open the card
+      if (this.sm.state === 'intro' && !ev.target.closest('.st-ctrls, .st-switch-slot')) return this.openCard();
       const t = ev.target.closest('button, a');
       if (!t || !host.contains(t)) return;
       if (t === this.el.cardBtn) return this.openCard();
@@ -523,7 +534,16 @@ export class Studio {
     this.scene?.setPointer?.(r1(nx), r1(ny));
   }
 
+  /** jump the intro to its last frame (the card at rest) without waiting for its timer */
+  skipIntro() {
+    if (this.sm.state !== 'intro') return false;
+    this.el.st.classList.add('no-intro'); this.host.classList.add('no-intro');
+    this.sm.jump('card');
+    return true;
+  }
+
   openCard() {
+    this.skipIntro();
     if (this.sm.state !== 'card') return;
     this.audio.unlock();
     this.audio.emit('open');
@@ -543,12 +563,12 @@ export class Studio {
   _syncAudioPreference() {
     const button = this.el.soundBtn;
     button.hidden = this.audio.preference.mode === 'off';
-    if (this.audio.missingUpload) button.title = 'المقطع المرفوع غير متاح على هذا الجهاز؛ يعمل الصوت الأساسي.';
+    if (this.audio.missingUpload && this.authorNotes) button.title = 'المقطع المرفوع غير متاح على هذا الجهاز؛ يعمل الصوت الأساسي.';
     else button.removeAttribute('title');
   }
 
   replay() {
-    clearTimeout(this._leaveTimer); clearTimeout(this.sealTimer); clearInterval(this.clock);
+    clearTimeout(this._leaveTimer); clearTimeout(this.sealTimer); clearTimeout(this._doneTimer); clearInterval(this.clock);
     this.leaving = false;
     this.el.page.classList.remove('leaving');
     this.audio.stopMusic();
@@ -591,7 +611,7 @@ export class Studio {
   destroy() {
     this.faceMotion?.revert();
     this.sm?.destroy(); this.scene?.destroy(); this.audio.destroy();
-    clearTimeout(this._leaveTimer); clearTimeout(this.sealTimer); clearTimeout(this._replayTimer); clearInterval(this.clock);
+    clearTimeout(this._leaveTimer); clearTimeout(this.sealTimer); clearTimeout(this._replayTimer); clearTimeout(this._doneTimer); clearInterval(this.clock);
     this.cleanups.forEach((f) => f());
     this.host.innerHTML = '';
   }

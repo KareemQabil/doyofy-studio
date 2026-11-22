@@ -6,6 +6,7 @@ import { RouterProvider } from '../../src/app/router';
 import { createServices } from '../../src/services';
 import { ShareQueue } from '../../src/features/guests/ShareQueue';
 import { GuestInvite } from '../../src/features/guest/GuestInvite';
+import { FollowUpSheet } from '../../src/features/guest/GuestExtras';
 import { portableView, encodePortableView } from '../../src/domain/portable-invite';
 import { defaultDesign } from '../../src/domain/invitation';
 
@@ -43,14 +44,56 @@ export async function run() {
   await act(async () => freshRoot.render(wrap(<GuestInvite slug={event.slug} code={p.code} />))); await settle();
   assert.ok(document.querySelector('.sig-cover'));
   await click(button('الموعد وتأكيد الحضور مباشرة')); await settle();
+  const demoNote = () => document.querySelector('.guest-demo')?.textContent ?? '';
+  assert.ok(demoNote().includes('لا يصل إلى صاحب المناسبة'), 'demo note is honest before the reply');
+  assert.ok(!demoNote().includes('رمز الدخول'), 'no admission code is promised before a confirmed reply');
   await click(document.querySelector('input[type="radio"][value="yes"]'));
   await click(button('إرسال الرد')); await settle();
-  assert.ok(document.querySelector('.hub-qr'), 'confirmed personal demo reaches its QR');
-  assert.ok(document.body.textContent?.includes('لم يُرسل ردّك للمنظّم'));
-  await click(button('معاينة بطاقة Google Wallet'));
-  assert.ok(document.querySelector('dialog[open] .wallet-pass'));
-  assert.ok(document.querySelector('dialog[open]')?.textContent?.includes('لم تُضف بطاقة إلى Google Wallet'));
+  // the success state: the entry pass leads the page and takes focus, the QR inside it
+  const first = document.querySelector('.hub > section');
+  assert.ok(first?.classList.contains('hub-pass') && first.querySelector('svg.qr'), 'confirmed personal reply leads with its QR pass');
+  assert.equal(document.activeElement?.id, 'hub-status', 'focus moves to the reply result');
+  assert.ok(demoNote().includes('رمز الدخول هنا للتجربة'));
+  assert.ok(!/المنظّم|المنظم/.test(document.querySelector('main')!.textContent!), 'guests never see organizer vocabulary');
+  // Google Wallet: the official-looking button opens a preview that says nothing was added
+  const gw = document.querySelector<HTMLButtonElement>('.gw-btn');
+  assert.equal(gw?.textContent, 'أضف إلى Google Wallet');
+  assert.ok(gw?.querySelector('svg.gw-mark'), 'the Wallet mark is inline SVG');
+  await click(gw);
+  const pass = document.querySelector('dialog[open] .wpass');
+  assert.ok(pass, 'Wallet preview shows the pass');
+  for (const text of [event.title, p.primaryGuestName, p.code, 'العدد', 'المكان']) assert.ok(pass!.textContent!.includes(text), `pass shows ${text}`);
+  assert.ok(document.querySelector('dialog[open]')?.textContent?.includes('لم تُضف أي بطاقة إلى Google Wallet'));
   assert.equal(JSON.stringify(await made.services.parties.get(p.id)), before, 'portable reply never alters organizer guest');
-  console.log('PASS DOM portable guest: cover → RSVP → personal QR → truthful Wallet preview; organizer unchanged');
+  await click(button('العودة إلى رمز الدخول'));
+  // a decline: no pass, no Wallet, no admission code in the note
+  await click(button('تعديل الرد')); await settle();
+  await click(document.querySelector('input[type="radio"][value="no"]'));
+  await click(button('إرسال الرد')); await settle();
+  assert.ok(document.body.textContent?.includes('سجّلنا اعتذاركم'));
+  assert.ok(!document.querySelector('.hub-qr, .gw-btn, svg.qr'), 'declined replies get neither QR nor Wallet');
+  assert.ok(!demoNote().includes('رمز الدخول'));
+  console.log('PASS DOM portable guest: direct reply → QR pass first → Wallet button + truthful preview; decline has no pass; organizer unchanged');
   await act(async () => freshRoot.unmount());
+
+  // both paths ask the same questions: the direct form and the cinematic follow-up sheet share one set
+  const withFood = portableView({ ...event, date: '2099-08-12' }, defaultDesign(event), p);
+  assert.ok(withFood.experience, 'the seeded wedding asks food');
+  const labels = () => [...document.querySelectorAll('legend, .field-label, label')].map((x) => x.textContent?.replace(/\s+/g, ' ').trim()).filter((x) => x && !/هل ستحضرون|عدد الحضور|نعم، سنحضر|نعتذر/.test(x)).sort();
+  const sheetRoot = createRoot(document.getElementById('root')!);
+  await act(async () => sheetRoot.render(wrap(<FollowUpSheet view={withFood} attending count={2} onSend={async () => null} onBack={() => {}} />))); await settle();
+  const cinematic = labels();
+  await act(async () => sheetRoot.unmount());
+  history.replaceState(null, '', `/i/${event.slug}/${p.code}?d=${encodePortableView(withFood)}`);
+  localStorage.clear();
+  const hubRoot = createRoot(document.getElementById('root')!);
+  await act(async () => hubRoot.render(wrap(<GuestInvite slug={event.slug} code={p.code} />))); await settle();
+  await click(button('الموعد وتأكيد الحضور مباشرة')); await settle();
+  await click(document.querySelector('input[type="radio"][value="yes"]')); await settle();
+  const direct = labels();
+  assert.ok(cinematic.some((x) => x!.includes('أسماء المرافقين')) && cinematic.some((x) => x!.includes('رسالة لصاحب المناسبة')) && document.querySelector('.gx-meals'), 'companions, food and message are asked');
+  assert.deepEqual(direct, cinematic, 'cinematic and direct paths ask the same follow-up questions');
+  console.log('PASS DOM same questions on both paths (companions, food, message)');
+  await act(async () => hubRoot.unmount());
 }
+
