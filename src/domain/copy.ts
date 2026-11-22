@@ -44,6 +44,26 @@ const coreModern = {
   autoSeatTooBig: 'أكبر من أي طاولة. زِد سعة طاولة لتتسع لهم.', autoSeatNoRoom: 'لا توجد مقاعد كافية.', autoSeatNothing: 'كل الضيوف المؤكدين لهم طاولات. اختر «إعادة توزيع الجميع» لترتيبهم من جديد.', autoSeatUnplaced: 'بلا مكان', autoSeatExcluded: 'مستبعدون من التوزيع', autoSeatNewOnApply: 'تُنشأ مع اعتماد التوزيع فقط.', autoSeatKept: 'موزعون من قبل', autoSeatSuggest: 'نقترح إضافة {tables} بسعة {seats} لكلٍّ منها.',
   // guest list: one primary action per guest, bulk sharing (r1-guests)
   publishFirst: 'انشر الدعوة', addPhone: 'أضف رقمًا', shareWhatsapp: 'شارك عبر واتساب', remindReply: 'ذكّر بالرد', recordArrival: 'سجّل الوصول', removeFromTable: 'إزالة من الطاولة', shareSelected: 'مشاركة المحدد', selectUnsent: 'حدّد من لم تصلهم الدعوة', selectVisible: 'تحديد الظاهر', sentOpenNext: 'أرسلتها، افتح التالي', copyTheirLinks: 'انسخ روابطها معًا', shareUnsent: 'أرسل لمن لم تصلهم الدعوة', remindSelected: 'ذكّر المحددين بالرد', remindSent: 'أرسلت التذكير',
+  // ---- r4-audio: account sounds (upload + start point, voice welcome), the editor's sound choice. Keep this block together.
+  audioTitle: 'مكتبتي الصوتية', audioIntro: 'أضف موسيقى من جهازك أو سجّل رسالة ترحيب بصوتك، ثم اخترها من «الحركة والصوت» في المحرر.', audioLimits: 'حتى 5 مقاطع، بحد 8 ميجابايت للمقطع. رسالة الترحيب حتى دقيقة.',
+  audioDeviceOnly: 'الموسيقى والرسائل التي تضيفها تعمل على هذا الجهاز فقط حتى نربط الخادم؛ ضيوفك على أجهزة أخرى يسمعون الصوت الأساسي.',
+  audioTrackName: 'اسم المقطع', audioTrackNamePh: 'مثلًا: موسيقى حفلنا', audioUpload: 'ارفع موسيقى', audioUploadLabel: 'رفع ملف صوتي', audioReading: 'نقرأ الملف…',
+  audioTrimTitle: 'من أين تبدأ الموسيقى؟', audioTrimHint: 'اسحب المؤشر لاختيار البداية. الزمن يسير من اليسار إلى اليمين، والجزء المظلَّل هو أول 30 ثانية يسمعها ضيوفك.', audioTimeline: 'الزمن →', audioStartLabel: 'بداية الموسيقى', audioStartAt: 'تبدأ عند {time}',
+  audioFadeIn: 'ظهور تدريجي', audioFadeInHint: 'يرتفع الصوت بهدوء في أول ثانية ونصف.', audioPreviewPlay: 'اسمع من البداية المختارة', audioPreviewStop: 'أوقف', audioSaveTrack: 'احفظ المقطع', audioSaveStart: 'احفظ البداية',
+  audioSaved: 'حُفظ المقطع. اختره من محرر الدعوة.', audioStartSaved: 'حُفظت نقطة البداية.', audioEditStart: 'غيّر البداية', audioMakeDefault: 'اجعله الافتراضي', audioIsDefault: 'الافتراضي للدعوات', audioDefaultSaved: 'أصبح هذا المقطع هو الصوت الافتراضي.',
+  audioDelete: 'احذف المقطع', audioDeleted: 'حُذف المقطع. الدعوات التي استخدمته تعود إلى الصوت الأساسي.', audioUseBuiltinDefault: 'اجعل الصوت الأساسي هو الافتراضي', audioBuiltinDefaultSaved: 'أصبح الصوت الأساسي هو الافتراضي.',
+  audioPreviewOf: 'معاينة {name}', audioKindVoice: 'رسالة ترحيب', audioKindMusic: 'موسيقى',
+  audioVoiceTitle: 'رسالة ترحيب بصوتك', audioVoiceHint: 'سجّل ترحيبًا قصيرًا حتى دقيقة. يسمعه ضيوفك مرة واحدة عند فتح الدعوة، ويمكنهم إعادته أو إيقافه.', audioMicAsk: 'سيطلب المتصفح إذنًا باستخدام الميكروفون.',
+  audioRecord: 'ابدأ التسجيل', audioRecordStop: 'أوقف التسجيل', audioRerecord: 'سجّل من جديد', audioSaveVoice: 'احفظ الرسالة', audioRecording: 'جارٍ التسجيل', audioRecordLevel: 'مستوى الصوت', audioRecordOf: '{time} من 1:00',
+  audioVoiceSaved: 'حُفظت رسالتك. فعّلها من «الحركة والصوت» في المحرر.', audioVoiceDefaultName: 'رسالة ترحيب',
+  audioErrNoRecorder: 'هذا المتصفح لا يدعم تسجيل الصوت. جرّب أحدث Chrome أو Safari، أو ارفع رسالتك كملف صوتي.', audioErrMicDenied: 'لم يُسمح باستخدام الميكروفون. اسمح به من إعدادات الموقع في المتصفح ثم حاول مرة أخرى.', audioErrNoMic: 'لم نجد ميكروفونًا على هذا الجهاز.', audioErrRecord: 'تعذّر التسجيل. حاول مرة أخرى.',
+  audioErrType: 'اختر ملف MP3 أو WAV أو OGG أو M4A أو WebM صوتيًا.', audioErrEmpty: 'الملف فارغ. اختر ملفًا صوتيًا آخر.', audioErrSize: 'حجم المقطع أكبر من 8 ميجابايت. اختر مقطعًا أقصر أو مضغوطًا مثل MP3.', audioErrFull: 'المكتبة ممتلئة (5 مقاطع). احذف مقطعًا قبل إضافة آخر.',
+  audioErrStorage: 'تعذّر الحفظ على هذا الجهاز. احذف مقطعًا قديمًا أو أفرغ بعض مساحة المتصفح.', audioErrDecode: 'هذا الملف غير قابل للتشغيل. اختر ملفًا صوتيًا صالحًا.', audioErrVoiceLong: 'الرسالة أطول من دقيقة. سجّل رسالة أقصر.', audioErrBytes: 'ملف هذا المقطع غير موجود على هذا الجهاز.',
+  audioSoundTitle: 'الصوت', audioSoundHint: 'يبدأ بعد أول لمسة، ويستطيع ضيوفك كتمه.', audioChoiceLabel: 'صوت الدعوة', audioChoiceNone: 'بدون صوت', audioChoiceNoneD: 'لا موسيقى ولا مؤثرات.', audioChoiceBuiltin: 'الصوت الأساسي', audioChoiceBuiltinD: 'موسيقى هادئة ومؤثرات التصميم.',
+  audioChoiceMine: 'موسيقاي', audioChoiceMineD: 'مقطع من مكتبتك الصوتية.', audioChoiceMineEmpty: 'ارفع موسيقى من حسابك أولًا.', audioPickTrack: 'المقطع', audioTrackMissing: 'المقطع غير متاح على هذا الجهاز · سيعمل الصوت الأساسي',
+  audioVoiceToggle: 'رسالة ترحيب صوتية', audioVoiceToggleHint: 'تُسمع مرة واحدة عند فتح الدعوة، وتخفت الموسيقى أثناءها.', audioVoicePick: 'الرسالة', audioVoiceMissing: 'الرسالة غير متاحة على هذا الجهاز', audioRecordInAccount: 'سجّل رسالة من حسابي',
+  audioManage: 'إدارة مكتبتي الصوتية', audioPreviewSound: 'شغّل الصوت في المعاينة', audioPreviewSoundHint: 'هنا فقط، لتسمعه كما سيسمعه ضيوفك. لا يغيّر الدعوة.', audioGuestVoice: 'رسالة ترحيب صوتية',
+  // ---- end r4-audio
 };
 const coreEgyptian: Variants<typeof coreModern> = {
   undo: 'رجّعه',
@@ -65,6 +85,11 @@ const coreEgyptian: Variants<typeof coreModern> = {
   autoSeatExclude: 'شيله من التوزيع', autoSeatInclude: 'رجّعه للتوزيع', autoSeatMoveTo: 'انقله لترابيزة', autoSeatAddTables: 'زوّد الترابيزات المقترحة', autoSeatNewTable: 'جديدة',
   autoSeatTooBig: 'أكبر من أي ترابيزة. كبّر سعة ترابيزة عشان تساعهم.', autoSeatNoRoom: 'مفيش أماكن كفاية.', autoSeatNothing: 'كل الضيوف اللي أكدوا ليهم ترابيزات. اختار «وزّع الكل من الأول» لو عايز ترتبهم من جديد.', autoSeatUnplaced: 'من غير مكان', autoSeatExcluded: 'اللي شلتهم من التوزيع', autoSeatNewOnApply: 'هتتعمل لما تعتمد التوزيع بس.', autoSeatKept: 'متوزعين من قبل', autoSeatSuggest: 'نقترح تزوّد {tables}، كل واحدة {seats}.',
   addPhone: 'حطّ رقم', shareWhatsapp: 'ابعت على واتساب', remindReply: 'فكّرهم بالرد', removeFromTable: 'شيلهم من الترابيزة', shareSelected: 'ابعت للمحددين', selectUnsent: 'حدد اللي لسه موصلتلهمش الدعوة', selectVisible: 'حدد الظاهر', sentOpenNext: 'بعتّها، افتح اللي بعدها', copyTheirLinks: 'انسخ لينكاتهم مع بعض', shareUnsent: 'ابعت للي لسه موصلتلهمش', remindSelected: 'فكّر المحددين بالرد', remindSent: 'بعتّ التذكير',
+  // ---- r4-audio (short action labels and the honesty line)
+  audioIntro: 'ضيف مزيكا من جهازك أو سجّل رسالة ترحيب بصوتك، وبعدين اختارها من «الحركة والصوت» في المحرر.', audioDeviceOnly: 'المزيكا والرسايل اللي بتضيفها بتشتغل على الجهاز ده بس لحد ما نربط السيرفر؛ ضيوفك على أجهزة تانية هيسمعوا الصوت الأساسي.',
+  audioUpload: 'ارفع مزيكا', audioTrimTitle: 'المزيكا تبدأ منين؟', audioPreviewPlay: 'اسمع من البداية اللي اخترتها', audioPreviewStop: 'وقّف', audioEditStart: 'غيّر البداية', audioMakeDefault: 'خليه الافتراضي', audioDelete: 'امسح المقطع',
+  audioRecord: 'سجّل دلوقتي', audioRecordStop: 'وقّف التسجيل', audioRerecord: 'سجّل تاني', audioSaveVoice: 'احفظ الرسالة', audioChoiceNone: 'من غير صوت', audioChoiceMine: 'المزيكا بتاعتي', audioRecordInAccount: 'سجّل رسالة من حسابي',
+  // ---- end r4-audio
 };
 const coreSaudi: Variants<typeof coreModern> = {
   accountSubtitle: 'بياناتك، وأسلوب الكلام، والصوت والمظهر.', saveProfile: 'احفظ بياناتي', profileSaved: 'تم حفظ بياناتك', nameRequired: 'اكتب اسمك قبل الحفظ.', languageStyle: 'أسلوب الكلام', languageHint: 'اختر الأسلوب اللي يناسبك. أسماء ضيوفك وكلام دعوتك تبقى مثل ما كتبتها.', appearanceHint: 'فاتح أو داكن أو حسب جهازك. تصميم دعوتك يبقى مثل ما اخترته.', demoSessionHint: 'بياناتك محفوظة على هالجهاز. جرّب كل الخطوات قبل ربط الخدمات.', roleHint: 'جرّب الأدوات حسب كل دور. الأكل يظهر لمزوّد الضيافة فقط.',
@@ -84,6 +109,11 @@ const coreSaudi: Variants<typeof coreModern> = {
   autoSeatExclude: 'استبعده من التوزيع', autoSeatInclude: 'رجّعه للتوزيع', autoSeatMoveTo: 'انقله لطاولة', autoSeatAddTables: 'أضف الطاولات المقترحة',
   autoSeatTooBig: 'أكبر من أي طاولة. زِد سعة طاولة عشان تكفيهم.', autoSeatNoRoom: 'ما فيه مقاعد كافية.', autoSeatNothing: 'كل الضيوف المؤكدين لهم طاولات. اختر «وزّع الكل من جديد» لو تبي ترتبهم من جديد.', autoSeatUnplaced: 'بدون مكان', autoSeatExcluded: 'المستبعدين من التوزيع', autoSeatNewOnApply: 'تنضاف مع اعتماد التوزيع فقط.', autoSeatSuggest: 'نقترح تضيف {tables}، كل وحدة {seats}.',
   addPhone: 'أضف رقم', shareWhatsapp: 'أرسل على واتساب', remindReply: 'ذكّرهم بالرد', removeFromTable: 'شيلهم من الطاولة', shareSelected: 'أرسل للمحددين', selectUnsent: 'حدّد اللي ما وصلتهم الدعوة', selectVisible: 'حدّد الظاهر', sentOpenNext: 'أرسلتها، افتح اللي بعدها', copyTheirLinks: 'انسخ روابطهم مع بعض', shareUnsent: 'أرسل للي ما وصلتهم', remindSelected: 'ذكّر المحددين بالرد', remindSent: 'أرسلت التذكير',
+  // ---- r4-audio (short action labels and the honesty line)
+  audioIntro: 'أضف موسيقى من جهازك أو سجّل رسالة ترحيب بصوتك، وبعدها اخترها من «الحركة والصوت» في المحرر.', audioDeviceOnly: 'الموسيقى والرسايل اللي تضيفها تشتغل على هالجهاز بس لين نربط الخادم؛ ضيوفك على أجهزة ثانية يسمعون الصوت الأساسي.',
+  audioUpload: 'ارفع موسيقى', audioTrimTitle: 'من وين تبدأ الموسيقى؟', audioPreviewPlay: 'اسمع من البداية اللي اخترتها', audioPreviewStop: 'وقّف', audioEditStart: 'غيّر البداية', audioMakeDefault: 'خلّه الافتراضي', audioDelete: 'احذف المقطع',
+  audioRecord: 'ابدأ التسجيل', audioRecordStop: 'وقّف التسجيل', audioRerecord: 'سجّل مرة ثانية', audioSaveVoice: 'احفظ الرسالة', audioChoiceNone: 'بدون صوت', audioChoiceMine: 'موسيقاي', audioRecordInAccount: 'سجّل رسالة من حسابي',
+  // ---- end r4-audio
 };
 const CORE = partly(coreModern, coreEgyptian, coreSaudi);
 

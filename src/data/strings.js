@@ -53,6 +53,7 @@ export function currentStrings(dialect = voice ?? currentDialect()) {
     namePlaceholder: `${k.engNamePlaceholder} · Type your name`, guests: ar(STRINGS.guests, k.engGuests), guestsHint: k.engGuestsHint,
     accept: ar(STRINGS.accept, k.guestAccept), decline: ar(STRINGS.decline, k.guestDecline), sealSend: ar(STRINGS.sealSend, k.guestSendReply),
     need: ar(STRINGS.need, k.engNeed), tapToOpen: ar(STRINGS.tapToOpen, k.engTapToOpen), watchAgain: ar(STRINGS.watchAgain, k.engWatchAgain),
+    voice: k.audioGuestVoice,
     thanks: { yes: ar(STRINGS.thanks.yes, k.engThanksYes), no: ar(STRINGS.thanks.no, k.engThanksNo) },
   };
 }
