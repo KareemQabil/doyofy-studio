@@ -10,6 +10,7 @@ import type {
   InvitationParty, MealAllocation, PartyInput, RSVPResponse, RsvpInput, Table, UpdateEventInput, User,
 } from '../domain/types';
 import type { ExperienceDraft } from '../domain/guest-experience';
+import type { Dialect } from '../domain/copy';
 import type { AutoSeatApply, AutoSeatUndo } from '../domain/auto-seating';
 
 export interface EventRepository {
@@ -120,8 +121,16 @@ export interface GuestView {
   phase: 'before' | 'event_day' | 'after';
   /** the questions and wishlist this guest sees (archived entries removed); absent = none */
   experience?: GuestExperience;
+  /** the organizer's voice (modern · Egyptian · Saudi), stored with the invitation: the guest pages speak it whatever
+   *  this device prefers. Absent (older links) = modern. Names and the organizer's own texts are never changed. */
+  dialect?: Dialect;
 }
-export interface GuestRsvpInput extends RsvpInput { name?: string }
+export interface GuestRsvpInput extends RsvpInput {
+  name?: string;
+  /** general link: the earlier reply (responseId) this one corrects, while the organizer has not handled it yet —
+   *  the organizer then sees one up-to-date reply, not two */
+  replaces?: string;
+}
 
 export interface GuestApi {
   /** records "opened" for personal links (not for organizer previews) */

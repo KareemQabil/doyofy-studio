@@ -99,6 +99,34 @@ export function inDigits(text: string, digits: 'arab' | 'latn' = 'latn'): string
   return digits === 'arab' ? text.replace(/[0-9]/g, (n) => String.fromCharCode(0x0660 + Number(n))) : text;
 }
 
+/**
+ * The separator between the parts of one Arabic date line («الثلاثاء، ١ ديسمبر»). A middle dot beside Arabic-Indic
+ * digits reads as a zero («· ١» → «١٠»), so an invitation that writes ١٢٣ joins its parts with the Arabic comma;
+ * Western digits keep the light middle dot. data/derive.js uses the same rule for the card faces (a unit test keeps them equal).
+ */
+export const dateSeparator = (digits: 'arab' | 'latn' = 'latn'): string => digits === 'arab' ? '، ' : ' · ';
+export const joinDateParts = (digits: 'arab' | 'latn', ...parts: Array<string | undefined | false>): string =>
+  parts.filter((p): p is string => !!p).join(dateSeparator(digits));
+
+/**
+ * Every number one invitation shows its guests, in its face's number system (١٢٣ or 123): the date, the time, the
+ * headcounts and counters on the guest pages follow the card, so one guest journey never mixes the two systems.
+ */
+export function invitationNumbers(digits: 'arab' | 'latn') {
+  return {
+    digits,
+    num: (n: number | string) => inDigits(String(n), digits),
+    text: (s: string) => inDigits(s, digits),
+    people: (n: number) => inDigits(people(n), digits),
+    peopleOf: (n: number) => inDigits(peopleOf(n), digits),
+    date: (date: LocalDate, opts: { weekday?: boolean; year?: boolean } = {}) => formatEventDate(date, { ...opts, digits }),
+    time: (time: LocalTime) => formatTime(time, digits),
+    /** «الثلاثاء، ١ ديسمبر ٢٠٢٦، ٨:٠٠ مساءً» — see dateSeparator */
+    join: (...parts: Array<string | undefined | false>) => joinDateParts(digits, ...parts),
+  };
+}
+export type InvitationNumbers = ReturnType<typeof invitationNumbers>;
+
 /** "الآن" / "قبل 5 دقائق" / "قبل ساعتين" / "أمس 9:15 م" / date */
 export function relativeTime(at: ISODateTime | Date, now: Date): string {
   const t = typeof at === 'string' ? new Date(at) : at;

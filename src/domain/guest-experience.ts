@@ -231,10 +231,11 @@ export function dietaryReport(parties: readonly InvitationParty[]): DietaryRepor
 }
 
 /** «٢ لحم · ١ سمك» for a party card; empty when nothing was chosen */
-export function mealSummary(x: GuestExperience, meals?: MealAllocation[]): string {
+/** «2 كبسة لحم · 1 دجاج مشوي»; a guest page writing ١٢٣ passes «، » (a dot beside ١ reads as ١٠, format.ts dateSeparator) */
+export function mealSummary(x: GuestExperience, meals?: MealAllocation[], sep = ' · '): string {
   if (!meals?.length) return '';
   const label = new Map(x.meals.options.map((o) => [o.id, o.label]));
-  return meals.filter((a) => a.count > 0).map((a) => `${a.count} ${label.get(a.optionId) ?? 'خيار محذوف'}`).join(' · ');
+  return meals.filter((a) => a.count > 0).map((a) => `${a.count} ${label.get(a.optionId) ?? 'خيار محذوف'}`).join(sep);
 }
 
 // ------------------------------------------------------------------ export (T36)

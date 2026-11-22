@@ -6,6 +6,7 @@
  */
 import { PageRegistry } from '../engine/registries.js';
 import { STRINGS as T, currentStrings } from '../data/strings.js';
+import { localDigits } from '../data/derive.js';
 
 const e = (v) => String(v ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 const kicker = (t, s) => `<span class="ar fx-rise fx-d1" style="font-size: 16px; color: ${t.aText}">${s.ar}</span>
@@ -101,7 +102,7 @@ const venue = {
 
 const rsvp = {
   id: 'rsvp', name: 'RSVP',
-  render: ({ t, rsvp: r }) => { const T = currentStrings(); return `
+  render: ({ t, c, rsvp: r }) => { const T = currentStrings(); return `
   <form class="rsvp" novalidate style="display: flex; flex-direction: column; align-items: stretch; gap: 18px; width: 290px">
     <div class="fx-rise fx-d1" style="display: flex; flex-direction: column; align-items: center">
       <span style="font-family: ${t.fAr}; font-size: 38px; line-height: 1.35">${T.rsvpTitle.ar}</span>
@@ -123,11 +124,11 @@ const rsvp = {
       <div style="display: flex; flex-direction: column; align-items: flex-start"><span class="ar" id="st-guests-l" style="font-size: 15px">${T.guests.ar}</span><span dir="ltr" style="font-size: 13px; font-style: italic; color: ${t.muted}">${T.guests.en}</span></div>
       <div dir="ltr" style="display: flex; align-items: center; gap: 4px" role="group" aria-labelledby="st-guests-l" aria-describedby="st-guests-h">
         <button type="button" class="st-round" data-guests="-1" aria-label="إنقاص عدد الحاضرين"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button>
-        <output class="rsvp-guests" aria-live="polite" style="font-size: 28px; width: 32px; text-align: center">${r.guests}</output>
+        <output class="rsvp-guests" aria-live="polite" style="font-size: 28px; width: 32px; text-align: center">${e(localDigits(r.guests, c.digits))}</output>
         <button type="button" class="st-round" data-guests="1" aria-label="زيادة عدد الحاضرين"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
       </div>
     </div>
-    <p id="st-guests-h" class="ar rsvp-guests-row" style="margin: -12px 0 0; font-size: 12px; text-align: center; color: ${t.muted}">يشملكم مع المرافقين</p>
+    <p id="st-guests-h" class="ar rsvp-guests-row rsvp-hint" style="margin: -12px 0 0; font-size: 12px; text-align: center; color: ${t.muted}">${T.guestsHint}</p>
     <button type="submit" class="st-cta fx-rise fx-d5 rsvp-submit" style="align-self: center; min-width: 220px; background: ${t.ink}; color: ${t.paper}; border-color: ${t.ink}">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M9 12.5l2 2 4-4.5"></path></svg>
       <span class="ar" style="font-size: 16px">${T.sealSend.ar}</span><span dir="ltr" style="font-size: 14px; font-style: italic">${T.sealSend.en}</span>

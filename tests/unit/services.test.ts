@@ -14,7 +14,7 @@ test('journey: create → publish → guest → RSVP from link → seat → part
   const today = s.clock.now();
   const date = new Date(today.getTime() + 20 * 864e5).toISOString().slice(0, 10);
 
-  await assert.rejects(s.events.create({ type: 'wedding', names: { a: 'سارة', b: '' }, date, time: '20:00', venue: { name: 'قاعة', city: 'الرياض' } }), /الاسم الثاني/);
+  await assert.rejects(s.events.create({ type: 'wedding', names: { a: 'سارة', b: '' }, date, time: '20:00', venue: { name: 'قاعة', city: 'الرياض' } }), /اكتب اسم العريس/, 'the message names the field it sits under');
   const ev = await s.events.create({ type: 'wedding', names: { a: 'سارة', b: 'أحمد', aEn: 'Sara', bEn: 'Ahmed' }, date, time: '20:00', venue: { name: 'قاعة الورد', city: 'الرياض' } });
   assert.equal(ev.title, 'زفاف سارة وأحمد');
   assert.equal(ev.slug, 'sara-ahmed');

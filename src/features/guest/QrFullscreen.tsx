@@ -10,8 +10,10 @@ import { Icon } from '../../ui';
 import { usePointerGesture } from '../../ui/hooks/usePointerGesture';
 import { shouldDismiss } from '../../domain/gestures';
 import { haptic } from '../../ui/motion/motion';
+import { useCopy } from '../../ui/copy';
 
 export function QrFullscreen({ value, code, name, title }: { value: string; code: string; name: string; title: string }) {
+  const { t } = useCopy();
   const [open, setOpen] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -31,9 +33,9 @@ export function QrFullscreen({ value, code, name, title }: { value: string; code
   });
   return (
     <>
-      <button ref={trigger} type="button" className="qrfs-trigger v2-press" onClick={() => { haptic('tick'); setOpen(true); }} aria-label={`كبّر رمز الدخول لـ${name}`}>
+      <button ref={trigger} type="button" className="qrfs-trigger v2-press" onClick={() => { haptic('tick'); setOpen(true); }} aria-label={`تكبير رمز الدخول لـ${name}`}>
         <QrCode value={value} size={196} label={`رمز QR لدخول ${name}`} />
-        <span className="qrfs-hint"><Icon name="expand" size="sm" />اضغط لتكبيره عند الباب</span>
+        <span className="qrfs-hint"><Icon name="expand" size="sm" />{t('guestZoomCode')}</span>
       </button>
       {open && createPortal(
         <div ref={panel} className="qrfs" role="dialog" aria-modal="true" aria-label="رمز الدخول بحجم كبير" {...swipe} onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
@@ -41,7 +43,7 @@ export function QrFullscreen({ value, code, name, title }: { value: string; code
           <p className="qrfs-name"><bdi>{name}</bdi></p>
           <QrCode value={value} size={Math.min(320, Math.round(Math.min(window.innerWidth, window.innerHeight) * 0.78))} label={`رمز QR لدخول ${name}`} />
           <p className="qrfs-code num" dir="ltr">{code}</p>
-          <p className="qrfs-tip">ارفع إضاءة الشاشة إن لزم · اسحب لأسفل للرجوع</p>
+          <p className="qrfs-tip">{t('guestCodeTip')}</p>
           <button type="button" className="qrfs-close" onClick={close}><Icon name="close" size="sm" />رجوع</button>
         </div>, document.body)}
     </>

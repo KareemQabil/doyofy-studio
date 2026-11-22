@@ -69,3 +69,6 @@ html:root:has(body.dy-guest .guest-page) { color-scheme: light; background: var(
 .wpass-code { display: grid; justify-items: center; gap: var(--s-1); padding: var(--s-4); border-radius: 14px; background: var(--c-qr-light); color: var(--c-qr-dark); }
 .wpass-code .num { font-weight: var(--fw-bold); letter-spacing: .24em; }
 .wallet-disclosure { display: flex; gap: var(--s-2); color: var(--c-text); font-size: var(--fs-sm); line-height: 1.8; margin-block-end: var(--s-4); padding: var(--s-2) var(--s-3); border-radius: var(--r-md); background: var(--c-info-soft); }
+/* keyboard focus on the dark guest bar: the light stage ink, never the platform's dark ring on near-black */
+.guest-bar { --c-focus: var(--c-stage-ink); }
+.guest-bar :focus-visible, :root[data-theme] .guest-bar :focus-visible, :root[data-theme] .guest-bar .guest-demo > summary:focus-visible { outline: 2px solid var(--c-stage-ink); outline-offset: 3px; }

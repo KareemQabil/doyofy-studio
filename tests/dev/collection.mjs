@@ -39,9 +39,30 @@ const report = await page.evaluate(() => [...document.querySelectorAll('.face')]
   const out = [...f.querySelectorAll('.oc-inner *')].filter((n) => !n.closest('svg') && n.childNodes.length && [...n.childNodes].some((t) => t.nodeType === 3 && t.textContent.trim())).filter((n) => { const r = n.getBoundingClientRect(); return r.top < box.top - 0.5 || r.bottom > box.bottom + 0.5 || r.left < box.left - 0.5 || r.right > box.right + 0.5; }).length;
   const names = [...f.querySelectorAll('.oc-name')].map((n) => parseFloat(n.style.fontSize));
   const broken = [...f.querySelectorAll('img')].filter((i) => !i.complete || !i.naturalWidth).length;
-  return { id: f.dataset.id, over, out, names, broken };
+  // overlap: the glyph boxes of every two text runs on the face (line by line, via Range) never intersect
+  const runs = []; const walk = document.createTreeWalker(f.querySelector('.oc-inner') ?? f, NodeFilter.SHOW_TEXT);
+  for (let t = walk.nextNode(); t; t = walk.nextNode()) {
+    if (!t.textContent.trim() || t.parentElement.closest('svg, style')) continue;
+    const r = document.createRange(); r.selectNodeContents(t);
+    // a run's box is its line box: a tall font's content area (Amiri's deep descent) is trimmed to the CSS line-height
+    const lh = parseFloat(getComputedStyle(t.parentElement).lineHeight);
+    for (const x of r.getClientRects()) {
+      if (x.width <= 0.5 || x.height <= 0.5) continue;
+      const cut = lh > 0 && x.height > lh ? (x.height - lh) / 2 : 0;
+      runs.push({ t: t.textContent.trim().slice(0, 18), b: { left: x.left, right: x.right, top: x.top + cut, bottom: x.bottom - cut, height: x.height - 2 * cut } });
+    }
+  }
+  const overlaps = [];
+  for (let i = 0; i < runs.length; i++) for (let j = i + 1; j < runs.length; j++) {
+    const a = runs[i].b, b = runs[j].b;
+    const w = Math.min(a.right, b.right) - Math.max(a.left, b.left), h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+    // line boxes of adjacent rows may share a hairline; real collisions overlap by more than 2px both ways
+    if (w > 2 && h > Math.max(2, 0.3 * Math.min(a.height, b.height)) && !(Math.abs(a.top - b.top) < 1 && Math.abs(a.bottom - b.bottom) < 1 && (a.right <= b.left + 2 || b.right <= a.left + 2))) overlaps.push(`${runs[i].t}×${runs[j].t} (${Math.round(h)}px)`);
+  }
+  return { id: f.dataset.id, over, out, names, broken, overlaps };
 }));
-for (const r of report) console.log(`${r.over > 0 || r.out || r.broken ? '✗' : '✓'} ${r.id.padEnd(30)} overflow ${r.over}px  outside ${r.out}  names ${r.names.join('/')}px${r.broken ? `  broken images ${r.broken}` : ''}`);
+for (const r of report) console.log(`${r.over > 0 || r.out || r.broken || r.overlaps.length ? '✗' : '✓'} ${r.id.padEnd(30)} overflow ${r.over}px  outside ${r.out}  names ${r.names.join('/')}px${r.broken ? `  broken images ${r.broken}` : ''}${r.overlaps.length ? `  overlaps ${r.overlaps.join(' | ')}` : ''}`);
+console.log(`faces ${report.length}, problems ${report.filter((r) => r.over > 0 || r.out || r.broken || r.overlaps.length).length}`);
 await page.screenshot({ path: out, fullPage: true });
 await browser.close(); server.close(); fs.rmSync(path.join(ROOT, 'dist', '_collection.html'));
 console.log('sheet', out);

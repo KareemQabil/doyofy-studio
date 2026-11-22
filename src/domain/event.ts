@@ -64,8 +64,10 @@ export type EssentialsErrors = Partial<Record<'a' | 'b' | 'date' | 'time' | 'ven
 export function validateEssentials(input: CreateEventInput, today: LocalDate): EssentialsErrors {
   const e: EssentialsErrors = {};
   const couple = isCoupleEvent(input.type);
-  if (!input.names.a?.trim()) e.a = couple ? 'اكتب الاسم الأول' : `اكتب ${eventTypeInfo(input.type).nameLabel}`;
-  if (couple && !input.names.b?.trim()) e.b = 'اكتب الاسم الثاني';
+  // the message names the field it sits under («اسم العروس» → «اكتب اسم العروس»)
+  const info = eventTypeInfo(input.type);
+  if (!input.names.a?.trim()) e.a = `اكتب ${info.nameLabel}`;
+  if (couple && !input.names.b?.trim()) e.b = `اكتب ${info.nameLabelB ?? 'الاسم الثاني'}`;
   if (input.type === 'other' && !input.title?.trim()) e.title = 'اكتب اسم المناسبة';
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) e.date = 'اختر التاريخ';
   else if (daysBetween(today, input.date) < 0) e.date = 'التاريخ في الماضي — اختر تاريخًا قادمًا';

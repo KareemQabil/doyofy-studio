@@ -352,12 +352,14 @@ function GuestCard({ p, publish, table, grouped = false, seatingEnabled, arrival
         <Avatar name={name} tone={p.rsvpStatus === 'confirmed' ? 'success' : p.rsvpStatus === 'declined' ? 'neutral' : 'warning'} />
         {/* the name button stretches over the card: one big target opens the guest (or toggles while selecting) */}
         <button type="button" className="g2-name" data-gesture-surface="" onClick={selecting ? onToggle : onOpen} aria-pressed={selecting ? checked : undefined}>{name}</button>
-        <span className={`g2-rsvp is-${state}`}><span className="g2-dot" aria-hidden="true" />{stateLabel}{stateCount != null ? <b className="num"> · {stateCount}</b> : null}</span>
+        {/* screen readers hear each part of the row as its own phrase («أكد الحضور، 2، أصدقاء العريس، حتى 2، طاولة 3»), not one run-on line */}
+        <span className={`g2-rsvp is-${state}`}><span className="g2-dot" aria-hidden="true" />{stateLabel}{stateCount != null ? <b className="num"> · {stateCount}</b> : null}<span className="sr-only">، </span></span>
         <span className="g2-meta">
           {[p.side, `حتى ${p.maxPartySize}`, p.companionNames?.length ? `+${p.companionNames.length} مرافقين` : null].filter(Boolean).join(' · ')}
-          {table ? (grouped ? null : <span className="g2-table"><Icon name="table" size="sm" />{table}</span>) : seatingEnabled && p.rsvpStatus === 'confirmed' ? <span className="g2-table is-missing">بلا طاولة</span> : null}
-          {p.phone && <bdi className="g2-phone num" dir="ltr">{formatPhone(p.phone)}</bdi>}
-          {flag && <span className="g2-flag"><Icon name="alert" size="sm" />{flag}</span>}
+          {table ? (grouped ? null : <span className="g2-table"><span className="sr-only">، </span><Icon name="table" size="sm" />{table}</span>) : seatingEnabled && p.rsvpStatus === 'confirmed' ? <span className="g2-table is-missing"><span className="sr-only">، </span>بلا طاولة</span> : null}
+          {p.phone && <bdi className="g2-phone num" dir="ltr"><span className="sr-only">، </span>{formatPhone(p.phone)}</bdi>}
+          {flag && <span className="g2-flag"><span className="sr-only">، </span><Icon name="alert" size="sm" />{flag}</span>}
+          <span className="sr-only">، </span>
         </span>
         <span className="g2-foot-line">
           {action}

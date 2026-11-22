@@ -9,6 +9,8 @@ import { GuestInvite } from '../../src/features/guest/GuestInvite';
 import { FollowUpSheet } from '../../src/features/guest/GuestExtras';
 import { portableView, encodePortableView } from '../../src/domain/portable-invite';
 import { defaultDesign } from '../../src/domain/invitation';
+import { setDialect } from '../../src/data/copy-preference.js';
+import { currentStrings } from '../../src/data/strings.js';
 
 export async function run() {
   const made = createServices(); made.prototype.update({ latencyMs: 0 }); made.prototype.reset('before');
@@ -121,5 +123,45 @@ export async function run() {
   assert.deepEqual(direct, cinematic, 'cinematic and direct paths ask the same follow-up questions');
   console.log('PASS DOM same questions on both paths (companions, food, message)');
   await act(async () => hubRoot.unmount());
+
+  // the organizer's voice travels in the link: a guest device that prefers modern Arabic still reads the Egyptian invitation
+  setDialect('ar'); localStorage.clear();
+  const egyptian = portableView({ ...event, date: '2099-08-12', guestExperience: undefined }, defaultDesign(event), p, 'ar-EG');
+  assert.equal(egyptian.dialect, 'ar-EG');
+  history.replaceState(null, '', `/i/${event.slug}/${p.code}?d=${encodePortableView(egyptian)}`);
+  const voiceRoot = createRoot(document.getElementById('root')!);
+  await act(async () => voiceRoot.render(wrap(<GuestInvite slug={event.slug} code={p.code} />))); await settle();
+  assert.ok(button('الميعاد وتأكيد الحضور على طول'), 'the cover speaks the organizer\'s voice');
+  assert.ok(button('افتحوا الدعوة'), 'guests are addressed in the plural');
+  await click(button('الميعاد وتأكيد الحضور على طول')); await settle();
+  const pageText = () => document.querySelector('main')?.textContent ?? '';
+  assert.ok(pageText().includes('هنيجي إن شاء الله') && pageText().includes('هتشرّفونا؟'), 'reply choices in the organizer\'s voice');
+  await click(document.querySelector('input[type="radio"][value="yes"]'));
+  await click(button('ابعتوا الرد')); await settle();
+  assert.ok(pageText().includes('حضوركم اتأكد'), 'success line in the organizer\'s voice');
+  assert.equal(currentStrings('ar-SA').accept.ar, 'بنحضر بإذن الله', 'the invitation engine uses the same reply words');
+  await act(async () => voiceRoot.unmount());
+  console.log('PASS DOM dialect: carried in the guest link payload and applied on the guest pages, whatever the device prefers');
+
+  // a fresh device opening a guest link that carries its invitation: the organizer's demo store is never seeded there
+  localStorage.clear();
+  history.replaceState(null, '', `/i/${event.slug}/${p.code}?d=${encodePortableView(snapshot)}`);
+  const guestDevice = createServices(); guestDevice.prototype.update({ latencyMs: 0 });
+  assert.equal(localStorage.getItem('doyofy:db:v1'), null, 'no organizer database on the guest device');
+  assert.equal((await guestDevice.services.events.list()).length, 0, 'no organizer events in memory either');
+  const deviceRoot = createRoot(document.getElementById('root')!);
+  await act(async () => deviceRoot.render(<ServicesProvider {...guestDevice}><RouterProvider mode="history"><GuestInvite slug={event.slug} code={p.code} /></RouterProvider></ServicesProvider>)); await settle();
+  await click(button('الموعد وتأكيد الحضور مباشرة')); await settle();
+  await click(document.querySelector('input[type="radio"][value="yes"]'));
+  await click(button('إرسال الرد')); await settle();
+  assert.ok(document.querySelector('.hub-pass'), 'the reply works without the organizer store');
+  assert.equal(localStorage.getItem('doyofy:db:v1'), null, 'replying does not seed it either');
+  assert.ok(!Object.keys(localStorage).some((k) => k.startsWith('doyofy:db')), 'no organizer data of any version');
+  await act(async () => deviceRoot.unmount());
+  // the organizer's own routes still seed their demo
+  history.replaceState(null, '', '/app/events');
+  createServices();
+  assert.ok(localStorage.getItem('doyofy:db:v1'), 'organizer routes keep the demo');
+  console.log('PASS DOM guest-link visit on a fresh device seeds no organizer data; organizer routes still do');
 }
 

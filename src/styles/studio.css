@@ -143,3 +143,21 @@ body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
 .st-rig { transition: opacity .6s ease, transform .9s var(--dy-draw); }
 .s-opening .st-rig { transform: translate3d(0, -8px, 200px); transition: opacity .35s ease .3s, transform .85s var(--dy-draw); }
 .s-pages .st-sheet { transition: opacity .45s ease, transform .8s var(--dy-in), visibility 0s; }
+
+/* ── touch targets and reading sizes on the scaled stage ───────────────────────────────────────────────
+   The 390×844 stage is scaled to the window (--s: 0.93 on a 390 phone under the guest bar, 0.69 at 320×640), so a
+   44px control would draw at 30–41 real px. Each control keeps its look and gets an invisible hit area of at least
+   44 real px (44px / --s on the stage); page dots grow to 24px wide. Hints never draw under 12 real px. */
+.st-round, .st-icon, .st-dotbtn, .st-pill, .st-cta { position: relative; }
+.st-round::after, .st-icon::after, .st-dotbtn::after, .st-pill::after, .st-cta::after {
+  content: ""; position: absolute; border-radius: inherit;
+  inset-block: min(0px, calc(50% - 22px / var(--s, 1)));
+  inset-inline: min(0px, calc(50% - 22px / var(--s, 1)));
+}
+.st-pill::after, .st-cta::after, .st-dotbtn::after { inset-inline: 0; }
+.st-dotbtn { width: max(24px, calc(24px / var(--s, 1))); }
+/* neighbours keep apart by the hit area they gained, so each control's whole 44px stays its own */
+.st-nav { gap: max(10px, calc(22px / var(--s, 1) - 20px)); }
+.st-ctrls > div { gap: max(8px, calc(44px / var(--s, 1) - 40px)) !important; }
+.st-page .rsvp-hint, .st-page .rsvp-need { font-size: max(12px, calc(12px / var(--s, 1))) !important; }
+.st-done .done-who.is-ar { letter-spacing: normal; font-size: 16px; line-height: 1.6; }

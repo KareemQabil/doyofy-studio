@@ -212,6 +212,8 @@ for (const appearance of APPEARANCES) {
       if (!guest.url().includes('?d=')) issue = 'portable invitation left the guest route';
       else if (qr.y > 0 || qr.bottom > qr.vh) issue = `personal QR not visible after the reply (bottom ${Math.round(qr.bottom)} of ${qr.vh}, scrolled ${qr.y})`;
       else if (!(await guest.locator('.guest-demo').textContent()).includes('لا يصل إلى صاحب المناسبة')) issue = 'demo reply claims delivery';
+      // privacy: the guest's device never receives the organizer's demo database (guest list, phone numbers)
+      else if ((await guest.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('doyofy:db')))).length) issue = 'guest link seeded the organizer store on the guest device';
       await guest.getByRole('button', { name: 'أضف إلى Google Wallet', exact: true }).click();
       await guest.locator('dialog[open] .wpass').waitFor();
       if (!(await guest.locator('dialog[open]').innerText()).includes('لم تُضف أي بطاقة')) issue = 'Wallet preview claims a real save';
@@ -221,7 +223,7 @@ for (const appearance of APPEARANCES) {
       // the cinematic path: one tap on the card while the intro still plays opens the invitation (no swallowed first tap)
       const cine = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
       await cine.goto(link.replace(/^https?:\/\/[^/]+/, BASE));
-      await cine.getByRole('button', { name: /افتح الدعوة/ }).first().click();
+      await cine.getByRole('button', { name: /افتحوا الدعوة/ }).first().click();
       await cine.locator('.st-cardbtn').waitFor({ state: 'attached' }); await cine.waitForTimeout(1200);
       await cine.locator('.st-cardbtn').click({ force: true }); await cine.waitForTimeout(1500);
       const state = await cine.evaluate(() => window.__studio?.sm.state);

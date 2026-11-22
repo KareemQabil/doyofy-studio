@@ -12,9 +12,12 @@ import { TactileDeck } from '../../ui/primitives/TactileDeck';
 import { Button, Icon, SearchInput } from '../../ui';
 import { OccasionGlyph } from '../../ui/icons';
 import { OccasionPoster } from './SignatureHome';
+import { useMedia } from './useMedia';
 
 export function SignatureOccasions({ value, onChange, onConfirm }: { value: EventType | null; onChange: (t: EventType) => void; onConfirm: (t: EventType) => void }) {
   const [searching, setSearching] = useState(false);
+  // a mouse and keyboard don't swipe: the hint names what works on this device
+  const fine = useMedia('(hover: hover) and (pointer: fine)');
   const [q, setQ] = useState('');
   const list = useRef<HTMLUListElement>(null);
   const at = Math.max(0, OCCASIONS_ORDERED.findIndex((t) => t.id === value));
@@ -26,7 +29,7 @@ export function SignatureOccasions({ value, onChange, onConfirm }: { value: Even
     <div className="wz-occasion">
       <header className="wz-head">
         <h2>ما المناسبة؟</h2>
-        <p>{searching ? 'اكتب اسم مناسبتك واخترها.' : 'اسحب البطاقات، واضغط على مناسبتك.'}</p>
+        <p>{searching ? 'اكتب اسم مناسبتك واخترها.' : fine ? 'تصفّح البطاقات بالأسهم، واضغط على مناسبتك.' : 'اسحب البطاقات، واضغط على مناسبتك.'}</p>
       </header>
       {searching ? (
         <div className="wz-search">
@@ -44,6 +47,7 @@ export function SignatureOccasions({ value, onChange, onConfirm }: { value: Even
         <>
           <TactileDeck items={OCCASIONS_ORDERED} index={at} onIndexChange={(i) => onChange(OCCASIONS_ORDERED[i]!.id)} getKey={(t) => t.id}
             label="اختر نوع المناسبة — اسحب يمينًا للتالي" itemLabel={(t) => `${t.label}، ${t.line}`} activateHint="اضغط للمتابعة"
+            hint={fine ? 'تصفّح البطاقات بالأسهم' : 'اسحب البطاقات لتتصفّح'}
             onActivate={(t) => onConfirm(t.id)} renderCard={(t, s) => <OccasionPoster type={t.id} active={s.active} />} className="wz-deck" />
           <button type="button" className="wz-text-btn" onClick={() => setSearching(true)}><Icon name="search" size="sm" />لا تجد مناسبتك؟ ابحث بالاسم</button>
         </>

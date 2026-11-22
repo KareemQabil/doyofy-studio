@@ -4,19 +4,25 @@
  * Food is split per person inside the family (D08) and needs are kept apart from meal choices (D09).
  * Wishes are external links: opening one never marks anything as paid or bought (D14, D16).
  */
-import { useId, useState, type ReactNode } from 'react';
+import { createContext, useContext, useId, useState, type ReactNode } from 'react';
 import type { DietaryAnswer, DietaryNeed, GiftItem, GiftKind, GuestExperience, MealAllocation, RsvpInput } from '../../domain/types';
 import type { GuestView } from '../../services/contracts';
 import {
   DIETARY, DIETARY_ERROR_TEXT, DIETARY_ORDER, GIFT_KIND, MEAL_ERROR_TEXT, activeGifts, activeMeals, asksAfterAttending, asksMeals, linkHost, mealSum, safeExternalUrl,
   validateDietary, validateMeals,
 } from '../../domain/guest-experience';
-import { people } from '../../domain/format';
+import { dateSeparator, invitationNumbers, people, type InvitationNumbers } from '../../domain/format';
+import { faceDigits } from '../../domain/templates';
 import { Banner, Button, Dialog, Field, Icon, Input, Textarea } from '../../ui';
 import { useCopy } from '../../ui/copy';
 import { haptic } from '../../ui/motion/motion';
 
 export type ExtrasValue = { meals: MealAllocation[]; dietary?: DietaryAnswer };
+
+/** the numbers these questions show: a guest page writes them as its invitation's face does (١٢٣ or 123);
+ *  the organizer's own preview of the questions keeps the platform's Western digits */
+const Numbers = createContext<InvitationNumbers>(invitationNumbers('latn'));
+const numbersOf = (view: GuestView) => invitationNumbers(faceDigits(view.design.cardId));
 export const emptyExtras = (prev?: { meals?: MealAllocation[]; dietary?: DietaryAnswer }): ExtrasValue => ({ meals: prev?.meals ?? [], dietary: prev?.dietary });
 
 /** the extras part of an RSVP payload, with the revision the guest answered against */
@@ -64,6 +70,7 @@ const TONES = ['a', 'b', 'c', 'd', 'e', 'f'] as const;
 
 function MealsField({ x, count, value, onChange, error }: { x: GuestExperience; count: number; value: MealAllocation[]; onChange: (v: MealAllocation[]) => void; error: string | null }) {
   const id = useId();
+  const N = useContext(Numbers);
   const options = activeMeals(x);
   const get = (oid: string) => value.find((a) => a.optionId === oid)?.count ?? 0;
   const sum = mealSum(value.filter((a) => options.some((o) => o.id === a.optionId)));
@@ -88,7 +95,7 @@ function MealsField({ x, count, value, onChange, error }: { x: GuestExperience; 
       )}
       <p id={`${id}-state`} className="gx-state" aria-live="polite">
         {single ? (sum ? 'تم الاختيار' : x.meals.required ? 'اختاروا طبقًا واحدًا' : 'اختياري')
-          : left === 0 ? `اكتمل — ${people(count)}` : `${sum} من ${count}${x.meals.required ? '' : ' · يمكن ترك البعض بلا اختيار'}`}
+          : left === 0 ? `اكتمل — ${N.people(count)}` : `${N.num(sum)} من ${N.num(count)}${x.meals.required ? '' : `${dateSeparator(N.digits)}يمكن ترك البعض بلا اختيار`}`}
       </p>
       <ul className="gx-options">
         {options.map((o, i) => {
@@ -104,7 +111,7 @@ function MealsField({ x, count, value, onChange, error }: { x: GuestExperience; 
                   <span className="gx-swatch" aria-hidden="true" /><span className="gx-label">{o.label}</span>
                   <div className="gx-stepper" role="group" aria-label={o.label}>
                     <button type="button" className="gx-step" aria-label={`زيادة ${o.label}`} disabled={left <= 0} onClick={() => set(o.id, n + 1)}><Icon name="plus" size="sm" /></button>
-                    <output className="gx-n num" aria-live="polite">{n}</output>
+                    <output className="gx-n num" aria-live="polite">{N.num(n)}</output>
                     <button type="button" className="gx-step" aria-label={`إنقاص ${o.label}`} disabled={n <= 0} onClick={() => set(o.id, n - 1)}><Icon name="minus" size="sm" /></button>
                   </div>
                 </div>
@@ -120,6 +127,7 @@ function MealsField({ x, count, value, onChange, error }: { x: GuestExperience; 
 
 // ------------------------------------------------------------------ dietary needs: not a medical form
 function DietaryField({ count, value, onChange, error }: { count: number; value: DietaryAnswer | undefined; onChange: (v: DietaryAnswer) => void; error: string | null }) {
+  const N = useContext(Numbers);
   const has = value?.answered ? (value.needs.length ? 'yes' : 'no') : null;
   const [open, setOpen] = useState(has === 'yes');
   const needs = value?.needs ?? [];
@@ -157,7 +165,7 @@ function DietaryField({ count, value, onChange, error }: { count: number; value:
               <span className="gx-sub">تخص</span>
               <button type="button" className={`gx-pill is-sm${value?.affectedCount == null ? ' is-on' : ''}`} aria-pressed={value?.affectedCount == null} onClick={() => onChange({ answered: true, needs, note: value?.note })}>لست متأكدًا</button>
               {Array.from({ length: count }, (_, i) => i + 1).map((n) => (
-                <button key={n} type="button" className={`gx-pill is-sm num${value?.affectedCount === n ? ' is-on' : ''}`} aria-pressed={value?.affectedCount === n} aria-label={`تخص ${people(n)}`} onClick={() => onChange({ answered: true, needs, affectedCount: n, note: value?.note })}>{n}</button>
+                <button key={n} type="button" className={`gx-pill is-sm num${value?.affectedCount === n ? ' is-on' : ''}`} aria-pressed={value?.affectedCount === n} aria-label={`تخص ${N.people(n)}`} onClick={() => onChange({ answered: true, needs, affectedCount: n, note: value?.note })}>{N.num(n)}</button>
               ))}
             </div>
           )}
@@ -182,7 +190,8 @@ export function followUpAsks(view: GuestView, attending: boolean, count: number)
 }
 export const asksFollowUp = (view: GuestView, attending: boolean, count: number) => Object.values(followUpAsks(view, attending, count)).some(Boolean);
 export function followUpError(view: GuestView, attending: boolean, count: number, v: FollowUp) {
-  return followUpAsks(view, attending, count).food ? extrasError(view.experience, v.extras, count) : null;
+  const e = followUpAsks(view, attending, count).food ? extrasError(view.experience, v.extras, count) : null;
+  return e && { ...e, text: numbersOf(view).text(e.text) };
 }
 /** the follow-up part of an RSVP payload */
 export function followUpPayload(view: GuestView, attending: boolean, count: number, v: FollowUp): Partial<RsvpInput> {
@@ -198,19 +207,19 @@ export function followUpPayload(view: GuestView, attending: boolean, count: numb
 export function FollowUpFields({ view, attending, count, value, onChange, error }: { view: GuestView; attending: boolean; count: number; value: FollowUp; onChange: (v: FollowUp) => void; error?: { field: 'meals' | 'dietary'; text: string } | null }) {
   const a = followUpAsks(view, attending, count);
   return (
-    <>
+    <Numbers.Provider value={numbersOf(view)}>
       {a.companions && (
         <fieldset className="form-group">
           <legend className="field-label">أسماء المرافقين <span className="field-opt">(اختياري)</span></legend>
           {Array.from({ length: count - 1 }, (_, i) => (
-            <Input key={i} aria-label={`اسم المرافق ${i + 1}`} placeholder={`المرافق ${i + 1}`} value={value.companions[i] ?? ''}
+            <Input key={i} aria-label={`اسم المرافق ${numbersOf(view).num(i + 1)}`} placeholder={`المرافق ${numbersOf(view).num(i + 1)}`} value={value.companions[i] ?? ''}
               onChange={(e) => { const c = [...value.companions]; c[i] = e.target.value; onChange({ ...value, companions: c }); }} />
           ))}
         </fieldset>
       )}
       {a.food && view.experience && <GuestExtrasFields x={view.experience} count={count} value={value.extras} onChange={(extras) => onChange({ ...value, extras })} error={error} />}
       {a.note && <Field label="رسالة لصاحب المناسبة" optional><Textarea rows={2} value={value.note} onChange={(e) => onChange({ ...value, note: e.target.value })} maxLength={240} /></Field>}
-    </>
+    </Numbers.Provider>
   );
 }
 
@@ -232,7 +241,7 @@ export function FollowUpSheet({ view, attending, count, onSend, onBack }: { view
   };
   return (
     <Dialog open onClose={onBack} variant="drawer" size="md" className="gx-sheet theme-guest" title="خطوة أخيرة قبل الإرسال"
-      description={attending ? `الحضور: ${people(count)} · لم يُرسل الرد بعد.` : 'الاعتذار · لم يُرسل الرد بعد.'}
+      description={attending ? `${t('guestAccept')}${dateSeparator(numbersOf(view).digits)}${numbersOf(view).people(count)}. لم يُرسل الرد بعد.` : `${t('guestDecline')}. لم يُرسل الرد بعد.`}
       footer={<><Button variant="primary" loading={busy} onClick={() => void send()}>{t('guestSendReply')}</Button><Button variant="ghost" disabled={busy} onClick={onBack}>رجوع للدعوة</Button></>}>
       {failure && <Banner tone="danger">{failure}</Banner>}
       <div className="stack gap-4"><FollowUpFields view={view} attending={attending} count={count} value={value} onChange={setValue} error={tried ? err : null} /></div>

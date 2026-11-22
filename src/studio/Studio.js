@@ -14,8 +14,8 @@ import { playCardMotion } from '../cards/card-motion.js';
 import { StateMachine } from '../engine/StateMachine.js';
 import { AudioEngine } from '../engine/AudioEngine.js';
 import { detectQuality } from '../engine/Quality.js';
-import { deriveContent, countdown, localDigits } from '../data/derive.js';
-import { STRINGS as T } from '../data/strings.js';
+import { deriveContent, countdown, localDigits, dateSep } from '../data/derive.js';
+import { STRINGS as T, currentStrings, setStringsVoice } from '../data/strings.js';
 import { PAGE_ORDER } from '../pages/index.js';
 import { SCENE_AMBIENCE } from '../audio/index.js';
 import { LocalRSVPAdapter } from '../engine/rsvp.js';
@@ -23,6 +23,8 @@ import { studioMarkup, ICON } from './markup.js';
 import { renderSwitcher } from './switcher.js';
 
 const STAGE_W = 390, STAGE_H = 844;
+/** «شخص واحد · شخصان · ٣ أشخاص · ١١ شخصًا» (Western digits here; the caller writes them in the face's system) */
+const peopleAr = (n) => n === 1 ? 'شخص واحد' : n === 2 ? 'شخصان' : n % 100 >= 3 && n % 100 <= 10 ? `${n} أشخاص` : n % 100 >= 11 ? `${n} شخصًا` : `${n} شخص`;
 /** seconds into the intro when the face's own entrance starts: the card is opaque and still flying in, so its frame
  *  draws and its art settles as it lands (styles/studio.css: the card flies in 1.6–3.7 s) */
 const INTRO_FACE_AT = 2.1;
@@ -51,10 +53,14 @@ export class Studio {
    *   doneAction  (platform) an extra button on the thank-you screen: { ar, en, onClick, autoAfter? } — with autoAfter (ms)
    *               the thank-you screen moves on by itself, so the guest lands on the same page as every other path
    *   authorNotes (platform) organizer-only hints on controls (e.g. an upload that is missing on this device); never for guests
+   *   voice       (platform) the organizer's voice ('ar' | 'ar-EG' | 'ar-SA') carried with a guest link; the engine's own
+   *               words follow it instead of this device's preference
    */
-  constructor(host, { invitation, card = 'kit-rose-garden', scene = 'silk', start = 'intro', assetBase = 'assets/', rsvp, experience = null, embedded = false, showSwitcher = true, muted = false, params = new URLSearchParams(location.search), guest = null, doneAction = null, authorNotes = false } = {}) {
+  constructor(host, { invitation, card = 'kit-rose-garden', scene = 'silk', start = 'intro', assetBase = 'assets/', rsvp, experience = null, embedded = false, showSwitcher = true, muted = false, params = new URLSearchParams(location.search), guest = null, doneAction = null, authorNotes = false, voice = null } = {}) {
     this.host = host;
     this.params = params;
+    this.voice = voice;
+    if (voice) setStringsVoice(voice);
     this.quality = detectQuality(params);
     // settings are flat (no 3D): `dimension` is kept in the data for old links and always reads 2d
     this.experience = { dimension: '2d', motion: experience?.motion ?? (this.quality.reducedMotion ? 'static' : 'animated') };
@@ -84,7 +90,8 @@ export class Studio {
 
   _derive(invitation) {
     const d = deriveContent(invitation, { digits: CardRegistry.has(this.cardId) ? CardRegistry.get(this.cardId).digits : undefined });
-    if (this.guest?.maxGuests) d.rsvp = { ...d.rsvp, maxGuests: this.guest.maxGuests, defaultGuests: Math.min(d.rsvp.defaultGuests ?? 2, this.guest.maxGuests) };
+    // a guest's first answer starts at their whole allowance (who is invited usually comes), still editable
+    if (this.guest?.maxGuests) d.rsvp = { ...d.rsvp, maxGuests: this.guest.maxGuests, defaultGuests: this.guest.maxGuests };
     return d;
   }
 
@@ -348,7 +355,7 @@ export class Studio {
     this.el.page.innerHTML = PageRegistry.get(id).render(v);
     this.el.page.classList.toggle('instant', instant);
     this.el.page.dataset.page = id;
-    this.el.dots.innerHTML = PAGE_ORDER.map((p, i) => `<button type="button" class="st-dotbtn ${i === this.page ? 'on' : ''}" data-go="${i}" aria-label="انتقل إلى ${T.pageLabels[i]}" aria-current="${i === this.page ? 'page' : 'false'}"><span class="st-dot"></span></button>`).join('');
+    this.el.dots.innerHTML = PAGE_ORDER.map((p, i) => `<button type="button" class="st-dotbtn ${i === this.page ? 'on' : ''}" data-go="${i}" aria-label="صفحة ${T.pageLabels[i]}" aria-current="${i === this.page ? 'page' : 'false'}"><span class="st-dot"></span></button>`).join('');
     this.host.querySelector('[data-act="prev"]').disabled = this.page === 0;
     this.host.querySelector('[data-act="next"]').disabled = this.page === 4;
     if (id === 'date') this._tickCountdown();
@@ -365,8 +372,12 @@ export class Studio {
     this.clock = setInterval(() => { if (this.sm.state === 'pages' && PAGE_ORDER[this.page] === 'date') paint(); else clearInterval(this.clock); }, 1000);
   }
 
-  go(n) {
+  /** `from`: the control that asked (a page dot, prev or next). Keyboard focus never falls back to the page body:
+   *  prev/next keep it while they can still act; a dot, or a button that has just been disabled at either end,
+   *  hands it to the sheet, so the next Tab reaches the new page's content (the reply form) before anything else. */
+  go(n, from = null) {
     if (this.sm.state !== 'pages' || n < 0 || n > 4 || n === this.page || this.leaving) return;
+    this._focusAfter = from && from === document.activeElement ? from : null;
     this.audio.emit('page');
     this.leaving = true;
     this.el.page.classList.add('leaving');
@@ -376,6 +387,8 @@ export class Studio {
       this.el.page.classList.remove('leaving');
       delete this.el.page.dataset.exit;
       this._renderPage();
+      const from = this._focusAfter; this._focusAfter = null;
+      if (from && (from.dataset.go || from.disabled || !from.isConnected)) this.el.sheet.focus({ preventScroll: true });
     }, this.sm.timing.pageLeave);
   }
 
@@ -390,7 +403,7 @@ export class Studio {
     });
     // FX-13: a decline asks no headcount — the counter folds away and returns with its last value on «سأحضر»
     root.querySelectorAll('.rsvp-guests-row').forEach(row => { row.hidden = r.attending === 'no'; });
-    const out = root.querySelector('.rsvp-guests'); if (out) out.textContent = r.guests;
+    const out = root.querySelector('.rsvp-guests'); if (out) out.textContent = localDigits(r.guests, this.data.digits);
     const [dn, up] = root.querySelectorAll('[data-guests]');
     if (dn) dn.disabled = r.guests <= this.data.rsvp.minGuests;
     if (up) up.disabled = r.guests >= this.data.rsvp.maxGuests;
@@ -401,7 +414,13 @@ export class Studio {
     const submit = root.querySelector('.rsvp-submit');
     if (submit) submit.disabled = r.submitting;
     const error = root.querySelector('.rsvp-save-error');
-    if (error) { error.hidden = !r.error; error.textContent = r.error; }
+    if (error) {
+      error.hidden = !r.error; error.textContent = r.error;
+      // a reply the guest chose not to finish yet is a calm note, not an alert (receipt.notice)
+      error.setAttribute('role', r.notice ? 'status' : 'alert');
+      error.style.color = r.notice ? t.muted : '#9b2729';
+      error.classList.toggle('is-notice', !!r.notice);
+    }
   }
 
   async submit() {
@@ -409,27 +428,40 @@ export class Studio {
     const r = this.rsvp;
     if (!r.name.trim() || !r.attending) { r.tried = true; this._syncRsvp(); return; }
     r.submitting = true;
-    r.error = '';
+    r.error = ''; r.notice = false;
     this._syncRsvp();
     try {
       const receipt = await this.rsvpAdapter.submit({ name: r.name.trim(), attending: r.attending === 'yes', guests: r.attending === 'yes' ? r.guests : 0 });
       if (this.rsvp !== r || this.sm.state !== 'pages') return;
       if (receipt?.ok === true) { r.receipt = receipt; r.sent = true; this.sm.send('submit'); return; }
-      r.error = receipt?.error || 'تعذر حفظ الرد. أعد المحاولة.';
-    } catch (err) { r.error = err instanceof Error ? err.message : 'تعذر حفظ الرد. أعد المحاولة.'; }
+      r.error = receipt?.error || 'تعذر حفظ الرد. أعيدوا المحاولة.';
+      r.notice = !!receipt?.notice;
+    } catch (err) { r.error = err instanceof Error ? err.message : 'تعذر حفظ الرد. أعيدوا المحاولة.'; }
     if (this.rsvp === r && this.sm.state === 'pages') { r.submitting = false; this._syncRsvp(); }
   }
 
   _renderDone() {
     const r = this.rsvp, c = this.data.c, declined = r.attending === 'no';
-    const th = declined ? T.thanks.no : T.thanks.yes;
+    const S = currentStrings(this.voice ?? undefined);
+    const th = declined ? S.thanks.no : S.thanks.yes;
     const q = (s) => this.el.done.querySelector(s);
     q('.done-ar').textContent = th.ar; q('.done-ar').style.fontFamily = this.theme.fAr;
-    const demo = !!r.receipt?.demo;   // never claim a reply reached the organizer when it did not
-    q('.done-en').textContent = demo ? 'A demo copy — your reply stays on this device.' : th.en;
+    // never claim a reply reached the organizer when it did not: a demo reply says so once, in Arabic, under the thanks
+    // (the English line would only repeat it); a real one keeps the English thank-you under the Arabic
+    const demo = !!r.receipt?.demo;
+    q('.done-en').textContent = demo ? '' : th.en;
+    q('.done-en').hidden = demo;
     q('.done-demo').hidden = !demo;
-    const name = r.name.trim().toUpperCase();
-    q('.done-who').textContent = name ? (declined ? name : `${name} · ${r.guests} ${r.guests === 1 ? 'GUEST' : 'GUESTS'}`) : `${[c.enAU, c.arB ? c.enBU : ''].filter(Boolean).join(' & ') || c.arA} · ${c.dateShort}`;
+    // who replied: Arabic in the invitation's own number system («أم نورة — خالة العروس، ٣ أشخاص»), its own direction
+    // and no letter-spacing (spacing breaks Arabic joining); a reply without a name keeps the Latin monogram line
+    const who = q('.done-who'), name = r.name.trim();
+    if (name) {
+      who.dir = 'rtl'; who.lang = 'ar'; who.classList.add('is-ar');
+      who.innerHTML = `<bdi>${e(name)}</bdi>${declined ? '' : `${dateSep(this.data.digits)}${e(localDigits(peopleAr(r.guests), this.data.digits))}`}`;
+    } else {
+      who.dir = 'ltr'; who.lang = 'en'; who.classList.remove('is-ar');
+      who.textContent = `${[c.enAU, c.arB ? c.enBU : ''].filter(Boolean).join(' & ') || c.arA} · ${c.dateShort}`;
+    }
   }
 
   // ---------------------------------------------------------------- input
@@ -463,13 +495,13 @@ export class Studio {
       if (t === this.el.cardBtn) return this.openCard();
       const act = t.dataset.act;
       if (act === 'close') { this.audio.emit('click'); return this.sm.state === 'pages' && this.sm.send('close'); }
-      if (act === 'next') return this.go(this.page + 1);
-      if (act === 'prev') return this.go(this.page - 1);
+      if (act === 'next') return this.go(this.page + 1, t);
+      if (act === 'prev') return this.go(this.page - 1, t);
       if (act === 'replay') { this.audio.emit('click'); return this.replay(); }
       if (act === 'done-action') { this.audio.emit('click'); return this.doneAction?.onClick(); }
       if (act === 'sound') return this.toggleSound();
       if (act === 'switcher') { this.audio.emit('click'); return this.swOpen ? this._closeSwitcher() : this._openSwitcher(); }
-      if (t.dataset.go) return this.go(Number(t.dataset.go));
+      if (t.dataset.go) return this.go(Number(t.dataset.go), t);
       if (t.dataset.attend) { this.audio.emit('choose'); this.rsvp.attending = t.dataset.attend; return this._syncRsvp(); }
       if (t.dataset.guests) { this.audio.emit('click'); const r = this.rsvp, d = this.data.rsvp; r.guests = Math.max(d.minGuests, Math.min(d.maxGuests, r.guests + Number(t.dataset.guests))); return this._syncRsvp(); }
       if (t.dataset.pickCard) { this.audio.emit('choose'); return this.setCard(t.dataset.pickCard); }
@@ -569,8 +601,9 @@ export class Studio {
     if (on && this.sm.state === 'pages') this.audio.startMusic();
     const b = this.el.soundBtn;
     b.innerHTML = on ? ICON.soundOn : ICON.soundOff;
+    // one pattern: a stable name and its pressed state («موسيقى الدعوة، مضغوط» = playing), never a label that flips too
     b.setAttribute('aria-pressed', String(on));
-    b.setAttribute('aria-label', on ? 'كتم الصوت' : 'تشغيل الصوت');
+    b.setAttribute('aria-label', T.sound);
   }
 
   _syncAudioPreference() {
@@ -627,6 +660,7 @@ export class Studio {
     clearTimeout(this._leaveTimer); clearTimeout(this.sealTimer); clearTimeout(this._replayTimer); clearTimeout(this._doneTimer); clearInterval(this.clock);
     this.cleanups.forEach((f) => f());
     this.host.innerHTML = '';
+    if (this.voice) setStringsVoice(null);
   }
 }
 

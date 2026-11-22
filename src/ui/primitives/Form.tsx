@@ -95,14 +95,15 @@ export function ChoiceGroup<T extends string>({ label, value, options, onChange,
 }
 
 /** − 3 + counter with real buttons (no tiny number spinners on phones) */
-export function Stepper({ label, value, min = 0, max = 99, onChange, suffix }: { label: string; value: number; min?: number; max?: number; onChange: (v: number) => void; suffix?: (n: number) => ReactNode }) {
+/** `format` writes the shown value (e.g. an invitation's ١٢٣ on a guest page); the value itself stays a number */
+export function Stepper({ label, value, min = 0, max = 99, onChange, suffix, format }: { label: string; value: number; min?: number; max?: number; onChange: (v: number) => void; suffix?: (n: number) => ReactNode; format?: (n: number) => ReactNode }) {
   const id = useId();
   return (
     <div className="stepper" role="group" aria-labelledby={id}>
       <span id={id} className="field-label">{label}</span>
       <div className="stepper-row">
         <button type="button" className="btn btn-secondary btn-lg btn-icon" aria-label={`زيادة ${label}`} disabled={value >= max} onClick={() => onChange(Math.min(max, value + 1))}><Icon name="plus" /></button>
-        <output className="stepper-value num" aria-live="polite">{value}{suffix && <span className="stepper-suffix">{suffix(value)}</span>}</output>
+        <output className="stepper-value num" aria-live="polite">{format ? format(value) : value}{suffix && <span className="stepper-suffix">{suffix(value)}</span>}</output>
         <button type="button" className="btn btn-secondary btn-lg btn-icon" aria-label={`إنقاص ${label}`} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))}><Icon name="minus" /></button>
       </div>
     </div>
