@@ -22,7 +22,6 @@
 @import '../features/signature/studio-surfaces.css';
 @import '../features/account/account.css';
 @import '../features/account/audio-library.css';
-@import '../features/signature/template-library.css';
 @import '../ui/styles/mobile-complete.css';
 @import '../features/account/welcome.css';
 @import '../features/guests/guests-v2.css';
@@ -36,3 +35,4 @@
 @import '../ui/styles/density.css';
 @import '../ui/styles/dark.css';
 @import '../features/templates/creation-mobile.css';
+@import '../features/events/wizard.css';

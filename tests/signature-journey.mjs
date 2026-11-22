@@ -68,14 +68,29 @@ async function run(vp) {
     return 'swipe right → 02';
   });
 
-  await step(vp, '04 graduation details + live card preview', async () => {
+  await step(vp, '04 design feed (step 2): one design per screen, chosen explicitly', async () => {
     await go('/app/events/new?type=graduation');
+    const feed = page.locator('.tf-scroll'); await feed.waitFor();
+    const card = await page.locator('.tf-slide.is-active .card-thumb').boundingBox();
+    const min = size.width <= 320 ? 220 : 240;
+    if (!card || card.width < min) throw new Error(`design card too small: ${card?.width}`);
+    if (card.y + card.height > size.height) throw new Error('design card runs under the footer');
+    const first = await page.locator('.tf-slide.is-active .tf-info h3').innerText();
+    await feed.focus(); await page.keyboard.press('ArrowDown');
+    await page.waitForFunction(t => document.querySelector('.tf-slide.is-active .tf-info h3')?.textContent !== t, first);
+    const chosen = await page.locator('.tf-slide.is-active .tf-info h3').innerText();
+    await page.getByRole('button', { name: 'اختر هذا التصميم' }).click();
+    await page.locator('#create-event').waitFor();
+    return `card ${Math.round(card.width)}px; ${first} → ${chosen}; ` + await noScroll();
+  });
+
+  await step(vp, '04b graduation details + live card preview', async () => {
     await page.getByLabel(/اسم الخريج/).fill('جود العتيبي');
     await page.getByLabel('التاريخ').fill('2027-06-20');
     await page.getByLabel('اسم القاعة أو المكان').fill('قاعة الريحان');
     await page.getByLabel('المدينة').fill('الرياض');
     await page.waitForTimeout(500);
-    const preview = await page.locator('.sig-create-aside').innerText();
+    const preview = await page.locator('.wz-live, .sig-create-aside').first().innerText();
     if (!preview.includes('جود')) throw new Error('preview missing the name');
     await shot('04-graduation-details');
     const body = await page.locator('main, .create-shell, body').first().innerText();
@@ -187,7 +202,7 @@ async function run(vp) {
 
   // couple (seeded)
   const W = '/app/events/evt_wedding';
-  for (const [n, path, sel] of [['20-couple-overview', `${W}/overview`, '.sig-moment'], ['21-couple-invitation', `${W}/invitation`, 'h1'], ['22-couple-guests', `${W}/guests`, 'h1'], ['23-couple-replies', `${W}/rsvp`, 'h1'], ['24-couple-reception', `${W}/check-in`, 'h1'], ['25-couple-summary', `${W}/summary`, '.summary-closure'], ['26-couple-seating', `${W}/seating`, 'h1'], ['27-couple-templates', `${W}/invitation/templates`, '.sig-library']]) {
+  for (const [n, path, sel] of [['20-couple-overview', `${W}/overview`, '.sig-moment'], ['21-couple-invitation', `${W}/invitation`, 'h1'], ['22-couple-guests', `${W}/guests`, 'h1'], ['23-couple-replies', `${W}/rsvp`, 'h1'], ['24-couple-reception', `${W}/check-in`, 'h1'], ['25-couple-summary', `${W}/summary`, '.summary-closure'], ['26-couple-seating', `${W}/seating`, 'h1'], ['27-couple-templates', `${W}/invitation/templates`, '.tf-scroll']]) {
     await step(vp, `${n.slice(3)} renders`, async () => { await go(path); await page.locator(sel).first().waitFor(); await page.waitForTimeout(400); await shot(n); return noScroll(); });
   }
   const drag = async (sel, dx, dy = 0) => {
