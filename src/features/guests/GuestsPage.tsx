@@ -246,7 +246,7 @@ export function GuestsPage({ event }: { event: Event }) {
       {exporting && <ExportGuestsDialog event={event} parties={all} tables={tableList} visibleIds={new Set(visible.map((p) => p.id))} selectedIds={new Set(sel)} onClose={() => setExporting(false)} />}
       {transferring && <TransferGuestsDialog event={event} parties={all.filter((p) => selected.has(p.id))} onClose={() => setTransferring(false)} onDone={clearSelection} />}
       {adding && (
-        <PartyFormDialog open key="new" title="إضافة ضيف" existing={all} defaultSize={event.settings.defaultPartySize}
+        <PartyFormDialog open key="new" title="إضافة ضيف" eventId={event.id} existing={all} defaultSize={event.settings.defaultPartySize}
           onClose={() => { setAdding(false); add.reset(); }} pending={add.pending} error={add.error} onSubmit={(input) => void add.run(input)} />
       )}
       {queue && <ShareQueue event={event} parties={queue.map((id) => all.find((p) => p.id === id)).filter((p): p is InvitationParty => !!p)} urlFor={shareUrl} linkFor={guestLink}

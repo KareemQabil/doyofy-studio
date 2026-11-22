@@ -1,6 +1,6 @@
 /** Status & feedback: badges, banners, empty/error/loading states, toasts. Tones map to tokens in CSS. */
 import { Lottie } from './Lottie';
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Tone } from '../../domain/types';
 import { Icon, type IconName } from '../icons';
 import { JourneyArtwork, type JourneyArtKind } from './JourneyArtwork';
@@ -18,9 +18,22 @@ export function Badge({ tone = 'neutral', children, icon, dot, title }: { tone?:
 
 const TONE_ICON: Record<Tone, IconName> = { neutral: 'info', info: 'info', success: 'check-circle', warning: 'alert', danger: 'alert', accent: 'sparkle' };
 
-export function Banner({ tone = 'info', title, children, action, icon, compact }: { tone?: Tone; title?: ReactNode; children?: ReactNode; action?: ReactNode; icon?: IconName; compact?: boolean }) {
+/**
+ * `reveal`: when this value changes (and is not null/false), the banner scrolls into view and takes focus —
+ * for an error that appears away from where the person is looking (e.g. after closing a dialog).
+ */
+export function Banner({ tone = 'info', title, children, action, icon, compact, reveal }: { tone?: Tone; title?: ReactNode; children?: ReactNode; action?: ReactNode; icon?: IconName; compact?: boolean; reveal?: unknown }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const revealable = reveal !== undefined;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reveal === undefined || reveal === null || reveal === false) return;
+    const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView?.({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+    el.focus({ preventScroll: true });
+  }, [reveal]);
   return (
-    <div className={`banner tone-${tone}${compact ? ' banner-compact' : ''}`} role={tone === 'danger' || tone === 'warning' ? 'alert' : 'status'}>
+    <div ref={ref} tabIndex={revealable ? -1 : undefined} className={`banner tone-${tone}${compact ? ' banner-compact' : ''}`} role={tone === 'danger' || tone === 'warning' ? 'alert' : 'status'}>
       <Icon name={icon ?? TONE_ICON[tone]} className="banner-icon" />
       <div className="banner-text">
         {title && <p className="banner-title">{title}</p>}

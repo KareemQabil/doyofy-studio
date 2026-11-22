@@ -8,7 +8,7 @@ import { startServer } from '../tools/serve.mjs';
 const OUT = `${ROOT}/qa/upgrade`;
 fs.mkdirSync(OUT, { recursive: true });
 const results = [];
-const server = await startServer(5392);
+const server = await startServer(Number(process.env.UPGRADE_PORT) || 5392);
 let browser;
 const watchdog = setTimeout(() => { console.error('Upgrade acceptance exceeded its 165-second budget.'); process.exit(1); }, 165000);
 const base = `http://localhost:${server.address().port}`;
@@ -181,22 +181,39 @@ try {
       for (let i = 0; i < 5; i++) await s.parties.create(ev.id, { primaryGuestName: `عائلة اختبار ${i}`, maxPartySize: 20 });
       return ev.id;
     });
-    await go(page, `/app/events/${id}/guests`);
+    // ?pay=decline is the prototype affordance for a declined payment; the checkout itself has no such toggle.
+    await go(page, `/app/events/${id}/guests?pay=decline`);
+    await page.locator('[data-capacity-meter].is-full').waitFor();
     await page.getByRole('button', { name: 'إضافة ضيف', exact: true }).click();
     await page.getByLabel('اسم الضيف أو العائلة', { exact: false }).fill('ضيف بعد الترقية');
     await page.getByRole('button', { name: 'إضافة', exact: true }).click();
     await page.locator('[data-capacity-flow]').waitFor();
-    await page.getByRole('button', { name: 'العودة للضيوف', exact: true }).click();
+    assert.equal(await page.getByText('محاكاة عملية مرفوضة').count(), 0, 'decline toggle hidden from the checkout');
+    await page.getByRole('button', { name: 'إلغاء الترقية', exact: true }).click();
     assert.equal(await page.getByLabel('اسم الضيف أو العائلة', { exact: false }).inputValue(), 'ضيف بعد الترقية');
+    // the reason is focused and on screen, not hidden above the fold
+    await page.waitForFunction(() => document.activeElement?.classList.contains('banner'));
+    const box = await page.evaluate(() => { const r = document.activeElement.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, h: innerHeight }; });
+    assert.ok(box.top >= 0 && box.bottom <= box.h, `notice off-screen: ${JSON.stringify(box)}`);
     assert.equal(await page.evaluate(async id => (await window.__doyofy.services.parties.list(id)).length, id), 5);
     await page.getByRole('button', { name: 'إضافة', exact: true }).click();
-    await page.getByRole('button', { name: 'متابعة بالدفع التجريبي', exact: true }).click();
+    await page.getByRole('button', { name: 'متابعة للدفع', exact: true }).click();
+    await page.getByText('تجريبي — لا يتم خصم أي مبلغ').waitFor();
     await page.getByRole('button', { name: 'تأكيد الدفع التجريبي', exact: true }).click();
+    await page.getByText('لم ينجح الدفع').waitFor();
+    assert.equal(await page.evaluate(async id => (await window.__doyofy.services.parties.list(id)).length, id), 5, 'decline wrote nothing');
+    await page.getByRole('button', { name: 'تأكيد الدفع التجريبي', exact: true }).click();
+    await page.getByText('أصبح حدّ مناسبتك 250 شخصًا').waitFor();
+    await page.getByText('تمت إضافة شخصين', { exact: false }).waitFor(); // the default invitation allows 2
     await page.waitForFunction(id => JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}').parties?.filter(p => p.eventId === id).length === 6, id);
+    await page.getByRole('button', { name: 'تم', exact: true }).click();
     const added = await page.evaluate(async id => (await window.__doyofy.services.parties.list(id)).filter(p => p.primaryGuestName === 'ضيف بعد الترقية').length, id);
     assert.equal(added, 1); await page.reload({ waitUntil: 'domcontentloaded' });
     assert.equal(await page.evaluate(async id => (await window.__doyofy.services.parties.list(id)).length, id), 6);
-    return 'cancel preserved form and 5 rows; demo payment resumed once; exactly 6 rows after reload';
+    await page.getByRole('button', { name: 'عرض الإيصال', exact: true }).first().click();
+    const receipt = await page.locator('[data-receipt]').innerText();
+    assert.ok(receipt.includes('49 ر.س') && /DEMO-/.test(receipt), receipt);
+    return 'cancel kept form, focused the notice; decline wrote nothing; demo payment resumed once; 6 rows after reload; receipt from the meter';
   });
 } catch (e) {
   results.push({ name: 'runner', ok: false, error: String(e.stack || e) }); console.error(e);

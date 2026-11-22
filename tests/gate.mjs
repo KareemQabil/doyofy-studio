@@ -43,7 +43,7 @@ const ROUTES = [
   const app = fs.readFileSync(path.join(ROOT, 'dist', distEntries().app), 'utf8');
   for (const [name, mark] of [['GSAP', 'GreenSock'], ['three.js', 'WebGLRenderer'], ['Lottie', 'bodymovin']]) if (app.includes(mark)) { console.log(`FAIL  bundle: ${name} is inside dist/app.js`); process.exitCode = 1; }
 }
-const server = await startServer(5411);
+const server = await startServer(Number(process.env.GATE_PORT) || 5411); // GATE_PORT: parallel worktrees
 const BASE = `http://localhost:${server.address().port}`;
 const browser = await chromium.launch({ executablePath: chromiumPath(), args: ['--enable-unsafe-swiftshader'] });
 const failures = [];

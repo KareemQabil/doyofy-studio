@@ -12,7 +12,10 @@ import { useBlocker, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
 import { errorMessage, isAppError } from '../../services/errors';
-import { useDesign } from '../shared/queries';
+import { useDesign, useParties } from '../shared/queries';
+import { CapacityMeter, useCapacityVersion } from '../billing/CapacityMeter';
+import { ReceiptList } from '../billing/Receipt';
+import { receiptsFor } from '../../domain/billing';
 import { localDateOf } from '../../domain/format';
 import { TIME_ZONES } from '../events/CreateEvent';
 import { GuestExperienceSettings } from './GuestExperienceSettings';
@@ -42,6 +45,7 @@ export function SettingsPage({ event }: { event: Event }) {
   useEffect(() => {
     if (loc.search.get('focus') === 'map') setTimeout(() => { mapRef.current?.focus(); mapRef.current?.scrollIntoView({ block: 'center' }); }, 150);
     if (loc.search.get('focus') === 'guest-experience') setTimeout(() => document.getElementById('guest-experience')?.scrollIntoView({ block: 'start' }), 150);
+    if (loc.search.get('focus') === 'capacity') setTimeout(() => document.getElementById('capacity')?.scrollIntoView({ block: 'start' }), 150);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = useMutation((s, input: UpdateEventInput) => s.events.update(event.id, input), { onSuccess: (e) => { setF(fromEvent(e)); toast({ tone: 'success', text: 'تم حفظ تفاصيل المناسبة' }); } });
@@ -131,6 +135,8 @@ export function SettingsPage({ event }: { event: Event }) {
       <div className="stack gap-6 settings">
         <GuestExperienceSettings event={event} />
 
+        <CapacitySettings event={event} />
+
         <Panel title="الدعوة">
           <div className="row wrap between gap-3">
             <Badge tone={PUBLISH_LABEL[ps].tone} dot>{PUBLISH_LABEL[ps].label}</Badge>
@@ -153,4 +159,16 @@ export function SettingsPage({ event }: { event: Event }) {
         confirmLabel={event.archivedAt ? 'إعادة' : 'أرشفة'} loading={archive.pending} onCancel={() => setArchiveOpen(false)} onConfirm={() => void archive.run()} />
     </>
   );
+}
+
+/** Plan and demo receipts for this event (the 100 free people include companions). */
+function CapacitySettings({ event }: { event: Event }) {
+  const parties = useParties(event.id);
+  useCapacityVersion();
+  return <Panel id="capacity" title="سعة الضيوف والمدفوعات">
+    <div className="stack gap-4">
+      {parties.data ? <CapacityMeter eventId={event.id} parties={parties.data} alwaysOfferUpgrade receiptLink={false} /> : null}
+      <ReceiptList receipts={receiptsFor(event.id)} />
+    </div>
+  </Panel>;
 }

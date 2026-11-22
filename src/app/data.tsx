@@ -7,7 +7,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { Services } from '../services/contracts';
 import type { PrototypeControls } from '../services';
 import { GuestLimitError } from '../domain/billing';
-import { requestGuestUpgrade } from '../features/billing/UpgradeFlow';
+import { requestGuestUpgrade, settleGuestUpgrade } from '../features/billing/UpgradeFlow';
+import { errorMessage } from '../services/errors';
 
 /** `started`/`settled` count fetches, so a caller can wait for one that began after the data last changed. */
 interface Entry { data?: unknown; error?: unknown; promise?: Promise<void>; loadedOnce: boolean; stale: boolean; version: number; started: number; settled: number; fn: (s: Services) => Promise<unknown>; subs: Set<() => void> }
@@ -135,8 +136,10 @@ export function useMutation<A extends unknown[], R>(fn: (s: Services, ...args: A
       catch (e) {
         if (!(e instanceof GuestLimitError) || !alive.current || !(await requestGuestUpgrade(e))) throw e;
         if (!alive.current) return undefined;
-        // Resume the saved operation once; another failure is displayed normally.
-        r = await operation(services, ...args);
+        // Resume the saved operation once; another failure is displayed normally (and on the confirmation).
+        try { r = await operation(services, ...args); }
+        catch (again) { settleGuestUpgrade(e, { failed: errorMessage(again) }); throw again; }
+        settleGuestUpgrade(e, 'done');
       }
       if (alive.current) setPending(false);
       optsRef.current.onSuccess?.(r);
