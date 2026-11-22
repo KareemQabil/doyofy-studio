@@ -8,6 +8,9 @@ import { GUEST_TOOLS } from './copy/guest-tools';
 import { SEATING } from './copy/seating';
 import { GUEST } from './copy/guest';
 import { ENGINE } from './copy/engine';
+import { EDITOR } from './copy/editor';
+import { EDITOR_SECTIONS } from './copy/editor-sections';
+import { SETTINGS } from './copy/settings';
 export type Dialect = 'ar' | 'ar-EG' | 'ar-SA';
 export const DIALECTS: Array<{ value: Dialect; label: string }> = [
   { value: 'ar', label: 'العربية المودرن' }, { value: 'ar-EG', label: 'المصري' }, { value: 'ar-SA', label: 'السعودي' },
@@ -89,11 +92,11 @@ const CORE = partly(coreModern, coreEgyptian, coreSaudi);
  * `voiced` groups spell every key in every voice, `partly` groups fall back to modern Arabic (see copy/group.ts).
  */
 export const COPY_GROUPS = {
-  core: CORE, home: HOME, homeMore: HOME_MORE, create: CREATE, createMore: CREATE_MORE, guests: GUESTS, guestTools: GUEST_TOOLS, seating: SEATING, guest: GUEST, engine: ENGINE,
+  core: CORE, home: HOME, homeMore: HOME_MORE, create: CREATE, createMore: CREATE_MORE, guests: GUESTS, guestTools: GUEST_TOOLS, seating: SEATING, guest: GUEST, engine: ENGINE, editor: EDITOR, editorSections: EDITOR_SECTIONS, settings: SETTINGS,
 } as const;
 
 const modern = {
-  ...CORE.modern, ...HOME.modern, ...HOME_MORE.modern, ...CREATE.modern, ...CREATE_MORE.modern, ...GUESTS.modern, ...GUEST_TOOLS.modern, ...SEATING.modern, ...GUEST.modern, ...ENGINE.modern,
+  ...CORE.modern, ...HOME.modern, ...HOME_MORE.modern, ...CREATE.modern, ...CREATE_MORE.modern, ...GUESTS.modern, ...GUEST_TOOLS.modern, ...SEATING.modern, ...GUEST.modern, ...ENGINE.modern, ...EDITOR.modern, ...EDITOR_SECTIONS.modern, ...SETTINGS.modern,
 };
 export type CopyKey = keyof typeof modern;
 export type Copy = { readonly [K in CopyKey]: string };

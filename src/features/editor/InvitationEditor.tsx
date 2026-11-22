@@ -38,6 +38,7 @@ import { useBlocker, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
 import { useCopy } from '../../ui/copy';
+import type { CopyKey } from '../../domain/copy';
 import { errorMessage } from '../../services/errors';
 import { useDesign, useEvent } from '../shared/queries';
 import { useCan } from '../shared/OwnerOnly';
@@ -46,13 +47,14 @@ import { ContentSection, DesignSection, EventSection, MotionSection, eventFields
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
 export type EditorSection = 'content' | 'design' | 'motion' | 'event';
-const SECTIONS: Array<{ value: EditorSection; label: string; icon: 'type' | 'palette' | 'motion' | 'calendar' }> = [
-  { value: 'content', label: 'المحتوى', icon: 'type' },
-  { value: 'design', label: 'الشكل', icon: 'palette' },
-  { value: 'motion', label: 'التجربة', icon: 'motion' },
-  { value: 'event', label: 'المناسبة', icon: 'calendar' },
+/** labels are dictionary keys, read in the organizer's voice when the tabs render */
+const SECTIONS: Array<{ value: EditorSection; label: CopyKey; icon: 'type' | 'palette' | 'motion' | 'calendar' }> = [
+  { value: 'content', label: 'edContent', icon: 'type' },
+  { value: 'design', label: 'edDesign', icon: 'palette' },
+  { value: 'motion', label: 'edMotion', icon: 'motion' },
+  { value: 'event', label: 'edEvent', icon: 'calendar' },
 ];
-const PAGES: Array<{ value: WorkbenchPage; label: string }> = [{ value: 'card', label: 'البطاقة' }, { value: 'message', label: 'الكلمة' }, { value: 'program', label: 'البرنامج' }];
+const PAGES: Array<{ value: WorkbenchPage; label: CopyKey }> = [{ value: 'card', label: 'edPageCard' }, { value: 'message', label: 'edPageMessage' }, { value: 'program', label: 'edPageProgram' }];
 const STOPS: SheetPoint[] = ['peek', 'half', 'full'];
 /** fields that raise the phone keyboard (pickers — date, time, select — do not) */
 const isTextField = (el: Element | null): el is HTMLElement =>
@@ -81,7 +83,7 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   const navigate = useNavigate();
   const loc = useLocation();
   const toast = useToast();
-  const { t } = useCopy();
+  const { t, copy } = useCopy();
   const phone = useMedia('(max-width: 959px)');
 
   const [content, setContent] = useState<InvitationDesignContent>(() => { const base = saved?.draft ?? defaultDesign(event); const selected = !saved && presetById(loc.search.get('template') ?? ''); return selected ? applyPreset(base, selected) : base; });
@@ -165,7 +167,7 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   // the event was saved (or changed in another tab): take the new values
   useEffect(() => { setEvDraft(eventFields(event)); }, [event.updatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useBlocker(save !== 'saved' || evDirty, evDirty ? 'لم تُحفظ تعديلات تفاصيل المناسبة. هل تريد المغادرة دون حفظها؟' : 'آخر تعديلاتك على الدعوة لم تُحفظ بعد. هل تريد المغادرة؟');
+  useBlocker(save !== 'saved' || evDirty, t(evDirty ? 'edLeaveEvent' : 'edLeave'));
 
   const persist = async () => {
     clearTimeout(timer.current);
@@ -195,7 +197,7 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   const flushThen = async (go: () => void) => {
     if (save !== 'saved') {
       const d = await persist();
-      if (!d) { toast({ tone: 'danger', text: 'تعذر حفظ آخر التعديلات. أعد المحاولة قبل المغادرة.' }); return; }
+      if (!d) { toast({ tone: 'danger', text: t('edSaveFailedLeave') }); return; }
     }
     go();
   };
@@ -205,17 +207,17 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   const doPublish = async () => {
     if (publishing) return;
     setPublishError(undefined);
-    const errors = validateEventFields(event, evDraft, services.clock.now());
+    const errors = validateEventFields(event, evDraft, services.clock.now(), copy);
     setEventErrors(errors);
     if (Object.keys(errors).length) {
       setSection('event');
       if (phone) setSheet('full');
-      setPublishError('راجع الحقول الموضّحة، ثم انشر الدعوة.');
+      setPublishError(t('edCheckFields'));
       requestAnimationFrame(() => { panel.current?.querySelector<HTMLElement>(`[data-event-field="${Object.keys(errors)[0]}"]`)?.focus(); });
       return;
     }
     setPublishing(true);
-    if (save !== 'saved' && !(await persist())) { setPublishing(false); setPublishError('لم نتمكن من حفظ التعديلات، لذلك لم تُنشر. أعد المحاولة.'); return; }
+    if (save !== 'saved' && !(await persist())) { setPublishing(false); setPublishError(t('edNotSavedNotPublished')); return; }
     try {
       if (evDirty) await services.events.update(event.id, {
         date: evDraft.date, time: evDraft.time,
@@ -242,10 +244,10 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
 
   const publishBtn = ps !== 'published' && !mayPublish
     // a team member sees where publishing lives and who does it, in the button's place (domain/roles)
-    ? <span className="ed-publish ed-publish-owner" role="note"><Icon name="lock" size="sm" />النشر لصاحب المناسبة</span>
+    ? <span className="ed-publish ed-publish-owner" role="note"><Icon name="lock" size="sm" />{t('edOwnerPublishes')}</span>
     : ps === 'published'
-    ? <Button variant="secondary" className="ed-publish is-done" icon="users" onClick={() => void flushThen(() => navigate(paths.guests(event.id)))}>إلى الضيوف</Button>
-    : <Button variant="primary" className="ed-publish" loading={publishing} icon="send" onClick={() => void doPublish()}>{ps === 'changed' ? 'انشر التعديلات' : 'انشر الدعوة'}</Button>;
+    ? <Button variant="secondary" className="ed-publish is-done" icon="users" onClick={() => void flushThen(() => navigate(paths.guests(event.id)))}>{t('edToGuests')}</Button>
+    : <Button variant="primary" className="ed-publish" loading={publishing} icon="send" onClick={() => void doPublish()}>{t(ps === 'changed' ? 'edPublishChanges' : 'edPublish')}</Button>;
 
   // phone sheet: three stops (peek = the section toolbar only · half · full, which still keeps a mini card above).
   // The handle follows the finger, snaps by position and velocity, a tap toggles, arrow keys step between stops.
@@ -280,30 +282,30 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   };
 
   const live = mode === 'preview' && !phone;
-  const saveLabel = save === 'error' ? <><Icon name="alert" size="sm" />تعذر الحفظ</>
-    : save === 'saved' ? <><Icon name="check" size="sm" />تم الحفظ</>
+  const saveLabel = save === 'error' ? <><Icon name="alert" size="sm" />{t('edSaveFailed')}</>
+    : save === 'saved' ? <><Icon name="check" size="sm" />{t('edSaved')}</>
     // pending and in-flight read the same, so the status does not flicker while typing
-    : <><span className="ed-save-dot" aria-hidden="true" />جارٍ الحفظ…</>;
-  const pubLabel = ps === 'published' ? 'منشورة' : ps === 'changed' ? 'تعديلات غير منشورة' : 'مسودة لم تُنشر';
+    : <><span className="ed-save-dot" aria-hidden="true" />{t('edSaving')}</>;
+  const pubLabel = t(ps === 'published' ? 'edPublished' : ps === 'changed' ? 'edChangedUnpublished' : 'edDraft');
 
   return (
     <div className={`ed ed-v3 mode-${live ? 'preview' : 'edit'} at-${sheet}${typing ? ' is-typing' : ''}`} data-sheet={sheet}>
-      <a href="#editor-controls" className="skip-link">تخطَّ إلى أدوات الدعوة</a>
+      <a href="#editor-controls" className="skip-link">{t('edSkip')}</a>
       <header className="ed-bar">
         <div className="ed-brand-cluster">
-          <button type="button" className="ed-brand" aria-label="ضيوفي — حفظ والعودة إلى المناسبة" onClick={close}><Logo height={28} /></button>
-          <button type="button" className="ed-close" aria-label="حفظ وإغلاق المحرر" onClick={close}><Icon name="back" /></button>
+          <button type="button" className="ed-brand" aria-label={t('edBrand')} onClick={close}><Logo height={28} /></button>
+          <button type="button" className="ed-close" aria-label={t('edCloseLabel')} onClick={close}><Icon name="back" /></button>
         </div>
         <div className="ed-title">
-          <h1 className="ed-h">تصميم الدعوة</h1>
+          <h1 className="ed-h">{t('edTitle')}</h1>
           <span className="ed-sub truncate">{event.title}</span>
           <span className="ed-status-line" aria-hidden="true"><span className={`ed-status-save is-${save}`}>{saveLabel}</span><span className={`ed-status-pub is-${ps}`}>{pubLabel}</span></span>
         </div>
         <div className="ed-status">
           <AccountMenu />
           <span className={`save-state is-${save}`} role="status" aria-live="polite">{saveLabel}</span>
-          {save === 'error' && <Button size="sm" onClick={() => void persist()}>أعد المحاولة</Button>}
-          <span className={`ed-pub is-${ps}`}><span className="ed-pub-dot" aria-hidden="true" />{ps === 'published' ? 'منشورة' : ps === 'changed' ? 'منشورة · تعديلات غير منشورة' : 'مسودة لم تُنشر'}</span>
+          {save === 'error' && <Button size="sm" onClick={() => void persist()}>{t('retry')}</Button>}
+          <span className={`ed-pub is-${ps}`}><span className="ed-pub-dot" aria-hidden="true" />{t(ps === 'published' ? 'edPublished' : ps === 'changed' ? 'edPublishedChanged' : 'edDraft')}</span>
         </div>
         <div className="ed-actions">
           <Button variant="secondary" icon="eye" className="ed-preview-btn" onClick={guestPreview}>{t('editorPreview')}</Button>
@@ -312,9 +314,9 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
         </div>
       </header>
 
-      <SealStamp show={justPublished} label="نُشرت دعوتك" />
+      <SealStamp show={justPublished} label={t('edJustPublished')} />
       <div className="ed-main">
-        <aside ref={panel} inert={publishing} className="ed-panel" aria-label="أدوات التصميم">
+        <aside ref={panel} inert={publishing} className="ed-panel" aria-label={t('edToolsLabel')}>
           <div className="ed-handle-row">
             <button type="button" className="ed-handle" aria-label={`لوحة التعديل: ${sheet === 'full' ? 'مكبّرة' : sheet === 'peek' ? 'مصغّرة' : 'بالمنتصف'}. اسحب أو استخدم الأسهم للأعلى والأسفل`} aria-expanded={sheet !== 'peek'}
               data-gesture-surface data-stop={sheet}
@@ -324,12 +326,12 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
             {sheet !== 'peek' && <IconButton size="sm" icon="chevron-down" className="ed-sheet-hide" label={t('editorHideTools')} onClick={() => { (document.activeElement as HTMLElement | null)?.blur?.(); beforeTyping.current = null; setSheet('peek'); }} />}
           </div>
           <div className="ed-tabs-wrap" onClick={onTabs}>
-            <Segmented label="أقسام المحرر" panels="ed" value={section} onChange={(v: EditorSection) => setSection(v)} options={SECTIONS} className="ed-tabs" />
+            <Segmented label={t('edTabsLabel')} panels="ed" value={section} onChange={(v: EditorSection) => setSection(v)} options={SECTIONS.map((s) => ({ ...s, label: t(s.label) }))} className="ed-tabs" />
           </div>
           <div className="ed-panel-body" role="tabpanel" id={`ed-${section}`} aria-labelledby={`ed-tab-${section}`} onFocusCapture={(e) => { const node = e.target as HTMLElement; if (node.closest('.ed-content-message')) setPage('message'); else if (node.closest('.ed-program-disclosure')) setPage('program'); else if (node.closest('.ed-content-names')) setPage('card'); }}>
             <span id="editor-controls" tabIndex={-1} />
-            {publishError && <Banner tone="danger" compact title="لم تُنشر الدعوة">{publishError}</Banner>}
-            {loc.search.get('first') === '1' && section === 'content' && <div className="ed-simple-intro"><Icon name="check-circle" size="sm" /><p><strong>دعوتك جاهزة للتعديل.</strong> راجع التفاصيل، ثم عاين وانشر.</p></div>}
+            {publishError && <Banner tone="danger" compact title={t('edNotPublished')}>{publishError}</Banner>}
+            {loc.search.get('first') === '1' && section === 'content' && <div className="ed-simple-intro"><Icon name="check-circle" size="sm" /><p><strong>{t('edReadyTitle')}</strong> {t('edReadyText')}</p></div>}
             {section === 'content' && <ContentSection event={event} content={content} update={update} />}
             {section === 'design' && <DesignSection event={shown} content={content} invitation={invitation} update={update} onChangeTemplate={changeTemplate} />}
             {section === 'motion' && <MotionSection content={content} invitation={invitation} update={update} sound={sound} onSound={setSound} />}
@@ -337,29 +339,29 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
           </div>
         </aside>
 
-        <section className="ed-stage" aria-label="معاينة الدعوة">
+        <section className="ed-stage" aria-label={t('edStageLabel')}>
           <div className="ed-stage-heading">
-            <div><p className="ed-stage-kicker">{live ? 'التجربة الكاملة' : 'على طاولة التصميم'}</p><p className="ed-stage-caption">{live ? 'شاهد الدعوة كما تُفتح لضيوفكم' : 'دعوتك، بكل تفاصيلها'}</p></div>
-            <Segmented label="عرض الاستوديو" value={mode} onChange={setMode} options={[{ value: 'edit', label: 'تعديل', icon: 'edit' }, { value: 'preview', label: 'معاينة', icon: 'play' }]} />
+            <div><p className="ed-stage-kicker">{t(live ? 'edFullKicker' : 'edDeskKicker')}</p><p className="ed-stage-caption">{t(live ? 'edFullCaption' : 'edDeskCaption')}</p></div>
+            <Segmented label={t('edModeLabel')} value={mode} onChange={setMode} options={[{ value: 'edit', label: t('edModeEdit'), icon: 'edit' }, { value: 'preview', label: t('edModePreview'), icon: 'play' }]} />
           </div>
-          {justPublished && <div className="ed-published" role="status"><Icon name="check-circle" size="sm" /><p><strong>دعوتك جاهزة للضيوف.</strong> تابع من «إلى الضيوف» بالأعلى: أضف قائمتك ثم شارك رابط كل دعوة.</p></div>}
+          {justPublished && <div className="ed-published" role="status"><Icon name="check-circle" size="sm" /><p><strong>{t('edGuestsReady')}</strong> {t('edGuestsReadyText')}</p></div>}
           {!live ? <>
             <div className="ed-page-swipe" key={page} ref={pager.ref} data-pager="" data-enter={pager.enter} {...pager.gesture}>
               <EditorWorkbench event={shown} content={content} page={page} motion={cardMotion} />
             </div>
             <div className="ed-stage-tools ed-canvas-bar">
-              <Segmented className="ed-canvas-tabs" size="sm" label="صفحة الدعوة المعروضة" value={page} onChange={setPage} options={PAGES} />
-              <span className="ed-canvas-caption">{CARD_NAMES[content.cardId] ?? 'دعوتك'} <span aria-hidden="true">·</span> تتغيّر مع كتابتك</span>
+              <Segmented className="ed-canvas-tabs" size="sm" label={t('edCanvasLabel')} value={page} onChange={setPage} options={PAGES.map((p) => ({ ...p, label: t(p.label) }))} />
+              <span className="ed-canvas-caption">{CARD_NAMES[content.cardId] ?? t('edYourInvitation')} <span aria-hidden="true">·</span> {t('edChangesAsYouType')}</span>
               <span className="ed-canvas-actions">
-                {page === 'card' && <IconButton size="sm" variant="ghost" icon="play" className="ed-motion-replay" label="شغّل حركة البطاقة" onClick={() => setCardMotion((n) => n + 1)} />}
-                <IconButton size="sm" variant="ghost" icon="expand" className="ed-workbench-expand" label="تكبير البطاقة" onClick={() => setExpanded(true)} />
+                {page === 'card' && <IconButton size="sm" variant="ghost" icon="play" className="ed-motion-replay" label={t('edReplayCard')} onClick={() => setCardMotion((n) => n + 1)} />}
+                <IconButton size="sm" variant="ghost" icon="expand" className="ed-workbench-expand" label={t('edExpand')} onClick={() => setExpanded(true)} />
               </span>
             </div>
           </> : <>
             <div className="ed-screen-wrap"><div className="ed-screen"><LivePreview start="intro" invitation={invitation} content={content} replayToken={replay} muted={!sound} /></div></div>
             <div className="ed-stage-tools">
-              <Button size="sm" variant="ghost" icon="play" onClick={() => setReplay((n) => n + 1)}>أعد العرض</Button>
-              <IconButton size="sm" icon={sound ? 'volume' : 'mute'} label={sound ? 'أوقف الصوت في المعاينة' : 'شغّل الصوت في المعاينة'} aria-pressed={sound} onClick={() => setSound((v) => !v)} />
+              <Button size="sm" variant="ghost" icon="play" onClick={() => setReplay((n) => n + 1)}>{t('edReplay')}</Button>
+              <IconButton size="sm" icon={sound ? 'volume' : 'mute'} label={t(sound ? 'edSoundOff' : 'edSoundOn')} aria-pressed={sound} onClick={() => setSound((v) => !v)} />
             </div>
           </>}
         </section>
