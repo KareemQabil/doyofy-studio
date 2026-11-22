@@ -8,5 +8,6 @@ export interface EngineStrings {
   [key: string]: unknown;
 }
 export declare const STRINGS: EngineStrings;
+export declare const LIVE_STRINGS: EngineStrings;
 export declare function setStringsVoice(dialect: Dialect | null | undefined): void;
 export declare function currentStrings(dialect?: Dialect): EngineStrings;

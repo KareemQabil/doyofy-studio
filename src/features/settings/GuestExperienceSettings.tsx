@@ -140,7 +140,7 @@ export function GuestExperienceSettings({ event, foodOnly = false }: { event: Ev
           <div className="gxs-phone theme-guest">
             <div className="gxs-screen">
               {foodOnly || preview === 'attend' ? (
-                asksAnything ? <section className="hub-card"><h4 className="hub-h">نعم، سنحضر — ٣ أشخاص</h4><GuestExtrasFields x={previewX} count={3} value={sample} onChange={setSample} /></section>
+                asksAnything ? <section className="hub-card"><h4 className="hub-h">سنحضر بكل سرور — ٣ أشخاص</h4><GuestExtrasFields x={previewX} count={3} value={sample} onChange={setSample} /></section>
                   : <p className="gxs-empty">لا أسئلة بعد التأكيد. يرسل الضيف رده مباشرة.</p>
               ) : null}
               {!foodOnly && preview === 'decline' && (d.gifts.enabled && d.gifts.afterDecline && previewX.gifts.items.length

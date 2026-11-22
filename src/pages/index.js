@@ -5,7 +5,7 @@
  * RSVP choices, guest count) are updated in place by the Studio so entrance animations never replay.
  */
 import { PageRegistry } from '../engine/registries.js';
-import { STRINGS as T, currentStrings } from '../data/strings.js';
+import { LIVE_STRINGS as T, currentStrings } from '../data/strings.js';
 import { localDigits } from '../data/derive.js';
 
 const e = (v) => String(v ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));

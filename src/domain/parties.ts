@@ -23,7 +23,7 @@ export const INVITATION_STATUS: Record<InvitationStatus, { label: string; tone: 
 export const SOURCE_LABEL: Record<StateSource, string> = {
   platform: 'سجلته المنصة',
   manual: 'حددته يدويًا',
-  simulated: 'محاكاة',
+  simulated: 'تجريبي',
 };
 
 export const RSVP_STATUS: Record<RsvpStatus, { label: string; tone: Tone }> = {

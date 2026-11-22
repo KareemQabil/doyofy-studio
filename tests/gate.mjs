@@ -203,7 +203,7 @@ for (const appearance of APPEARANCES) {
     try {
       await guest.goto(link.replace(/^https?:\/\/[^/]+/, BASE));
       await guest.getByRole('button', { name: 'الموعد وتأكيد الحضور مباشرة', exact: true }).click();
-      await guest.getByText('نعم، سنحضر', { exact: true }).click();
+      await guest.getByText('سنحضر بكل سرور', { exact: true }).click();
       await guest.getByRole('button', { name: 'إرسال الرد', exact: true }).click();
       await guest.locator('.hub-qr svg.qr').waitFor();
       await guest.waitForTimeout(300);

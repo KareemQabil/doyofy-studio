@@ -44,7 +44,7 @@ export function QrFullscreen({ value, code, name, title }: { value: string; code
           <QrCode value={value} size={Math.min(320, Math.round(Math.min(window.innerWidth, window.innerHeight) * 0.78))} label={`رمز QR لدخول ${name}`} />
           <p className="qrfs-code num" dir="ltr">{code}</p>
           <p className="qrfs-tip">{t('guestCodeTip')}</p>
-          <button type="button" className="qrfs-close" onClick={close}><Icon name="close" size="sm" />رجوع</button>
+          <button type="button" className="qrfs-close" onClick={close}><Icon name="close" size="sm" />{t('qrBack')}</button>
         </div>, document.body)}
     </>
   );

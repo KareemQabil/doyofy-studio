@@ -35,6 +35,7 @@ export function GoogleWalletButton({ onClick }: { onClick: () => void }) {
 
 export function WalletPreview({ view, value, demo = false }: { view: GuestView; value: string; demo?: boolean }) {
   const [open, setOpen] = useState(false);
+  const { t, n } = useCopy();
   if (!view.party || view.party.rsvpStatus !== 'confirmed') return null;
   const p = view.party;
   const ev = view.event;
@@ -43,25 +44,25 @@ export function WalletPreview({ view, value, demo = false }: { view: GuestView; 
   return <>
     <div className="gw-wrap">
       <GoogleWalletButton onClick={() => setOpen(true)} />
-      <p className="gw-note">يفتح معاينة لشكل البطاقة — لا تُضاف فعليًا.</p>
+      <p className="gw-note">{t('gwNote')}</p>
     </div>
-    <Dialog open={open} title="معاينة بطاقة Google Wallet" description="هكذا تظهر بطاقة دخولكم في المحفظة." onClose={() => setOpen(false)} size="sm" className="theme-guest wallet-dialog"
-      footer={<Button variant="primary" onClick={() => setOpen(false)}>العودة إلى رمز الدخول</Button>}>
-      <p className="wallet-disclosure" role="note">هذه معاينة فقط — لم تُضف أي بطاقة إلى Google Wallet.{demo ? ' رمز هذه النسخة للتجربة ولا يثبت حجزًا.' : ''}</p>
+    <Dialog open={open} title={t('gwTitle')} description={t('gwHint')} onClose={() => setOpen(false)} size="sm" className="theme-guest wallet-dialog"
+      footer={<Button variant="primary" onClick={() => setOpen(false)}>{t('gwBack')}</Button>}>
+      <p className="wallet-disclosure" role="note">{t('gwOnly')}{demo ? t('gwDemoCode') : ''}</p>
       <article className="wpass" aria-label={`بطاقة دخول ${p.name}`}>
         <header className="wpass-top">
           <span className="wpass-logo"><LogoMark size={20} /></span>
           <span className="wpass-issuer">ضيوفي</span>
-          <span className="wpass-kind">بطاقة دخول</span>
+          <span className="wpass-kind">{t('gwPass')}</span>
         </header>
         <h3 className="wpass-title">{ev.title}</h3>
         <dl className="wpass-fields">
-          <div><dt>التاريخ</dt><dd>{N.date(ev.date)}</dd></div>
-          <div><dt>الوقت</dt><dd>{N.time(ev.time)}</dd></div>
-          <div className="is-wide"><dt>المكان</dt><dd>{ev.venue.name}، {ev.venue.city}</dd></div>
-          <div><dt>الضيف</dt><dd><bdi>{p.name}</bdi></dd></div>
-          <div><dt>العدد</dt><dd>{N.people(p.confirmedPartySize ?? 1)}</dd></div>
-          {p.tableName && <div className="is-wide"><dt>الطاولة</dt><dd>{p.tableName}</dd></div>}
+          <div><dt>{t('gwDate')}</dt><dd>{N.date(ev.date)}</dd></div>
+          <div><dt>{t('gwTime')}</dt><dd>{N.time(ev.time)}</dd></div>
+          <div className="is-wide"><dt>{t('gwPlace')}</dt><dd>{ev.venue.name}، {ev.venue.city}</dd></div>
+          <div><dt>{t('gwGuest')}</dt><dd><bdi>{p.name}</bdi></dd></div>
+          <div><dt>{t('gwCount')}</dt><dd>{N.text(n(p.confirmedPartySize ?? 1, 'person'))}</dd></div>
+          {p.tableName && <div className="is-wide"><dt>{t('gwTable')}</dt><dd>{p.tableName}</dd></div>}
         </dl>
         <div className="wpass-code">
           <QrCode value={value} size={168} label={`رمز QR لدخول ${p.name}`} />

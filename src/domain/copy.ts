@@ -5,6 +5,9 @@ import { HOME, HOME_MORE } from './copy/home';
 import { CREATE, CREATE_MORE } from './copy/create';
 import { GUESTS } from './copy/guests';
 import { GUEST_TOOLS } from './copy/guest-tools';
+import { SEATING } from './copy/seating';
+import { GUEST } from './copy/guest';
+import { ENGINE } from './copy/engine';
 export type Dialect = 'ar' | 'ar-EG' | 'ar-SA';
 export const DIALECTS: Array<{ value: Dialect; label: string }> = [
   { value: 'ar', label: 'العربية المودرن' }, { value: 'ar-EG', label: 'المصري' }, { value: 'ar-SA', label: 'السعودي' },
@@ -29,7 +32,7 @@ const coreModern = {
   // the guest's own pages (always plural; Google's button label is its official wording in every voice)
   guestFastTrack: 'الموعد وتأكيد الحضور', guestSendReply: 'إرسال الرد', guestDemo: 'نسخة تجريبية', guestAddToWallet: 'أضف إلى Google Wallet',
   guestOpen: 'افتحوا الدعوة', guestSealHint: 'اسحبوا الختم للأعلى', guestSealLabel: 'افتحوا الدعوة: اضغطوا على الختم أو اسحبوه للأعلى', guestSkipToDetails: 'الموعد وتأكيد الحضور مباشرة',
-  guestAttendQuestion: 'هل ستحضرون؟', guestAccept: 'نعم، سنحضر', guestDecline: 'نعتذر عن الحضور', guestChooseReply: 'اختاروا الحضور أو الاعتذار', guestNameRequired: 'اكتبوا الاسم ليعرف صاحب المناسبة من ردّ.',
+  guestAttendQuestion: 'هل ستحضرون؟', guestAccept: 'سنحضر بكل سرور', guestDecline: 'نعتذر عن الحضور', guestChooseReply: 'اختاروا الحضور أو الاعتذار', guestNameRequired: 'اكتبوا الاسم ليعرف صاحب المناسبة من ردّ.',
   guestConfirmed: 'حضوركم مؤكد', guestDeclined: 'سجّلنا اعتذاركم', guestReplyArrived: 'وصل ردكم', guestEditReply: 'تعديل الرد', guestShowCode: 'اعرضوا الرمز على فريق الاستقبال عند الوصول.',
   guestZoomCode: 'اضغطوا لتكبيره عند الباب', guestCodeTip: 'ارفعوا إضاءة الشاشة إن لزم، واسحبوا لأسفل للرجوع.', guestWatchAgain: 'شاهدوا الدعوة مرة أخرى', guestYourDetails: 'تفاصيل حضوركم',
   autoSeat: 'توزيع تلقائي', autoSeatTitle: 'اقتراح التوزيع', autoSeatHint: 'راجع الاقتراح قبل اعتماده: كل دعوة على طاولة واحدة، وكل جهة على طاولات متجاورة. لن يتغيّر شيء قبل الاعتماد.',
@@ -86,11 +89,11 @@ const CORE = partly(coreModern, coreEgyptian, coreSaudi);
  * `voiced` groups spell every key in every voice, `partly` groups fall back to modern Arabic (see copy/group.ts).
  */
 export const COPY_GROUPS = {
-  core: CORE, home: HOME, homeMore: HOME_MORE, create: CREATE, createMore: CREATE_MORE, guests: GUESTS, guestTools: GUEST_TOOLS,
+  core: CORE, home: HOME, homeMore: HOME_MORE, create: CREATE, createMore: CREATE_MORE, guests: GUESTS, guestTools: GUEST_TOOLS, seating: SEATING, guest: GUEST, engine: ENGINE,
 } as const;
 
 const modern = {
-  ...CORE.modern, ...HOME.modern, ...HOME_MORE.modern, ...CREATE.modern, ...CREATE_MORE.modern, ...GUESTS.modern, ...GUEST_TOOLS.modern,
+  ...CORE.modern, ...HOME.modern, ...HOME_MORE.modern, ...CREATE.modern, ...CREATE_MORE.modern, ...GUESTS.modern, ...GUEST_TOOLS.modern, ...SEATING.modern, ...GUEST.modern, ...ENGINE.modern,
 };
 export type CopyKey = keyof typeof modern;
 export type Copy = { readonly [K in CopyKey]: string };

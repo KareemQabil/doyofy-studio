@@ -124,7 +124,7 @@ export async function run() {
   // both paths ask the same questions: the direct form and the cinematic follow-up sheet share one set
   const withFood = portableView({ ...event, date: '2099-08-12' }, defaultDesign(event), p);
   assert.ok(withFood.experience, 'the seeded wedding asks food');
-  const labels = () => [...document.querySelectorAll('legend, .field-label, label')].map((x) => x.textContent?.replace(/\s+/g, ' ').trim()).filter((x) => x && !/هل ستحضرون|عدد الحضور|نعم، سنحضر|نعتذر/.test(x)).sort();
+  const labels = () => [...document.querySelectorAll('legend, .field-label, label')].map((x) => x.textContent?.replace(/\s+/g, ' ').trim()).filter((x) => x && !/هل ستحضرون|عدد الحضور|سنحضر بكل سرور|نعتذر/.test(x)).sort();
   const sheetRoot = createRoot(document.getElementById('root')!);
   await act(async () => sheetRoot.render(wrap(<FollowUpSheet view={withFood} attending count={2} onSend={async () => null} onBack={() => {}} />))); await settle();
   const cinematic = labels();

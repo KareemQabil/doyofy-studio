@@ -12,11 +12,11 @@ export function DemoNote({ compact = false, pass = false, className = '' }: { co
     <details className={`guest-demo${compact ? ' is-compact' : ''} ${className}`}>
       <summary>
         <Icon name="info" size="sm" />
-        <span className="guest-demo-line"><strong>{t('guestDemo')}</strong>{!compact && <> · الرد يبقى على جهازكم</>}</span>
+        <span className="guest-demo-line"><strong>{t('guestDemo')}</strong>{!compact && t('demoStays')}</span>
         <Icon name="chevron-down" size="sm" className="guest-demo-chev" />
       </summary>
       <p className="guest-demo-more">
-        في هذه النسخة يُحفظ ردّكم على هذا الجهاز فقط ولا يصل إلى صاحب المناسبة.{pass ? ' رمز الدخول هنا للتجربة ولا يثبت حجزًا.' : ''}
+        {t('demoOnly')}{pass ? t('demoPass') : ''}
       </p>
     </details>
   );

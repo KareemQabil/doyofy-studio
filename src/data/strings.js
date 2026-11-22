@@ -15,13 +15,13 @@ export const STRINGS = {
   rsvpTitle: { ar: 'تأكيد الحضور', en: 'KINDLY REPLY' },
   yourName: { ar: 'الاسم', en: 'Your name' },
   namePlaceholder: 'اكتبوا الاسم · Type your name',
-  accept: { ar: 'نعم، سنحضر', en: 'Joyfully accepts' },
+  accept: { ar: 'سنحضر بكل سرور', en: 'Joyfully accepts' },
   decline: { ar: 'نعتذر عن الحضور', en: 'Regretfully declines' },
   guests: { ar: 'إجمالي الحاضرين', en: 'Total attending' },
   guestsHint: 'يشملكم مع المرافقين',
   sound: 'موسيقى الدعوة',
   sealSend: { ar: 'إرسال الرد', en: 'Send reply' },
-  need: { ar: 'نرجو كتابة الاسم واختيار الرد', en: 'Add your name and a reply' },
+  need: { ar: 'اكتبوا الاسم واختاروا الرد', en: 'Add your name and a reply' },
   tapToOpen: { ar: 'المسوا البطاقة لفتحها', en: 'Tap the card to open' },
   honour: 'REQUEST THE HONOUR OF YOUR PRESENCE',
   honourSingle: 'YOU ARE WARMLY INVITED',
@@ -44,8 +44,18 @@ export function setStringsVoice(dialect) { voice = dialect === 'ar-EG' || dialec
  */
 export function currentStrings(dialect = voice ?? currentDialect()) {
   const k = copyFor(dialect);
-  const base = { ...STRINGS, accept: { ...STRINGS.accept, ar: k.guestAccept }, decline: { ...STRINGS.decline, ar: k.guestDecline }, sealSend: { ...STRINGS.sealSend, ar: k.guestSendReply } };
-  if (dialect === 'ar-EG') return { ...base, tapToOpen: { ...STRINGS.tapToOpen, ar: 'دوسوا على الكارت وافتحوا الدعوة' }, watchAgain: { ...STRINGS.watchAgain, ar: 'شوفوها تاني' }, thanks: { yes: { ...STRINGS.thanks.yes, ar: 'مستنيينكم' }, no: { ...STRINGS.thanks.no, ar: 'هنفتقدكم' } }, need: { ...STRINGS.need, ar: 'اكتبوا الاسم واختاروا ردكم' } };
-  if (dialect === 'ar-SA') return { ...base, tapToOpen: { ...STRINGS.tapToOpen, ar: 'اضغطوا على البطاقة وافتحوا الدعوة' }, watchAgain: { ...STRINGS.watchAgain, ar: 'شوفوها مرة ثانية' }, thanks: { yes: { ...STRINGS.thanks.yes, ar: 'بانتظاركم' }, no: { ...STRINGS.thanks.no, ar: 'بنفتقدكم' } }, need: { ...STRINGS.need, ar: 'اكتبوا الاسم واختاروا ردّكم' } };
-  return base;
+  const ar = (pair, text) => ({ ...pair, ar: text });
+  return {
+    ...STRINGS,
+    saveTheDate: ar(STRINGS.saveTheDate, k.engSaveTheDate), countingDown: ar(STRINGS.countingDown, k.engCountingDown), countingDownSingle: ar(STRINGS.countingDownSingle, k.engCountingDownSingle),
+    addToCalendar: ar(STRINGS.addToCalendar, k.engAddToCalendar), theEvening: ar(STRINGS.theEvening, k.engProgramme), theVenue: ar(STRINGS.theVenue, k.engVenue),
+    directions: ar(STRINGS.directions, k.engDirections), rsvpTitle: ar(STRINGS.rsvpTitle, k.engRsvpTitle), yourName: ar(STRINGS.yourName, k.engYourName),
+    namePlaceholder: `${k.engNamePlaceholder} · Type your name`, guests: ar(STRINGS.guests, k.engGuests), guestsHint: k.engGuestsHint,
+    accept: ar(STRINGS.accept, k.guestAccept), decline: ar(STRINGS.decline, k.guestDecline), sealSend: ar(STRINGS.sealSend, k.guestSendReply),
+    need: ar(STRINGS.need, k.engNeed), tapToOpen: ar(STRINGS.tapToOpen, k.engTapToOpen), watchAgain: ar(STRINGS.watchAgain, k.engWatchAgain),
+    thanks: { yes: ar(STRINGS.thanks.yes, k.engThanksYes), no: ar(STRINGS.thanks.no, k.engThanksNo) },
+  };
 }
+
+/** the engine's pages read their words when they render, so a page drawn for a guest link speaks that link's voice */
+export const LIVE_STRINGS = new Proxy(STRINGS, { get: (_, key) => currentStrings()[key] });

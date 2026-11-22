@@ -35,7 +35,7 @@ const mapUrl = (v: GuestView) => v.event.venue.mapUrl || `https://www.google.com
 
 export function GuestHub({ view, code, submission, onView, onReplay, guestApi, demo = false }: { view: GuestView; code: string | null; submission: Submission; onView: (v: GuestView) => void; onReplay: () => void; guestApi?: GuestApi; demo?: boolean }) {
   const now = useNow(60000);
-  const { t } = useCopy();
+  const { t, n } = useCopy();
   const p = view.party;
   const names = resolvedNames(view.event, view.design);
   const today = localDateOf(now, view.event.timeZone);
@@ -71,13 +71,13 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
       <p className="hub-kicker">{view.event.title}</p>
       <h1 className="hub-names">{names.a}{isCoupleEvent(view.event.type) && names.b ? <> <span className="hub-amp">و</span> {names.b}</> : null}</h1>
       <p className="hub-date">{N.join(N.date(view.event.date), N.time(view.event.time))}</p>
-      {view.phase !== 'after' && <p className="hub-count">{days > 0 ? N.text(countdownLabel(view.event.date, today)) : days === 0 ? 'اليوم!' : ''}</p>}
+      {view.phase !== 'after' && <p className="hub-count">{days > 0 ? N.text(countdownLabel(view.event.date, today)) : days === 0 ? t('ghToday') : ''}</p>}
     </header>
   );
 
   return (
     <main className="guest-page theme-guest">
-      <SealStamp key={saved} show={replied} label={demo ? 'حُفظ ردكم للتجربة' : p?.rsvpStatus === 'declined' ? 'وصل اعتذاركم' : t('guestReplyArrived')} tone={p?.rsvpStatus === 'declined' ? 'charcoal' : 'gold'} />
+      <SealStamp key={saved} show={replied} label={demo ? t('ghDemoSaved') : p?.rsvpStatus === 'declined' ? t('ghDeclineArrived') : t('guestReplyArrived')} tone={p?.rsvpStatus === 'declined' ? 'charcoal' : 'gold'} />
       <div className="hub">
         {demo && <DemoNote pass={pass} />}
 
@@ -85,15 +85,15 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
         {pass && p && (
           <section className="hub-card hub-qr hub-pass" aria-labelledby="hub-status">
             <p className="hub-pass-kicker">{view.event.title}</p>
-            <h2 id="hub-status" ref={result} tabIndex={-1} className="hub-pass-title"><Icon name="check-circle" />{p.checkedInCount > 0 ? 'أهلًا وسهلًا!' : t('guestConfirmed')}</h2>
-            <p className="hub-pass-who"><bdi>{p.name}</bdi>{sep}{p.checkedInCount > 0 ? <>تم تسجيل دخول {N.peopleOf(p.checkedInCount)}{p.confirmedPartySize && p.checkedInCount < p.confirmedPartySize ? ` من ${N.num(p.confirmedPartySize)}` : ''}</> : N.people(p.confirmedPartySize ?? 1)}</p>
+            <h2 id="hub-status" ref={result} tabIndex={-1} className="hub-pass-title"><Icon name="check-circle" />{p.checkedInCount > 0 ? t('ghWelcome') : t('guestConfirmed')}</h2>
+            <p className="hub-pass-who"><bdi>{p.name}</bdi>{sep}{p.checkedInCount > 0 ? <>{t('ghCheckedIn', { people: N.text(n(p.checkedInCount, 'person', true)) })}{p.confirmedPartySize && p.checkedInCount < p.confirmedPartySize ? t('ghOf', { n: N.num(p.confirmedPartySize) }) : ''}</> : N.text(n(p.confirmedPartySize ?? 1, 'person'))}</p>
             <QrFullscreen value={`DOYOFY:${p.code}`} code={p.code} name={p.name} title={view.event.title} />
             <p className="hub-code num" dir="ltr">{p.code}</p>
             <p className="muted t-sm">{t('guestShowCode')}</p>
-            {p.tableName && <p className="hub-table"><Icon name="table" size="sm" />طاولتكم: <strong>{p.tableName}</strong></p>}
-            {view.experience && p.meals?.length ? <p className="gx-mine">العشاء: {N.text(mealSummary(view.experience, p.meals, sep))}</p> : null}
-            {p.dietary?.needs.length ? <p className="gx-mine">نراعي: {dietaryLabel(p.dietary)}</p> : null}
-            {p.companionNames?.length ? <p className="faint t-sm">المرافقون: {p.companionNames.join('، ')}</p> : null}
+            {p.tableName && <p className="hub-table"><Icon name="table" size="sm" />{t('ghYourTable')} <strong>{p.tableName}</strong></p>}
+            {view.experience && p.meals?.length ? <p className="gx-mine">{t('ghDinner', { meals: N.text(mealSummary(view.experience, p.meals, sep)) })}</p> : null}
+            {p.dietary?.needs.length ? <p className="gx-mine">{t('ghWeCare', { needs: dietaryLabel(p.dietary) })}</p> : null}
+            {p.companionNames?.length ? <p className="faint t-sm">{t('ghCompanions', { names: p.companionNames.join('، ') })}</p> : null}
             <WalletPreview view={view} value={`DOYOFY:${p.code}`} demo={demo} />
             {view.canEdit && <Button variant="ghost" size="sm" icon="edit" onClick={() => setEditing(true)}>{t('guestEditReply')}</Button>}
           </section>
@@ -101,7 +101,7 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
 
         {head}
 
-        {failed && <Banner tone="danger" title={demo ? 'لم يُحفظ ردكم' : 'لم يصل ردكم'}>{submission.error} جرّبوا مرة أخرى.</Banner>}
+        {failed && <Banner tone="danger" title={t(demo ? 'ghNotSaved' : 'ghNotArrived')}>{submission.error} {t('ghTryAgain')}</Banner>}
 
         {/* ---------------- reply status (everything but the entry pass) */}
         {!pass && (
@@ -109,43 +109,43 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
             {!p ? (
               (submission?.ok || generalSubmitted) && !editingGeneral ? (
                 <div className="stack gap-2">
-                  <h2 id="hub-status" ref={result} tabIndex={-1} className="hub-h">شكرًا{submission?.ok && submission.name ? <> <bdi>{submission.name}</bdi></> : generalSubmitted ? <> <bdi>{generalSubmitted}</bdi></> : ''}، {demo ? 'حُفظ ردكم' : t('guestReplyArrived')}</h2>
+                  <h2 id="hub-status" ref={result} tabIndex={-1} className="hub-h">{t('ghThanks')}{submission?.ok && submission.name ? <> <bdi>{submission.name}</bdi></> : generalSubmitted ? <> <bdi>{generalSubmitted}</bdi></> : ''}، {demo ? t('ghSaved') : t('guestReplyArrived')}</h2>
                   {generalReply && <p className="muted">{generalReply.attending ? `${t('guestAccept')}${sep}${N.people(generalReply.count)}` : t('guestDecline')}</p>}
-                  <p className="muted">{demo ? 'حُفظ ردّكم على هذا الجهاز فقط.' : 'سيراجع صاحب المناسبة ردكم ويطابقه مع قائمة الضيوف، ثم يمكنه مشاركة رابطكم الشخصي معكم.'}</p>
+                  <p className="muted">{t(demo ? 'ghSavedHere' : 'ghReview')}</p>
                   {generalReply && view.canEdit && <div><Button variant="secondary" icon="edit" onClick={() => setEditingGeneral(true)}>{t('guestEditReply')}</Button></div>}
                 </div>
               ) : (
-                <div className="stack gap-4"><h2 id="hub-status" className="hub-h">نسعد بحضوركم</h2>{view.canEdit
+                <div className="stack gap-4"><h2 id="hub-status" className="hub-h">{t('ghHappy')}</h2>{view.canEdit
                   ? <GeneralResponse view={view} N={N} guestApi={guestApi} initial={editingGeneral ? generalReply : null} onCancel={editingGeneral ? () => setEditingGeneral(false) : undefined}
                     onSaved={(v, reply) => { onView(v); setGeneralSubmitted(reply.name); setGeneralReply(reply); setEditingGeneral(false); setSaved((n) => n + 1); }} />
-                  : <p className="muted">انتهت فترة تأكيد الحضور. تواصلوا مع صاحب المناسبة.</p>}</div>
+                  : <p className="muted">{t('ghClosed')}</p>}</div>
               )
             ) : p.checkedInCount > 0 ? (
               <div className="hub-status is-in">
                 <Icon name="check-circle" size="lg" />
-                <div><h2 id="hub-status" ref={result} tabIndex={-1} className="hub-h">أهلًا وسهلًا!</h2><p className="muted">تم تسجيل دخول {N.peopleOf(p.checkedInCount)}{p.confirmedPartySize && p.checkedInCount < p.confirmedPartySize ? ` من ${N.num(p.confirmedPartySize)}` : ''}.</p></div>
+                <div><h2 id="hub-status" ref={result} tabIndex={-1} className="hub-h">{t('ghWelcome')}</h2><p className="muted">{t('ghCheckedIn', { people: N.text(n(p.checkedInCount, 'person', true)) })}{p.confirmedPartySize && p.checkedInCount < p.confirmedPartySize ? t('ghOf', { n: N.num(p.confirmedPartySize) }) : ''}.</p></div>
               </div>
             ) : p.rsvpStatus === 'confirmed' ? (
               <div className="hub-status is-yes">
                 <Icon name="check-circle" size="lg" />
                 <div><h2 id="hub-status" ref={result} tabIndex={-1} className="hub-h">{t('guestConfirmed')}</h2><p className="muted"><bdi>{p.name}</bdi>{sep}{N.people(p.confirmedPartySize ?? 1)}</p>
-                  {view.experience && p.meals?.length ? <p className="gx-mine">العشاء: {N.text(mealSummary(view.experience, p.meals, sep))}</p> : null}
-                  {p.dietary?.needs.length ? <p className="gx-mine">نراعي: {dietaryLabel(p.dietary)}</p> : null}</div>
+                  {view.experience && p.meals?.length ? <p className="gx-mine">{t('ghDinner', { meals: N.text(mealSummary(view.experience, p.meals, sep)) })}</p> : null}
+                  {p.dietary?.needs.length ? <p className="gx-mine">{t('ghWeCare', { needs: dietaryLabel(p.dietary) })}</p> : null}</div>
               </div>
             ) : p.rsvpStatus === 'declined' ? (
               <div className="hub-status is-no">
                 <Icon name="envelope" size="lg" />
-                <div><h2 id="hub-status" ref={result} tabIndex={-1} className="hub-h">{t('guestDeclined')}</h2><p className="muted">نفتقدكم{view.canEdit ? '. إن تغيّرت الظروف يمكنكم تعديل الرد.' : '.'}</p></div>
+                <div><h2 id="hub-status" ref={result} tabIndex={-1} className="hub-h">{t('guestDeclined')}</h2><p className="muted">{t('ghMissYou')}{view.canEdit ? t('ghCanChange') : '.'}</p></div>
               </div>
             ) : (
-              <div><h2 id="hub-status" className="hub-h">لم تردّوا بعد</h2><p className="muted">الدعوة تشمل {N.peopleOf(p.maxPartySize)}.</p></div>
+              <div><h2 id="hub-status" className="hub-h">{t('ghNotYet')}</h2><p className="muted">{t('ghIncludes', { people: N.text(n(p.maxPartySize, 'person', true)) })}</p></div>
             )}
 
-            {p && p.rsvpStatus === 'confirmed' && p.tableName && <p className="hub-table"><Icon name="table" size="sm" />طاولتكم: <strong>{p.tableName}</strong></p>}
-            {p?.companionNames?.length && p.rsvpStatus === 'confirmed' ? <p className="faint t-sm">المرافقون: {p.companionNames.join('، ')}</p> : null}
+            {p && p.rsvpStatus === 'confirmed' && p.tableName && <p className="hub-table"><Icon name="table" size="sm" />{t('ghYourTable')} <strong>{p.tableName}</strong></p>}
+            {p?.companionNames?.length && p.rsvpStatus === 'confirmed' ? <p className="faint t-sm">{t('ghCompanions', { names: p.companionNames.join('، ') })}</p> : null}
 
-            {p && view.canEdit && !editing && <Button variant="secondary" icon="edit" onClick={() => setEditing(true)}>{p.rsvpStatus === 'pending' ? 'ردّوا الآن' : t('guestEditReply')}</Button>}
-            {p && !view.canEdit && view.phase !== 'after' && p.rsvpStatus !== 'pending' && <p className="faint t-sm">بدأت المناسبة — لتعديل الرد تواصلوا مع صاحب المناسبة.</p>}
+            {p && view.canEdit && !editing && <Button variant="secondary" icon="edit" onClick={() => setEditing(true)}>{p.rsvpStatus === 'pending' ? t('ghReplyNow') : t('guestEditReply')}</Button>}
+            {p && !view.canEdit && view.phase !== 'after' && p.rsvpStatus !== 'pending' && <p className="faint t-sm">{t('ghStarted')}</p>}
             {p && editing && view.canEdit && <RsvpForm view={view} N={N} code={code!} guestApi={guestApi} onSaved={(v) => { onView(v); setEditing(false); setSaved((n) => n + 1); }} onRefresh={onView} onCancel={p.rsvpStatus !== 'pending' ? () => setEditing(false) : undefined} />}
           </section>
         )}
@@ -155,21 +155,21 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
 
         {/* ---------------- details */}
         <section className="hub-card" aria-labelledby="hub-where">
-          <h2 id="hub-where" className="hub-h">الموعد والمكان</h2>
+          <h2 id="hub-where" className="hub-h">{t('ghWhenWhere')}</h2>
           <ul className="hub-facts">
             <li><Icon name="calendar" size="sm" /><span>{N.date(view.event.date)}<br /><span className="faint">{N.time(view.event.time)}</span></span></li>
             <li><Icon name="pin" size="sm" /><span>{view.event.venue.name}<br /><span className="faint">{view.event.venue.city}</span></span></li>
           </ul>
           <div className="row wrap gap-2">
             {/* one gold primary per screen: while a reply form is open, sending it is the primary, the way there is not */}
-            <a className={`btn ${formOpen ? 'btn-secondary' : 'btn-primary'} btn-md`} href={mapUrl(view)} target="_blank" rel="noopener noreferrer"><Icon name="pin" size="sm" />الاتجاهات</a>
-            {view.phase === 'before' && <a className="btn btn-secondary btn-md" href={calendarUrl(view)} target="_blank" rel="noopener noreferrer"><Icon name="calendar" size="sm" />أضف إلى التقويم</a>}
+            <a className={`btn ${formOpen ? 'btn-secondary' : 'btn-primary'} btn-md`} href={mapUrl(view)} target="_blank" rel="noopener noreferrer"><Icon name="pin" size="sm" />{t('ghDirections')}</a>
+            {view.phase === 'before' && <a className="btn btn-secondary btn-md" href={calendarUrl(view)} target="_blank" rel="noopener noreferrer"><Icon name="calendar" size="sm" />{t('ghCalendar')}</a>}
           </div>
         </section>
 
         {view.design.program.length > 0 && (
           <section className="hub-card" aria-labelledby="hub-prog">
-            <h2 id="hub-prog" className="hub-h">برنامج المناسبة</h2>
+            <h2 id="hub-prog" className="hub-h">{t('ghProgramme')}</h2>
             <ol className="hub-program">
               {view.design.program.filter((x) => x.time && x.ar).map((x, i) => <li key={i}><span className="num" dir={N.digits === 'arab' ? 'rtl' : 'ltr'}>{N.time(x.time)}</span><span>{x.ar}</span></li>)}
             </ol>
@@ -187,7 +187,7 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
 
 function RsvpForm({ view, N, code, onSaved, onRefresh, onCancel, guestApi }: { view: GuestView; N: InvitationNumbers; code: string; onSaved: (v: GuestView) => void; onRefresh: (v: GuestView) => void; onCancel?: () => void; guestApi?: GuestApi }) {
   const services = useServices();
-  const { t } = useCopy();
+  const { t, n: countOf } = useCopy();
   const p = view.party!;
   const [attending, setAttending] = useState<'yes' | 'no' | null>(p.rsvpStatus === 'confirmed' ? 'yes' : p.rsvpStatus === 'declined' ? 'no' : null);
   // a first reply starts at the party's whole allowance (who is invited usually comes); a change starts from the last answer
@@ -225,8 +225,8 @@ function RsvpForm({ view, N, code, onSaved, onRefresh, onCancel, guestApi }: { v
         options={[{ value: 'yes', label: t('guestAccept') }, { value: 'no', label: t('guestDecline') }]} />
       {yes && (
         <>
-          <Stepper label="عدد الحضور" value={count} min={1} max={p.maxPartySize} format={N.num} onChange={(c) => { setCount(c); setMore((v) => ({ ...v, extras: fitExtras(v.extras, c) })); }} />
-          <p className="faint t-sm">يشملكم مع المرافقين، والدعوة تشمل حتى {N.peopleOf(p.maxPartySize)}.</p>
+          <Stepper label={t('ghCount')} value={count} min={1} max={p.maxPartySize} format={N.num} onChange={(c) => { setCount(c); setMore((v) => ({ ...v, extras: fitExtras(v.extras, c) })); }} />
+          <p className="faint t-sm">{t('ghCountHint', { people: N.text(countOf(p.maxPartySize, 'person', true)) })}</p>
           {err && <p className="field-error">{RSVP_ERROR_TEXT[err]}</p>}
         </>
       )}
@@ -265,11 +265,11 @@ function GeneralResponse({ view, N, onSaved, onCancel, initial, guestApi }: { vi
       onSaved(v, { id: v.responseId, name: name.trim(), attending: yes, count: n, more });
     } catch (e) { setError(errorMessage(e)); } finally { setBusy(false); }
   }}>
-    <Field label="الاسم" required error={nameErr}><Input ref={nameInput} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></Field>
+    <Field label={t('ghName')} required error={nameErr}><Input ref={nameInput} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></Field>
     <ChoiceGroup label={t('guestAttendQuestion')} value={answer} onChange={(v: 'yes' | 'no') => setAnswer(v)} error={answerErr} options={[{ value: 'yes', label: t('guestAccept') }, { value: 'no', label: t('guestDecline') }]} />
-    {yes && <><Stepper label="عدد الحضور" value={count} min={1} max={view.maxGuests} format={N.num} onChange={(c) => { setCount(c); setMore((v) => ({ ...v, extras: fitExtras(v.extras, c) })); }} /><p className="faint t-sm">يشملكم مع المرافقين.</p></>}
+    {yes && <><Stepper label={t('ghCount')} value={count} min={1} max={view.maxGuests} format={N.num} onChange={(c) => { setCount(c); setMore((v) => ({ ...v, extras: fitExtras(v.extras, c) })); }} /><p className="faint t-sm">{t('ghWithCompanions')}</p></>}
     {answer && <FollowUpFields view={view} attending={yes} count={n} value={more} onChange={setMore} error={tried ? xErr : null} />}
-    <p className="field-hint">يراجع صاحب المناسبة ردّكم ويطابقه مع قائمة الضيوف.</p>
+    <p className="field-hint">{t('ghMatches')}</p>
     {error && <Banner tone="danger">{error}</Banner>}
     <div className="row wrap gap-2">
       <Button variant="primary" type="submit" loading={busy}>{t('guestSendReply')}</Button>

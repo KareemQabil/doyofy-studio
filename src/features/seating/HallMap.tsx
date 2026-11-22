@@ -13,6 +13,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import type { InvitationParty } from '../../domain/types';
 import { checkAssign, type TableOccupancy } from '../../domain/seating';
 import { seatsFor } from '../../domain/parties';
+import { useCopy } from '../../ui/copy';
 import { people } from '../../domain/format';
 import { Icon } from '../../ui';
 import { haptic } from '../../ui/motion/motion';
@@ -47,6 +48,7 @@ export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragO
   onDropParty?: (t: TableOccupancy) => (e: React.DragEvent) => void; dragOver?: string | null; onDragOverTable?: (id: string | null) => void;
   showFood?: boolean; orderMode?: boolean; onReorder?: (source: string, target: string) => void; onOrderDone?: () => void;
 }) {
+  const { t } = useCopy();
   const [orderSource, setOrderSource] = useState<string | null>(null);
   const [orderTarget, setOrderTarget] = useState<string | null>(null);
   const touchOrder = useRef<{ pointerId: number; source: string; target: string } | null>(null);
@@ -56,15 +58,15 @@ export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragO
     <section className="hall seat-overview" aria-label="خريطة الطاولات وتصفية القائمة">
       <header className="hall-head">
         <div>
-          <p className="hall-kicker"><Icon name="table" size="sm" />خريطة القاعة</p>
-          <h2><span className="num">{used}</span> من <span className="num">{total}</span> مقعدًا مشغولة</h2>
+          <p className="hall-kicker"><Icon name="table" size="sm" />{t('hallKicker')}</p>
+          <h2>{t('hallUsed', { used, total })}</h2>
         </div>
-        <button type="button" className={`hall-all${focus === 'all' ? ' is-on' : ''}`} aria-pressed={focus === 'all'} onClick={() => onFocus('all')}>كل الطاولات</button>
+        <button type="button" className={`hall-all${focus === 'all' ? ' is-on' : ''}`} aria-pressed={focus === 'all'} onClick={() => onFocus('all')}>{t('hallAll')}</button>
       </header>
-      <div className="hall-stage" aria-hidden="true"><span>المنصّة</span></div>
+      <div className="hall-stage" aria-hidden="true"><span>{t('hallStage')}</span></div>
       {/* the keyboard sentence only where a keyboard is likely (seating-v2.css hides it on touch screens) */}
-      {orderMode && <div className="hall-order-bar"><p className="hall-order-hint" id="hall-order-help">اسحب طاولة لتغيير ترتيبها.<span className="hall-order-keys"> بالكيبورد: استخدم الأسهم على الطاولة.</span></p>
-        {onOrderDone && <button type="button" className="hall-all is-on" onClick={onOrderDone}>إنهاء الترتيب</button>}</div>}
+      {orderMode && <div className="hall-order-bar"><p className="hall-order-hint" id="hall-order-help">{t('hallOrderHint')}<span className="hall-order-keys">{t('hallOrderKeys')}</span></p>
+        {onOrderDone && <button type="button" className="hall-all is-on" onClick={onOrderDone}>{t('seatOrderDone')}</button>}</div>}
       <div className={`hall-floor${orderMode ? ' is-ordering' : ''}`} style={{ '--hall-n': tables.length } as CSSProperties}>
         {tables.map((o, i) => (
           <button key={o.table.id} type="button" style={{ '--hall-i': i } as CSSProperties}
@@ -86,11 +88,11 @@ export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragO
             <span className="hall-table-art"><TableDisc o={o} /><strong className="hall-count num">{o.used}<small>/{o.table.capacity}</small></strong>
               {showFood && o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) && <span className="hall-allergy" aria-hidden="true"><Icon name="alert" size="sm" /></span>}</span>
             <span className="hall-name">{o.table.name}</span>
-            <span className="hall-status">{o.over ? `زيادة ${-o.remaining}` : o.remaining === 0 ? 'ممتلئة' : `${o.remaining} متاح`}</span>
+            <span className="hall-status">{o.over ? t('hallExtra', { n: -o.remaining }) : o.remaining === 0 ? t('hallFull') : t('hallFree', { n: o.remaining })}</span>
           </button>
         ))}
       </div>
-      <p className="hall-note">ترتيب للعرض فقط — ليس مخطط القاعة الفعلي.</p>
+      <p className="hall-note">{t('hallNote')}</p>
     </section>
   );
 }
@@ -100,15 +102,16 @@ export function SeatDock({ party, tables, hover, onPick, onCancel, onList }: {
   party: InvitationParty; tables: TableOccupancy[]; hover: string | null; onPick: (t: TableOccupancy) => void; onCancel: () => void; onList: () => void;
 }) {
   const need = seatsFor(party);
+  const { t, n } = useCopy();
   const strip = useRef<HTMLDivElement>(null);
   // keep the hovered destination in view while dragging along the strip
   useEffect(() => { if (hover) strip.current?.querySelector(`[data-table="${CSS.escape(hover)}"]`)?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' }); }, [hover]);
   return (
     <div className="seat-dock" onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onCancel(); } }} role="dialog" aria-label={`اختر طاولة لـ${party.primaryGuestName}`}>
       <div className="seat-dock-head">
-        <span className="seat-dock-chip"><b>{party.primaryGuestName}</b> · {people(need)}</span>
-        <span className="seat-dock-hint">{hover ? 'أفلِت لتأكيد النقل' : 'اضغط طاولة أو اسحب إليها'}</span>
-        <button type="button" className="seat-dock-list" onClick={onList}>قائمة</button>
+        <span className="seat-dock-chip"><b>{party.primaryGuestName}</b> · {n(need, 'person')}</span>
+        <span className="seat-dock-hint">{t(hover ? 'dockDrop' : 'dockHint')}</span>
+        <button type="button" className="seat-dock-list" onClick={onList}>{t('dockList')}</button>
         <button type="button" className="seat-dock-cancel" onClick={onCancel} aria-label="إلغاء النقل"><Icon name="close" size="sm" /></button>
       </div>
       <div className="seat-dock-strip" ref={strip}>
@@ -123,7 +126,7 @@ export function SeatDock({ party, tables, hover, onPick, onCancel, onList }: {
               onClick={() => onPick(o)}>
               <span className="hall-table-art"><TableDisc o={o} preview={hover === o.table.id && !current ? after : undefined} /><strong className="hall-count num">{hover === o.table.id && !current ? after : o.used}<small>/{o.table.capacity}</small></strong></span>
               <span className="hall-name">{o.table.name}</span>
-              <span className="hall-status">{current ? 'الحالية' : check.ok ? `→ ${after}/${o.table.capacity}` : 'لا تتسع'}</span>
+              <span className="hall-status">{current ? t('dockCurrent') : check.ok ? `→ ${after}/${o.table.capacity}` : t('dockNoFit')}</span>
             </button>
           );
         })}

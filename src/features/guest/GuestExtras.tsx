@@ -56,11 +56,12 @@ export function fitExtras(v: ExtrasValue, count: number): ExtrasValue {
 }
 
 export function GuestExtrasFields({ x, count, value, onChange, error }: { x: GuestExperience; count: number; value: ExtrasValue; onChange: (v: ExtrasValue) => void; error?: { field: 'meals' | 'dietary'; text: string } | null }) {
+  const { t } = useCopy();
   return (
     <div className="gx">
       {asksMeals(x) && <MealsField x={x} count={count} value={value.meals} onChange={(meals) => onChange({ ...value, meals })} error={error?.field === 'meals' ? error.text : null} />}
       {x.dietary.enabled && <DietaryField count={count} value={value.dietary} onChange={(dietary) => onChange({ ...value, dietary })} error={error?.field === 'dietary' ? error.text : null} />}
-      <p className="gx-privacy"><Icon name="eye" size="sm" />يرى إجابات الطعام فريق الضيافة فقط.</p>
+      <p className="gx-privacy"><Icon name="eye" size="sm" />{t('gxPrivacy')}</p>
     </div>
   );
 }
@@ -69,6 +70,7 @@ export function GuestExtrasFields({ x, count, value, onChange, error }: { x: Gue
 const TONES = ['a', 'b', 'c', 'd', 'e', 'f'] as const;
 
 function MealsField({ x, count, value, onChange, error }: { x: GuestExperience; count: number; value: MealAllocation[]; onChange: (v: MealAllocation[]) => void; error: string | null }) {
+  const { t } = useCopy();
   const id = useId();
   const N = useContext(Numbers);
   const options = activeMeals(x);
@@ -87,15 +89,15 @@ function MealsField({ x, count, value, onChange, error }: { x: GuestExperience; 
   while (plates.length < count) plates.push(null);
   return (
     <fieldset className={`gx-block gx-meals${error ? ' has-error' : ''}`} aria-describedby={`${id}-state`}>
-      <legend className="gx-title">{single ? 'ماذا تفضّلون على العشاء؟' : 'ماذا يفضّل كل واحد منكم؟'}</legend>
+      <legend className="gx-title">{t(single ? 'gxDinnerOne' : 'gxDinnerEach')}</legend>
       {!single && (
         <div className="gx-plates" aria-hidden="true">
           {plates.map((t, i) => <span key={i} className={`gx-plate${t == null ? ' is-empty' : ` tone-${TONES[t % TONES.length]}`}`} style={{ ['--i' as string]: i }} />)}
         </div>
       )}
       <p id={`${id}-state`} className="gx-state" aria-live="polite">
-        {single ? (sum ? 'تم الاختيار' : x.meals.required ? 'اختاروا طبقًا واحدًا' : 'اختياري')
-          : left === 0 ? `اكتمل — ${N.people(count)}` : `${N.num(sum)} من ${N.num(count)}${x.meals.required ? '' : `${dateSeparator(N.digits)}يمكن ترك البعض بلا اختيار`}`}
+        {single ? t(sum ? 'gxChosen' : x.meals.required ? 'gxPickOne' : 'gxOptional')
+          : left === 0 ? t('gxComplete', { people: N.people(count) }) : `${N.num(sum)} / ${N.num(count)}${x.meals.required ? '' : `${dateSeparator(N.digits)}${t('gxLeaveSome')}`}`}
       </p>
       <ul className="gx-options">
         {options.map((o, i) => {
@@ -127,6 +129,7 @@ function MealsField({ x, count, value, onChange, error }: { x: GuestExperience; 
 
 // ------------------------------------------------------------------ dietary needs: not a medical form
 function DietaryField({ count, value, onChange, error }: { count: number; value: DietaryAnswer | undefined; onChange: (v: DietaryAnswer) => void; error: string | null }) {
+  const { t } = useCopy();
   const N = useContext(Numbers);
   const has = value?.answered ? (value.needs.length ? 'yes' : 'no') : null;
   const [open, setOpen] = useState(has === 'yes');
@@ -144,26 +147,26 @@ function DietaryField({ count, value, onChange, error }: { count: number; value:
   );
   return (
     <fieldset className={`gx-block gx-diet${error ? ' has-error' : ''}`}>
-      <legend className="gx-title">هل لدى أحدكم حساسية أو نظام غذائي نراعيه؟</legend>
+      <legend className="gx-title">{t('gxDiet')}</legend>
       <div className="gx-yesno">
-        <button type="button" className={`gx-pill${has === 'no' && !open ? ' is-on' : ''}`} aria-pressed={has === 'no' && !open} onClick={() => { setOpen(false); onChange({ answered: true, needs: [] }); }}>لا شيء، شكرًا</button>
-        <button type="button" className={`gx-pill${open ? ' is-on' : ''}`} aria-pressed={open} onClick={() => { setOpen(true); if (!value?.answered) onChange({ answered: true, needs: [] }); }}>نعم</button>
+        <button type="button" className={`gx-pill${has === 'no' && !open ? ' is-on' : ''}`} aria-pressed={has === 'no' && !open} onClick={() => { setOpen(false); onChange({ answered: true, needs: [] }); }}>{t('gxNothing')}</button>
+        <button type="button" className={`gx-pill${open ? ' is-on' : ''}`} aria-pressed={open} onClick={() => { setOpen(true); if (!value?.answered) onChange({ answered: true, needs: [] }); }}>{t('gxYes')}</button>
       </div>
       {open && (
         <div className="gx-needs">
-          <p className="gx-sub">حساسية</p>
+          <p className="gx-sub">{t('gxAllergy')}</p>
           <div className="gx-chips">{group('allergy').map(chip)}</div>
-          <p className="gx-sub">نظام غذائي</p>
+          <p className="gx-sub">{t('gxDietSystem')}</p>
           <div className="gx-chips">{group('diet').map(chip)}{group('other').map(chip)}</div>
           {(needs.includes('other') || needs.some((n) => DIETARY[n].group === 'allergy')) && (
-            <Field label={needs.includes('other') ? 'اكتبوها بكلمات قليلة' : 'تفاصيل تساعدنا'} optional={!needs.includes('other')}>
-              <Input value={value?.note ?? ''} maxLength={140} placeholder="مثال: حساسية شديدة من الفول السوداني" onChange={(e) => onChange({ answered: true, needs, affectedCount: value?.affectedCount, note: e.target.value })} />
+            <Field label={t(needs.includes('other') ? 'gxWriteIt' : 'gxDetails')} optional={!needs.includes('other')}>
+              <Input value={value?.note ?? ''} maxLength={140} placeholder={t('gxDietExample')} onChange={(e) => onChange({ answered: true, needs, affectedCount: value?.affectedCount, note: e.target.value })} />
             </Field>
           )}
           {count > 1 && needs.length > 0 && (
             <div className="gx-affected" role="group" aria-label="تخص كم شخصًا">
-              <span className="gx-sub">تخص</span>
-              <button type="button" className={`gx-pill is-sm${value?.affectedCount == null ? ' is-on' : ''}`} aria-pressed={value?.affectedCount == null} onClick={() => onChange({ answered: true, needs, note: value?.note })}>لست متأكدًا</button>
+              <span className="gx-sub">{t('gxAffects')}</span>
+              <button type="button" className={`gx-pill is-sm${value?.affectedCount == null ? ' is-on' : ''}`} aria-pressed={value?.affectedCount == null} onClick={() => onChange({ answered: true, needs, note: value?.note })}>{t('gxNotSure')}</button>
               {Array.from({ length: count }, (_, i) => i + 1).map((n) => (
                 <button key={n} type="button" className={`gx-pill is-sm num${value?.affectedCount === n ? ' is-on' : ''}`} aria-pressed={value?.affectedCount === n} aria-label={`تخص ${N.people(n)}`} onClick={() => onChange({ answered: true, needs, affectedCount: n, note: value?.note })}>{N.num(n)}</button>
               ))}
@@ -205,20 +208,21 @@ export function followUpPayload(view: GuestView, attending: boolean, count: numb
 }
 
 export function FollowUpFields({ view, attending, count, value, onChange, error }: { view: GuestView; attending: boolean; count: number; value: FollowUp; onChange: (v: FollowUp) => void; error?: { field: 'meals' | 'dietary'; text: string } | null }) {
+  const { t } = useCopy();
   const a = followUpAsks(view, attending, count);
   return (
     <Numbers.Provider value={numbersOf(view)}>
       {a.companions && (
         <fieldset className="form-group">
-          <legend className="field-label">أسماء المرافقين <span className="field-opt">(اختياري)</span></legend>
+          <legend className="field-label">{t('gxCompanionNames')} <span className="field-opt">(اختياري)</span></legend>
           {Array.from({ length: count - 1 }, (_, i) => (
-            <Input key={i} aria-label={`اسم المرافق ${numbersOf(view).num(i + 1)}`} placeholder={`المرافق ${numbersOf(view).num(i + 1)}`} value={value.companions[i] ?? ''}
+            <Input key={i} aria-label={`اسم المرافق ${numbersOf(view).num(i + 1)}`} placeholder={t('gxCompanion', { n: numbersOf(view).num(i + 1) })} value={value.companions[i] ?? ''}
               onChange={(e) => { const c = [...value.companions]; c[i] = e.target.value; onChange({ ...value, companions: c }); }} />
           ))}
         </fieldset>
       )}
       {a.food && view.experience && <GuestExtrasFields x={view.experience} count={count} value={value.extras} onChange={(extras) => onChange({ ...value, extras })} error={error} />}
-      {a.note && <Field label="رسالة لصاحب المناسبة" optional><Textarea rows={2} value={value.note} onChange={(e) => onChange({ ...value, note: e.target.value })} maxLength={240} /></Field>}
+      {a.note && <Field label={t('gxNoteToHost')} optional><Textarea rows={2} value={value.note} onChange={(e) => onChange({ ...value, note: e.target.value })} maxLength={240} /></Field>}
     </Numbers.Provider>
   );
 }
@@ -240,9 +244,9 @@ export function FollowUpSheet({ view, attending, count, onSend, onBack }: { view
     if (problem) setFailure(problem);
   };
   return (
-    <Dialog open onClose={onBack} variant="drawer" size="md" className="gx-sheet theme-guest" title="خطوة أخيرة قبل الإرسال"
-      description={attending ? `${t('guestAccept')}${dateSeparator(numbersOf(view).digits)}${numbersOf(view).people(count)}. لم يُرسل الرد بعد.` : `${t('guestDecline')}. لم يُرسل الرد بعد.`}
-      footer={<><Button variant="primary" loading={busy} onClick={() => void send()}>{t('guestSendReply')}</Button><Button variant="ghost" disabled={busy} onClick={onBack}>رجوع للدعوة</Button></>}>
+    <Dialog open onClose={onBack} variant="drawer" size="md" className="gx-sheet theme-guest" title={t('gxLastStep')}
+      description={attending ? `${t('guestAccept')}${dateSeparator(numbersOf(view).digits)}${numbersOf(view).people(count)}. ${t('gxNotSentYet')}` : `${t('guestDecline')}. ${t('gxNotSentYet')}`}
+      footer={<><Button variant="primary" loading={busy} onClick={() => void send()}>{t('guestSendReply')}</Button><Button variant="ghost" disabled={busy} onClick={onBack}>{t('gxBack')}</Button></>}>
       {failure && <Banner tone="danger">{failure}</Banner>}
       <div className="stack gap-4"><FollowUpFields view={view} attending={attending} count={count} value={value} onChange={setValue} error={tried ? err : null} /></div>
     </Dialog>
@@ -262,6 +266,7 @@ function GiftArt({ kind }: { kind: GiftKind }) {
 }
 
 function WishCard({ g }: { g: GiftItem }) {
+  const { t } = useCopy();
   const url = safeExternalUrl(g.url);
   return (
     <li className={`gx-wish is-${g.kind}`}>
@@ -278,13 +283,14 @@ function WishCard({ g }: { g: GiftItem }) {
           </a>
           <span className="gx-wish-host" dir="ltr">{linkHost(url)}</span>
         </div>
-      ) : <p className="gx-wish-nolink">اسألوا صاحب المناسبة عن التفاصيل</p>}
+      ) : <p className="gx-wish-nolink">{t('gxAskHost')}</p>}
     </li>
   );
 }
 
 /** «قائمة الرغبات» on the guest page — the reply never depends on it (D15) */
 export function Wishlist({ x, mode, children }: { x: GuestExperience; mode: 'hub' | 'decline'; children?: ReactNode }) {
+  const { t } = useCopy();
   const items = activeGifts(x);
   if (!items.length) return null;
   // after a decline, sending something from afar comes first (F068): flowers and contributions lead
@@ -294,18 +300,18 @@ export function Wishlist({ x, mode, children }: { x: GuestExperience; mode: 'hub
     <section className={`hub-card gx-wishlist is-${mode}`} aria-labelledby={`gx-wl-${mode}`}>
       {mode === 'decline' ? (
         <>
-          <p className="gx-kicker">اختياري تمامًا</p>
-          <h2 id={`gx-wl-${mode}`} className="hub-h">مشاركتكم من بعيد</h2>
-          <p className="muted">غيابكم مفهوم، ولطفكم يصل. إن أحببتم أن تشاركوهم الفرحة:</p>
+          <p className="gx-kicker">{t('gxFullyOptional')}</p>
+          <h2 id={`gx-wl-${mode}`} className="hub-h">{t('gxFromAfar')}</h2>
+          <p className="muted">{t('gxAbsence')}</p>
         </>
       ) : (
         <>
-          <h2 id={`gx-wl-${mode}`} className="hub-h">قائمة الرغبات</h2>
-          <p className="muted">{x.gifts.intro || 'لمن أحب أن يهدي — اختياري تمامًا.'}</p>
+          <h2 id={`gx-wl-${mode}`} className="hub-h">{t('gxWishlist')}</h2>
+          <p className="muted">{x.gifts.intro || t('gxWishIntro')}</p>
         </>
       )}
       <ul className="gx-wishes">{sorted.map((g) => <WishCard key={g.id} g={g} />)}</ul>
-      <p className="gx-wish-foot"><Icon name="info" size="sm" />الروابط تفتح مواقع خارجية اختارها صاحب المناسبة. لا نسجّل دفعًا أو شراء، وردكم لا يتأثر بها.</p>
+      <p className="gx-wish-foot"><Icon name="info" size="sm" />{t('gxWishFoot')}</p>
       {children}
     </section>
   );

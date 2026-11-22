@@ -84,13 +84,13 @@ export function formatEventDate(date: LocalDate, opts: { weekday?: boolean; year
   return f.format(d).replace('،', '');
 }
 
-/** "8:30 مساءً" (or "٨:٣٠ مساءً" with `digits: 'arab'`, see formatEventDate) */
+/** "8:30 مساءً" (or "٨:٣٠ مساءً" with `digits: 'arab'`, see formatEventDate): صباحًا before noon, ظهرًا to 3pm, عصرًا 3–5pm, مساءً after */
 export function formatTime(time: LocalTime, digits: 'arab' | 'latn' = 'latn'): string {
   const [hs, ms] = time.split(':');
   const h = Number(hs), m = Number(ms);
   if (Number.isNaN(h) || Number.isNaN(m)) return time;
   const h12 = ((h + 11) % 12) + 1;
-  const period = h < 12 ? 'صباحًا' : h < 17 ? 'ظهرًا' : 'مساءً';
+  const period = h < 12 ? 'صباحًا' : h < 15 ? 'ظهرًا' : h < 17 ? 'عصرًا' : 'مساءً';
   return inDigits(`${h12}:${String(m).padStart(2, '0')} ${h === 12 && m === 0 ? 'ظهرًا' : period}`, digits);
 }
 

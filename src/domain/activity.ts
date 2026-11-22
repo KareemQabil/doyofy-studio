@@ -16,9 +16,9 @@ export function activityText(a: EventActivity): string {
     case 'parties_imported': return `تمت إضافة ${pluralOf(n(d.count), P.guest)} من ملف${n(d.skipped) ? ` (تم تخطي ${pluralOf(n(d.skipped), P.row)})` : ''}`;
     case 'party_updated': return `تم تعديل بيانات ${s(d.name)}`;
     case 'party_removed': return `تم حذف ${s(d.name)} من القائمة`;
-    case 'invitation_shared': return n(d.count) > 1 ? `تمت مشاركة ${pluralOf(n(d.count), P.invitation)}${d.how === 'simulated' ? ' (محاكاة)' : ''}` : `تمت مشاركة دعوة ${s(d.name)}${d.how === 'manual' ? ' يدويًا' : d.how === 'simulated' ? ' (محاكاة)' : ''}`;
+    case 'invitation_shared': return n(d.count) > 1 ? `تمت مشاركة ${pluralOf(n(d.count), P.invitation)}${d.how === 'simulated' ? ' · تجريبي' : ''}` : `تمت مشاركة دعوة ${s(d.name)}${d.how === 'manual' ? ' يدويًا' : d.how === 'simulated' ? ' · تجريبي' : ''}`;
     case 'invitation_opened': return `${s(d.name)} فتح الدعوة`;
-    case 'invitation_failed': return n(d.count) > 1 ? `تعذر إرسال ${pluralOf(n(d.count), P.invitation)} (محاكاة)` : `تعذر إرسال دعوة ${s(d.name)} (محاكاة)`;
+    case 'invitation_failed': return n(d.count) > 1 ? `تعذّر إرسال ${pluralOf(n(d.count), P.invitation)} · تجريبي` : `تعذّر إرسال دعوة ${s(d.name)} · تجريبي`;
     // reminders are sent by the organizer from their own WhatsApp/SMS and recorded only after they confirm
     case 'reminder_sent': return n(d.count) > 1 ? `ذكّرت ${pluralOf(n(d.count), P.invitation)} بالرد` : `ذكّرت ${s(d.name)} بالرد`;
     case 'rsvp_confirmed': return `${s(d.name)} أكد الحضور — ${people(n(d.count))}`;

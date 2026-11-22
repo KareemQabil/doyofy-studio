@@ -15,7 +15,7 @@ import { StateMachine } from '../engine/StateMachine.js';
 import { AudioEngine } from '../engine/AudioEngine.js';
 import { detectQuality } from '../engine/Quality.js';
 import { deriveContent, countdown, localDigits, dateSep } from '../data/derive.js';
-import { STRINGS as T, currentStrings, setStringsVoice } from '../data/strings.js';
+import { LIVE_STRINGS as T, currentStrings, setStringsVoice } from '../data/strings.js';
 import { PAGE_ORDER } from '../pages/index.js';
 import { SCENE_AMBIENCE } from '../audio/index.js';
 import { LocalRSVPAdapter } from '../engine/rsvp.js';
@@ -179,7 +179,7 @@ export class Studio {
 
   _renderCredit() {
     const c = this.data.c, couple = !!c.arB;
-    const ar = couple ? `${e(c.arA)} و ${e(c.arB)}` : e(c.arA);
+    const ar = couple ? `${e(c.arA)} و${e(c.arB)}` : e(c.arA);
     const en = couple ? [c.enAU, c.enBU].filter(Boolean).map(e).join(' &amp; ') : e(c.enAU);
     this.el.credit.innerHTML = `<span class="fx-foil" style="font-family: ${this.theme.fAr}; font-size: ${couple ? 58 : Math.min(58, Math.max(30, Math.round(420 / Math.max(1, [...c.arA].length))))}px; line-height: 1.45; text-align: center">${ar}</span>
       ${en ? `<span dir="ltr" style="font-size: 12px; letter-spacing: 0.42em; color: #E3C58C; margin-top: 4px">${en}</span>` : ''}
@@ -276,7 +276,7 @@ export class Studio {
     for (const [k, v] of Object.entries({ paper: t.paper, ink: t.ink, muted: t.muted, accent: t.accent, atext: t.aText, env: t.env, far: t.fAr, envmid: mix(t.env, -0.12), envdark: mix(t.env, -0.4), envlight: mix(t.env, 0.14) })) s.setProperty('--' + k, v);
     this.el.mono.textContent = c.arB ? `${c.monoA} · ${c.monoB}` : `${c.monoA}`;
     const mLatin = c.arB ? [c.enA, c.enB].filter(Boolean).map(e).join(' &amp; ') : e(c.enA);
-    this.host.querySelector('.st-mcard').innerHTML = `<span style="font-family: ${t.fAr}; font-size: 28px; line-height: 1.35; text-align: center">${c.arB ? `${e(c.arA)} و ${e(c.arB)}` : e(c.arA)}</span>
+    this.host.querySelector('.st-mcard').innerHTML = `<span style="font-family: ${t.fAr}; font-size: 28px; line-height: 1.35; text-align: center">${c.arB ? `${e(c.arA)} و${e(c.arB)}` : e(c.arA)}</span>
       ${mLatin ? `<span dir="ltr" style="font-size: 14px; font-style: italic; color: ${t.muted}">${mLatin}</span>` : ''}
       <span dir="ltr" style="font-size: 10px; letter-spacing: 0.3em; color: ${t.aText}; margin-top: 6px">${e(c.dateNum)}</span>`;
     this.host.dataset.card = this.cardId;

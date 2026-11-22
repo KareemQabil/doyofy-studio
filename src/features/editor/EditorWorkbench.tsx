@@ -17,7 +17,7 @@ export type WorkbenchPage = 'card' | 'message' | 'program';
 function Paper({ event, content, page, width, motion = 0, label }: { event: Event; content: InvitationDesignContent; page: WorkbenchPage; width: number; motion?: number; label?: string }) {
   if (page === 'card') return <CardThumb event={event} content={content} width={width} motion={motion} label={label ?? `معاينة البطاقة: ${CARD_NAMES[content.cardId] ?? 'دعوتك'}`} />;
   const names = resolvedNames(event, content);
-  const headingNames = isCoupleEvent(event.type) && names.b ? `${names.a} و ${names.b}` : names.a;
+  const headingNames = isCoupleEvent(event.type) && names.b ? `${names.a} و${names.b}` : names.a;
   const k = width / 300;
   return <span className="ed-copy-frame" style={{ width, height: 420 * k }}>
     <article className="ed-copy-paper" style={k === 1 ? undefined : { transform: `scale(${k})` }} aria-label={page === 'message' ? 'معاينة كلمة الدعوة' : 'معاينة البرنامج'}>

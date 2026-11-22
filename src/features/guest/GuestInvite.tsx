@@ -86,8 +86,6 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
   );
 }
 
-/** closing the follow-up sheet is a choice, not a failure: the reply page shows this calmly (not as an error) */
-export const NOT_SENT_YET = 'لم يُرسل الرد بعد. أكملوا الخطوة الأخيرة متى شئتم.';
 
 /** after the thank-you screen has had its moment, the cinematic path moves on to the same success page as the direct one */
 const DONE_HOLD_MS = 2800;
@@ -126,7 +124,7 @@ function InvitationPlayer({ view, code, onSubmitted, onDone, guestApi, demo = fa
         card: view.design.cardId, scene: view.design.sceneId, experience: view.design.experience,
         showSwitcher: false, params: new URLSearchParams(), voice: view.dialect ?? 'ar',
         guest: p ? { name: p.name, nameLocked: true, maxGuests: p.maxPartySize, attending: p.rsvpStatus === 'confirmed' ? 'yes' : p.rsvpStatus === 'declined' ? 'no' : null, guests: p.confirmedPartySize || undefined } : { maxGuests: view.maxGuests },
-        doneAction: { ar: p ? t('guestYourDetails') : 'متابعة', en: p ? 'Your details' : 'Continue', autoAfter: DONE_HOLD_MS, onClick: () => cb.current.onDone() },
+        doneAction: { ar: p ? t('guestYourDetails') : t('ghContinue'), en: p ? 'Your details' : 'Continue', autoAfter: DONE_HOLD_MS, onClick: () => cb.current.onDone() },
         rsvp: {
           // the same follow-up as the direct form (companions, food, message) before the one and only submit
           submit: (r) => {
@@ -154,7 +152,7 @@ function InvitationPlayer({ view, code, onSubmitted, onDone, guestApi, demo = fa
       <div ref={host} className="guest-studio has-bar" />
       {held && (
         <FollowUpSheet view={view} attending={held.r.attending} count={held.r.attending ? held.r.guests : 0}
-          onBack={() => { held.settle({ ok: false, error: NOT_SENT_YET, notice: true }); setHeld(null); }}
+          onBack={() => { held.settle({ ok: false, error: t('ghNotSent'), notice: true }); setHeld(null); }}
           onSend={async (more) => {
             const res = await sendRef.current(held.r, more);
             if (!res.ok) return res.error;

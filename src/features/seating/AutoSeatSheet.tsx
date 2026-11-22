@@ -14,15 +14,14 @@ import {
 } from '../../domain/auto-seating';
 import { seatsFor } from '../../domain/parties';
 import { P, people, plural, pluralOf, type PluralForms } from '../../domain/format';
-import type { Dialect } from '../../domain/copy';
+import { nounForms, type Dialect } from '../../domain/copy';
 import { Badge, Banner, Button, Dialog, Icon, Segmented } from '../../ui';
 import { useMutation } from '../../app/data';
 import { useCopy } from '../../ui/copy';
 import { errorMessage } from '../../services/errors';
 
-/** «ترابيزة» in Egyptian (FINAL_POLISH_PLAN terminology), «طاولة» otherwise */
-const TABLE_EG: PluralForms = { zero: 'مفيش ترابيزات', one: 'ترابيزة واحدة', two: 'ترابيزتين', few: '# ترابيزات', many: '# ترابيزة', other: '# ترابيزة' };
-export const tableForms = (dialect: Dialect): PluralForms => (dialect === 'ar-EG' ? TABLE_EG : P.table);
+/** «ترابيزة» in Egyptian (FINAL_POLISH_PLAN terminology), «طاولة» otherwise — the dictionary's counted noun */
+export const tableForms = (dialect: Dialect): PluralForms => nounForms(dialect, 'table');
 const WILL: Record<Dialect, string> = { ar: 'سنوزّع', 'ar-EG': 'هنوزّع', 'ar-SA': 'بنوزّع' };
 const SHORT: Record<Dialect, string> = { ar: 'ينقص', 'ar-EG': 'ناقص', 'ar-SA': 'ناقص' };
 const OFF: Record<Dialect, string> = { ar: 'سنُزيل من الطاولات من لم يؤكد', 'ar-EG': 'هنشيل من الترابيزات اللي مأكدش', 'ar-SA': 'بنشيل من الطاولات اللي ما أكد' };
