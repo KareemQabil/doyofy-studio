@@ -59,7 +59,7 @@ const SYNONYMS: Array<[ImportField, RegExp]> = [
   ['size', /(عدد|العدد|أشخاص|اشخاص|المسموح|size|count|guests|pax|seats|party)/i],
   ['companions', /(مرافق|المرافقين|companion|plus|with)/i],
   ['notes', /(ملاحظ|note|comment)/i],
-  ['side', /(جهة|الجهة|طرف|مجموعة|side|group|family of)/i],
+  ['side', /(قسم|القسم|الأقسام|جهة|الجهة|طرف|مجموعة|side|section|group|family of)/i],
   ['name', /(اسم|الاسم|ضيف|الضيف|عائلة|name|guest|full)/i],
 ];
 

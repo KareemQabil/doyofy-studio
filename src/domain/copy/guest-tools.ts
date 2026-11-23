@@ -46,7 +46,7 @@ export const GUEST_TOOLS = partly({
   pfDupeTitle: 'هالرقم مسجّل من قبل', pfDupeText: 'باسم «{name}». تأكد إنها مو نفس الدعوة قبل ما تضيف.', pfTwo: 'شخصين',
   pfAllowedHint: 'كم شخص تشمل هالدعوة، مع صاحبها. الضيف يحدد العدد الفعلي لما يرد.', pfMore: '+ أسماء المرافقين، والجهة، وملاحظة (اختياري)',
   pfSideHint: 'مثل: الأهل، الربع، زملاء الدوام', pfNote: 'ملاحظة لك',
-  rrTitle: 'سجّل الرد بنفسك', rrAllows: '{name} · الدعوة لين {people}', rrSave: 'احفظ الرد', rrQuestion: 'بيحضرون؟', rrChoose: 'اختر حضور أو اعتذار', rrYes: 'بيحضرون', rrNo: 'معتذرين',
+  rrTitle: 'سجّل الرد بنفسك', rrAllows: '{name} · الدعوة حتى {people}', rrSave: 'احفظ الرد', rrQuestion: 'بيحضرون؟', rrChoose: 'اختر حضور أو اعتذار', rrYes: 'بيحضرون', rrNo: 'معتذرين',
   rrNoteHint: 'مثل: أكدوا بالجوال', rrSavedYes: 'سجّلنا حضور {name} — {people}', rrSavedNo: 'سجّلنا اعتذار {name}',
   exExportN: 'صدّر {n}', exExport: 'صدّر', exScope: 'وش تبي تصدّر', exSelected: 'اللي اخترتهم ({n})', exPick: 'طاولات وأقسام معيّنة', exNoTable: 'بدون طاولة', exNoSection: 'بدون قسم',
   exPhones: 'ضمّن أرقام الجوال', exPickOne: 'اختر طاولة أو قسم واحد على الأقل.', exNone: 'ما فيه دعوات هنا.',
