@@ -11,8 +11,9 @@
  * - Scene ambience (optional, per scene) loops quietly under the card/pages and ducks for the finale.
  * - The organizer's own sounds (domain/audio-library.ts): an uploaded track replaces the built-in music, starting at
  *   its chosen point with a short fade-in and looping back to it; a voice welcome plays ONCE at the opening and ducks
- *   the music while it speaks. Bytes come from the AudioStore; when they are not on this device (a guest elsewhere)
- *   the built-in sound plays and the voice stays silent — nothing is said to the guest.
+ *   the music while it speaks. Bytes come from the AudioStore, or on a guest's device from the uploaded copy whose URL the
+ *   invitation carries (backend on); when neither is there the built-in sound plays and the voice stays silent —
+ *   nothing is said to the guest.
  */
 import { loadAudioTrackBlob, playbackPlan, readAudioLibrary } from '../domain/audio-library';
 
@@ -46,10 +47,12 @@ export class AudioEngine {
     if (JSON.stringify(selection || { mode: 'default' }) === JSON.stringify(this.preference)) return;
     this.stopMusic(); this.stopVoice();
     this.preference = selection || { mode: 'default' };
-    const tracks = readAudioLibrary().tracks;
-    this.customTrack = this.preference.mode === 'library' ? tracks.find(t => t.id === this.preference.trackId && t.kind === 'music') || null : null;
-    this.missingUpload = this.preference.mode === 'library' && !this.customTrack;
-    this.voiceTrack = this.preference.voiceId ? tracks.find(t => t.id === this.preference.voiceId && t.kind === 'voice') || null : null;
+    const tracks = readAudioLibrary().tracks, p = this.preference;
+    // not in this device's library (a guest's device): the uploaded copy the invitation carries, trimmed as the organizer chose
+    const remote = (id, kind, url, startSec = 0, fadeInSec = 0) => id && url ? { id, kind, startSec, fadeInSec, remoteUrl: url } : null;
+    this.customTrack = p.mode === 'library' ? tracks.find(t => t.id === p.trackId && t.kind === 'music') || remote(p.trackId, 'music', p.trackUrl, p.trackStart, p.trackFade) : null;
+    this.missingUpload = p.mode === 'library' && !this.customTrack;
+    this.voiceTrack = p.voiceId ? tracks.find(t => t.id === p.voiceId && t.kind === 'voice') || remote(p.voiceId, 'voice', p.voiceUrl) : null;
     this.voiceReady = false; this.voicePlayed = false;
     if (this.preference.mode === 'off' || this.customTrack) this.setAmbience(null);
     void this._checkBytes();
@@ -66,7 +69,7 @@ export class AudioEngine {
     this.onChange?.();
   }
   _uploadBlob(track) {
-    if (!this.uploads.has(track.id)) this.uploads.set(track.id, loadAudioTrackBlob(track.id).catch(() => null));
+    if (!this.uploads.has(track.id)) this.uploads.set(track.id, loadAudioTrackBlob(track.id, undefined, track.remoteUrl).catch(() => null));
     return this.uploads.get(track.id);
   }
   async _uploadBuffer(track) {

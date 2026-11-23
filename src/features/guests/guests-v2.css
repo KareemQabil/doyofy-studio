@@ -123,7 +123,6 @@
 .g2-card .food-line { grid-area: food; }
 .g2-ticks { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--c-text-3); }
 .g2-ticks svg { width: 18px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.g2-ticks.is-draft { opacity: .7; }
 .g2-ticks.is-opened { color: var(--c-success); font-weight: 600; }
 .g2-ticks.is-failed { color: var(--c-danger); }
 /* a reminder on hold (sent or reminded in the last 48 h): a quiet line where «ذكّر بالرد» would be */

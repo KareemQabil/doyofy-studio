@@ -15,6 +15,7 @@ import { Link } from '../../app/router';
 import { copyFor, type Copy } from '../../domain/copy';
 import { currentDialect, useCopy } from '../../ui/copy';
 import type { AudioSelection } from '../../domain/audio-library';
+import { useCloud } from '../shared/cloud';
 
 type Update = (patch: Partial<InvitationDesignContent>) => void;
 
@@ -172,11 +173,12 @@ export function MotionSection({ content, invitation, update, sound, onSound, toA
 /**
  * One sound choice — none / built-in / my music (pick a track) — plus an optional voice welcome (r4-audio).
  * `default` (nothing chosen yet) shows as the account default: its track when there is one, built-in otherwise.
- * The device-only line is organizer UI; guests elsewhere just hear the built-in sound.
+ * The device-only line is organizer UI (gone once the backend uploads the sounds); guests elsewhere just hear the built-in sound.
  */
 function SoundGroup({ content, update, sound, onSound, toAccount }: { content: InvitationDesignContent; update: Update; sound: boolean; onSound: (v: boolean) => void; toAccount?: AccountLink }) {
   const { t } = useCopy();
   const library = useAudioLibrary();
+  const cloudOn = useCloud().status() === true;
   const audio: AudioSelection = content.audio ?? { mode: 'default' };
   const music = library.tracks.filter(tr => tr.kind === 'music'), voices = library.tracks.filter(tr => tr.kind === 'voice');
   const shown = audio.mode === 'default' ? (library.defaultTrackId ? 'library' : 'builtin') : audio.mode;
@@ -211,7 +213,7 @@ function SoundGroup({ content, update, sound, onSound, toAccount }: { content: I
         {voices.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
         {voiceMissing && <option value={audio.voiceId}>{t('audioVoiceMissing')}</option>}
       </Select></Field>}
-      {uploaded && <p className="ed-sec-hint" data-audio-device-note>{t('audioDeviceOnly')}</p>}
+      {uploaded && !cloudOn && <p className="ed-sec-hint" data-audio-device-note>{t('audioDeviceOnly')}</p>}
       <p className="ed-sec-hint"><AccountAnchor to={toAccount}>{voices.length ? t('audioManage') : t('audioRecordInAccount')}</AccountAnchor></p>
       <Switch label={t('audioPreviewSound')} hint={t('audioPreviewSoundHint')} checked={sound} onChange={onSound} />
     </section>

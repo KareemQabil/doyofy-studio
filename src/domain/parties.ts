@@ -2,18 +2,16 @@
  * Invitation parties: derived states, counts, filters and RSVP rules.
  * Headcount is never copied anywhere: it is always derived from parties (spec §29).
  */
-import type { CheckInStatus, InvitationParty, InvitationStatus, PublishState, RsvpInput, RsvpStatus, StateSource, Tone } from './types';
+import type { CheckInStatus, InvitationParty, InvitationStatus, RsvpInput, RsvpStatus, StateSource, Tone } from './types';
 import { toArabicDigitsSafe } from './format';
 
 // ------------------------------------------------------------------ delivery (invitation communication)
-/** spec states: draft (invitation not published) · ready · shared · opened · failed */
-export function invitationStatus(p: InvitationParty, publish: PublishState): InvitationStatus {
-  if (p.delivery.status === 'not_shared') return publish === 'published' || publish === 'changed' ? 'ready' : 'draft';
-  return p.delivery.status;
+/** spec states: ready · shared · opened · failed. The invitation is always live, so an unsent one is ready to share. */
+export function invitationStatus(p: InvitationParty): InvitationStatus {
+  return p.delivery.status === 'not_shared' ? 'ready' : p.delivery.status;
 }
 
 export const INVITATION_STATUS: Record<InvitationStatus, { label: string; tone: Tone }> = {
-  draft: { label: 'غير مرسلة', tone: 'neutral' },
   ready: { label: 'جاهزة للمشاركة', tone: 'info' },
   shared: { label: 'تمت المشاركة', tone: 'info' },
   opened: { label: 'تم الفتح', tone: 'success' },

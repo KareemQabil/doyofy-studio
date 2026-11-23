@@ -5,7 +5,7 @@
  *   3. the details: only what the invitation needs — the name(s) the occasion asks for and the date. The time is a
  *      chip on 8:00 مساءً (tap to change), the place is optional behind «أضف المكان (اختياري)», the time zone is
  *      the device's own (changed only from a small link next to the time). The chosen invitation takes shape live.
- *   → the invitation opens in the editor for fine edits.
+ *   → the invitation opens in the editor for fine edits; it is live from the start (no publish step).
  * The step indicator stays at the top of every step. The unfinished draft (fields, step and chosen design) is saved
  * per local account and resumed. A shared catalogue link (?type=…&template=…&preview=1) opens step 2 on that design.
  */
@@ -104,7 +104,7 @@ const ArabicDateTime = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInpu
   </span>;
 });
 
-/** only the owner creates events (domain/roles «event.create»): a coordinator arriving here from a link gets the reason, not a form they could never publish */
+/** only the owner creates events (domain/roles «event.create»): a coordinator arriving here from a link gets the reason, not a form they could never submit */
 export function CreateEvent() {
   const role = useRole();
   const { t } = useCopy();

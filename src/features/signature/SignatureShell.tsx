@@ -22,7 +22,7 @@ import { useRole } from '../shared/OwnerOnly';
 import { useCopy } from '../../ui/copy';
 
 export function SignatureShell({ children, right, mobileContext }: { children: ReactNode; right?: ReactNode; mobileContext?: ReactNode }) {
-  // only the owner creates events: a coordinator could never publish one (domain/roles «event.create»)
+  // only the owner creates events (domain/roles «event.create»)
   const mayCreate = can(useRole(), 'event.create');
   const { t } = useCopy();
   const scrolled = useScrolled(8);

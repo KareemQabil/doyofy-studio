@@ -12,7 +12,7 @@ import type { Event, EventType, InvitationDesignContent } from '../../domain/typ
 import { OCCASIONS_ORDERED, eventPhase, eventTypeInfo, hasVenue, PHASE_LABEL, placeLine, todayFor } from '../../domain/event';
 import { PHASE_KEY } from '../../domain/copy/activity';
 import { countdownLabel, formatEventDate, formatTime } from '../../domain/format';
-import { defaultDesign, publishState } from '../../domain/invitation';
+import { defaultDesign } from '../../domain/invitation';
 import { applyPreset, presetsFor } from '../../domain/templates';
 import { swipeStep } from '../../domain/gestures';
 import { useNow } from '../../app/data';
@@ -36,13 +36,13 @@ import { SignatureBanner } from './SignatureBanner';
 import { useCopy } from '../../ui/copy';
 import type { Copy } from '../../domain/copy';
 
-/** the next useful step for an event, in the organizer's words (not engine terms) */
-export function nextStep(e: Event, ps: string, phase: string, c: Pick<Copy, 'stepSummary' | 'stepGate' | 'stepReview' | 'stepPublishChanges' | 'stepFollow'>) {
+/** the next useful step for an event, in the organizer's words (not engine terms). The invitation is always live:
+ *  a design not yet looked at is a suggestion, never a gate. */
+export function nextStep(e: Event, designed: boolean, phase: string, c: Pick<Copy, 'stepSummary' | 'stepGate' | 'stepReview' | 'stepFollow'>) {
   const past = phase === 'completed' || phase === 'archived';
   if (past) return { label: c.stepSummary, to: paths.summary(e.id) };
   if (phase === 'event_day') return { label: c.stepGate, to: paths.gate(e.id) };
-  if (ps === 'none' || ps === 'draft') return { label: c.stepReview, to: paths.design(e.id) };
-  if (ps === 'changed') return { label: c.stepPublishChanges, to: paths.design(e.id) };
+  if (!designed) return { label: c.stepReview, to: paths.design(e.id) };
   return { label: c.stepFollow, to: paths.guests(e.id) };
 }
 
@@ -138,7 +138,7 @@ function Hero({ featured, loading }: { featured?: Event; loading: boolean }) {
   const design = useDesign(featured?.id ?? '');
   const looks = useLooks(featured, design.data?.draft);
   const phase = featured ? eventPhase(featured, now) : 'upcoming';
-  const step = featured ? nextStep(featured, publishState(design.data), phase, copy) : null;
+  const step = featured ? nextStep(featured, !!design.data, phase, copy) : null;
   return (
     <section className="sig-hero" aria-labelledby="sig-hero-title">
       <span className="sig-hero-pattern" aria-hidden="true" />
@@ -179,7 +179,7 @@ function EventTicket({ event }: { event: Event }) {
   const now = useNow();
   const design = useDesign(event.id);
   const phase = eventPhase(event, now);
-  const step = nextStep(event, publishState(design.data), phase, copy);
+  const step = nextStep(event, !!design.data, phase, copy);
   const past = phase === 'completed' || phase === 'archived';
   return (
     <article className={`sig-ticket${past ? ' is-past' : ''}`}>
@@ -260,7 +260,7 @@ export function SignatureHome() {
   const events = useEvents();
   const now = useNow(60000);
   const [memories, setMemories] = useState(false);
-  // a coordinator works on the owner's events; creating one of their own would be a dead end (they cannot publish)
+  // a coordinator works on the owner's events; creating one of their own would be a dead end (domain/roles «event.create»)
   const mayCreate = can(useRole(), 'event.create');
   const all = events.data ?? [];
   const { active, past } = useMemo(() => ({

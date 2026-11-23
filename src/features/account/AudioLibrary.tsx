@@ -16,6 +16,7 @@ import { AudioTrim } from './AudioTrim';
 import { VoiceRecorder } from './VoiceRecorder';
 import { audioMedia, type AudioSummary } from './audio-media';
 import { audioErrorKey } from './audio-errors';
+import { useCloud } from '../shared/cloud';
 
 const issueOf = (e: unknown): AudioIssue => e instanceof AudioLibraryError ? e.code : 'storage';
 /** a draft start point: a fresh upload (file) or an existing track being re-trimmed (trackId) */
@@ -36,6 +37,8 @@ function TrackSample({ track }: { track: AudioTrack }) {
  */
 export function AudioLibrary({ focus = false, back }: { focus?: boolean; back?: string | null }) {
   const { t } = useCopy();
+  // with the backend on, uploads also go to its storage and play on guests' devices: the device-only line would be untrue
+  const cloudOn = useCloud().status() === true;
   useEffect(() => {
     if (!focus) return;
     const panel = document.getElementById('audio');
@@ -109,7 +112,7 @@ export function AudioLibrary({ focus = false, back }: { focus?: boolean; back?: 
     {backLink && <div className="audio-back row wrap gap-3">{backLink}<span className="field-hint">{t('audioBackHint')}</span></div>}
     <p className="muted">{t('audioIntro')}</p>
     <p className="field-hint">{t('audioLimits')}</p>
-    <p className="audio-device-note" data-audio-device-note>{t('audioDeviceOnly')}</p>
+    {!cloudOn && <p className="audio-device-note" data-audio-device-note>{t('audioDeviceOnly')}</p>}
     <div className="audio-library-upload stack gap-3">
       <Field label={t('audioTrackName')} optional><Input value={name} maxLength={80} placeholder={t('audioTrackNamePh')} onChange={e => setName(e.target.value)} /></Field>
       <input ref={input} className="sr-only" type="file" tabIndex={-1} aria-label={t('audioUploadLabel')} accept={[...AUDIO_MIME, '.mp3', '.m4a', '.wav', '.ogg', '.webm', '.aac'].join(',')} onChange={e => void pickFile(e.target.files?.[0])} />

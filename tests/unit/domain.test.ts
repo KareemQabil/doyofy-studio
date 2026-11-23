@@ -7,7 +7,6 @@ import { checkAssign, occupancy, seatingWarnings } from '../../src/domain/seatin
 import { assessCheckIn, codeFromScan, expectedArrivals, statusAfter } from '../../src/domain/checkin';
 import { SAMPLE_IMPORT_CSV, guessMapping, importTables, matchTable, newTableName, parseDelimited, reviewImport, rowsToPartyInputs, summarise, toRawTable } from '../../src/domain/import';
 import { plural, pluralOf, P, people, peopleOf, countdownLabel, zonedToInstant, offsetString, initialOf } from '../../src/domain/format';
-import { publishState } from '../../src/domain/invitation';
 
 const party = (o: Partial<InvitationParty> = {}): InvitationParty => ({
   id: o.id ?? 'p1', eventId: 'e', code: o.code ?? 'ABCDE', primaryGuestName: 'عائلة الحربي', maxPartySize: 4,
@@ -53,12 +52,10 @@ test('RSVP bounded by allowance; declining keeps the table (flagged, not cleared
   assert.equal(seatingWarnings([], [p]).declinedAssigned.length, 1);
 });
 
-test('delivery state is separate from RSVP; draft/ready derive from publish state', () => {
+test('delivery state is separate from RSVP; an unsent invitation is ready at once (always live)', () => {
   const p = party();
-  assert.equal(invitationStatus(p, 'draft'), 'draft');
-  assert.equal(invitationStatus(p, 'published'), 'ready');
-  assert.equal(invitationStatus(party({ delivery: { status: 'opened' }, rsvpStatus: 'pending' }), 'published'), 'opened');
-  assert.equal(publishState(null), 'none');
+  assert.equal(invitationStatus(p), 'ready');
+  assert.equal(invitationStatus(party({ delivery: { status: 'opened' }, rsvpStatus: 'pending' })), 'opened');
 });
 
 test('duplicates and Arabic-aware search', () => {
@@ -171,7 +168,7 @@ test('Arabic plurals and time zones', () => {
 // ------------------------------------------------------------------ UI/UX iteration: occasions + template presets
 import { EVENT_TYPES, OCCASIONS_ORDERED, OCCASION_GROUPS, validateEssentials as validate } from '../../src/domain/event';
 import { TEMPLATE_PRESETS, applyPreset, presetOf, presetsFor } from '../../src/domain/templates';
-import { CARD_NAMES, SCENE_NAMES, defaultDesign } from '../../src/domain/invitation';
+import { CARD_NAMES, SCENE_NAMES, defaultDesign, liveDesign } from '../../src/domain/invitation';
 
 test('occasions: more than four, every one grouped, popular first, one catalogue for both choosers', () => {
   assert.ok(EVENT_TYPES.length >= 12);
@@ -216,6 +213,15 @@ test('template presets use real engine assets and only valid experiences', () =>
     assert.equal(p.experience.dimension, '2d', `${p.id}: settings are flat`);
     assert.ok(p.styles.length && p.occasionTags.length);
   }
+});
+
+test('always live: guests get the latest saved design, the default before the first save, and never an old «published» copy', () => {
+  const ev = { type: 'wedding', names: { a: 'لينا', b: 'عمر' }, time: '20:00' } as never;
+  assert.deepEqual(liveDesign(null, ev), defaultDesign(ev));
+  const saved = { ...defaultDesign(ev), cardId: 'kit-seal-arch' };
+  const old = { ...defaultDesign(ev), cardId: 'lace' };
+  // older stored data keeps its «published» snapshot; it loads, but is never what guests see
+  assert.equal(liveDesign({ draft: saved, published: old } as never, ev).cardId, 'kit-seal-arch');
 });
 
 test('a template changes only the look — names, message and program are kept', () => {

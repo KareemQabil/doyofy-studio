@@ -15,6 +15,7 @@ export function activityText(a: EventActivity, dialect: Dialect = 'ar'): string 
     case 'event_created': return c.acCreated;
     case 'event_updated': return t(c.acUpdated, { what: d.what ? ` (${s(d.what)})` : '' });
     case 'invitation_saved': return c.acSaved;
+    // legacy rows from before the invitation was always live: read as «ready / updated for guests»
     case 'invitation_published': return d.first ? c.acPublished : c.acRepublished;
     case 'party_added': return t(c.acAdded, { name: s(d.name) });
     case 'parties_imported': return t(c.acImported, { guests: many(d.count, 'guest'), skipped: n(d.skipped) ? t(c.acImportSkipped, { rows: many(d.skipped, 'row') }) : '' });

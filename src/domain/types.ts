@@ -123,7 +123,9 @@ export interface ProgramItem { time: LocalTime; ar: string; en: string }
 /** Everything about the invitation that is NOT event data. Event data (date, venue…) is merged in at render time. */
 export interface InvitationDesignContent {
   /** sound choice (none / built-in / my music) + optional voice welcome; see domain/audio-library.ts */
-  audio?: { mode: 'default' | 'builtin' | 'library' | 'off'; trackId?: string; trackName?: string; voiceId?: string; voiceName?: string };
+  audio?: { mode: 'default' | 'builtin' | 'library' | 'off'; trackId?: string; trackName?: string; voiceId?: string; voiceName?: string;
+    /** only in what guests receive from the backend (see AudioSelection) */
+    trackUrl?: string; trackStart?: number; trackFade?: number; voiceUrl?: string };
   experience: { dimension: Dimension; motion: Motion };
   cardId: string;
   sceneId: string;
@@ -136,20 +138,23 @@ export interface InvitationDesignContent {
 export interface InvitationDesign {
   id: string;
   eventId: string;
+  /** the latest saved design — what the organizer sees is what guests get (the invitation is always live).
+   *  The field keeps its stored name so older saved data loads unchanged. */
   draft: InvitationDesignContent;
   draftSavedAt: ISODateTime;
-  /** snapshot guests see; absent until first publish */
+  /** legacy: a "published" snapshot from before the invitation was always live. Still loaded, never read. */
   published?: InvitationDesignContent;
   publishedAt?: ISODateTime;
 }
 
+/** @deprecated the invitation has no publish state any more; kept only for code that still compiles against it */
 export type PublishState = 'none' | 'draft' | 'published' | 'changed';
 
 // ------------------------------------------------------------------ guests
-/** platform delivery state as stored; `draft`/`ready` are derived from the invitation's publish state */
+/** platform delivery state as stored; a `not_shared` invitation is shown as `ready` (its link works from the start) */
 export type DeliveryStatus = 'not_shared' | 'shared' | 'opened' | 'failed';
 /** spec §12/§13 states as shown to the organizer */
-export type InvitationStatus = 'draft' | 'ready' | 'shared' | 'opened' | 'failed';
+export type InvitationStatus = 'ready' | 'shared' | 'opened' | 'failed';
 /** who knows the state: the platform saw it, the organizer marked it, or the prototype simulated it */
 export type StateSource = 'platform' | 'manual' | 'simulated';
 

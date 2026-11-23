@@ -6,12 +6,12 @@ import { voiced } from './group';
 
 export const SHARED = voiced({
   // the guest's invitation page before it opens (guests are always addressed in the plural)
-  shOpening: 'جارٍ فتح الدعوة', shLinkBroken: 'الرابط غير مكتمل', shAskAgain: 'اطلبوا رابط الدعوة مرة أخرى من صاحب المناسبة.', shNotYet: 'الدعوة غير متاحة بعد', shNotFound: 'لم نجد هذه الدعوة',
+  shOpening: 'جارٍ فتح الدعوة', shLinkBroken: 'الرابط غير مكتمل', shAskAgain: 'اطلبوا رابط الدعوة مرة أخرى من صاحب المناسبة.', shNotFound: 'لم نجد هذه الدعوة',
   shRetryGuests: 'أعيدوا المحاولة', shPlayFailed: 'تعذّر تشغيل الدعوة', shPrivateTo: 'دعوة خاصة إلى {name}', shForYou: 'دعوة لكم',
   shZoomQr: 'تكبير رمز الدخول لـ{name}', shQrFor: 'رمز QR لدخول {name}', shQrBig: 'رمز الدخول بحجم كبير', shPassFor: 'بطاقة دخول {name}',
   // previews of the invitation
-  shGuestName: 'اسم الضيف', shPreviewPublished: 'معاينة الدعوة المنشورة', shPreviewDraft: 'معاينة المسودة — هذه التعديلات ليست منشورة للضيوف', shNoReply: 'لن يُسجل أي رد',
-  shPreviewShort: 'معاينة', shDraftShort: 'معاينة المسودة', shClosePreview: 'إغلاق المعاينة', shPreparing: 'جارٍ تجهيز المعاينة', shLiveLabel: 'معاينة حية للدعوة', shPreparingDots: 'تجهيز المعاينة…',
+  shGuestName: 'اسم الضيف', shPreviewLive: 'معاينة الدعوة كما تصل لضيوفك', shNoReply: 'لن يُسجل أي رد',
+  shPreviewShort: 'معاينة', shClosePreview: 'إغلاق المعاينة', shPreparing: 'جارٍ تجهيز المعاينة', shLiveLabel: 'معاينة حية للدعوة', shPreparingDots: 'تجهيز المعاينة…',
   shPreviewFailed: 'تعذّر فتح المعاينة.', shCardFailed: 'تعذّر عرض البطاقة. أعد تحميل الصفحة.', shOpenDesign: 'افتح لمعاينة التصميم', shJourney: 'من أول دعوة إلى آخر ضيف',
   shCardPreview: 'معاينة البطاقة: {name}', shMsgPreview: 'معاينة كلمة الدعوة', shProgPreview: 'معاينة البرنامج', shPaperMsg: 'يسعدنا حضوركم.', shPaperProg: 'لحظات ننتظركم فيها.',
   shWriteMsg: 'اكتب كلمة دعوتك، وستظهر هنا.', shBigCard: 'البطاقة بحجم أكبر', shZoomed: 'البطاقة مكبّرة. مرّر للتنقل داخلها', shBigPreview: 'معاينة البطاقة بحجم أكبر',
@@ -32,13 +32,13 @@ export const SHARED = voiced({
   shPickTableFor: 'اختر طاولة لـ{name}', shCancelMove: 'إلغاء النقل', shCurrentTable: 'الطاولة الحالية', shBecomes: 'تصبح {after} من {cap}', shOverCap: '، فوق السعة',
   shEditParty: 'تعديل {name}', shScope: 'نطاق التوزيع', shSides: 'الجهات', shNoSide: 'بلا جهة', shOverCapB: 'فوق السعة', shSuggestedOf: '، منها {n} مقترحة', shOverByB: '، فوق السعة بـ{n}',
   // roles: what a team member sees where an owner-only action would be (domain/roles)
-  ownerOnlyNote: 'متاح لصاحب المناسبة', createOwnerTitle: 'إنشاء المناسبات لصاحب المناسبة', createOwnerText: 'حسابك يعمل كمنسّق: تدير الضيوف والطاولات والاستقبال لمناسبات أصحابها. ينشئ صاحب المناسبة مناسبته وينشر دعوتها، ثم تظهر لك هنا.', createOwnerBack: 'العودة إلى مناسباتي',
+  ownerOnlyNote: 'متاح لصاحب المناسبة', createOwnerTitle: 'إنشاء المناسبات لصاحب المناسبة', createOwnerText: 'حسابك يعمل كمنسّق: تدير الضيوف والطاولات والاستقبال لمناسبات أصحابها. ينشئ صاحب المناسبة مناسبته، ثم تظهر لك هنا.', createOwnerBack: 'العودة إلى مناسباتي',
 }, {
-  shOpening: 'بنفتح الدعوة', shLinkBroken: 'اللينك ناقص', shAskAgain: 'اطلبوا لينك الدعوة تاني من صاحب المناسبة.', shNotYet: 'الدعوة لسه مش متاحة', shNotFound: 'ملقيناش الدعوة دي',
+  shOpening: 'بنفتح الدعوة', shLinkBroken: 'اللينك ناقص', shAskAgain: 'اطلبوا لينك الدعوة تاني من صاحب المناسبة.', shNotFound: 'ملقيناش الدعوة دي',
   shRetryGuests: 'جرّبوا تاني', shPlayFailed: 'الدعوة ما اشتغلتش', shPrivateTo: 'دعوة خاصة لـ{name}', shForYou: 'دعوة ليكم',
   shZoomQr: 'كبّروا كود الدخول لـ{name}', shQrFor: 'كود QR لدخول {name}', shQrBig: 'كود الدخول كبير', shPassFor: 'كارت دخول {name}',
-  shGuestName: 'اسم الضيف', shPreviewPublished: 'معاينة الدعوة المنشورة', shPreviewDraft: 'معاينة المسودة — التعديلات دي لسه ما اتنشرتش للضيوف', shNoReply: 'مفيش رد هيتسجل',
-  shPreviewShort: 'معاينة', shDraftShort: 'معاينة المسودة', shClosePreview: 'اقفل المعاينة', shPreparing: 'بنجهّز المعاينة', shLiveLabel: 'معاينة مباشرة للدعوة', shPreparingDots: 'بنجهّز المعاينة…',
+  shGuestName: 'اسم الضيف', shPreviewLive: 'معاينة الدعوة زي ما بتوصل لضيوفك', shNoReply: 'مفيش رد هيتسجل',
+  shPreviewShort: 'معاينة', shClosePreview: 'اقفل المعاينة', shPreparing: 'بنجهّز المعاينة', shLiveLabel: 'معاينة مباشرة للدعوة', shPreparingDots: 'بنجهّز المعاينة…',
   shPreviewFailed: 'المعاينة ما اتفتحتش.', shCardFailed: 'الكارت ما ظهرش. اعمل ريفريش للصفحة.', shOpenDesign: 'افتح وشوف التصميم', shJourney: 'من أول دعوة لآخر ضيف',
   shCardPreview: 'معاينة الكارت: {name}', shMsgPreview: 'معاينة كلمة الدعوة', shProgPreview: 'معاينة البرنامج', shPaperMsg: 'يسعدنا وجودكم.', shPaperProg: 'لحظات مستنيينكم فيها.',
   shWriteMsg: 'اكتب كلمة دعوتك، وهتظهر هنا.', shBigCard: 'الكارت بحجم أكبر', shZoomed: 'الكارت متكبّر. حرّك عشان تتنقل جواه', shBigPreview: 'معاينة الكارت بحجم أكبر',
@@ -54,13 +54,13 @@ export const SHARED = voiced({
   shHallLabel: 'خريطة الترابيزات وتصفية القايمة', shTableUse: '{name}: {used} من {cap}', shOverBy: '، زيادة {n}', shHasAllergy: '، عليها حساسية أكل', shOrder: '، الترتيب {n}',
   shPickTableFor: 'اختار ترابيزة لـ{name}', shCancelMove: 'الغي النقل', shCurrentTable: 'الترابيزة الحالية', shBecomes: 'هتبقى {after} من {cap}', shOverCap: '، فوق السعة',
   shEditParty: 'عدّل {name}', shScope: 'نطاق التوزيع', shSides: 'الجهات', shNoSide: 'من غير جهة', shOverCapB: 'فوق السعة', shSuggestedOf: '، منهم {n} مقترحين', shOverByB: '، فوق السعة بـ{n}',
-  ownerOnlyNote: 'لصاحب الفرح بس', createOwnerTitle: 'المناسبات الجديدة بيعملها صاحبها', createOwnerText: 'حسابك شغّال كمنسّق: بتدير الضيوف والترابيزات والاستقبال لمناسبات أصحابها. صاحب المناسبة هو اللي بيعملها وينشر دعوتها، وبعدين هتظهر لك هنا.', createOwnerBack: 'ارجع لمناسباتي',
+  ownerOnlyNote: 'لصاحب الفرح بس', createOwnerTitle: 'المناسبات الجديدة بيعملها صاحبها', createOwnerText: 'حسابك شغّال كمنسّق: بتدير الضيوف والترابيزات والاستقبال لمناسبات أصحابها. صاحب المناسبة هو اللي بيعملها، وبعدين هتظهر لك هنا.', createOwnerBack: 'ارجع لمناسباتي',
 }, {
-  shOpening: 'نفتح الدعوة', shLinkBroken: 'الرابط ناقص', shAskAgain: 'اطلبوا رابط الدعوة مرة ثانية من صاحب المناسبة.', shNotYet: 'الدعوة مو متاحة للحين', shNotFound: 'ما لقينا هالدعوة',
+  shOpening: 'نفتح الدعوة', shLinkBroken: 'الرابط ناقص', shAskAgain: 'اطلبوا رابط الدعوة مرة ثانية من صاحب المناسبة.', shNotFound: 'ما لقينا هالدعوة',
   shRetryGuests: 'جرّبوا مرة ثانية', shPlayFailed: 'ما اشتغلت الدعوة', shPrivateTo: 'دعوة خاصة لـ{name}', shForYou: 'دعوة لكم',
   shZoomQr: 'كبّروا رمز الدخول لـ{name}', shQrFor: 'رمز QR لدخول {name}', shQrBig: 'رمز الدخول بحجم كبير', shPassFor: 'بطاقة دخول {name}',
-  shGuestName: 'اسم الضيف', shPreviewPublished: 'معاينة الدعوة المنشورة', shPreviewDraft: 'معاينة المسودة — هالتعديلات ما نُشرت للضيوف', shNoReply: 'ما راح يتسجّل أي رد',
-  shPreviewShort: 'معاينة', shDraftShort: 'معاينة المسودة', shClosePreview: 'سكّر المعاينة', shPreparing: 'نجهّز المعاينة', shLiveLabel: 'معاينة مباشرة للدعوة', shPreparingDots: 'نجهّز المعاينة…',
+  shGuestName: 'اسم الضيف', shPreviewLive: 'معاينة الدعوة مثل ما توصل لضيوفك', shNoReply: 'ما راح يتسجّل أي رد',
+  shPreviewShort: 'معاينة', shClosePreview: 'سكّر المعاينة', shPreparing: 'نجهّز المعاينة', shLiveLabel: 'معاينة مباشرة للدعوة', shPreparingDots: 'نجهّز المعاينة…',
   shPreviewFailed: 'ما انفتحت المعاينة.', shCardFailed: 'ما طلعت البطاقة. حدّث الصفحة.', shOpenDesign: 'افتح وشوف التصميم', shJourney: 'من أول دعوة لآخر ضيف',
   shCardPreview: 'معاينة البطاقة: {name}', shMsgPreview: 'معاينة كلمة الدعوة', shProgPreview: 'معاينة البرنامج', shPaperMsg: 'يسعدنا حضوركم.', shPaperProg: 'لحظات ننتظركم فيها.',
   shWriteMsg: 'اكتب كلمة دعوتك، وبتطلع هنا.', shBigCard: 'البطاقة بحجم أكبر', shZoomed: 'البطاقة مكبّرة. مرّر عشان تتنقل داخلها', shBigPreview: 'معاينة البطاقة بحجم أكبر',
@@ -76,5 +76,5 @@ export const SHARED = voiced({
   shHallLabel: 'خريطة الطاولات وتصفية القائمة', shTableUse: '{name}: {used} من {cap}', shOverBy: '، زيادة {n}', shHasAllergy: '، عليها حساسية أكل', shOrder: '، الترتيب {n}',
   shPickTableFor: 'اختر طاولة لـ{name}', shCancelMove: 'ألغِ النقل', shCurrentTable: 'الطاولة الحالية', shBecomes: 'بتصير {after} من {cap}', shOverCap: '، فوق السعة',
   shEditParty: 'عدّل {name}', shScope: 'نطاق التوزيع', shSides: 'الجهات', shNoSide: 'بدون جهة', shOverCapB: 'فوق السعة', shSuggestedOf: '، منها {n} مقترحة', shOverByB: '، فوق السعة بـ{n}',
-  ownerOnlyNote: 'لصاحب المناسبة بس', createOwnerTitle: 'إنشاء المناسبات لصاحبها', createOwnerText: 'حسابك يشتغل كمنسّق: تدير الضيوف والطاولات والاستقبال لمناسبات أصحابها. صاحب المناسبة هو اللي ينشئها وينشر دعوتها، وبعدها تطلع لك هنا.', createOwnerBack: 'ارجع لمناسباتي',
+  ownerOnlyNote: 'لصاحب المناسبة بس', createOwnerTitle: 'إنشاء المناسبات لصاحبها', createOwnerText: 'حسابك يشتغل كمنسّق: تدير الضيوف والطاولات والاستقبال لمناسبات أصحابها. صاحب المناسبة هو اللي ينشئها، وبعدها تطلع لك هنا.', createOwnerBack: 'ارجع لمناسباتي',
 });

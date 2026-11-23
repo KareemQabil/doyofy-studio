@@ -15,9 +15,8 @@
  * Details open in a drawer (?party=). Filter, search and grouping live in the URL.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Event, InvitationParty, PublishState, Table } from '../../domain/types';
+import type { Event, InvitationParty, Table } from '../../domain/types';
 import { PARTY_FILTERS, countParties, duplicatePhoneIds, invitationStatus, matchesFilter, partyNeedsAttention, searchParties, type PartyFilter } from '../../domain/parties';
-import { publishState } from '../../domain/invitation';
 import { formatPhone, relativeTime } from '../../domain/format';
 import { Avatar, Banner, Button, EmptyState, ErrorState, Icon, LinkButton, Menu, PageHeader, SearchInput, PageLoader, type IconName } from '../../ui';
 import { useMutation, useNow, useServices } from '../../app/data';
@@ -104,8 +103,6 @@ export function GuestsPage({ event }: { event: Event }) {
   const unseat = useMutation((s, id: string) => s.seating.assign(id, null), { onSuccess: (p) => { haptic('success'); toast({ tone: 'success', text: t('glUnseated', { name: p.primaryGuestName }) }); } });
 
   const all = parties.data ?? [];
-  const ps = publishState(design.data);
-  const published = ps === 'published' || ps === 'changed';
   const dup = useMemo(() => duplicatePhoneIds(all), [all]);
   const c = useMemo(() => countParties(all), [all]);
   const counts = useMemo(() => Object.fromEntries(PARTY_FILTERS.map((f) => [f.id, all.filter((p) => matchesFilter(p, f.id, dup)).length])), [all, dup]) as Record<PartyFilter, number>;
@@ -119,8 +116,8 @@ export function GuestsPage({ event }: { event: Event }) {
   const selecting = selectMode || sel.length > 0;
   const toggle = (id: string) => { haptic('tick'); setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); };
   const guestLink = useGuestLink(event);
-  const shareUrl = (p: InvitationParty) => published && p.phone && normalisePhone(p.phone).ok ? whatsappUrl(p.phone, inviteMessage(event, p, guestLink(p), dialect)) : undefined;
-  const remindUrl = (p: InvitationParty) => published && p.phone && normalisePhone(p.phone).ok ? whatsappUrl(p.phone, reminderMessage(event, p, guestLink(p), dialect)) : undefined;
+  const shareUrl = (p: InvitationParty) => p.phone && normalisePhone(p.phone).ok ? whatsappUrl(p.phone, inviteMessage(event, p, guestLink(p), dialect)) : undefined;
+  const remindUrl = (p: InvitationParty) => p.phone && normalisePhone(p.phone).ok ? whatsappUrl(p.phone, reminderMessage(event, p, guestLink(p), dialect)) : undefined;
   const unsent = useMemo(() => all.filter(isUnsent).sort((a, b) => a.primaryGuestName.localeCompare(b.primaryGuestName, 'ar')), [all]);
   // «أرسل لمن لم تصلهم الدعوة» follows the list on screen: with a filter or a search it counts only the guests shown
   const unsentShown = useMemo(() => { if (filter === 'all' && !q.trim()) return unsent; const shown = new Set(visible.map((p) => p.id)); return unsent.filter((p) => shown.has(p.id)); }, [unsent, visible, filter, q]);
@@ -133,7 +130,7 @@ export function GuestsPage({ event }: { event: Event }) {
   const shareParam = loc.search.get('share');
   useEffect(() => {
     if (shareParam !== 'unsent' || parties.loading || design.loading) return;
-    if (published && unsent.length && manage) setQueue({ ids: unsent.map((p) => p.id), mode: 'invite' });
+    if (unsent.length && manage) setQueue({ ids: unsent.map((p) => p.id), mode: 'invite' });
     setParam('share', null);
   }, [shareParam, parties.loading, design.loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -153,13 +150,12 @@ export function GuestsPage({ event }: { event: Event }) {
   const chips = PARTY_FILTERS.filter((f) => f.id === 'all' || counts[f.id] > 0 || filter === f.id);
   const groups = grouped ? groupByTable(visible, tableList, t('glNoTable')) : null;
   const rowProps = (p: InvitationParty, i: number) => ({
-    p, publish: ps, table: tableName(p.tableId), seatingEnabled: tableList.length > 0, arrivalTime, now, attention: partyNeedsAttention(p, dup), checked: selected.has(p.id), selecting, foodAccess, manage,
+    p, table: tableName(p.tableId), seatingEnabled: tableList.length > 0, arrivalTime, now, attention: partyNeedsAttention(p, dup), checked: selected.has(p.id), selecting, foodAccess, manage,
     hint: hintRow && i === 0, onToggle: () => toggle(p.id), onSelectStart: () => { setSelectMode(true); setSelected((s) => new Set(s).add(p.id)); },
     onOpen: () => setParam('party', p.id), shareUrl: shareUrl(p), remindUrl: remindUrl(p), onShare: (kind: 'share' | 'remind') => setSharePrompt({ id: p.id, kind }), event,
     busy: unseat.pending && unseating === p.id,
     onNext: (action: GuestNextAction) => {
-      if (action === 'publish') navigate(paths.invitation(event.id));
-      else if (action === 'seat') navigate(`${paths.seating(event.id)}?party=${encodeURIComponent(p.id)}`);
+      if (action === 'seat') navigate(`${paths.seating(event.id)}?party=${encodeURIComponent(p.id)}`);
       else if (action === 'unseat') { setUnseating(p.id); void unseat.run(p.id); }
       else if (action === 'arrival') navigate(paths.checkin(event.id));
       else if (action === 'share') setQueue({ ids: [p.id], mode: 'invite' });
@@ -199,7 +195,6 @@ export function GuestsPage({ event }: { event: Event }) {
         </EmptyState>
       ) : (
         <div className="g2-body">
-          {!published && <Banner tone="warning" compact title={t('glUnpublished')} action={<LinkButton to={paths.invitation(event.id)} size="sm">{t('glToInvitation')}</LinkButton>}>{t('glUnpublishedText')}</Banner>}
 
           {!food && <div className="g2-filters" role="group" aria-label={t('glFilterLabel')}>
             {chips.map((f) => (
@@ -225,7 +220,7 @@ export function GuestsPage({ event }: { event: Event }) {
 
           {/* the job that is left, as the clear next step: share with everyone not yet invited (one sheet, one guest at a time).
               To review them first: «تحديد» → «لم تصلهم» in the selection bar. */}
-          {!food && manage && published && !selecting && unsentShown.length > 0 && <div className="g2-unsent">
+          {!food && manage && !selecting && unsentShown.length > 0 && <div className="g2-unsent">
             <Button variant="primary" icon="send" className="g2-unsent-go" onClick={() => { haptic('tick'); setQueue({ ids: unsentShown.map((p) => p.id), mode: 'invite' }); }}>
               {t('shareUnsent')}<b className="num g2-unsent-count">{unsentShown.length}</b>
             </Button>
@@ -237,18 +232,18 @@ export function GuestsPage({ event }: { event: Event }) {
                 <span className="g2-bulk-count" aria-live="polite">{sel.length ? t('glSelectedCount', { n: n(sel.length, 'invitation') }) : t('glPickInvitations')}{visibleSelected < sel.length ? t('glShownCount', { n: visibleSelected }) : ''}</span>
                 <span className="g2-bulk-picks" role="group" aria-label={t('glQuickPick')}>
                   <button type="button" className="g2-bulk-pick" aria-label={allVisibleSelected ? t('glClearAllLabel') : `${t('selectVisible')} (${visible.length})`} onClick={() => { haptic('tick'); setSelected(allVisibleSelected ? new Set() : new Set(visible.map((p) => p.id))); }}>{allVisibleSelected ? t('glClearAll') : <>{t('glVisible')} <span className="num">{visible.length}</span></>}</button>
-                  {published && unsent.length > 0 && <button type="button" className="g2-bulk-pick" aria-label={`${t('selectUnsent')} (${unsent.length})`} aria-pressed={sel.length === unsent.length && unsent.every((p) => selected.has(p.id))} onClick={selectUnsent}>{t('glUnsentPick')} <span className="num">{unsent.length}</span></button>}
+                  {unsent.length > 0 && <button type="button" className="g2-bulk-pick" aria-label={`${t('selectUnsent')} (${unsent.length})`} aria-pressed={sel.length === unsent.length && unsent.every((p) => selected.has(p.id))} onClick={selectUnsent}>{t('glUnsentPick')} <span className="num">{unsent.length}</span></button>}
                 </span>
               </div>
               <div className="g2-bulk-actions">
-                <Button size="sm" variant="primary" icon="chat" disabled={!published || !sel.length} onClick={() => setQueue({ ids: sel, mode: 'invite' })}>{t('shareSelected')}</Button>
+                <Button size="sm" variant="primary" icon="chat" disabled={!sel.length} onClick={() => setQueue({ ids: sel, mode: 'invite' })}>{t('shareSelected')}</Button>
                 <Menu label={t('glMoreActions')} items={[
-                  { label: `${t('remindSelected')}${selRemindable.length ? ` (${selRemindable.length})` : ''}`, icon: 'bell', disabled: !published || !selRemindable.length, onSelect: () => setQueue({ ids: selRemindable, mode: 'remind' }) },
-                  { label: t('glManualDone'), icon: 'check', disabled: !published || !sel.length || bulkManual.pending, onSelect: () => void bulkManual.run(sel) },
+                  { label: `${t('remindSelected')}${selRemindable.length ? ` (${selRemindable.length})` : ''}`, icon: 'bell', disabled: !selRemindable.length, onSelect: () => setQueue({ ids: selRemindable, mode: 'remind' }) },
+                  { label: t('glManualDone'), icon: 'check', disabled: !sel.length || bulkManual.pending, onSelect: () => void bulkManual.run(sel) },
                   // owner-only (domain/roles): export says why it is unavailable, moving between events is not offered
                   { label: t('exportSelected'), icon: 'download', disabled: !sel.length || !can(role, 'guests.export'), hint: can(role, 'guests.export') ? undefined : t('ownerOnlyNote'), onSelect: () => setExporting(true) },
                   can(role, 'guests.transfer') ? { label: t('moveGuests'), icon: 'move', disabled: !sel.length, onSelect: () => setTransferring(true) } : null,
-                  { label: t('glSimulateSend'), icon: 'send', disabled: !published || !sel.length, onSelect: () => void bulkSend.run(sel) },
+                  { label: t('glSimulateSend'), icon: 'send', disabled: !sel.length, onSelect: () => void bulkSend.run(sel) },
                 ]} />
                 <button type="button" className="g2-bulk-close" onClick={clearSelection} aria-label={t('glEndSelection')}><Icon name="close" size="sm" /></button>
               </div>
@@ -282,7 +277,7 @@ export function GuestsPage({ event }: { event: Event }) {
           ) : (
             <ul className="g2-list" aria-label={t('guestList')}>{visible.map((p, i) => <GuestCard key={p.id} {...rowProps(p, i)} />)}</ul>
           )}
-          {!food && <p className="faint t-sm g2-foot">{visible.length !== all.length ? t('glShowing', { n: visible.length, all: all.length }) : n(all.length, 'invitation')}{published ? t('glDemoLinks') : ''}</p>}
+          {!food && <p className="faint t-sm g2-foot">{visible.length !== all.length ? t('glShowing', { n: visible.length, all: all.length }) : n(all.length, 'invitation')}{t('glDemoLinks')}</p>}
         </div>
       )}
 
@@ -294,7 +289,7 @@ export function GuestsPage({ event }: { event: Event }) {
       )}
       {queue && <ShareQueue event={event} mode={queue.mode} parties={queue.ids.map((id) => all.find((p) => p.id === id)).filter((p): p is InvitationParty => !!p)} urlFor={queue.mode === 'remind' ? remindUrl : shareUrl} linkFor={guestLink}
         onClose={(done) => { setQueue(null); if (done) clearSelection(); }} onAddPhone={manage ? (id) => { setQueue(null); setEditPhone(id); setParam('party', id); } : undefined} />}
-      {open && tables.data && <PartyDrawer key={open.id} event={event} party={open} all={all} tables={tables.data} publish={ps} startEditing={editPhone === open.id} onClose={() => { setEditPhone(null); setParam('party', null); }} />}
+      {open && tables.data && <PartyDrawer key={open.id} event={event} party={open} all={all} tables={tables.data} startEditing={editPhone === open.id} onClose={() => { setEditPhone(null); setParam('party', null); }} />}
       {openId && !open && !parties.loading && <Banner tone="info">{t('glGone')}</Banner>}
     </div>
   );
@@ -310,10 +305,10 @@ function groupByTable(list: InvitationParty[], tables: Table[], noTable: string)
 }
 
 /** WhatsApp-like ticks for the invitation link — they describe the link, never a WhatsApp read receipt */
-function DeliveryTicks({ p, publish, when }: { p: InvitationParty; publish: PublishState; when?: string }) {
+function DeliveryTicks({ p, when }: { p: InvitationParty; when?: string }) {
   const { t } = useCopy();
-  const s = invitationStatus(p, publish);
-  const key: CopyKey = s === 'draft' ? 'invDraft' : s === 'ready' ? 'invReady' : s === 'shared' ? (p.delivery.source === 'manual' ? 'invManual' : 'invShared') : s === 'opened' ? 'invOpened' : 'invFailed';
+  const s = invitationStatus(p);
+  const key: CopyKey = s === 'ready' ? 'invReady' : s === 'shared' ? (p.delivery.source === 'manual' ? 'invManual' : 'invShared') : s === 'opened' ? 'invOpened' : 'invFailed';
   // a simulated send carries the one «تجريبي» word, never a «(محاكاة)» suffix
   const label = s === 'shared' && p.delivery.source === 'simulated' ? `${t(key)} · ${t('demoBadge')}` : t(key);
   return (
@@ -324,18 +319,18 @@ function DeliveryTicks({ p, publish, when }: { p: InvitationParty; publish: Publ
   );
 }
 
-const ACTION_ICON: Record<Exclude<GuestNextAction, 'details' | 'wait'>, IconName> = { publish: 'send', phone: 'plus', share: 'chat', remind: 'bell', seat: 'table', unseat: 'minus', arrival: 'check' };
+const ACTION_ICON: Record<Exclude<GuestNextAction, 'details' | 'wait'>, IconName> = { phone: 'plus', share: 'chat', remind: 'bell', seat: 'table', unseat: 'minus', arrival: 'check' };
 
 /**
  * A compact card (≈6–7 per phone screen): the whole card opens the guest, ONE primary action per guest (never a
  * second button for the same job), and the guest's state shows as a coloured edge plus its text label.
  */
-function GuestCard({ p, publish, table, grouped = false, seatingEnabled, arrivalTime, now, attention, checked, selecting, hint, onToggle, onSelectStart, onOpen, shareUrl, remindUrl, onShare, event, foodAccess, manage, busy, onNext }: {
-  p: InvitationParty; publish: PublishState; table?: string; grouped?: boolean; seatingEnabled: boolean; arrivalTime: boolean; now: Date; attention: string[]; checked: boolean; selecting: boolean; hint: boolean; event: Event;
+function GuestCard({ p, table, grouped = false, seatingEnabled, arrivalTime, now, attention, checked, selecting, hint, onToggle, onSelectStart, onOpen, shareUrl, remindUrl, onShare, event, foodAccess, manage, busy, onNext }: {
+  p: InvitationParty; table?: string; grouped?: boolean; seatingEnabled: boolean; arrivalTime: boolean; now: Date; attention: string[]; checked: boolean; selecting: boolean; hint: boolean; event: Event;
   onToggle: () => void; onSelectStart: () => void; onOpen: () => void; shareUrl?: string; remindUrl?: string; onShare: (kind: 'share' | 'remind') => void; foodAccess: boolean; manage: boolean; busy: boolean; onNext: (action: GuestNextAction) => void;
 }) {
   const { t, dialect } = useCopy();
-  const next = guestNextAction(p, publish, seatingEnabled, arrivalTime, now);
+  const next = guestNextAction(p, seatingEnabled, arrivalTime, now);
   // «wait»: just invited or reminded — say when («أُرسلت قبل ساعة» on the ticks, or «ذُكّرت قبل…») instead of «ذكّر بالرد»
   const held = next === 'wait' ? remindHold(p, now) : null;
   const heldWhen = held ? relativeTime(held.at, now, dialect) : undefined;
@@ -355,7 +350,7 @@ function GuestCard({ p, publish, table, grouped = false, seatingEnabled, arrival
   const state = arrived ? 'arrived' : unsentState ? 'unsent' : p.rsvpStatus;
   const stateLabel = t(arrived ? ARRIVAL_KEY[p.checkInStatus] : unsentState ? 'stUnsent' : RSVP_KEY[p.rsvpStatus]);
   const stateCount = arrived ? p.checkedInCount : p.rsvpStatus === 'confirmed' ? p.confirmedPartySize : undefined;
-  const label = next === 'details' || next === 'wait' ? '' : { publish: t('publishFirst'), phone: t('addPhone'), share: t('shareWhatsapp'), remind: t('remindReply'), seat: t('assignTable'), unseat: t('removeFromTable'), arrival: t('recordArrival') }[next];
+  const label = next === 'details' || next === 'wait' ? '' : { phone: t('addPhone'), share: t('shareWhatsapp'), remind: t('remindReply'), seat: t('assignTable'), unseat: t('removeFromTable'), arrival: t('recordArrival') }[next];
   // share and remind are plain links to WhatsApp (no popup blocker); the «did you send?» prompt follows
   const href = next === 'share' ? shareUrl : next === 'remind' ? remindUrl : undefined;
   const action = !manage || next === 'details' ? null : next === 'wait'
@@ -367,7 +362,7 @@ function GuestCard({ p, publish, table, grouped = false, seatingEnabled, arrival
     <li ref={cardRef} className={`g2-row swipe-row${checked ? ' is-selected' : ''}${selecting ? ' is-selecting' : ''} rsvp-${p.rsvpStatus} state-${state}`}>
       <div className="swipe-tray swipe-tray-start" aria-hidden="true">
         {shareUrl ? <a className="swipe-action is-whatsapp" href={shareUrl} target="_blank" rel="noopener noreferrer" tabIndex={-1} onClick={() => { onShare('share'); swipe.close(); }}><Icon name="chat" />{t('sendWhatsapp')}</a>
-          : <button type="button" className="swipe-action is-muted" tabIndex={-1} onClick={() => { swipe.close(); onOpen(); }}><Icon name="chat" />{publish === 'draft' || publish === 'none' ? t('glAfterPublish') : t('addPhone')}</button>}
+          : <button type="button" className="swipe-action is-muted" tabIndex={-1} onClick={() => { swipe.close(); onOpen(); }}><Icon name="chat" />{t('addPhone')}</button>}
       </div>
       <div className="swipe-tray swipe-tray-end" aria-hidden="true">
         <button type="button" className="swipe-action is-muted" tabIndex={-1} onClick={() => { swipe.close(); onOpen(); }}><Icon name="eye" />{t('glDetails')}</button>
@@ -390,7 +385,7 @@ function GuestCard({ p, publish, table, grouped = false, seatingEnabled, arrival
         <span className="g2-foot-line">
           {action}
           {/* no number yet: «جاهزة للمشاركة» beside «أضف رقمًا» would contradict the action */}
-          {next !== 'phone' && <DeliveryTicks p={p} publish={publish} when={ticksWhen} />}
+          {next !== 'phone' && <DeliveryTicks p={p} when={ticksWhen} />}
         </span>
         {foodAccess && <FoodLine event={event} p={p} />}
       </div>
