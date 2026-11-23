@@ -11,15 +11,14 @@ import { copyFor, type Dialect } from './copy';
  * The UI hides or explains what a role cannot do; the mock services refuse it too (services/mock/repositories.ts).
  * A production API must enforce the same table.
  */
-/** `invitation.publish` is deprecated: the invitation is always live (no publish step). Kept only for callers compiled against it. */
 export type Permission =
   | 'guests.add' | 'guests.edit' | 'guests.share' | 'guests.remind'
   | 'guests.delete' | 'guests.transfer' | 'guests.export'
   | 'seating' | 'checkin' | 'food'
-  | 'billing' | 'invitation.publish' | 'event.create' | 'event.archive';
+  | 'billing' | 'event.create' | 'event.archive';
 
 /** the actions the owner keeps for themselves */
-const OWNER_ONLY: ReadonlySet<Permission> = new Set(['guests.delete', 'guests.transfer', 'guests.export', 'billing', 'invitation.publish', 'event.create', 'event.archive']);
+const OWNER_ONLY: ReadonlySet<Permission> = new Set(['guests.delete', 'guests.transfer', 'guests.export', 'billing', 'event.create', 'event.archive']);
 
 export function can(role: Role, action: Permission): boolean {
   if (action === 'food') return role === 'caterer';
@@ -44,7 +43,6 @@ export const FORBIDDEN_TEXT: Record<Permission, string> = {
   checkin: 'تسجيل الوصول متاح لفريق التنظيم والاستقبال.',
   food: 'تقارير الطعام متاحة لمزود الضيافة.',
   billing: 'الدفع وترقية الباقة متاحان لصاحب المناسبة فقط.',
-  'invitation.publish': 'هذا الإجراء متاح لصاحب المناسبة فقط.',
   'event.create': 'إنشاء مناسبة جديدة متاح لصاحب المناسبة فقط.',
   'event.archive': 'أرشفة المناسبة متاحة لصاحب المناسبة فقط.',
 };

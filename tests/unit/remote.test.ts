@@ -227,16 +227,6 @@ test('[mocked] invitations: saveDraft sends the last seen revision and refreshes
   await rejectsWith(s.invitations.saveDraft(EVENT_ID, design), 'conflict', /من جهاز آخر/);
 });
 
-test('[mocked] invitations.publish (deprecated) with no design yet saves the occasion default', async () => {
-  const live = { ...designRow(1), published: design, published_at: '2026-10-10T10:00:00Z', published_version: 1 };
-  const { s, calls } = setup([json(200, []), json(200, eventRow), json(200, designRow(1)), json(200, live)]);
-  const d = await s.invitations.publish(EVENT_ID);
-  assert.deepEqual(calls.map((c) => c.url.replace(URL_BASE, '').split('?')[0]), [
-    '/rest/v1/invitation_designs', '/rest/v1/events', '/rest/v1/rpc/save_invitation_draft', '/rest/v1/rpc/publish_invitation',
-  ]);
-  assert.equal(d.draft.cardId, 'lace');
-});
-
 test('[mocked] parties: list mapping, constraint errors → field-level validation, messaging refused without a request', async () => {
   const { s, calls } = setup([
     json(200, [partyRow]),

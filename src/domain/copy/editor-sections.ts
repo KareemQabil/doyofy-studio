@@ -1,29 +1,37 @@
-/** The editor's content, design and event sections (the motion and audio section belongs to the audio library). */
-import { partly } from './group';
+/**
+ * The editor's «النص» and «الشكل» tabs (the «الصوت» tab belongs to the audio library). Names, date and place are the
+ * EVENT's own details, edited here once for everywhere; English is optional and disclosed on demand.
+ */
+import { voiced } from './group';
 
-export const EDITOR_SECTIONS = partly({
-  esNames: 'الأسماء على البطاقة', esNamesHint: 'الأسماء من بيانات المناسبة. عدّلها هنا فقط إن أردت أن تظهر بشكل مختلف.', esName: 'الاسم', esSecondName: 'الاسم الثاني', esEnglish: 'بالإنجليزية', esArabic: 'بالعربية',
-  esMessage: 'كلمة الدعوة', esEnStale: 'السطر الإنجليزي على البطاقة لم يتغيّر:', esEditIt: 'عدّله', esDeleteIt: 'احذفه', esHideEnglish: 'إخفاء النصوص الإنجليزية', esShowEnglish: 'النصوص الإنجليزية',
-  esProgramme: 'برنامج المناسبة', esProgrammeMeta: 'اختياري · {n} جاهزة', esProgrammeHint: 'يظهر في صفحات الدعوة. يمكنك تعديل الفقرات أو حذفها.', esItemTime: 'وقت الفقرة {n}', esItem: 'الفقرة {n}', esItemPlaceholder: 'الفقرة', esDeleteItem: 'احذف الفقرة {n}', esAddItem: 'أضف فقرة',
+export const EDITOR_SECTIONS = voiced({
+  esNames: 'الأسماء', esNamesHint: 'تظهر على البطاقة وفي كل صفحات مناسبتك.', esName: 'الاسم', esSecondName: 'الاسم الثاني', esNameError: 'اكتب {label}',
+  esWhen: 'الموعد', esDate: 'التاريخ', esTime: 'الوقت', esWhere: 'المكان', esVenue: 'اسم القاعة أو المكان', esCity: 'المدينة', esMap: 'رابط الخريطة', esMapHint: 'يفتح للضيف زر «الاتجاهات».',
+  esDateError: 'اختر تاريخًا صحيحًا', esFutureError: 'اختر تاريخًا قادمًا', esTimeError: 'اختر وقتًا صحيحًا', esMapHttps: 'أضف رابط خريطة يبدأ بـ https://', esMapBad: 'أضف رابط خريطة صحيحًا',
+  esMessage: 'كلمة الدعوة', esEnStale: 'السطر الإنجليزي على البطاقة لم يتغيّر:', esEditIt: 'عدّله', esDeleteIt: 'احذفه',
+  esEnglish: 'إضافة نص إنجليزي', esEnglishHint: 'يظهر تحت النص العربي على البطاقة وصفحات الدعوة.', esNameEn: '{label} بالإنجليزية', esMessageEn: 'كلمة الدعوة بالإنجليزية',
+  esProgramme: 'برنامج المناسبة', esProgrammeMeta: 'اختياري · {n} جاهزة', esProgrammeHint: 'يظهر في صفحات الدعوة. يمكنك تعديل الفقرات أو حذفها.', esItemTime: 'وقت الفقرة {n}', esItem: 'الفقرة {n}', esItemEn: 'الفقرة {n} بالإنجليزية', esItemPlaceholder: 'الفقرة', esDeleteItem: 'احذف الفقرة {n}', esAddItem: 'أضف فقرة',
   esDesign: 'التصميم', esCustom: 'تصميم مخصّص', esChangeDesign: 'غيّر التصميم', esForYou: 'مختارة لمناسبتك', esForYouHint: 'يتغيّر شكل البطاقة فقط، والنص والأسماء تبقى كما كتبتها.', esCardsLabel: 'بطاقات مختارة',
   esScene: 'الخلفية', esSceneHint: 'لون الخلفية ونقشها خلف البطاقة. يراها الضيف عند فتح الدعوة.', esScenesLabel: 'خلفيات مختارة', esAll: 'كل البطاقات والخلفيات', esOptional: 'اختياري', esCard: 'البطاقة',
-  esDateError: 'اختر تاريخًا صحيحًا', esFutureError: 'اختر تاريخًا قادمًا', esTimeError: 'اختر وقتًا صحيحًا', esVenueError: 'اكتب اسم المكان', esCityError: 'اكتب المدينة', esMapHttps: 'أضف رابط خريطة يبدأ بـ https://', esMapBad: 'أضف رابط خريطة صحيحًا', esSizeError: 'عدد الأشخاص من 1 إلى 20',
-  esUnified: 'بيانات موحّدة للمناسبة', esUnifiedText: 'تظهر تعديلاتك في المعاينة فورًا. احفظها هنا، أو انشر الدعوة ليُحفظ كل شيء معًا.', esWhen: 'الموعد', esDate: 'التاريخ', esTime: 'الوقت', esWhere: 'المكان', esVenue: 'اسم القاعة أو المكان', esCity: 'المدينة',
-  esMap: 'رابط الخريطة', esMapHint: 'يفتح للضيف زر «الاتجاهات».', esGuests: 'الضيوف', esPerInvitation: 'عدد الأشخاص لكل دعوة', esPerInvitationHint: 'الحد الافتراضي للضيوف الجدد، ويمكن تغييره لكل ضيف من قائمة الضيوف.', esSave: 'احفظ بيانات المناسبة', esSaved: 'تم الحفظ',
   esMotion: 'الحركة', esAnimatedD: 'افتتاحية سينمائية، وظرف يُختم ويطير بعد الرد.', esStaticD: 'تفتح مباشرة على البطاقة، بلا حركة.',
 }, {
-  esNames: 'الأسامي على الكارت', esNamesHint: 'الأسامي من بيانات المناسبة. عدّلها هنا بس لو عايزها تظهر بشكل مختلف.', esSecondName: 'الاسم التاني', esEnglish: 'بالإنجليزي', esArabic: 'بالعربي',
-  esEnStale: 'السطر الإنجليزي على الكارت ما اتغيّرش:', esHideEnglish: 'اخفي الكلام الإنجليزي', esShowEnglish: 'الكلام الإنجليزي',
-  esProgrammeHint: 'بيظهر في صفحات الدعوة. تقدر تعدّل الفقرات أو تمسحها.', esDeleteItem: 'امسح الفقرة {n}', esAddItem: 'زوّد فقرة',
-  esForYouHint: 'شكل الكارت بس اللي بيتغيّر، والكلام والأسامي بيفضلوا زي ما كتبتهم.', esSceneHint: 'لون الخلفية ونقشتها ورا الكارت. الضيف بيشوفها لما يفتح الدعوة.', esAll: 'كل الكروت والخلفيات', esCard: 'الكارت',
+  esNames: 'الأسامي', esNamesHint: 'بتظهر على الكارت وفي كل صفحات مناسبتك.', esName: 'الاسم', esSecondName: 'الاسم التاني', esNameError: 'اكتب {label}',
+  esWhen: 'الميعاد', esDate: 'التاريخ', esTime: 'الساعة', esWhere: 'المكان', esVenue: 'اسم القاعة أو المكان', esCity: 'المدينة', esMap: 'لينك الخريطة', esMapHint: 'بيفتح للضيف زرار «الاتجاهات».',
   esDateError: 'اختار تاريخ صح', esFutureError: 'اختار تاريخ جاي', esTimeError: 'اختار ساعة صح', esMapHttps: 'حط لينك خريطة بيبدأ بـ https://', esMapBad: 'حط لينك خريطة صح',
-  esUnifiedText: 'تعديلاتك بتظهر في المعاينة على طول. احفظها هنا، أو انشر الدعوة وكل حاجة هتتحفظ مع بعض.', esWhen: 'الميعاد', esTime: 'الساعة', esMap: 'لينك الخريطة', esMapHint: 'بيفتح للضيف زرار «الاتجاهات».',
-  esPerInvitationHint: 'الحد الافتراضي للضيوف الجداد، وتقدر تغيّره لكل ضيف من قايمة الضيوف.', esSaved: 'اتحفظ',
+  esMessage: 'كلمة الدعوة', esEnStale: 'السطر الإنجليزي على الكارت ما اتغيّرش:', esEditIt: 'عدّله', esDeleteIt: 'امسحه',
+  esEnglish: 'إضافة كلام إنجليزي', esEnglishHint: 'بيظهر تحت الكلام العربي على الكارت وصفحات الدعوة.', esNameEn: '{label} بالإنجليزي', esMessageEn: 'كلمة الدعوة بالإنجليزي',
+  esProgramme: 'برنامج المناسبة', esProgrammeMeta: 'اختياري · {n} جاهزة', esProgrammeHint: 'بيظهر في صفحات الدعوة. تقدر تعدّل الفقرات أو تمسحها.', esItemTime: 'ساعة الفقرة {n}', esItem: 'الفقرة {n}', esItemEn: 'الفقرة {n} بالإنجليزي', esItemPlaceholder: 'الفقرة', esDeleteItem: 'امسح الفقرة {n}', esAddItem: 'زوّد فقرة',
+  esDesign: 'التصميم', esCustom: 'تصميم مخصوص', esChangeDesign: 'غيّر التصميم', esForYou: 'مختارة لمناسبتك', esForYouHint: 'شكل الكارت بس اللي بيتغيّر، والكلام والأسامي بيفضلوا زي ما كتبتهم.', esCardsLabel: 'كروت مختارة',
+  esScene: 'الخلفية', esSceneHint: 'لون الخلفية ونقشتها ورا الكارت. الضيف بيشوفها لما يفتح الدعوة.', esScenesLabel: 'خلفيات مختارة', esAll: 'كل الكروت والخلفيات', esOptional: 'اختياري', esCard: 'الكارت',
   esMotion: 'الحركة', esAnimatedD: 'افتتاحية سينمائية، وظرف بيتختم ويطير بعد الرد.', esStaticD: 'بتفتح على الكارت على طول، من غير حركة.',
 }, {
-  esNamesHint: 'الأسماء من بيانات المناسبة. عدّلها هنا بس إذا تبيها تطلع بشكل مختلف.', esEnStale: 'السطر الإنجليزي على البطاقة ما تغيّر:', esHideEnglish: 'أخفِ النصوص الإنجليزية',
-  esProgrammeHint: 'يطلع في صفحات الدعوة. تقدر تعدّل الفقرات أو تحذفها.', esForYouHint: 'يتغيّر شكل البطاقة بس، والكلام والأسماء تبقى مثل ما كتبتها.', esSceneHint: 'لون الخلفية ونقشتها ورا البطاقة. يشوفها الضيف لما يفتح الدعوة.',
-  esDateError: 'اختر تاريخ صحيح', esFutureError: 'اختر تاريخ جاي', esTimeError: 'اختر وقت صحيح', esMapBad: 'أضف رابط خريطة صحيح',
-  esUnifiedText: 'تعديلاتك تطلع في المعاينة على طول. احفظها هنا، أو انشر الدعوة وينحفظ كل شي مع بعض.', esPerInvitationHint: 'الحد الافتراضي للضيوف الجدد، وتقدر تغيّره لكل ضيف من قائمة الضيوف.', esSaved: 'انحفظ',
+  esNames: 'الأسماء', esNamesHint: 'تطلع على البطاقة وفي كل صفحات مناسبتك.', esName: 'الاسم', esSecondName: 'الاسم الثاني', esNameError: 'اكتب {label}',
+  esWhen: 'الموعد', esDate: 'التاريخ', esTime: 'الوقت', esWhere: 'المكان', esVenue: 'اسم القاعة أو المكان', esCity: 'المدينة', esMap: 'رابط الخريطة', esMapHint: 'يفتح للضيف زر «الاتجاهات».',
+  esDateError: 'اختر تاريخ صحيح', esFutureError: 'اختر تاريخ جاي', esTimeError: 'اختر وقت صحيح', esMapHttps: 'أضف رابط خريطة يبدأ بـ https://', esMapBad: 'أضف رابط خريطة صحيح',
+  esMessage: 'كلمة الدعوة', esEnStale: 'السطر الإنجليزي على البطاقة ما تغيّر:', esEditIt: 'عدّله', esDeleteIt: 'احذفه',
+  esEnglish: 'إضافة نص إنجليزي', esEnglishHint: 'يطلع تحت النص العربي على البطاقة وصفحات الدعوة.', esNameEn: '{label} بالإنجليزي', esMessageEn: 'كلمة الدعوة بالإنجليزي',
+  esProgramme: 'برنامج المناسبة', esProgrammeMeta: 'اختياري · {n} جاهزة', esProgrammeHint: 'يطلع في صفحات الدعوة. تقدر تعدّل الفقرات أو تحذفها.', esItemTime: 'وقت الفقرة {n}', esItem: 'الفقرة {n}', esItemEn: 'الفقرة {n} بالإنجليزي', esItemPlaceholder: 'الفقرة', esDeleteItem: 'احذف الفقرة {n}', esAddItem: 'أضف فقرة',
+  esDesign: 'التصميم', esCustom: 'تصميم مخصّص', esChangeDesign: 'غيّر التصميم', esForYou: 'مختارة لمناسبتك', esForYouHint: 'يتغيّر شكل البطاقة بس، والكلام والأسماء تبقى مثل ما كتبتها.', esCardsLabel: 'بطاقات مختارة',
+  esScene: 'الخلفية', esSceneHint: 'لون الخلفية ونقشتها ورا البطاقة. يشوفها الضيف لما يفتح الدعوة.', esScenesLabel: 'خلفيات مختارة', esAll: 'كل البطاقات والخلفيات', esOptional: 'اختياري', esCard: 'البطاقة',
   esMotion: 'الحركة', esAnimatedD: 'افتتاحية سينمائية، وظرف ينختم ويطير بعد الرد.', esStaticD: 'تفتح على البطاقة على طول، بدون حركة.',
 });

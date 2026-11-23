@@ -18,6 +18,21 @@ export function cardFaceHtml(cardId: string, invitation: unknown): string {
   return card.render(deriveContent(invitation, { digits: card.digits }).c);
 }
 
+/**
+ * The lines a card face prints for the event's names, its date and its place, in that face's number system — the
+ * editor finds them on the drawn face to make each one a «tap to edit» target. Empty and one-letter strings are left out.
+ */
+export function cardFaceTexts(cardId: string, invitation: unknown): Record<'names' | 'date' | 'venue', string[]> {
+  const card = CardRegistry.has(cardId) ? CardRegistry.get(cardId) : CardRegistry.get(FALLBACK_CARD);
+  const c = deriveContent(invitation, { digits: card.digits }).c as Record<string, unknown>;
+  const pick = (...keys: string[]) => [...new Set(keys.map((k) => String(c[k] ?? '').replace(/\s+/g, ' ').trim()).filter((s) => s.length > 1))];
+  return {
+    names: pick('arA', 'arB', 'enA', 'enB', 'enAU', 'enBU'),
+    date: pick('dateAr', 'dayAr', 'dateNum', 'dateShort', 'timeAr', 'monthAr', 'yearAr', 'dateEn', 'dayEn', 'timeEn', 'dateEnU', 'dayEnU', 'monthEnU'),
+    venue: pick('venueAr', 'cityAr', 'venueEn', 'venueEnU', 'cityEn', 'cityEnU'),
+  };
+}
+
 export function cardIds(): string[] { return CardRegistry.list().map((c) => c.id); }
 /** a 2D setting (390×844 phone stage) as static markup — the gallery lays the card on it */
 export function sceneArtHtml(sceneId: string): string {

@@ -3,7 +3,7 @@
  * The design never stores event data (date, time, venue): `toInvitationData` merges the Event in at
  * render time, so editing the invitation can't silently change the event (spec §10).
  */
-import type { Event, InvitationDesign, InvitationDesignContent, PublishState } from './types';
+import type { Event, InvitationDesign, InvitationDesignContent } from './types';
 import { eventTypeInfo, isCoupleEvent } from './event';
 import { OCCASION_LABELS_EN, OCCASION_STARTERS } from './occasion-starters';
 import { CARD_NAMES, faceDigits, presetById } from './templates';
@@ -52,15 +52,6 @@ export function liveDesign(d: Pick<InvitationDesign, 'draft'> | null | undefined
   return d?.draft ?? defaultDesign(ev);
 }
 
-/**
- * @deprecated There is no publish concept any more (owner decision, Nov 2026); nothing outside the editor's
- * transitional code reads this. Kept so code compiled against it keeps building while it is removed.
- */
-export function publishState(d: InvitationDesign | null | undefined): PublishState {
-  if (!d) return 'none';
-  if (!d.published) return 'draft';
-  return JSON.stringify(d.published) === JSON.stringify(d.draft) ? 'published' : 'changed';
-}
 
 export interface ResolvedNames { a: string; b: string; aEn: string; bEn: string; fromEvent: boolean }
 

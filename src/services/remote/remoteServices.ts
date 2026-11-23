@@ -164,12 +164,6 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
         }));
         return changed(rememberDesign(await db.rpc<DesignRow>('publish_invitation', { p_event_id: eventId, p_expected_revision: revisions.get(eventId) ?? null })));
       },
-      /** @deprecated nothing to publish any more: saves the occasion's default design when none is saved yet */
-      publish: async (eventId) => {
-        const saved = await services.invitations.get(eventId);
-        if (saved) return saved;
-        return services.invitations.saveDraft(eventId, defaultDesign(await services.events.get(eventId)));
-      },
     },
 
     // ---------------------------------------------------------------- parties
