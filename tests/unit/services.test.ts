@@ -18,6 +18,14 @@ test('journey: create → publish → guest → RSVP from link → seat → part
   const ev = await s.events.create({ type: 'wedding', names: { a: 'سارة', b: 'أحمد', aEn: 'Sara', bEn: 'Ahmed' }, date, time: '20:00', venue: { name: 'قاعة الورد', city: 'الرياض' } });
   assert.equal(ev.title, 'زفاف سارة وأحمد');
   assert.equal(ev.slug, 'sara-ahmed');
+  // less data: the names and the date are enough — the time defaults to 8:00 PM and the place stays blank until added
+  const bare = await s.events.create({ type: 'graduation', names: { a: 'جود' }, date });
+  assert.equal(bare.time, '20:00');
+  assert.deepEqual(bare.venue, { name: '', city: '' });
+  assert.equal(bare.title, 'حفل تخرج جود');
+  const placed = await s.events.update(bare.id, { venue: { ...bare.venue, name: 'قاعة الريحان', city: 'الرياض' } });
+  assert.equal(placed.venue.name, 'قاعة الريحان', 'the place can be added later');
+  await assert.rejects(s.events.create({ type: 'graduation', names: { a: 'جود' }, date: '' }), /اختر التاريخ/);
 
   // guest link fails until the invitation is published
   const p = await s.parties.create(ev.id, { primaryGuestName: 'عائلة الدوسري', phone: '0551203344', maxPartySize: 4 });

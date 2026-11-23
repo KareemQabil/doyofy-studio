@@ -16,7 +16,7 @@ import type {
 import type { CreateEventInput, InvitationDesign, InvitationDesignContent, PartyInput, User } from '../../domain/types';
 import { AppError, copyError } from '../errors';
 import { makeCode, makeSlug, normaliseCode } from '../../domain/ids';
-import { suggestTitle, todayFor, validateEssentials } from '../../domain/event';
+import { cleanVenue, DEFAULT_EVENT_TIME, suggestTitle, todayFor, validateEssentials } from '../../domain/event';
 import { defaultDesign } from '../../domain/invitation';
 import { normalisePhone } from '../../domain/phone';
 import { validateTable } from '../../domain/seating';
@@ -106,8 +106,8 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
         const row = {
           type: input.type, title: input.title?.trim() || suggestTitle(input.type, input.names),
           names: { a: input.names.a.trim(), b: input.names.b?.trim() || undefined, aEn: input.names.aEn?.trim() || undefined, bEn: input.names.bEn?.trim() || undefined },
-          date: input.date, time: input.time, time_zone: timeZone, duration_hours: 5,
-          venue: { ...input.venue, name: input.venue.name.trim(), city: input.venue.city.trim() },
+          date: input.date, time: input.time || DEFAULT_EVENT_TIME, time_zone: timeZone, duration_hours: 5,
+          venue: cleanVenue(input.venue),
         };
         // slugs are globally unique and other owners' slugs are invisible (RLS): retry with a suffix on conflict
         for (let attempt = 0; attempt < 4; attempt++) {

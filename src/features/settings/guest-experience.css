@@ -37,3 +37,15 @@
 .gxs-preview-note { font-size: var(--fs-xs); color: var(--c-text-3); }
 @media (max-width: 1039px) { .gxs-preview { position: static; } }
 @media (prefers-reduced-motion: reduce) { .gxs-sub { animation: none; } }
+
+/* event settings: essentials first; «خيارات متقدمة» is one folded row with the same panel rhythm inside (SettingsPage.tsx) */
+.settings-advanced { border-bottom: 1px solid var(--c-line); }
+.settings-advanced > summary { list-style: none; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 16px 0; cursor: pointer; }
+.settings-advanced > summary::-webkit-details-marker { display: none; }
+.settings-advanced > summary:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; border-radius: var(--r-sm, 6px); }
+.settings-advanced-title { display: block; font-weight: var(--fw-bold, 700); font-size: 16px; color: var(--c-text); }
+.settings-advanced-hint { display: block; margin-top: 2px; font-size: 13px; line-height: 1.6; color: var(--c-text-2); }
+.settings-advanced > summary > .icon { flex: none; color: var(--c-text-2); transition: transform 180ms var(--ease-out); }
+.settings-advanced[open] > summary > .icon { transform: rotate(180deg); }
+.settings-advanced > .panel:last-child { border-bottom: 0; }
+@media (prefers-reduced-motion: reduce) { .settings-advanced > summary > .icon { transition: none; } }

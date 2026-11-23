@@ -26,7 +26,8 @@ export type EventType =
   | 'other';
 
 export interface Venue {
-  name: string;        // Arabic display name
+  /** Arabic display name — may be '' (the place is optional; screens use hasVenue/placeLine from domain/event) */
+  name: string;
   city: string;
   nameEn?: string;
   cityEn?: string;
@@ -74,7 +75,8 @@ export interface Event extends EventDetails {
   updatedAt: ISODateTime;
 }
 
-export type CreateEventInput = Pick<EventDetails, 'type' | 'names' | 'date' | 'time' | 'venue'> & { title?: string; timeZone?: string };
+/** only the names and the date are needed: the time defaults to 20:00, the place can be added later (blank strings) */
+export type CreateEventInput = Pick<EventDetails, 'type' | 'names' | 'date'> & { time?: LocalTime; venue?: Partial<Venue>; title?: string; timeZone?: string };
 export type UpdateEventInput = Partial<EventDetails> & { settings?: Partial<EventSettings> };
 
 // ------------------------------------------------------------------ guest experience (meals, dietary, wishlist)

@@ -1,5 +1,5 @@
 /** Event rules: types, titles, validation of the essentials, phase over time. */
-import type { CreateEventInput, Event, EventDetails, EventType, LocalDate, Tone } from './types';
+import type { CreateEventInput, Event, EventDetails, EventType, LocalDate, Tone, Venue } from './types';
 import { daysBetween, localDateOf, zonedToInstant } from './format';
 
 export type OccasionGroup = 'marriage' | 'personal' | 'family' | 'business' | 'other';
@@ -58,9 +58,16 @@ export function suggestTitle(type: EventType, names: { a: string; b?: string }):
   return [info.titlePrefix, who].filter(Boolean).join(' ');
 }
 
-export type EssentialsErrors = Partial<Record<'a' | 'b' | 'date' | 'time' | 'venue' | 'city' | 'title', string>>;
+export type EssentialsErrors = Partial<Record<'a' | 'b' | 'date' | 'time' | 'title', string>>;
 
-/** minimum to create an event (spec §8 step 2). Optional details never block creation. */
+/** the time an invitation starts at when the organizer doesn't choose one (8:00 مساءً, editable later) */
+export const DEFAULT_EVENT_TIME = '20:00';
+
+/**
+ * Minimum to create an event: only what the invitation cannot exist without — the name(s) the occasion needs
+ * and the date. The time defaults to 20:00 and the place is optional (every screen shows an event without a
+ * venue/city cleanly), so neither ever blocks creation.
+ */
 export function validateEssentials(input: CreateEventInput, today: LocalDate): EssentialsErrors {
   const e: EssentialsErrors = {};
   const couple = isCoupleEvent(input.type);
@@ -71,11 +78,25 @@ export function validateEssentials(input: CreateEventInput, today: LocalDate): E
   if (input.type === 'other' && !input.title?.trim()) e.title = 'اكتب اسم المناسبة';
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) e.date = 'اختر التاريخ';
   else if (daysBetween(today, input.date) < 0) e.date = 'التاريخ في الماضي — اختر تاريخًا قادمًا';
-  if (!/^\d{2}:\d{2}$/.test(input.time)) e.time = 'اختر الوقت';
-  if (!input.venue.name?.trim()) e.venue = 'اكتب اسم المكان';
-  if (!input.venue.city?.trim()) e.city = 'اكتب المدينة';
+  if (input.time && !/^\d{2}:\d{2}$/.test(input.time)) e.time = 'اختر الوقت';
   return e;
 }
+
+/** a place the organizer has added (venue or city); older data and new events may have neither */
+export const hasVenue = (v: Partial<Venue> | null | undefined): boolean => !!(v?.name?.trim() || v?.city?.trim());
+/** «قاعة الياسمين، الرياض» · «الرياض» · '' — only the parts that exist, never a dangling separator */
+export const placeLine = (v: Partial<Venue> | null | undefined, sep = '، '): string =>
+  [v?.name, v?.city].map((x) => x?.trim()).filter(Boolean).join(sep);
+/** a maps link only for a real place: the organizer's own link, else a search for venue + city; null without one */
+export function mapLink(v: Partial<Venue> | null | undefined): string | null {
+  if (v?.mapUrl) return v.mapUrl;
+  if (!hasVenue(v)) return null;
+  const q = [v?.nameEn || v?.name, v?.cityEn || v?.city].map((x) => x?.trim()).filter(Boolean).join(' ');
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
+/** the venue a create stores: trimmed strings, blank allowed (the place can be added later) */
+export const cleanVenue = (v: Partial<Venue> | null | undefined): Venue =>
+  ({ ...v, name: v?.name?.trim() ?? '', city: v?.city?.trim() ?? '' });
 
 // ------------------------------------------------------------------ phase
 export type EventPhase = 'upcoming' | 'final_week' | 'event_day' | 'completed' | 'archived';

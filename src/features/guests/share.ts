@@ -1,13 +1,17 @@
 /** Personal invitation messages (WhatsApp deep link). Real BSP sending is out of scope — see UX_DECISIONS D-008. */
 import type { Event, InvitationParty } from '../../domain/types';
 import { formatEventDate, formatTime } from '../../domain/format';
+import { placeLine } from '../../domain/event';
 import { normalisePhone } from '../../domain/phone';
 import { copyFor, fill, type Dialect } from '../../domain/copy';
 import { currentDialect } from '../../ui/copy';
 
 /** the invitation a guest receives, in the organizer's voice — always addressed in the plural (حضوركم، ردّكم) */
 export function inviteMessage(ev: Event, p: Pick<InvitationParty, 'primaryGuestName'>, link: string, dialect: Dialect = currentDialect()): string {
-  return fill(copyFor(dialect).msgInvite, { name: p.primaryGuestName, title: ev.title, when: `${formatEventDate(ev.date)} · ${formatTime(ev.time)}`, place: `${ev.venue.name}، ${ev.venue.city}`, link });
+  // the place is optional: without one the message simply has no place line
+  const place = placeLine(ev.venue);
+  const text = place ? copyFor(dialect).msgInvite : copyFor(dialect).msgInvite.replace('\n{place}', '');
+  return fill(text, { name: p.primaryGuestName, title: ev.title, when: `${formatEventDate(ev.date)} · ${formatTime(ev.time)}`, place, link });
 }
 
 export function reminderMessage(ev: Event, p: Pick<InvitationParty, 'primaryGuestName'>, link: string, dialect: Dialect = currentDialect()): string {

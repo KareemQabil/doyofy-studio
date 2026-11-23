@@ -9,7 +9,7 @@
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Event, EventType, InvitationDesignContent } from '../../domain/types';
-import { OCCASIONS_ORDERED, eventPhase, eventTypeInfo, PHASE_LABEL, todayFor } from '../../domain/event';
+import { OCCASIONS_ORDERED, eventPhase, eventTypeInfo, hasVenue, PHASE_LABEL, placeLine, todayFor } from '../../domain/event';
 import { PHASE_KEY } from '../../domain/copy/activity';
 import { countdownLabel, formatEventDate, formatTime } from '../../domain/format';
 import { defaultDesign, publishState } from '../../domain/invitation';
@@ -188,7 +188,7 @@ function EventTicket({ event }: { event: Event }) {
         <p className="sig-ticket-kind"><span>{eventTypeInfo(event.type).label}</span><Status tone={PHASE_LABEL[phase].tone}>{past ? t(PHASE_KEY[phase]) : countdownLabel(event.date, todayFor(event, now), dialect)}</Status></p>
         <h3><Link to={paths.overview(event.id)}>{event.title}</Link></h3>
         <p className="sig-ticket-meta"><Icon name="calendar" size="sm" />{formatEventDate(event.date)} · <bdi className="num">{formatTime(event.time)}</bdi></p>
-        <p className="sig-ticket-meta"><Icon name="pin" size="sm" />{event.venue.name}، {event.venue.city}</p>
+        {hasVenue(event.venue) && <p className="sig-ticket-meta"><Icon name="pin" size="sm" />{placeLine(event.venue)}</p>}
       </div>
       <TicketEdge />
       <div className="sig-ticket-stub"><LinkButton to={step.to} variant={past ? 'ghost' : 'secondary'} iconEnd="forward">{step.label}</LinkButton></div>

@@ -89,6 +89,13 @@ export class Studio {
     this._build();
   }
 
+  /** the pages this invitation has: «المكان» only when there is a place (the venue is optional at creation) */
+  _pages() {
+    const { c, mapHref } = this.data;
+    return PAGE_ORDER.filter((id) => id !== 'venue' || !!(c.venueAr || c.cityAr || mapHref));
+  }
+  _last() { return this._pages().length - 1; }
+
   _derive(invitation) {
     const d = deriveContent(invitation, { digits: CardRegistry.has(this.cardId) ? CardRegistry.get(this.cardId).digits : undefined });
     // a guest's first answer starts at their whole allowance (who is invited usually comes), still editable
@@ -157,7 +164,7 @@ export class Studio {
 
   // ---------------------------------------------------------------- run (per play-through)
   _run(startAt) {
-    this.page = startAt === 'rsvp' ? 4 : 0;
+    this.page = startAt === 'rsvp' ? this._last() : 0;
     const g = this.guest;
     this.rsvp = {
       name: g?.name ?? '', locked: !!g?.nameLocked, attending: g?.attending ?? null,
@@ -181,7 +188,8 @@ export class Studio {
   _renderCredit() {
     const c = this.data.c, couple = !!c.arB;
     const ar = couple ? `${e(c.arA)} و${e(c.arB)}` : e(c.arA);
-    const en = couple ? [c.enAU, c.enBU].filter(Boolean).map(e).join(' &amp; ') : e(c.enAU);
+    // no Latin line that only echoes the Arabic names (English names are optional)
+    const en = [c.enA !== c.arA && c.enAU, couple && c.enB !== c.arB && c.enBU].filter(Boolean).map(e).join(' &amp; ');
     this.el.credit.innerHTML = `<span class="fx-foil" style="font-family: ${this.theme.fAr}; font-size: ${couple ? 58 : Math.min(58, Math.max(30, Math.round(420 / Math.max(1, [...c.arA].length))))}px; line-height: 1.45; text-align: center">${ar}</span>
       ${en ? `<span dir="ltr" style="font-size: 12px; letter-spacing: 0.42em; color: #E3C58C; margin-top: 4px">${en}</span>` : ''}
       <span dir="ltr" style="font-size: 11px; letter-spacing: 0.34em; color: rgba(243,217,160,.7); margin-top: 18px">${couple ? T.honour : T.honourSingle}</span>`;
@@ -285,7 +293,7 @@ export class Studio {
     const s = this.el.st.style;
     for (const [k, v] of Object.entries({ paper: t.paper, ink: t.ink, muted: t.muted, accent: t.accent, atext: t.aText, env: t.env, far: t.fAr, envmid: mix(t.env, -0.12), envdark: mix(t.env, -0.4), envlight: mix(t.env, 0.14) })) s.setProperty('--' + k, v);
     this.el.mono.textContent = c.arB ? `${c.monoA} · ${c.monoB}` : `${c.monoA}`;
-    const mLatin = c.arB ? [c.enA, c.enB].filter(Boolean).map(e).join(' &amp; ') : e(c.enA);
+    const mLatin = [c.enA !== c.arA && c.enA, c.arB && c.enB !== c.arB && c.enB].filter(Boolean).map(e).join(' &amp; ');
     this.host.querySelector('.st-mcard').innerHTML = `<span style="font-family: ${t.fAr}; font-size: 28px; line-height: 1.35; text-align: center">${c.arB ? `${e(c.arA)} و${e(c.arB)}` : e(c.arA)}</span>
       ${mLatin ? `<span dir="ltr" style="font-size: 14px; font-style: italic; color: ${t.muted}">${mLatin}</span>` : ''}
       <span dir="ltr" style="font-size: 10px; letter-spacing: 0.3em; color: ${t.aText}; margin-top: 6px">${e(c.dateNum)}</span>`;
@@ -360,14 +368,16 @@ export class Studio {
 
   // ---------------------------------------------------------------- pages
   _renderPage(leaving, instant = false) {
-    const id = PAGE_ORDER[this.page];
+    const pages = this._pages();
+    this.page = Math.min(this.page, pages.length - 1);   // a live edit can remove the place (and its page)
+    const id = pages[this.page];
     const v = { t: this.theme, c: this.data.c, copy: this.data.copy, program: this.data.program, calHref: this.data.calHref, mapHref: this.data.mapHref, rsvp: this.rsvp };
     this.el.page.innerHTML = PageRegistry.get(id).render(v);
     this.el.page.classList.toggle('instant', instant);
     this.el.page.dataset.page = id;
-    this.el.dots.innerHTML = PAGE_ORDER.map((p, i) => `<button type="button" class="st-dotbtn ${i === this.page ? 'on' : ''}" data-go="${i}" aria-label="${T.page(T.pageLabels[i])}" aria-current="${i === this.page ? 'page' : 'false'}"><span class="st-dot"></span></button>`).join('');
+    this.el.dots.innerHTML = pages.map((p, i) => `<button type="button" class="st-dotbtn ${i === this.page ? 'on' : ''}" data-go="${i}" aria-label="${T.page(T.pageLabels[PAGE_ORDER.indexOf(p)])}" aria-current="${i === this.page ? 'page' : 'false'}"><span class="st-dot"></span></button>`).join('');
     this.host.querySelector('[data-act="prev"]').disabled = this.page === 0;
-    this.host.querySelector('[data-act="next"]').disabled = this.page === 4;
+    this.host.querySelector('[data-act="next"]').disabled = this.page === pages.length - 1;
     if (id === 'date') this._tickCountdown();
     if (id === 'rsvp') this._syncRsvp();
   }
@@ -379,14 +389,14 @@ export class Studio {
     };
     paint();
     clearInterval(this.clock);
-    this.clock = setInterval(() => { if (this.sm.state === 'pages' && PAGE_ORDER[this.page] === 'date') paint(); else clearInterval(this.clock); }, 1000);
+    this.clock = setInterval(() => { if (this.sm.state === 'pages' && this._pages()[this.page] === 'date') paint(); else clearInterval(this.clock); }, 1000);
   }
 
   /** `from`: the control that asked (a page dot, prev or next). Keyboard focus never falls back to the page body:
    *  prev/next keep it while they can still act; a dot, or a button that has just been disabled at either end,
    *  hands it to the sheet, so the next Tab reaches the new page's content (the reply form) before anything else. */
   go(n, from = null) {
-    if (this.sm.state !== 'pages' || n < 0 || n > 4 || n === this.page || this.leaving) return;
+    if (this.sm.state !== 'pages' || n < 0 || n > this._last() || n === this.page || this.leaving) return;
     this._focusAfter = from && from === document.activeElement ? from : null;
     this.audio.emit('page');
     this.leaving = true;
@@ -398,7 +408,7 @@ export class Studio {
       delete this.el.page.dataset.exit;
       this._renderPage();
       // the page's name is the one thing announced (the live line), so turning a page never re-reads a whole page
-      const said = this.host.querySelector('.st-page-said'); if (said) said.textContent = T.pageLabels[n];
+      const said = this.host.querySelector('.st-page-said'); if (said) said.textContent = T.pageLabels[PAGE_ORDER.indexOf(this._pages()[n])];
       const from = this._focusAfter; this._focusAfter = null;
       if (from && (from.dataset.go || from.disabled || !from.isConnected)) this.el.sheet.focus({ preventScroll: true });
     }, this.sm.timing.pageLeave);
@@ -558,7 +568,7 @@ export class Studio {
       if (!d.axis) { if (Math.hypot(dx, dy) < 8) return; d.axis = Math.abs(dy) >= Math.abs(dx) ? 'y' : 'x'; this.el.page.classList.add('dragging'); }
       const v = d.axis === 'y' ? dy : dx;
       const dir = d.axis === 'y' ? (v < 0 ? 1 : -1) : (v > 0 ? 1 : -1);
-      const t = (this.page + dir < 0 || this.page + dir > 4) ? v * 0.16 : v * 0.6;
+      const t = (this.page + dir < 0 || this.page + dir > this._last()) ? v * 0.16 : v * 0.6;
       this.el.page.style.transform = d.axis === 'y' ? `translateY(${t.toFixed(1)}px)` : `translateX(${t.toFixed(1)}px)`;
       this.el.page.style.opacity = String(1 - Math.min(0.55, Math.abs(t) / 300));
     });
@@ -574,7 +584,7 @@ export class Studio {
       const fast = Math.abs(v) > 24 && Math.abs(v) / Math.max(1, performance.now() - down.t) > 0.5;
       const dir = axis === 'y' ? (v < 0 ? 1 : -1) : (v > 0 ? 1 : -1);
       const n = this.page + dir;
-      if ((Math.abs(v) > 50 || fast) && n >= 0 && n <= 4) { this.el.page.dataset.exit = `${axis}${v < 0 ? '-' : '+'}`; settle(); this.go(n); return; }
+      if ((Math.abs(v) > 50 || fast) && n >= 0 && n <= this._last()) { this.el.page.dataset.exit = `${axis}${v < 0 ? '-' : '+'}`; settle(); this.go(n); return; }
       settle();
     });
     on(sheet, 'pointercancel', (ev) => { if (this._down?.id === ev.pointerId) { this._down = null; settle(); } });

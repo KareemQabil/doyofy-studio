@@ -436,6 +436,15 @@ export async function run(){
   assert.equal(document.querySelector('#create-event input[type="date"]')!.closest('.wz-datetime')!.querySelector('.wz-datetime-face')!.textContent,'اختر التاريخ','no mm/dd/yyyy in the Arabic UI');
   await fill(document.querySelector<HTMLInputElement>('#create-event input')!,'جود');await settle();
   assert.ok(document.querySelector('.wz-live, .wz-aside')!.textContent!.includes('جود'),'the card takes the name while typing');
+  // less data: a graduation asks one name and the date; the time is a chip on 8:00 PM, the place is optional and folded
+  const fields=()=>Array.from(document.querySelectorAll<HTMLInputElement>('#create-event input, #create-event select'));
+  assert.deepEqual(fields().map(x=>x.type),['text','date'],'only the name and the date are asked');
+  assert.equal(document.querySelector('#create-event input[lang="en"], #create-event input[dir="ltr"]'),null,'no English names in creation');
+  const timeChip=button('8:00 مساءً · غيّر');assert.equal(timeChip.textContent,'الوقت: 8:00 مساءً · غيّر','the accessible name holds the visible words');
+  assert.equal(document.querySelector('.wz-tz'),null,'the time zone is automatic, not a visible control');
+  await click(timeChip);assert.equal(document.querySelector<HTMLInputElement>('#create-event input[type="time"]')!.value,'20:00');assert.ok(document.querySelector('.wz-tz .wz-tz-change'),'the zone changes only from a small link beside the time');
+  await click(button('أضف المكان (اختياري)'));
+  const place=Array.from(document.querySelectorAll('.wz-place .field'));assert.equal(place.length,2);assert.ok(place.every(f=>f.querySelector('.field-opt')),'venue and city are optional');
   const saved=JSON.parse(window.localStorage.getItem('doyofy:create-draft:v1:usr_owner')!);assert.equal(saved.step,3);assert.equal(saved.draft.type,'graduation');
   await click(button('المناسبة'));assert.equal(current(),'1المناسبة','finished steps can be revisited');
   window.localStorage.removeItem('doyofy:create-draft:v1:usr_owner');
@@ -523,6 +532,41 @@ export async function run(){
   const view=await made.services.guest.open(event.slug,(await made.services.parties.list(event.id)).find(p=>p.rsvpStatus==='pending')!.code);
   assert.ok(!view.experience!.meals.options.some(o=>o.id==='meal_meat'),'hidden from guests');
   made.prototype.update({role:'organizer'});
+ });
+ await check('adding a guest needs only a name: phone optional, the allowance a chip on the event default, the rest folded',async()=>{
+  made.prototype.update({role:'organizer'});
+  const ev=await made.services.events.create({type:'graduation',names:{a:'ضيف بالاسم فقط'},date:event.date});
+  history.replaceState(null,'',paths.guests(ev.id));
+  await render(wrap(<GuestsPage event={ev}/>));await settle();
+  await click(Array.from(document.querySelectorAll('button')).find(b=>/^(إضافة ضيف|أضف ضيفًا)$/.test(b.textContent?.trim()??''))!);await settle();
+  const dialog=document.querySelector('dialog[open]')!;assert.ok(dialog.querySelector('#party-form'));
+  const inputs=Array.from(dialog.querySelectorAll<HTMLInputElement>('#party-form input, #party-form textarea'));
+  assert.deepEqual(inputs.map(x=>x.type),['text','tel'],'only the name and an optional phone are open');
+  assert.ok(inputs[1]!.closest('.field')!.querySelector('.field-opt'),'the phone is marked optional');
+  assert.equal(dialog.querySelector('.stepper'),null,'the allowance is a chip, not a stepper to set');
+  const chip=dialog.querySelector<HTMLButtonElement>('.pf-chip')!;assert.equal(chip.textContent,'العدد المسموح: الدعوة لـشخصين · غيّر');
+  await fill(inputs[0]!,'عائلة الاسم فقط');
+  await click(Array.from(dialog.querySelectorAll('button')).find(b=>b.textContent?.trim()==='إضافة')!);await settle();
+  const added=(await made.services.parties.list(ev.id)).find(p=>p.primaryGuestName==='عائلة الاسم فقط')!;
+  assert.ok(added,'added with just a name');assert.equal(added.maxPartySize,ev.settings.defaultPartySize);assert.equal(added.phone,undefined);
+  // changing the allowance is one tap away
+  await click(Array.from(document.querySelectorAll('button')).find(b=>/^(إضافة ضيف|أضف ضيفًا)$/.test(b.textContent?.trim()??''))!);await settle();
+  await click(document.querySelector('dialog[open] .pf-chip')!);assert.ok(document.querySelector('dialog[open] .stepper'));
+  await render(null);history.replaceState(null,'','/');
+ });
+ await check('settings show the essentials first; advanced options are folded and the place is optional',async()=>{
+  const ev=await made.services.events.create({type:'wedding',names:{a:'سارة',b:'أحمد'},date:event.date});
+  await render(wrap(<SettingsPage event={ev}/>));await settle();
+  const adv=document.querySelector<HTMLDetailsElement>('details.settings-advanced')!;assert.ok(adv&&!adv.open,'advanced options start folded');
+  for(const label of ['نوع المناسبة','المنطقة الزمنية','بالإنجليزية','العدد المسموح الافتراضي'])assert.ok(adv.textContent!.includes(label),`${label} is advanced`);
+  const essentials=document.querySelector('.settings .panel')!;assert.ok(essentials.querySelector('input[type=date]')&&essentials.querySelector('input[type=time]'));
+  assert.equal(document.querySelectorAll('.settings input[type=date]').length,1,'the date is asked once');
+  // with no place the form still saves: rename one name and save
+  await fill(essentials.querySelector<HTMLInputElement>('input')!,'سارة م.');
+  const save=button('حفظ التغييرات') as HTMLButtonElement;assert.ok(!save.disabled,'no venue/city needed to save');
+  await click(save);await settle();
+  const after=await made.services.events.get(ev.id);assert.equal(after.names.a,'سارة م.');assert.deepEqual([after.venue.name,after.venue.city],['','']);
+  await render(null);
  });
  await check('organizer guest list and settings hide food while preserving wishlist controls',async()=>{
   made.prototype.update({role:'organizer'});
@@ -615,11 +659,12 @@ export async function run(){
   assert.ok(document.body.textContent?.includes('استعدنا ما كتبته'));assert.equal(document.querySelector<HTMLInputElement>('#create-event input')!.value,'خريجة المسودة');
   const form=document.querySelector<HTMLFormElement>('#create-event')!;
   await fill(form.querySelector<HTMLInputElement>('input[type=date]')!,event.date);
-  const textInputs=Array.from(form.querySelectorAll<HTMLInputElement>('input')).filter(x=>!['date','time'].includes(x.type));
-  await fill(textInputs[textInputs.length-2]!,'قاعة المسودة');await fill(textInputs[textInputs.length-1]!,'الرياض');
+  // names + date are enough: no time, venue or city typed
+  assert.equal(form.querySelector('input[type=time]'),null);assert.equal(form.querySelector('.wz-place'),null);
   await act(async()=>{form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});await settle();
   assert.ok(location.pathname.endsWith('/invitation/design'));
   const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services;const id=location.pathname.split('/')[3]!;
+  const createdEv=await api.events.get(id);assert.equal(createdEv.time,'20:00');assert.deepEqual([createdEv.venue.name,createdEv.venue.city],['','']);assert.equal(createdEv.names.aEn,undefined);
   assert.equal((await api.invitations.get(id)).draft.cardId,selected.cardId);assert.equal(window.localStorage.getItem('doyofy:create-draft:v1:usr_owner'),null);
   // typing in the editor keeps the design chosen from the link
   await fill(document.querySelector<HTMLInputElement>('.ed-group input')!,'خريجة الرابط');await act(async()=>{await new Promise(r=>setTimeout(r,800));});await settle();

@@ -10,6 +10,7 @@ export const CREATE = voiced({
   wzEssentials: '{type}: البيانات الأساسية', wzNotCreated: 'لم تُنشأ المناسبة', wzCouple: 'العروسان', wzHost: 'صاحب المناسبة', wzName: 'الاسم', wzSecondName: 'الاسم الثاني',
   wzEventName: 'اسم المناسبة', wzEventNameHint: 'مثال: حفل افتتاح، عزيمة رمضان', wzWhen: 'الموعد', wzDate: 'التاريخ', wzTime: 'الوقت', wzPickDate: 'اختر التاريخ', wzPickTime: 'اختر الوقت',
   wzTimeZone: 'التوقيت: {zone}', wzChange: 'تغيير', wzZone: 'المنطقة الزمنية', wzWhere: 'المكان', wzVenue: 'اسم القاعة أو المكان', wzVenueExample: 'مثال: قاعة الياسمين', wzCity: 'المدينة', wzCityExample: 'مثال: الرياض',
+  wzTimeChip: '{time} · غيّر', wzAddPlace: 'أضف المكان (اختياري)', wzPlaceLater: 'يمكنك إضافة المكان أو تعديله لاحقًا من الإعدادات.',
   wzLeave: 'لم تُنشأ المناسبة بعد. هل تريد المغادرة وترك ما كتبته؟',
   wzLive: 'دعوتك تتجهّز الآن', wzChangeDesign: 'غيّر التصميم', wzDateLater: ' · التاريخ مؤقت حتى تختاره', wzDesignOf: 'تصميم {type}',
   // the design feed
@@ -26,6 +27,7 @@ export const CREATE = voiced({
   wzEssentials: '{type}: البيانات الأساسية', wzNotCreated: 'المناسبة متعملتش', wzCouple: 'العريس والعروسة', wzHost: 'صاحب المناسبة', wzName: 'الاسم', wzSecondName: 'الاسم التاني',
   wzEventName: 'اسم المناسبة', wzEventNameHint: 'مثال: حفلة افتتاح، عزومة رمضان', wzWhen: 'الميعاد', wzDate: 'التاريخ', wzTime: 'الساعة', wzPickDate: 'اختار التاريخ', wzPickTime: 'اختار الساعة',
   wzTimeZone: 'التوقيت: {zone}', wzChange: 'غيّر', wzZone: 'المنطقة الزمنية', wzWhere: 'المكان', wzVenue: 'اسم القاعة أو المكان', wzVenueExample: 'مثال: قاعة الياسمين', wzCity: 'المدينة', wzCityExample: 'مثال: القاهرة',
+  wzTimeChip: '{time} · غيّر', wzAddPlace: 'ضيف المكان (اختياري)', wzPlaceLater: 'تقدر تضيف المكان أو تغيّره بعدين من الإعدادات.',
   wzLeave: 'المناسبة لسه متعملتش. عايز تخرج وتسيب اللي كتبته؟',
   wzLive: 'دعوتك بتتجهّز دلوقتي', wzChangeDesign: 'غيّر التصميم', wzDateLater: ' · التاريخ مؤقت لحد ما تختاره', wzDesignOf: 'تصميم {type}',
   tfNoStyle: 'لسه مفيش تصاميم بالستايل ده.', tfShowAll: 'وريني كل التصاميم', tfFilterHint: 'اختار اللي على ذوقك. التصميم الحالي هيفضل لحد ما تختار غيره.', tfReplay: 'شغّلها من الأول',
@@ -41,6 +43,7 @@ export const CREATE = voiced({
   wzEssentials: '{type}: البيانات الأساسية', wzNotCreated: 'ما انضافت المناسبة', wzCouple: 'المعرس والعروس', wzHost: 'صاحب المناسبة', wzName: 'الاسم', wzSecondName: 'الاسم الثاني',
   wzEventName: 'اسم المناسبة', wzEventNameHint: 'مثال: حفل افتتاح، عزيمة رمضان', wzWhen: 'الموعد', wzDate: 'التاريخ', wzTime: 'الوقت', wzPickDate: 'اختر التاريخ', wzPickTime: 'اختر الوقت',
   wzTimeZone: 'التوقيت: {zone}', wzChange: 'غيّر', wzZone: 'المنطقة الزمنية', wzWhere: 'المكان', wzVenue: 'اسم القاعة أو المكان', wzVenueExample: 'مثال: قاعة الياسمين', wzCity: 'المدينة', wzCityExample: 'مثال: الرياض',
+  wzTimeChip: '{time} · غيّر', wzAddPlace: 'أضف المكان (اختياري)', wzPlaceLater: 'تقدر تضيف المكان أو تعدّله بعدين من الإعدادات.',
   wzLeave: 'المناسبة ما انضافت للحين. تبي تطلع وتترك اللي كتبته؟',
   wzLive: 'دعوتك تتجهّز الحين', wzChangeDesign: 'غيّر التصميم', wzDateLater: ' · التاريخ مؤقت لين تختاره', wzDesignOf: 'تصميم {type}',
   tfNoStyle: 'ما فيه تصاميم بهالأسلوب للحين.', tfShowAll: 'اعرض كل التصاميم', tfFilterHint: 'اختر اللي يناسب ذوقك. التصميم الحالي يبقى لين تختار غيره.', tfReplay: 'شغّلها من البداية',

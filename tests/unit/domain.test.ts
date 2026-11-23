@@ -186,6 +186,27 @@ test('occasions: more than four, every one grouped, popular first, one catalogue
   assert.equal(e.a, 'اكتب اسم المؤتمر');
 });
 
+test('less data: names + date are the whole essentials; time defaults, the place is optional and shown without gaps', async () => {
+  const { DEFAULT_EVENT_TIME, hasVenue, mapLink, placeLine, cleanVenue } = await import('../../src/domain/event');
+  // only the occasion's name(s) and the date are asked; no time, venue or city errors exist any more
+  assert.deepEqual(validate({ type: 'wedding', names: { a: 'سارة', b: 'أحمد' }, date: '2099-01-01' }, '2026-01-01'), {});
+  assert.deepEqual(Object.keys(validate({ type: 'wedding', names: { a: '' }, date: '' }, '2026-01-01')).sort(), ['a', 'b', 'date']);
+  assert.deepEqual(Object.keys(validate({ type: 'birthday', names: { a: 'جود' }, date: '' }, '2026-01-01')), ['date'], 'one name for a one-person occasion');
+  assert.ok(validate({ type: 'birthday', names: { a: 'جود' }, date: '2099-01-01', time: '25' }, '2026-01-01').time, 'a malformed time is still caught');
+  assert.equal(DEFAULT_EVENT_TIME, '20:00');
+  // the place: only the parts that exist, never a dangling «، »; no map search without a place
+  assert.equal(placeLine({ name: 'قاعة الورد', city: 'الرياض' }), 'قاعة الورد، الرياض');
+  assert.equal(placeLine({ name: '', city: 'الرياض' }), 'الرياض');
+  assert.equal(placeLine({ name: ' ', city: '' }), '');
+  assert.equal(hasVenue({ name: '', city: '' }), false);
+  assert.equal(hasVenue(undefined), false);
+  assert.equal(mapLink({ name: '', city: '' }), null);
+  assert.equal(mapLink({ name: '', city: '', mapUrl: 'https://maps.example/x' }), 'https://maps.example/x', 'a pasted map link still counts');
+  assert.match(mapLink({ name: 'قاعة', city: 'جدة', cityEn: 'Jeddah' })!, /query=%D9%82%D8%A7%D8%B9%D8%A9%20Jeddah$/);
+  assert.deepEqual(cleanVenue(undefined), { name: '', city: '' });
+  assert.deepEqual(cleanVenue({ name: ' قاعة ', city: ' جدة ' }), { name: 'قاعة', city: 'جدة' });
+});
+
 test('template presets use real engine assets and only valid experiences', () => {
   assert.ok(TEMPLATE_PRESETS.length >= 10);
   assert.equal(new Set(TEMPLATE_PRESETS.map((p) => p.id)).size, TEMPLATE_PRESETS.length);

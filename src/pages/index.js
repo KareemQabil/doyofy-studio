@@ -26,7 +26,8 @@ const invitation = {
     <span class="fx-rise fx-d3" style="font-family: ${t.fAr}; font-size: 30px; line-height: 0.9; color: ${t.accent}">و</span>
     <span class="fx-rise fx-d3" style="font-family: ${t.fAr}; font-size: ${nameSize(c.arB)}px; line-height: 1.35">${e(c.arB)}</span>`
       : `<span class="fx-rise fx-d2" style="font-family: ${t.fAr}; font-size: ${nameSize(c.arA)}px; line-height: 1.35; margin-top: 12px; text-align: center; text-wrap: balance">${e(c.arA)}</span>`;
-    const latin = couple ? [c.enA, c.enB].filter(Boolean).map(e).join(' &amp; ') : e(c.enA);
+    // English names are optional (not asked at creation): no Latin line that only echoes the Arabic names
+    const latin = [c.enA !== c.arA && c.enA, couple && c.enB !== c.arB && c.enB].filter(Boolean).map(e).join(' &amp; ');
     return col(`
     ${kicker(t, head)}
     <h2 class="pg-h" style="display: contents">${names}</h2>
@@ -76,6 +77,7 @@ const program = {
     </ol>`),
 };
 
+// the place is optional: only the parts that exist, and the map button only with a real place (Studio drops the page without one)
 const venue = {
   id: 'venue', name: 'Venue',
   render: ({ t, c, mapHref }) => col(`
@@ -92,12 +94,12 @@ const venue = {
       <circle class="fx-pulse" cx="126" cy="132" r="12" fill="${t.env}" opacity=".35"></circle>
       <g transform="translate(126 132)"><path d="M0 0 C-4 -8 -14 -14 -14 -26 A14 14 0 0 1 14 -26 C14 -14 4 -8 0 0Z" fill="${t.env}" stroke="${t.accent}" stroke-width="1"></path><circle cx="0" cy="-26" r="5" fill="${t.paper}"></circle></g>
     </svg>
-    <span class="fx-rise fx-d3" style="font-family: ${t.fAr}; font-size: 26px; line-height: 1.5; margin-top: 14px">${e(c.venueAr)}</span>
-    <span class="fx-rise fx-d3" dir="ltr" style="font-size: 17px; font-style: italic; color: ${t.muted}">${e(c.venueEn)} · ${e(c.cityEn)}</span>
-    <a class="st-cta fx-rise fx-d4" href="${e(mapHref)}" target="_blank" rel="noopener" style="margin-top: 18px; background: ${t.ink}; color: ${t.paper}; border-color: ${t.ink}">
+    ${c.venueAr || c.cityAr ? `<span class="fx-rise fx-d3" style="font-family: ${t.fAr}; font-size: 26px; line-height: 1.5; margin-top: 14px">${e(c.venueAr || c.cityAr)}</span>` : ''}
+    ${[c.venueEn, c.cityEn].filter(Boolean).length ? `<span class="fx-rise fx-d3" dir="ltr" style="font-size: 17px; font-style: italic; color: ${t.muted}">${[c.venueEn, c.cityEn].filter(Boolean).map(e).join(' · ')}</span>` : ''}
+    ${mapHref ? `<a class="st-cta fx-rise fx-d4" href="${e(mapHref)}" target="_blank" rel="noopener" style="margin-top: 18px; background: ${t.ink}; color: ${t.paper}; border-color: ${t.ink}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z"></path></svg>
       <span class="ar" style="font-size: 15px">${T.directions.ar}</span><span dir="ltr" style="font-size: 14px; font-style: italic">${T.directions.en}</span>
-    </a>`),
+    </a>` : ''}`),
 };
 
 const rsvp = {

@@ -2,7 +2,7 @@ import { JourneyBanner } from '../shared/JourneyBanner';
 /** One next step, then actionable exceptions. The event lifecycle shapes the composition. */
 import { useState } from 'react';
 import type { Event } from '../../domain/types';
-import { eventPhase, PHASE_LABEL, todayFor } from '../../domain/event';
+import { eventPhase, hasVenue, PHASE_LABEL, placeLine, todayFor } from '../../domain/event';
 import { countdownLabel, formatEventDate, formatTime, relativeTime } from '../../domain/format';
 import { checklist, needsAttention, nextAction, type OverviewInput } from '../../domain/overview';
 import { journeyStage, overviewFacts, rankAttention } from '../../domain/experience';
@@ -42,7 +42,7 @@ export function Overview({ event }: { event: Event }) {
   return <div className="overview">
     <header className="event-overview-head">
       <div><p className="eyebrow">{t('ovEyebrow')}</p><div className="row wrap gap-3"><h1>{event.title}</h1><Status tone={PHASE_LABEL[phase].tone}>{t(PHASE_KEY[phase])}</Status></div>
-        <p className="overview-location"><Icon name="pin" size="sm" />{event.venue.name}، {event.venue.city}</p></div>
+        {hasVenue(event.venue) && <p className="overview-location"><Icon name="pin" size="sm" />{placeLine(event.venue)}</p>}</div>
       <LinkButton to={paths.settings(event.id)} variant="ghost" icon="edit" size="sm">{t('wsSettings')}</LinkButton>
     </header>
     <Stage size="md" tone="charcoal" pattern="knot" className="sig-moment" aria-label={t('ovNextStep')}>

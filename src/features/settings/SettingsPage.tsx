@@ -1,13 +1,15 @@
 /**
- * Event settings (spec §19) — limited on purpose: basics, date/time, venue & map, reply rules,
- * table visibility, invitation state, archive. One save bar; leaving with unsaved edits asks first.
+ * Event settings (spec §19) — limited on purpose. Essentials first: the names, the date and time, and the optional
+ * place (venue, city, map link). Everything else — occasion type and title, English text, time zone and duration,
+ * reply rules — sits folded under «خيارات متقدمة». Each fact is asked once. One save bar; leaving with unsaved edits
+ * asks first. Guest experience, capacity, the invitation and archiving follow, each saved on its own.
  */
 import { useEffect, useRef, useState } from 'react';
 import type { Event, EventType, UpdateEventInput } from '../../domain/types';
 import { EVENT_TYPES, isCoupleEvent, suggestTitle } from '../../domain/event';
 import { PUBLISH_LABEL, publishState } from '../../domain/invitation';
 import { PUBLISH_KEY } from '../../domain/copy/activity';
-import { Badge, Banner, Button, ConfirmDialog, Field, Input, LinkButton, PageHeader, Panel, Select, Stepper, Switch } from '../../ui';
+import { Badge, Banner, Button, ConfirmDialog, Field, Icon, Input, LinkButton, PageHeader, Panel, Select, Stepper, Switch } from '../../ui';
 import { useMutation, useServices } from '../../app/data';
 import { useBlocker, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -68,7 +70,8 @@ export function SettingsPage({ event }: { event: Event }) {
     venue: { name: f.venue.trim(), city: f.city.trim(), nameEn: f.venueEn.trim() || undefined, cityEn: f.cityEn.trim() || undefined, mapUrl: f.mapUrl.trim() || undefined },
     settings: { defaultPartySize: f.defaultPartySize, revealTableToGuests: f.revealTableToGuests, allowGeneralLink: f.allowGeneralLink },
   });
-  const missing = !f.a.trim() || (couple && !f.b.trim()) || !f.venue.trim() || !f.city.trim() || !f.date || !f.time;
+  // the place is optional (an event needs only names + date); the time always has a value
+  const missing = !f.a.trim() || (couple && !f.b.trim()) || !f.date || !f.time;
   const badMap = !!f.mapUrl.trim() && !/^https?:\/\//.test(f.mapUrl.trim());
 
   return (
@@ -76,37 +79,20 @@ export function SettingsPage({ event }: { event: Event }) {
       <PageHeader title={t('setTitle')} subtitle={t('setSub')} />
       <form className="stack gap-6 settings" onSubmit={(e) => { e.preventDefault(); if (!missing && !badMap) submit(); }} noValidate>
         {save.error && !(isAppError(save.error) && save.error.field) ? <Banner tone="danger" title={t('setNotSaved')}>{errorMessage(save.error)}</Banner> : null}
+        {/* essentials: what every organizer may want to change — the names, when, and (optionally) where */}
         <Panel title={t('setBasics')}>
           <div className="stack gap-4">
             <div className="grid-2">
-              <Field label={t('setType')}><Select value={f.type} onChange={(e) => set('type', e.target.value as EventType)}>{EVENT_TYPES.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}</Select></Field>
-              <Field label={t('setEventTitle')} hint={t('setEventTitleHint')}><Input value={f.title} onChange={(e) => set('title', e.target.value)} placeholder={suggestTitle(f.type, { a: f.a, b: f.b })} /></Field>
-            </div>
-            <div className="grid-2">
               <Field label={t(couple ? 'setFirstName' : 'setHost')} required error={!f.a.trim() ? t('setRequired') : null}><Input value={f.a} onChange={(e) => set('a', e.target.value)} /></Field>
               {couple && <Field label={t('setSecondName')} required error={!f.b.trim() ? t('setRequired') : null}><Input value={f.b} onChange={(e) => set('b', e.target.value)} /></Field>}
-              <Field label={t('setEnglish')} optional><Input ltr value={f.aEn} onChange={(e) => set('aEn', e.target.value)} /></Field>
-              {couple && <Field label={t('setEnglish')} optional><Input ltr value={f.bEn} onChange={(e) => set('bEn', e.target.value)} /></Field>}
             </div>
-          </div>
-        </Panel>
-
-        <Panel title={t('setWhen')}>
-          <div className="grid-3">
-            <Field label={t('setDate')} required error={err('date')}><Input type="date" value={f.date} min={today} onChange={(e) => set('date', e.target.value)} /></Field>
-            <Field label={t('setTime')} required><Input type="time" value={f.time} onChange={(e) => set('time', e.target.value)} /></Field>
-            <Field label={t('setZone')}><Select value={f.timeZone} onChange={(e) => set('timeZone', e.target.value)}>{TIME_ZONES.map(([z, l]) => <option key={z} value={z}>{l}</option>)}</Select></Field>
-          </div>
-          <Stepper label={t('setDuration')} value={f.durationHours} min={1} max={12} onChange={(n) => set('durationHours', n)} />
-        </Panel>
-
-        <Panel title={t('setWhere')}>
-          <div className="stack gap-4">
             <div className="grid-2">
-              <Field label={t('setVenue')} required error={!f.venue.trim() ? t('setRequired') : null}><Input value={f.venue} onChange={(e) => set('venue', e.target.value)} /></Field>
-              <Field label={t('setCity')} required error={!f.city.trim() ? t('setRequired') : null}><Input value={f.city} onChange={(e) => set('city', e.target.value)} /></Field>
-              <Field label={t('setVenueEn')} optional><Input ltr value={f.venueEn} onChange={(e) => set('venueEn', e.target.value)} /></Field>
-              <Field label={t('setCityEn')} optional><Input ltr value={f.cityEn} onChange={(e) => set('cityEn', e.target.value)} /></Field>
+              <Field label={t('setDate')} required error={err('date')}><Input type="date" value={f.date} min={today} onChange={(e) => set('date', e.target.value)} /></Field>
+              <Field label={t('setTime')} required><Input type="time" value={f.time} onChange={(e) => set('time', e.target.value)} /></Field>
+            </div>
+            <div className="grid-2">
+              <Field label={t('setVenue')} optional hint={!f.venue.trim() && !f.city.trim() ? t('setPlaceHint') : undefined}><Input value={f.venue} onChange={(e) => set('venue', e.target.value)} /></Field>
+              <Field label={t('setCity')} optional><Input value={f.city} onChange={(e) => set('city', e.target.value)} /></Field>
             </div>
             <Field label={t('setMap')} optional error={badMap ? t('setMapHttps') : null} hint={t('setMapHint')}>
               <Input ref={mapRef} ltr type="url" value={f.mapUrl} onChange={(e) => set('mapUrl', e.target.value)} placeholder="https://maps.app.goo.gl/…" />
@@ -114,14 +100,40 @@ export function SettingsPage({ event }: { event: Event }) {
           </div>
         </Panel>
 
-        <Panel title={t('setReplies')}>
-          <div className="stack gap-3">
-            <Stepper label={t('setDefaultSize')} value={f.defaultPartySize} min={1} max={20} onChange={(n) => set('defaultPartySize', n)} />
-            <p className="field-hint">{t('setDefaultSizeHint')}</p>
-            <Switch label={t('setShowTable')} hint={t('setShowTableHint')} checked={f.revealTableToGuests} onChange={(v) => set('revealTableToGuests', v)} />
-            <Switch label={t('setGeneral')} hint={t('setGeneralHint')} checked={f.allowGeneralLink} onChange={(v) => set('allowGeneralLink', v)} />
-          </div>
-        </Panel>
+        {/* advanced, folded: rarely changed, each still asked only here */}
+        <details className="settings-advanced">
+          <summary><span className="grow"><span className="settings-advanced-title">{t('setAdvanced')}</span><span className="settings-advanced-hint">{t('setAdvancedHint')}</span></span><Icon name="chevron-down" size="sm" /></summary>
+          <Panel title={t('setOccasion')}>
+            <div className="stack gap-4">
+              <div className="grid-2">
+                <Field label={t('setType')}><Select value={f.type} onChange={(e) => set('type', e.target.value as EventType)}>{EVENT_TYPES.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}</Select></Field>
+                <Field label={t('setEventTitle')} hint={t('setEventTitleHint')}><Input value={f.title} onChange={(e) => set('title', e.target.value)} placeholder={suggestTitle(f.type, { a: f.a, b: f.b })} /></Field>
+              </div>
+              <div className="grid-2">
+                <Field label={t('setZone')}><Select value={f.timeZone} onChange={(e) => set('timeZone', e.target.value)}>{TIME_ZONES.map(([z, l]) => <option key={z} value={z}>{l}</option>)}</Select></Field>
+              </div>
+              <Stepper label={t('setDuration')} value={f.durationHours} min={1} max={12} onChange={(n) => set('durationHours', n)} />
+            </div>
+          </Panel>
+
+          <Panel title={t('setEnglishText')} subtitle={t('setEnglishTextHint')}>
+            <div className="grid-2">
+              <Field label={`${t(couple ? 'setFirstName' : 'setHost')} ${t('setEnglish')}`} optional><Input ltr value={f.aEn} onChange={(e) => set('aEn', e.target.value)} /></Field>
+              {couple && <Field label={`${t('setSecondName')} ${t('setEnglish')}`} optional><Input ltr value={f.bEn} onChange={(e) => set('bEn', e.target.value)} /></Field>}
+              <Field label={t('setVenueEn')} optional><Input ltr value={f.venueEn} onChange={(e) => set('venueEn', e.target.value)} /></Field>
+              <Field label={t('setCityEn')} optional><Input ltr value={f.cityEn} onChange={(e) => set('cityEn', e.target.value)} /></Field>
+            </div>
+          </Panel>
+
+          <Panel title={t('setReplies')}>
+            <div className="stack gap-3">
+              <Stepper label={t('setDefaultSize')} value={f.defaultPartySize} min={1} max={20} onChange={(n) => set('defaultPartySize', n)} />
+              <p className="field-hint">{t('setDefaultSizeHint')}</p>
+              <Switch label={t('setShowTable')} hint={t('setShowTableHint')} checked={f.revealTableToGuests} onChange={(v) => set('revealTableToGuests', v)} />
+              <Switch label={t('setGeneral')} hint={t('setGeneralHint')} checked={f.allowGeneralLink} onChange={(v) => set('allowGeneralLink', v)} />
+            </div>
+          </Panel>
+        </details>
 
         {dirty && (
           <div className="save-bar" role="region" aria-label={t('setSaveRegion')}>

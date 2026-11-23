@@ -87,6 +87,12 @@ async function run(vp) {
   await step(vp, '04b graduation details + live card preview', async () => {
     await page.getByLabel(/اسم الخريج/).fill('جود العتيبي');
     await page.getByLabel('التاريخ').fill('2027-06-20');
+    // less data: the name and the date are the whole form; the time is a chip on 8:00 PM, the place is optional
+    const asked = await page.locator('#create-event input:visible, #create-event select:visible').count();
+    if (asked !== 2) throw new Error(`${asked} fields asked (expected the name and the date)`);
+    await page.getByRole('button', { name: /8:00 مساءً/ }).waitFor();
+    // the place stays one tap away; added here so the later directions/map steps have a venue
+    await page.getByRole('button', { name: 'أضف المكان (اختياري)' }).click();
     await page.getByLabel('اسم القاعة أو المكان').fill('قاعة الريحان');
     await page.getByLabel('المدينة').fill('الرياض');
     await page.waitForTimeout(500);
@@ -141,6 +147,9 @@ async function run(vp) {
     await page.getByLabel('اسم الضيف أو العائلة').fill('عائلة الحربي');
     const hint = await page.locator('dialog[open]').innerText();
     if (/العروس|العريس/.test(hint)) throw new Error('wedding copy in the guest form');
+    // only the name is needed: the allowance is a chip on the event default, not a stepper to set
+    if (await page.locator('dialog[open] .stepper').count()) throw new Error('allowance stepper open by default');
+    await page.locator('dialog[open] .pf-chip').waitFor();
     await page.locator('dialog[open]').getByRole('button', { name: 'إضافة' }).click();
     await page.getByText('عائلة الحربي').first().waitFor();
     await page.waitForTimeout(500); await shot('08-guests');

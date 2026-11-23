@@ -10,7 +10,7 @@ import type { Event, InvitationParty, PartyInput } from '../../domain/types';
 import { makeCode, makeId, makeSlug, normaliseCode } from '../../domain/ids';
 import { defaultDesign, publishState } from '../../domain/invitation';
 import { applyRsvp, seatsFor, validateRsvp, RSVP_ERROR_TEXT } from '../../domain/parties';
-import { eventPhase, eventStart, suggestTitle, validateEssentials, todayFor } from '../../domain/event';
+import { cleanVenue, DEFAULT_EVENT_TIME, eventPhase, eventStart, suggestTitle, validateEssentials, todayFor } from '../../domain/event';
 import { normalisePhone } from '../../domain/phone';
 import { expectedArrivals, statusAfter, EXCEPTION_TEXT } from '../../domain/checkin';
 import { validateTable } from '../../domain/seating';
@@ -73,8 +73,8 @@ export function mockEvents({ store, now }: Ctx): EventRepository {
           id: makeId('evt'), ownerId: 'usr_owner', type: input.type,
           title: input.title?.trim() || suggestTitle(input.type, input.names),
           names: { a: input.names.a.trim(), b: input.names.b?.trim() || undefined, aEn: input.names.aEn?.trim() || undefined, bEn: input.names.bEn?.trim() || undefined },
-          date: input.date, time: input.time, timeZone, durationHours: 5,
-          venue: { ...input.venue, name: input.venue.name.trim(), city: input.venue.city.trim() },
+          date: input.date, time: input.time || DEFAULT_EVENT_TIME, timeZone, durationHours: 5,
+          venue: cleanVenue(input.venue),
           slug: makeSlug([input.names.aEn, input.names.bEn], new Set(db.events.map((e) => e.slug))),
           settings: { defaultPartySize: 2, revealTableToGuests: false, allowGeneralLink: false },
           createdAt: t.toISOString(), updatedAt: t.toISOString(),

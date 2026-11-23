@@ -3,6 +3,7 @@ import type {
   CheckInException, CheckInRecord, Event, EventActivity, InvitationDesign, InvitationDesignContent, InvitationParty,
   RSVPResponse, Table, UpdateEventInput,
 } from '../../domain/types';
+import { cleanVenue } from '../../domain/event';
 
 type Nullable<T> = { [K in keyof T]: T[K] | null };
 
@@ -51,7 +52,7 @@ const isoOpt = (v: string | null | undefined): string | undefined => (v == null 
 export function toEvent(r: EventRow): Event {
   return {
     id: r.id, ownerId: r.owner_id, type: r.type, title: r.title, names: r.names, date: r.date, time: r.time.slice(0, 5),
-    timeZone: r.time_zone, durationHours: Number(r.duration_hours), venue: r.venue, slug: r.slug,
+    timeZone: r.time_zone, durationHours: Number(r.duration_hours), venue: cleanVenue(r.venue), slug: r.slug,
     settings: { defaultPartySize: r.default_party_size, revealTableToGuests: r.reveal_table_to_guests, allowGeneralLink: r.allow_general_link },
     checkInPreparedAt: isoOpt(r.check_in_prepared_at), archivedAt: isoOpt(r.archived_at),
     createdAt: iso(r.created_at), updatedAt: iso(r.updated_at),

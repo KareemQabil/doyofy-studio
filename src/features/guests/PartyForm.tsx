@@ -1,4 +1,8 @@
-/** Add / edit guest (quick dialog): name, phone, allowed size; companions, side and note are optional. */
+/**
+ * Add / edit guest (quick dialog). Only the name is required: the phone is optional (add it later to send on WhatsApp),
+ * the allowance starts at the event's default and shows as one chip («الدعوة لشخصين · غيّر»), and the companions,
+ * side and note stay folded under «+ …».
+ */
 import { useMemo, useState, type FormEvent } from 'react';
 import type { InvitationParty, PartyInput } from '../../domain/types';
 import { normalisePhone } from '../../domain/phone';
@@ -6,7 +10,7 @@ import { formatPhone } from '../../domain/format';
 import { useCopy } from '../../ui/copy';
 import { allocatedGuests, capacityLevel, guestLimit } from '../../domain/billing';
 import { useCapacityVersion } from '../billing/CapacityMeter';
-import { Banner, Button, Dialog, Field, Input, Stepper, Textarea } from '../../ui';
+import { Banner, Button, Dialog, Field, Icon, Input, Stepper, Textarea } from '../../ui';
 import { errorMessage, isAppError } from '../../services/errors';
 
 export function PartyFormDialog({ open, onClose, initial, existing, defaultSize, onSubmit, pending, error, title, eventId }: {
@@ -24,6 +28,8 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
   const [side, setSide] = useState(initial?.side ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [more, setMore] = useState(!!(initial?.companionNames?.length || initial?.side || initial?.notes));
+  // the allowance is already set (the event's default): a chip until the organizer wants another number
+  const [sizeOpen, setSizeOpen] = useState(!!initial && initial.maxPartySize !== defaultSize);
   const [tried, setTried] = useState(false);
 
   const phoneRes = phone.trim() ? normalisePhone(phone) : null;
@@ -64,8 +70,17 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
           <Input ltr type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" autoComplete="off" />
         </Field>
         {dupe && <Banner tone="warning" compact title={t('pfDupeTitle')}>{t('pfDupeText', { name: dupe.primaryGuestName })}</Banner>}
-        <Stepper label={t('pfAllowed')} value={size} min={1} max={20} onChange={setSize} suffix={(k) => t(k === 1 ? 'pfOne' : k === 2 ? 'pfTwo' : 'pfMany')} />
-        <p className="field-hint">{t('pfAllowedHint')}</p>
+        {!sizeOpen ? (
+          <button type="button" className="pf-chip"
+            onClick={() => { setSizeOpen(true); requestAnimationFrame(() => document.querySelector<HTMLElement>('#party-form .stepper-row button:not(:disabled)')?.focus()); }}>
+            <Icon name="users" size="sm" /><span className="sr-only">{t('pfAllowed')}: </span><span>{t('pfAllowedChip', { size: n(size, 'person', true) })}</span>
+          </button>
+        ) : (
+          <>
+            <Stepper label={t('pfAllowed')} value={size} min={1} max={20} onChange={setSize} suffix={(k) => t(k === 1 ? 'pfOne' : k === 2 ? 'pfTwo' : 'pfMany')} />
+            <p className="field-hint">{t('pfAllowedHint')}</p>
+          </>
+        )}
         {capacityNote}
         {!more ? (
           <button type="button" className="link-btn" onClick={() => setMore(true)}>{t('pfMore')}</button>

@@ -2,14 +2,16 @@
  * Create event — a three-step wizard with as few choices per step as possible:
  *   1. the occasion (the tactile occasion deck, with search as a fallback)
  *   2. the design: a full-screen vertical feed of the designs suited to that occasion (one per screen)
- *   3. the details: essentials only (names · date · time · venue/city), with the chosen invitation taking shape live
- *   → the invitation opens in the editor for fine edits and publishing.
+ *   3. the details: only what the invitation needs — the name(s) the occasion asks for and the date. The time is a
+ *      chip on 8:00 مساءً (tap to change), the place is optional behind «أضف المكان (اختياري)», the time zone is
+ *      the device's own (changed only from a small link next to the time). The chosen invitation takes shape live.
+ *   → the invitation opens in the editor for fine edits.
  * The step indicator stays at the top of every step. The unfinished draft (fields, step and chosen design) is saved
  * per local account and resumed. A shared catalogue link (?type=…&template=…&preview=1) opens step 2 on that design.
  */
 import { forwardRef, useEffect, useMemo, useRef, useState, type FormEvent, type InputHTMLAttributes } from 'react';
 import type { CreateEventInput, EventType } from '../../domain/types';
-import { eventTypeInfo, isCoupleEvent, validateEssentials, type EssentialsErrors } from '../../domain/event';
+import { DEFAULT_EVENT_TIME, eventTypeInfo, isCoupleEvent, validateEssentials, type EssentialsErrors } from '../../domain/event';
 import { formatEventDate, formatTime, localDateOf } from '../../domain/format';
 import { Banner, Button, EmptyState, Field, FocusLayout, Icon, Input, LinkButton, Select } from '../../ui';
 import { useRole } from '../shared/OwnerOnly';
@@ -35,8 +37,16 @@ export const TIME_ZONES: Array<[string, string]> = [
 ];
 
 type Step = 1 | 2 | 3;
-type Draft = { type: EventType | null; a: string; b: string; aEn: string; bEn: string; title: string; date: string; time: string; venue: string; city: string; timeZone: string };
-const EMPTY: Draft = { type: null, a: '', b: '', aEn: '', bEn: '', title: '', date: '', time: '20:00', venue: '', city: '', timeZone: 'Asia/Riyadh' };
+type Draft = { type: EventType | null; a: string; b: string; title: string; date: string; time: string; venue: string; city: string; timeZone: string };
+const EMPTY: Draft = { type: null, a: '', b: '', title: '', date: '', time: DEFAULT_EVENT_TIME, venue: '', city: '', timeZone: 'Asia/Riyadh' };
+
+/** the device's own time zone when it is one we list; otherwise Riyadh (the organizer can change it from a small link) */
+function deviceZone(): string {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return TIME_ZONES.some(([z]) => z === zone) ? zone : EMPTY.timeZone;
+  } catch { return EMPTY.timeZone; }
+}
 
 /** a draft worth announcing: something the organizer actually typed (not just the occasion they tapped) */
 const hasTyped = (d: Draft) => !!(d.a.trim() || d.b.trim() || d.title.trim() || d.date || d.venue.trim() || d.city.trim());
@@ -119,12 +129,15 @@ function CreateEventWizard() {
   const [cached] = useState(() => readDraft(draftKey, preset));
   const fromLink = loc.search.get('preview') === '1' && !!requestedTemplate;
   const [step, setStep] = useState<Step>(() => fromLink ? 2 : cached?.step ?? (cached?.draft.a || cached?.draft.date ? 3 : requestedTemplate ? 3 : preset ? 2 : 1));
-  const [d, setD] = useState<Draft>(cached?.draft ?? { ...EMPTY, type: preset });
+  const [d, setD] = useState<Draft>(cached?.draft ?? { ...EMPTY, type: preset, timeZone: deviceZone() });
   const [selectedTemplate, setSelectedTemplate] = useState<TemplatePreset | undefined>(() => requestedTemplate ?? presetById(cached?.templateId ?? ''));
   const [browsed, setBrowsed] = useState<TemplatePreset | null>(() => requestedTemplate ?? presetById(cached?.templateId ?? '') ?? null);
   const [resumed, setResumed] = useState(!!cached && hasTyped(cached.draft));
   const [errors, setErrors] = useState<EssentialsErrors>({});
   const [showTz, setShowTz] = useState(false);
+  // the time and the place stay folded until asked for (a restored draft opens what it had changed)
+  const [timeOpen, setTimeOpen] = useState(() => !!cached && cached.draft.time !== DEFAULT_EVENT_TIME);
+  const [placeOpen, setPlaceOpen] = useState(() => !!(cached?.draft.venue.trim() || cached?.draft.city.trim()));
   const formRef = useRef<HTMLFormElement>(null);
   const typed = d.a || d.b || d.title || d.date || d.venue || d.city;
   const create = useMutation((s, input: CreateEventInput) => s.events.create(input));
@@ -151,9 +164,9 @@ function CreateEventWizard() {
 
   const input = (): CreateEventInput => ({
     type: d.type ?? 'other',
-    names: { a: d.a, b: couple ? d.b : undefined, aEn: d.aEn || undefined, bEn: couple ? d.bEn || undefined : undefined },
+    names: { a: d.a, b: couple ? d.b : undefined },
     title: d.type === 'other' ? d.title : undefined,
-    date: d.date, time: d.time, timeZone: d.timeZone,
+    date: d.date, time: d.time || DEFAULT_EVENT_TIME, timeZone: d.timeZone,
     venue: { name: d.venue, city: d.city },
   });
 
@@ -206,7 +219,7 @@ function CreateEventWizard() {
         <WizardSteps step={step} onGo={go} disabled={create.pending} />
         {/* one slim line, only when something typed was restored */}
         {resumed && step !== 2 && <p className="wz-resume" role="status"><Icon name="info" size="sm" /><span>{t('wzResumed')}</span>
-          <button type="button" className="link-btn" onClick={() => { setD({ ...EMPTY, type: preset ?? d.type }); setErrors({}); setResumed(false); setSelectedTemplate(requestedTemplate); setBrowsed(requestedTemplate ?? null); }}>{t('wzStartOver')}</button></p>}
+          <button type="button" className="link-btn" onClick={() => { setD({ ...EMPTY, type: preset ?? d.type, timeZone: deviceZone() }); setErrors({}); setResumed(false); setTimeOpen(false); setPlaceOpen(false); setShowTz(false); setSelectedTemplate(requestedTemplate); setBrowsed(requestedTemplate ?? null); }}>{t('wzStartOver')}</button></p>}
         {step === 1 && <SignatureOccasions value={d.type} onChange={chooseType} onConfirm={(type) => { chooseType(type); go(2); }} />}
         {step === 2 && feedEvent && d.type && (
           <div className="wz-feed-page">
@@ -234,23 +247,42 @@ function CreateEventWizard() {
               </fieldset>
               <fieldset className="wz-group">
                 <legend>{t('wzWhen')}</legend>
-                <div className="wz-pair">
-                  <Field label={t('wzDate')} required error={errors.date}><ArabicDateTime kind="date" value={d.date} min={today} onChange={(e) => set('date', e.target.value)} /></Field>
-                  <Field label={t('wzTime')} required error={errors.time}><ArabicDateTime kind="time" value={d.time} onChange={(e) => set('time', e.target.value)} /></Field>
-                </div>
-                {!showTz ? (
-                  <p className="wz-tz">{t('wzTimeZone', { zone: TIME_ZONES.find(([z]) => z === d.timeZone)?.[1] ?? '' })} <button type="button" className="link-btn wz-tz-change" onClick={() => setShowTz(true)} aria-label={t('wzChangeZone')}>{t('wzChange')}</button></p>
+                <Field label={t('wzDate')} required error={errors.date}><ArabicDateTime kind="date" value={d.date} min={today} onChange={(e) => set('date', e.target.value)} /></Field>
+                {/* the time is already chosen (8:00 مساءً): one chip shows it, a tap opens the field */}
+                {!timeOpen ? (
+                  <button type="button" className="wz-chip"
+                    onClick={() => { setTimeOpen(true); requestAnimationFrame(() => formRef.current?.querySelector<HTMLInputElement>('input[type="time"]')?.focus()); }}>
+                    {/* read as «الوقت: 8:00 مساءً · غيّر» — the visible words stay inside the accessible name */}
+                    <Icon name="clock" size="sm" /><span className="sr-only">{t('wzTime')}: </span><span>{t('wzTimeChip', { time: formatTime(d.time || DEFAULT_EVENT_TIME) })}</span>
+                  </button>
                 ) : (
-                  <Field label={t('wzZone')}><Select value={d.timeZone} onChange={(e) => set('timeZone', e.target.value)}>{TIME_ZONES.map(([z, l]) => <option key={z} value={z}>{l}</option>)}</Select></Field>
+                  <>
+                    <Field label={t('wzTime')} error={errors.time}><ArabicDateTime kind="time" value={d.time} onChange={(e) => set('time', e.target.value)} /></Field>
+                    {/* the time zone is the device's own; it shows (and changes) only here, beside the time */}
+                    {!showTz ? (
+                      <p className="wz-tz">{t('wzTimeZone', { zone: TIME_ZONES.find(([z]) => z === d.timeZone)?.[1] ?? '' })} <button type="button" className="link-btn wz-tz-change" onClick={() => setShowTz(true)} aria-label={t('wzChangeZone')}>{t('wzChange')}</button></p>
+                    ) : (
+                      <Field label={t('wzZone')}><Select value={d.timeZone} onChange={(e) => set('timeZone', e.target.value)}>{TIME_ZONES.map(([z, l]) => <option key={z} value={z}>{l}</option>)}</Select></Field>
+                    )}
+                  </>
                 )}
               </fieldset>
-              <fieldset className="wz-group">
-                <legend>{t('wzWhere')}</legend>
-                <div className="wz-pair">
-                  <Field label={t('wzVenue')} required error={errors.venue}><Input value={d.venue} onChange={(e) => set('venue', e.target.value)} placeholder={t('wzVenueExample')} /></Field>
-                  <Field label={t('wzCity')} required error={errors.city}><Input value={d.city} onChange={(e) => set('city', e.target.value)} placeholder={t('wzCityExample')} /></Field>
-                </div>
-              </fieldset>
+              {/* the place is optional: the invitation, guest pages and wallet pass read cleanly without it */}
+              {!placeOpen ? (
+                <button type="button" className="wz-chip wz-chip-add"
+                  onClick={() => { setPlaceOpen(true); requestAnimationFrame(() => formRef.current?.querySelector<HTMLInputElement>('.wz-place input')?.focus()); }}>
+                  <Icon name="plus" size="sm" /><span>{t('wzAddPlace')}</span>
+                </button>
+              ) : (
+                <fieldset className="wz-group wz-place">
+                  <legend>{t('wzWhere')}</legend>
+                  <div className="wz-pair">
+                    <Field label={t('wzVenue')} optional><Input value={d.venue} onChange={(e) => set('venue', e.target.value)} placeholder={t('wzVenueExample')} /></Field>
+                    <Field label={t('wzCity')} optional><Input value={d.city} onChange={(e) => set('city', e.target.value)} placeholder={t('wzCityExample')} /></Field>
+                  </div>
+                  <p className="field-hint">{t('wzPlaceLater')}</p>
+                </fieldset>
+              )}
             </form>
             {desktop && <aside className="wz-aside sig-create-aside" aria-label={t('wzPreviewAside')}><SignatureCreatePreview fields={fields} today={today} template={selectedTemplate} onChangeDesign={() => go(2)} /></aside>}
           </div>

@@ -76,10 +76,12 @@ export function deriveContent(inv, opts = {}) {
 
   const start = d.getTime();
   const stamp = (ms) => new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const placeEn = [c.venueEn, c.cityEn].filter(Boolean).join(', ');
   const calHref = isNaN(start) ? '#' : 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='
     + encodeURIComponent(inv.event.title || `${[c.enA, c.enB].filter(Boolean).join(' & ')} — ${inv.event.label?.en || (c.enB ? 'Wedding' : 'Celebration')}`) + '&dates=' + stamp(start) + '/' + stamp(start + (inv.event.durationHours || 5) * 36e5)
-    + '&location=' + encodeURIComponent(`${c.venueEn}, ${c.cityEn}`);
-  const mapHref = inv.venue.mapUrl || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(`${c.venueEn} ${c.cityEn}`);
+    + (placeEn ? '&location=' + encodeURIComponent(placeEn) : '');
+  // the place is optional: no venue/city (and no map link) → no map button and no «المكان» page (Studio)
+  const mapHref = inv.venue.mapUrl || (placeEn ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([c.venueEn, c.cityEn].filter(Boolean).join(' ')) : null);
 
   const program = inv.program.map((p, i, a) => ({
     time: fmtTime12(p.time, digits), dir: digits === 'arab' ? 'rtl' : 'ltr', ar: p.ar, en: p.en,
