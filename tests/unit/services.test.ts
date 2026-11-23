@@ -7,8 +7,9 @@ before(() => {
   (globalThis as unknown as { window: unknown }).window = { localStorage: { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v), removeItem: (k: string) => void mem.delete(k) }, addEventListener() {} };
 });
 
-test('journey: create → publish → guest → RSVP from link → seat → partial + full check-in → counts & activity', async () => {
+test('journey: create → guest (link works at once) → RSVP from link → seat → partial + full check-in → counts & activity', async () => {
   const { createServices } = await import('../../src/services/index');
+  const { defaultDesign } = await import('../../src/domain/invitation');
   const { services: s, prototype } = createServices();
   prototype.update({ latencyMs: 0 });
   const today = s.clock.now();
@@ -19,13 +20,16 @@ test('journey: create → publish → guest → RSVP from link → seat → part
   assert.equal(ev.title, 'زفاف سارة وأحمد');
   assert.equal(ev.slug, 'sara-ahmed');
 
-  // guest link fails until the invitation is published
+  // always live: the guest link works as soon as the guest is added, with the occasion's default design…
   const p = await s.parties.create(ev.id, { primaryGuestName: 'عائلة الدوسري', phone: '0551203344', maxPartySize: 4 });
-  await assert.rejects(s.guest.open(ev.slug, p.code), (e: Error & { code?: string }) => e.code === 'not_published');
-  await s.invitations.publish(ev.id);
-
   const opened = await s.guest.open(ev.slug, p.code);
   assert.equal(opened.party?.name, 'عائلة الدوسري');
+  assert.deepEqual(opened.design, defaultDesign(ev));
+  // …and the next open shows the latest saved design, with no publish step
+  await s.invitations.saveDraft(ev.id, { ...defaultDesign(ev), cardId: 'kit-seal-arch', message: { ar: 'نص جديد', en: 'New' } });
+  const again = await s.guest.open(ev.slug, p.code);
+  assert.equal(again.design.cardId, 'kit-seal-arch');
+  assert.equal(again.design.message.ar, 'نص جديد');
   assert.equal((await s.parties.get(p.id)).delivery.status, 'opened');
 
   await assert.rejects(s.guest.submitRsvp(ev.slug, p.code, { attending: true, count: 5 }), /أكبر من المسموح/);
@@ -47,7 +51,7 @@ test('journey: create → publish → guest → RSVP from link → seat → part
   assert.equal(undone.checkInStatus, 'partial');
 
   const kinds = (await s.activity.list(ev.id, 50)).map((a) => a.kind);
-  for (const k of ['event_created', 'party_added', 'invitation_published', 'invitation_opened', 'rsvp_confirmed', 'party_seated', 'checked_in_partial', 'checked_in', 'check_in_undone']) assert.ok(kinds.includes(k as never), k);
+  for (const k of ['event_created', 'party_added', 'invitation_opened', 'rsvp_confirmed', 'party_seated', 'checked_in_partial', 'checked_in', 'check_in_undone']) assert.ok(kinds.includes(k as never), k);
 });
 
 test('general link replies wait for matching; offline mode fails with a human message', async () => {
@@ -79,8 +83,8 @@ test('all 13 occasions complete the simplified journey with their own starter, p
     const starter=presetById(OCCASION_STARTERS[type.id].presetId)!;
     const design=await s.invitations.saveDraft(ev.id,defaultDesign(ev));assert.equal(design.draft.cardId,starter.cardId,type.id);assert.equal(design.draft.sceneId,starter.sceneId,type.id);
     assert.deepEqual(design.draft.message,defaultDesign(ev).message);
-    await assert.rejects(s.guest.open(ev.slug),e=>(e as {code:string}).code==='not_published');
-    const p=await s.parties.create(ev.id,{primaryGuestName:'عائلة الاختبار',maxPartySize:3});await s.invitations.publish(ev.id);
+    assert.equal((await s.guest.open(ev.slug)).design.cardId,starter.cardId,`${type.id}: the general link works at once`);
+    const p=await s.parties.create(ev.id,{primaryGuestName:'عائلة الاختبار',maxPartySize:3});
     await s.guest.open(ev.slug,p.code);await assert.rejects(s.guest.submitRsvp(ev.slug,p.code,{attending:true,count:4}));
     await s.guest.submitRsvp(ev.slug,p.code,{attending:false,count:0});assert.equal((await s.parties.get(p.id)).rsvpStatus,'declined');
     await s.guest.submitRsvp(ev.slug,p.code,{attending:true,count:3});assert.equal((await s.guest.open(ev.slug,p.code)).party?.confirmedPartySize,3);

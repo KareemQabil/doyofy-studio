@@ -1,4 +1,4 @@
-import type { Event, InvitationParty, PublishState, Table } from './types';
+import type { Event, InvitationParty, Table } from './types';
 import { csvCell } from './guest-experience';
 import { eventPhase } from './event';
 import { normalisePhone } from './phone';
@@ -79,14 +79,13 @@ export const canRemind = (p: InvitationParty, now: Date): boolean =>
  * «unseat»: the guest declined but still holds a table. «wait»: a reminder would be due but the guest was just
  * invited or reminded (see remindHold) — the card says when instead of offering the reminder again.
  */
-export type GuestNextAction = 'publish' | 'phone' | 'share' | 'remind' | 'wait' | 'seat' | 'unseat' | 'arrival' | 'details';
-export function guestNextAction(p: InvitationParty, publish: PublishState, seatingEnabled: boolean, arrivalTime = false, now?: Date): GuestNextAction {
+export type GuestNextAction = 'phone' | 'share' | 'remind' | 'wait' | 'seat' | 'unseat' | 'arrival' | 'details';
+export function guestNextAction(p: InvitationParty, seatingEnabled: boolean, arrivalTime = false, now?: Date): GuestNextAction {
   if (p.checkInStatus === 'checked_in') return 'details';
   if (p.rsvpStatus === 'declined') return p.tableId ? 'unseat' : 'details';
   if (p.rsvpStatus === 'confirmed') return seatingEnabled && !p.tableId ? 'seat' : arrivalTime ? 'arrival' : 'details';
-  if (publish === 'none' || publish === 'draft') return 'publish';
   if (!normalisePhone(p.phone).ok) return 'phone';
-  if (!['shared', 'opened'].includes(invitationStatus(p, publish))) return 'share';
+  if (!['shared', 'opened'].includes(invitationStatus(p))) return 'share';
   return now && remindHold(p, now) ? 'wait' : 'remind';
 }
 

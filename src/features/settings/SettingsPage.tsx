@@ -5,15 +5,13 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Event, EventType, UpdateEventInput } from '../../domain/types';
 import { EVENT_TYPES, isCoupleEvent, suggestTitle } from '../../domain/event';
-import { PUBLISH_LABEL, publishState } from '../../domain/invitation';
-import { PUBLISH_KEY } from '../../domain/copy/activity';
-import { Badge, Banner, Button, ConfirmDialog, Field, Input, LinkButton, PageHeader, Panel, Select, Stepper, Switch } from '../../ui';
+import { Banner, Button, ConfirmDialog, Field, Input, LinkButton, PageHeader, Panel, Select, Stepper, Switch } from '../../ui';
 import { useMutation, useServices } from '../../app/data';
 import { useBlocker, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
 import { errorMessage, isAppError } from '../../services/errors';
-import { useDesign, useParties } from '../shared/queries';
+import { useParties } from '../shared/queries';
 import { CapacityMeter, useCapacityVersion } from '../billing/CapacityMeter';
 import { ReceiptList } from '../billing/Receipt';
 import { receiptsFor } from '../../domain/billing';
@@ -34,7 +32,6 @@ const fromEvent = (e: Event): Form => ({
 
 export function SettingsPage({ event }: { event: Event }) {
   const services = useServices();
-  const design = useDesign(event.id);
   const toast = useToast();
   const { t } = useCopy();
   const navigate = useNavigate();
@@ -58,7 +55,6 @@ export function SettingsPage({ event }: { event: Event }) {
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((x) => ({ ...x, [k]: v }));
   const couple = isCoupleEvent(f.type);
   const err = (field: string) => (isAppError(save.error) && save.error.field === field ? errorMessage(save.error) : null);
-  const ps = publishState(design.data);
   const today = localDateOf(services.clock.now(), f.timeZone);
 
   const submit = () => void save.run({
@@ -142,7 +138,8 @@ export function SettingsPage({ event }: { event: Event }) {
 
         <Panel title={t('setInvitation')}>
           <div className="row wrap between gap-3">
-            <Badge tone={PUBLISH_LABEL[ps].tone} dot>{t(PUBLISH_KEY[ps])}</Badge>
+            {/* always live: no state to report, only where to manage it */}
+            <p className="muted t-sm grow">{t('ivLiveSub')}</p>
             <LinkButton to={paths.invitation(event.id)} size="sm">{t('setManageInvitation')}</LinkButton>
           </div>
         </Panel>

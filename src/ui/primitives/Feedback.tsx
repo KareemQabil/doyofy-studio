@@ -88,7 +88,7 @@ export function Spinner({ label, size = 56 }: { label?: string; size?: number })
 }
 
 // ------------------------------------------------------------------ toasts
-/** `celebrate`: a milestone (publish, first guest in): the success seal also plays large in the middle of the screen */
+/** `celebrate`: a milestone (first invitation sent, first guest in): the success seal also plays large in the middle of the screen */
 interface Toast { id: number; tone: Tone; text: ReactNode; action?: { label: string; run: () => void }; celebrate?: boolean }
 const ToastCtx = createContext<(t: Omit<Toast, 'id'>) => void>(() => {});
 

@@ -3,7 +3,7 @@
  * and every delivery state says who knows it: the platform, the organizer (manual), or a simulation.
  */
 import { useState } from 'react';
-import type { Event, InvitationParty, PublishState, Table } from '../../domain/types';
+import type { Event, InvitationParty, Table } from '../../domain/types';
 import { CHECKIN_STATUS, INVITATION_STATUS, RSVP_STATUS, duplicatePhoneIds, invitationStatus, partyNeedsAttention } from '../../domain/parties';
 import { ARRIVAL_KEY, FLAG_KEY, INVITATION_KEY, RSVP_KEY, SOURCE_KEY } from '../../domain/copy/guests';
 import { formatPhone, relativeTime } from '../../domain/format';
@@ -22,8 +22,8 @@ import { normalisePhone } from '../../domain/phone';
 import { useCopy } from '../../ui/copy';
 import { can } from '../../domain/roles';
 
-export function PartyDrawer({ event, party, all, tables, publish, startEditing = false, onClose }: {
-  event: Event; party: InvitationParty; all: readonly InvitationParty[]; tables: readonly Table[]; publish: PublishState; startEditing?: boolean; onClose: () => void;
+export function PartyDrawer({ event, party, all, tables, startEditing = false, onClose }: {
+  event: Event; party: InvitationParty; all: readonly InvitationParty[]; tables: readonly Table[]; startEditing?: boolean; onClose: () => void;
 }) {
   const now = useNow();
   const toast = useToast();
@@ -37,8 +37,8 @@ export function PartyDrawer({ event, party, all, tables, publish, startEditing =
   const [copiedAsk, setCopiedAsk] = useState(false);
   const [shareStatus, setShareStatus] = useState('');
   const link = guestLink(party);
-  const published = publish === 'published' || publish === 'changed';
-  const inv = invitationStatus(party, publish);
+  // the invitation is always live: the personal link works from the moment the guest is added
+  const inv = invitationStatus(party);
   const table = tables.find((t) => t.id === party.tableId);
   const issues = partyNeedsAttention(party, duplicatePhoneIds(all)).map((f) => (FLAG_KEY[f] ? t(FLAG_KEY[f]!) : f));
   const validPhone = normalisePhone(party.phone).ok;
@@ -73,45 +73,38 @@ export function PartyDrawer({ event, party, all, tables, publish, startEditing =
         <section className="drawer-section" aria-labelledby="pd-inv">
           <div className="row between"><h3 id="pd-inv" className="drawer-h">{t('pdInvitation')}</h3><Badge tone={INVITATION_STATUS[inv].tone} dot>{t(INVITATION_KEY[inv])}</Badge></div>
           <p className="faint t-sm">
-            {inv === 'draft' ? t('pdDraft')
-              : inv === 'ready' ? t('pdReady')
+            {inv === 'ready' ? t('pdReady')
               : inv === 'opened' ? `${t('pdOpened', { when: party.delivery.openedAt ? relativeTime(party.delivery.openedAt, now, dialect) : '' })} · ${t(SOURCE_KEY.platform)}`
               : inv === 'failed' ? `${t('pdFailed')}${party.delivery.failureReason === 'missing_phone' || party.delivery.failureReason === 'invalid_phone' ? t('pdBadPhone') : ''} · ${t(SOURCE_KEY[party.delivery.source ?? 'simulated'])}`
               : `${t('pdSent', { when: party.delivery.at ? relativeTime(party.delivery.at, now, dialect) : '' })} · ${t(SOURCE_KEY[party.delivery.source ?? 'manual'])}`}
             {party.delivery.reminderAt && t('pdLastReminder', { when: relativeTime(party.delivery.reminderAt, now, dialect) })}
           </p>
-          {published ? (
-            <>
-              <CopyField label={t('pdPersonalLink')} value={link} hint={t('pdCode', { code: party.code })} onCopied={() => { if (inv === 'ready' || inv === 'failed') setCopiedAsk(true); }} />
-              {copiedAsk && (
-                <Banner tone="info" compact title={t('pdDidSendLink')} action={<Button size="sm" onClick={() => { setCopiedAsk(false); void markShared.run(); }}>{t('pdYesSentIt')}</Button>}>
-                  {t('pdMarkToFollow')}
-                </Banner>
-              )}
-              <div className="action-grid">
-                {validPhone ? <a className={`btn ${inv==='ready'||inv==='failed'?'btn-primary':'btn-secondary'} btn-md`} href={whatsappUrl(party.phone, message)} target="_blank" rel="noopener noreferrer" onClick={()=>setCopiedAsk(true)}><Icon name="chat" size="sm"/>{t('sendWhatsapp')}</a> : <Button icon="phone" onClick={()=>setEditing(true)}>{t(party.phone ? 'pdFixPhone' : 'pdAddPhone')}</Button>}
-                {validPhone && <a className="btn btn-secondary btn-md" href={smsUrl(party.phone, message)} onClick={() => setCopiedAsk(true)}><Icon name="phone" size="sm" />{t('sendSms')}</a>}
-                {typeof navigator.share === 'function' && <Button icon="share" onClick={async () => {
-                  try { await navigator.share({ title: event.title, text: message }); setCopiedAsk(true); setShareStatus(t('pdShareDone')); }
-                  catch (e) { if (!(e instanceof DOMException && e.name === 'AbortError')) setShareStatus(t('pdShareFailed')); }
-                }}>{t('pdDeviceShare')}</Button>}
-                {party.rsvpStatus==='pending' && ['shared','opened'].includes(inv) && validPhone && <a className="btn btn-secondary btn-md" href={whatsappUrl(party.phone, reminderMessage(event,party,link,dialect))} target="_blank" rel="noopener noreferrer" onClick={()=>setRemindAsk(true)}><Icon name="bell" size="sm"/>{t('pdPrepareReminder')}</a>}
-              </div>
-              {remindAsk && (
-                <Banner tone="info" compact title={t('glDidRemind')} action={<Button size="sm" loading={remind.pending} onClick={() => void remind.run()}>{t('glYesSent')}</Button>}>
-                  {t('pdRemindAfter')}
-                </Banner>
-              )}
-              {shareStatus && <p className="field-hint" role="status">{shareStatus}</p>}
-              <details className="drawer-secondary"><summary>{t('pdMoreShare')}</summary><div className="action-grid">
-                <Button icon="check" disabled={busy} loading={markShared.pending} onClick={()=>void markShared.run()}>{t('glManualDone')}</Button>
-                <Button icon="send" loading={simulate.pending} disabled={busy} onClick={()=>void simulate.run()}>{inv==='failed'?t('pdTryAgain'):t('simulateSend')} <Badge tone="neutral">{t('demoBadge')}</Badge></Button>
-              </div></details>
-              <p className="faint t-xs">{t('pdOpenNote')}</p>
-            </>
-          ) : (
-            <Banner tone="warning" compact action={<Button size="sm" onClick={() => navigate(paths.invitation(event.id))}>{t('glToInvitation')}</Button>}>{t('pdPublishFirst')}</Banner>
+          <CopyField label={t('pdPersonalLink')} value={link} hint={t('pdCode', { code: party.code })} onCopied={() => { if (inv === 'ready' || inv === 'failed') setCopiedAsk(true); }} />
+          {copiedAsk && (
+            <Banner tone="info" compact title={t('pdDidSendLink')} action={<Button size="sm" onClick={() => { setCopiedAsk(false); void markShared.run(); }}>{t('pdYesSentIt')}</Button>}>
+              {t('pdMarkToFollow')}
+            </Banner>
           )}
+          <div className="action-grid">
+            {validPhone ? <a className={`btn ${inv==='ready'||inv==='failed'?'btn-primary':'btn-secondary'} btn-md`} href={whatsappUrl(party.phone, message)} target="_blank" rel="noopener noreferrer" onClick={()=>setCopiedAsk(true)}><Icon name="chat" size="sm"/>{t('sendWhatsapp')}</a> : <Button icon="phone" onClick={()=>setEditing(true)}>{t(party.phone ? 'pdFixPhone' : 'pdAddPhone')}</Button>}
+            {validPhone && <a className="btn btn-secondary btn-md" href={smsUrl(party.phone, message)} onClick={() => setCopiedAsk(true)}><Icon name="phone" size="sm" />{t('sendSms')}</a>}
+            {typeof navigator.share === 'function' && <Button icon="share" onClick={async () => {
+              try { await navigator.share({ title: event.title, text: message }); setCopiedAsk(true); setShareStatus(t('pdShareDone')); }
+              catch (e) { if (!(e instanceof DOMException && e.name === 'AbortError')) setShareStatus(t('pdShareFailed')); }
+            }}>{t('pdDeviceShare')}</Button>}
+            {party.rsvpStatus==='pending' && ['shared','opened'].includes(inv) && validPhone && <a className="btn btn-secondary btn-md" href={whatsappUrl(party.phone, reminderMessage(event,party,link,dialect))} target="_blank" rel="noopener noreferrer" onClick={()=>setRemindAsk(true)}><Icon name="bell" size="sm"/>{t('pdPrepareReminder')}</a>}
+          </div>
+          {remindAsk && (
+            <Banner tone="info" compact title={t('glDidRemind')} action={<Button size="sm" loading={remind.pending} onClick={() => void remind.run()}>{t('glYesSent')}</Button>}>
+              {t('pdRemindAfter')}
+            </Banner>
+          )}
+          {shareStatus && <p className="field-hint" role="status">{shareStatus}</p>}
+          <details className="drawer-secondary"><summary>{t('pdMoreShare')}</summary><div className="action-grid">
+            <Button icon="check" disabled={busy} loading={markShared.pending} onClick={()=>void markShared.run()}>{t('glManualDone')}</Button>
+            <Button icon="send" loading={simulate.pending} disabled={busy} onClick={()=>void simulate.run()}>{inv==='failed'?t('pdTryAgain'):t('simulateSend')} <Badge tone="neutral">{t('demoBadge')}</Badge></Button>
+          </div></details>
+          <p className="faint t-xs">{t('pdOpenNote')}</p>
         </section>
 
         <section className="drawer-section" aria-labelledby="pd-rsvp">

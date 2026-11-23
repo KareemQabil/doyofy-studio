@@ -6,11 +6,12 @@ import { copyFor, type Dialect } from './copy';
  *   صاحب المناسبة (organizer)  everything.
  *   المنسق (coordinator)        add, edit, share/send, remind, seat (auto-seating and table order too), check-in —
  *                               never delete guests, transfer them between events, export files, pay/upgrade,
- *                               create or archive events, or publish the invitation (a coordinator cannot publish, so creating one would be a dead end).
+ *                               or create or archive events.
  *   مزود الضيافة (caterer)      the food report, the menu settings and a read-only view of guests and tables.
  * The UI hides or explains what a role cannot do; the mock services refuse it too (services/mock/repositories.ts).
  * A production API must enforce the same table.
  */
+/** `invitation.publish` is deprecated: the invitation is always live (no publish step). Kept only for callers compiled against it. */
 export type Permission =
   | 'guests.add' | 'guests.edit' | 'guests.share' | 'guests.remind'
   | 'guests.delete' | 'guests.transfer' | 'guests.export'
@@ -43,7 +44,7 @@ export const FORBIDDEN_TEXT: Record<Permission, string> = {
   checkin: 'تسجيل الوصول متاح لفريق التنظيم والاستقبال.',
   food: 'تقارير الطعام متاحة لمزود الضيافة.',
   billing: 'الدفع وترقية الباقة متاحان لصاحب المناسبة فقط.',
-  'invitation.publish': 'نشر الدعوة متاح لصاحب المناسبة فقط.',
+  'invitation.publish': 'هذا الإجراء متاح لصاحب المناسبة فقط.',
   'event.create': 'إنشاء مناسبة جديدة متاح لصاحب المناسبة فقط.',
   'event.archive': 'أرشفة المناسبة متاحة لصاحب المناسبة فقط.',
 };

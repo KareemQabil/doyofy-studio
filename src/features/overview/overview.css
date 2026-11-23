@@ -39,19 +39,6 @@
 .attention-list li>span:nth-child(2) { flex:1; }
 .attention-icon { display:grid; place-items:center; width:32px; height:32px; border-radius:50%; background:var(--c-surface-subtle); flex:none; }
 .attention-list a { display:inline-flex; align-items:center; gap:5px; font-weight:600; text-decoration:none; min-height:44px; flex:none; }
-.preparation-list { border:1px solid var(--c-line); border-radius:var(--r-lg); padding:0 20px; background:var(--c-surface); }
-.preparation-list summary { min-height:64px; display:flex; align-items:center; gap:12px; cursor:pointer; list-style:none; }
-.preparation-list summary::-webkit-details-marker { display:none; }
-.preparation-list summary>span:first-child { flex:1; font-weight:600; }
-.preparation-list[open] summary>.icon { transform:rotate(180deg); }
-.checklist { list-style:none; margin-top:12px !important; }
-.check-link { display:flex; align-items:center; gap:12px; padding-block:14px; color:var(--c-text); text-decoration:none; }
-.check-item+.check-item { border-top:1px solid var(--c-line); }
-.check-num { width:28px; height:28px; flex:none; display:grid; place-items:center; border:1px solid var(--c-line-strong); border-radius:50%; font-size:var(--fs-xs); color:var(--c-text-3); }
-.is-done .check-num { background:var(--c-success-soft); border-color:transparent; color:var(--c-success); }
-.check-title,.check-detail { display:block; }
-.check-title { font-size:var(--fs-sm); font-weight:500; }
-.check-detail { color:var(--c-text-3); font-size:var(--fs-xs); margin-top:4px; }
 .recent-section { border-inline-start:1px solid var(--c-line); padding-inline-start:28px; display:flex; flex-direction:column; gap:20px; }
 .timeline { list-style:none; display:flex; flex-direction:column; }
 .timeline-item { display:flex; align-items:flex-start; gap:12px; font-size:var(--fs-sm); padding-bottom:24px; position:relative; }
@@ -65,4 +52,4 @@
 .counts>.stat,.counts>.counts-checkin { flex:1; min-width:110px; }
 .overview-grid { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:24px; }
 @media(max-width:1100px) { .event-moment { grid-template-columns:90px minmax(0,1fr); gap:24px; } .moment-flourish { display:none; } .overview-columns { grid-template-columns:minmax(0,1fr); } .recent-section { border-inline-start:0; padding-inline-start:0; border-top:1px solid var(--c-line); padding-top:24px; } }
-@media(max-width:640px) { .overview { gap:24px; } .event-overview-head { align-items:flex-start; } .event-overview-head>.btn { display:none; } .event-moment { padding:24px 20px; grid-template-columns:minmax(0,1fr); gap:12px; } .moment-calendar { flex-direction:row; align-items:baseline; gap:6px; border:0; padding:0; } .moment-day { font-size:26px; } .moment-time { margin:0; } .moment-copy h2 { font-size:var(--fs-xl); } .moment-copy>.btn { width:100%; margin-top:16px; } .journey li:not(:last-child)::after { inset-inline-start:calc(50% + 21px); inset-inline-end:calc(-50% + 21px); } .journey a { font-size:12px; } .event-facts>div { padding-inline:14px; } .event-facts strong { font-size:28px; } .event-facts dt,.event-facts dd>span { font-size:var(--fs-xs); } .event-facts dd { gap:4px; } .attention-list li { gap:8px; } .attention-icon { display:none; } .preparation-list { padding-inline:16px; } .preparation-list summary { gap:6px; } .overview-grid { grid-template-columns:minmax(0,1fr); } }
+@media(max-width:640px) { .overview { gap:24px; } .event-overview-head { align-items:flex-start; } .event-overview-head>.btn { display:none; } .event-moment { padding:24px 20px; grid-template-columns:minmax(0,1fr); gap:12px; } .moment-calendar { flex-direction:row; align-items:baseline; gap:6px; border:0; padding:0; } .moment-day { font-size:26px; } .moment-time { margin:0; } .moment-copy h2 { font-size:var(--fs-xl); } .moment-copy>.btn { width:100%; margin-top:16px; } .journey li:not(:last-child)::after { inset-inline-start:calc(50% + 21px); inset-inline-end:calc(-50% + 21px); } .journey a { font-size:12px; } .event-facts>div { padding-inline:14px; } .event-facts strong { font-size:28px; } .event-facts dt,.event-facts dd>span { font-size:var(--fs-xs); } .event-facts dd { gap:4px; } .attention-list li { gap:8px; } .attention-icon { display:none; } .overview-grid { grid-template-columns:minmax(0,1fr); } }
