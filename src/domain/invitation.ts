@@ -44,18 +44,23 @@ export function defaultDesign(ev: Event): InvitationDesignContent {
   };
 }
 
+/**
+ * The design guests get: the latest saved one, always. The invitation has no publish step — a fresh event's
+ * links already work with its occasion's default design, and an older stored «published» snapshot is ignored.
+ */
+export function liveDesign(d: Pick<InvitationDesign, 'draft'> | null | undefined, ev: Event): InvitationDesignContent {
+  return d?.draft ?? defaultDesign(ev);
+}
+
+/**
+ * @deprecated There is no publish concept any more (owner decision, Nov 2026); nothing outside the editor's
+ * transitional code reads this. Kept so code compiled against it keeps building while it is removed.
+ */
 export function publishState(d: InvitationDesign | null | undefined): PublishState {
   if (!d) return 'none';
   if (!d.published) return 'draft';
   return JSON.stringify(d.published) === JSON.stringify(d.draft) ? 'published' : 'changed';
 }
-
-export const PUBLISH_LABEL: Record<PublishState, { label: string; tone: 'neutral' | 'info' | 'success' | 'warning' }> = {
-  none: { label: 'لم تُصمم بعد', tone: 'neutral' },
-  draft: { label: 'مسودة — غير منشورة', tone: 'warning' },
-  published: { label: 'منشورة', tone: 'success' },
-  changed: { label: 'منشورة · تعديلات غير منشورة', tone: 'info' },
-};
 
 export interface ResolvedNames { a: string; b: string; aEn: string; bEn: string; fromEvent: boolean }
 

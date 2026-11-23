@@ -65,11 +65,11 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
   useEffect(() => { if (carried && !portable) return; document.body.classList.add('dy-guest'); void load(); return () => document.body.classList.remove('dy-guest'); }, [load, carried, portable]);
 
   if (carried && !portable) return <main className="guest-page theme-guest guest-center">{legacyCarried ? <PageLoader name="envelope" label={t('shOpening')} size={96} /> : <EmptyState icon="alert" title={t('shLinkBroken')}>{t('shAskAgain')}</EmptyState>}</main>;
+  // the invitation is always live: a link fails only when it is wrong, or the network is down
   if (error) {
-    const notPublished = isAppError(error) && error.code === 'not_published';
     return (
       <main className="guest-page theme-guest guest-center">
-        <EmptyState icon={notPublished ? 'clock' : 'envelope'} title={notPublished ? t('shNotYet') : t('shNotFound')}
+        <EmptyState icon="envelope" title={t('shNotFound')}
           action={isAppError(error) && error.code === 'network' ? <Button onClick={() => void load()}>{t('shRetryGuests')}</Button> : undefined}>
           {errorMessage(error)}
         </EmptyState>

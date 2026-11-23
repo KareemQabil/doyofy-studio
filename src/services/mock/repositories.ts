@@ -8,7 +8,7 @@ import type {
 } from '../contracts';
 import type { Event, InvitationParty, PartyInput } from '../../domain/types';
 import { makeCode, makeId, makeSlug, normaliseCode } from '../../domain/ids';
-import { defaultDesign, publishState } from '../../domain/invitation';
+import { defaultDesign, liveDesign } from '../../domain/invitation';
 import { applyRsvp, seatsFor, validateRsvp, RSVP_ERROR_TEXT } from '../../domain/parties';
 import { eventPhase, eventStart, suggestTitle, validateEssentials, todayFor } from '../../domain/event';
 import { normalisePhone } from '../../domain/phone';
@@ -162,15 +162,14 @@ export function mockInvitations({ store, now }: Ctx): InvitationRepository {
       else { d.draft = content; d.draftSavedAt = t; }
       return clone(d);
     }), 'write'),
+    // @deprecated: the invitation is always live (guests get the latest saved design). Kept for callers compiled
+    // against it: it only makes sure a design is saved, and records the legacy snapshot so older readers agree.
     publish: (eventId) => store.request(() => store.write((db) => {
-      guard(store, 'invitation.publish');
       const ev = findEvent(db, eventId);
-      const t = now();
+      const t = now().toISOString();
       let d = db.designs.find((x) => x.eventId === eventId);
-      if (!d) { d = { id: makeId('dsg'), eventId, draft: defaultDesign(ev), draftSavedAt: t.toISOString() }; db.designs.push(d); }
-      const first = !d.published;
-      d.published = clone(d.draft); d.publishedAt = t.toISOString();
-      log(db, t, eventId, 'invitation_published', { first });
+      if (!d) { d = { id: makeId('dsg'), eventId, draft: defaultDesign(ev), draftSavedAt: t }; db.designs.push(d); }
+      d.published = clone(d.draft); d.publishedAt = t;
       return clone(d);
     }), 'write'),
   };
@@ -588,8 +587,8 @@ export function mockGuest({ store, now }: Ctx): GuestApi {
     const db = store.read();
     const ev = db.events.find((e) => e.slug === slug && !e.archivedAt);
     if (!ev) throw new AppError('not_found', 'هذه الدعوة غير موجودة. تأكد من الرابط مع صاحب الدعوة.');
-    const design = db.designs.find((d) => d.eventId === ev.id);
-    if (!design?.published) throw new AppError('not_published', 'الدعوة غير متاحة بعد. سيشاركها صاحب المناسبة قريبًا.');
+    // always live: the latest saved design, or the occasion's default before the first save — never «not published»
+    const design = liveDesign(db.designs.find((d) => d.eventId === ev.id), ev);
     let party: InvitationParty | undefined;
     if (code) {
       party = db.parties.find((p) => p.eventId === ev.id && p.code === normaliseCode(code));
@@ -610,7 +609,7 @@ export function mockGuest({ store, now }: Ctx): GuestApi {
     const table = party?.tableId && ev.settings.revealTableToGuests ? db.tables.find((t) => t.id === party!.tableId)?.name : undefined;
     return clone({
       event: { id: ev.id, slug: ev.slug, type: ev.type, title: ev.title, names: ev.names, date: ev.date, time: ev.time, timeZone: ev.timeZone, durationHours: ev.durationHours, venue: ev.venue },
-      design: publishState(design) === 'none' ? design.draft : design.published,
+      design,
       party: party ? { code: party.code, name: party.primaryGuestName, maxPartySize: party.maxPartySize, rsvpStatus: party.rsvpStatus, confirmedPartySize: party.confirmedPartySize, companionNames: party.companionNames, guestNote: party.guestNote, meals: party.meals, dietary: party.dietary, tableName: table, checkedInCount: party.checkedInCount } : null,
       canEdit: phase === 'upcoming' || phase === 'final_week' || (phase === 'event_day' && now() < eventStart(ev)),
       phase: phase === 'completed' || phase === 'archived' ? 'after' : phase === 'event_day' ? 'event_day' : 'before',

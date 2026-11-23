@@ -1,7 +1,8 @@
 // «توقيع» journey in a real browser (Chromium via Playwright), at 390 / 768 / 1440.
 //   node tests/signature-journey.mjs [phone|tab|desk|all]
 // Graduation (single person), created from scratch: occasion deck (keyboard) → details → prepared invitation →
-// «أرسل للضيوف» → add a guest → guest link: envelope cover → RSVP → reception gate check-in → summary.
+// always live (no publish step): tap to edit, «أرسل للضيوف» → add a guest → guest link works at once: envelope cover → RSVP →
+// reception gate check-in → summary.
 // Couple (seeded wedding): overview → invitation → guests → replies → reception → summary → guest cover.
 // Also checks: no horizontal page scroll, no wedding copy on the graduation surfaces, reduced-motion cover,
 // sheet keyboard steps on phone, no page errors. Writes review/screenshots-or-captures/journey/<vp>-*.png
@@ -139,11 +140,14 @@ async function run(vp) {
     return page.url().replace(BASE, '');
   });
 
-  await step(vp, '07 graduation invitation summary has no wedding copy', async () => {
+  await step(vp, '07 graduation invitation summary: always live, one forward action, no wedding copy', async () => {
     await go(`/app/events/${eventId}/invitation`);
     await page.locator('h1').first().waitFor();
     const t = await page.locator('main').innerText();
     const bad = t.match(/العروس|العريس|العروسين/); if (bad) throw new Error(`found «${bad[0]}»`);
+    // no publish concept: the invitation is what guests get, and the next step is the guests
+    const pub = t.match(/انشر|نشر|منشورة|مسودة/); if (pub) throw new Error(`publish word «${pub[0]}»`);
+    if (!(await page.getByRole('link', { name: /أضف الضيوف|أرسل للضيوف/ }).count())) throw new Error('no «أرسل للضيوف» action');
     await shot('07-invitation'); return noScroll();
   });
 
@@ -163,7 +167,7 @@ async function run(vp) {
   });
   const slug = await page.evaluate((id) => { const db = JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}'); return (db.events || []).find((e) => e.id === id)?.slug || ''; }, eventId);
 
-  await step(vp, '09 guest: envelope cover (B night), single-name copy', async () => {
+  await step(vp, '09 guest: the link works at once (no publish) — envelope cover (B night), single-name copy', async () => {
     await go(`/i/${slug}/${code}`);
     await page.locator('.sig-cover').waitFor();
     const t = await page.locator('.sig-cover-head').innerText();

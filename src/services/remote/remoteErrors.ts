@@ -6,11 +6,12 @@
 import { AppError, type ErrorCode } from '../errors';
 import { RSVP_ERROR_TEXT } from '../../domain/parties';
 
-const CODES: ReadonlySet<string> = new Set<ErrorCode>(['not_found', 'validation', 'conflict', 'network', 'not_published', 'storage', 'forbidden']);
+const CODES: ReadonlySet<string> = new Set<ErrorCode>(['not_found', 'validation', 'conflict', 'network', 'storage', 'forbidden']);
 
 export const REASON_TEXT: Record<string, string> = {
   // public guest path (same wording as services/mock/repositories.ts)
   unknown_event: 'هذه الدعوة غير موجودة. تأكد من الرابط مع صاحب الدعوة.',
+  // a server from before the invitation was always live may still answer this for an event that never saved a design
   not_published: 'الدعوة غير متاحة بعد. سيشاركها صاحب المناسبة قريبًا.',
   unknown_code: 'رابط الدعوة غير صحيح أو أُلغي. تواصل مع صاحب الدعوة.',
   personal_only: 'هذه الدعوة شخصية. استخدم الرابط الذي وصلك من صاحب الدعوة.',
@@ -43,8 +44,8 @@ export const REASON_TEXT: Record<string, string> = {
   check_in_count_invalid: 'اختر عدد القادمين الآن.',
   check_in_method_invalid: 'طريقة التسجيل غير معروفة.',
   event_archived: 'المناسبة مؤرشفة. استعدها أولًا.',
-  draft_revision_conflict: 'عُدّلت الدعوة من جهاز آخر. حدّث الصفحة لترى آخر نسخة قبل الحفظ أو النشر.',
-  nothing_to_publish: 'لا توجد مسودة للنشر بعد.',
+  draft_revision_conflict: 'عُدّلت الدعوة من جهاز آخر. حدّث الصفحة لترى آخر نسخة قبل الحفظ.',
+  nothing_to_publish: 'لم تُحفظ الدعوة بعد.',
   design_invalid: 'تعذر حفظ التصميم: البيانات غير مكتملة.',
   seat_requires_confirmed: 'يمكن توزيع الدعوات المؤكدة فقط.',
   mixed_events: 'اختر ضيوفًا من مناسبة واحدة.',
@@ -102,6 +103,8 @@ export function appErrorFromEnvelope(env: { code?: unknown; reason?: unknown }):
   const code = asCode(env.code);
   const reason = typeof env.reason === 'string' ? env.reason : '';
   if (env.code === 'rate_limited') return appError('conflict', reason || 'too_many_requests');
+  // legacy server reason: the app has no «not published» state, so the guest sees a calm «not available yet»
+  if (env.code === 'not_published') return appError('not_found', 'not_published');
   return appError(code ?? 'validation', reason || (code ?? 'validation'));
 }
 

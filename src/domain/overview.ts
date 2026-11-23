@@ -1,8 +1,9 @@
 /**
- * Event Overview logic (spec §8–9): setup checklist, the ONE next action for the current stage,
- * and "needs attention" items. Everything is derived from current data — nothing stored.
+ * Event Overview logic (spec §8–9): the ONE next action for the current stage (design → add guests → send →
+ * follow replies → reception) and "needs attention" items. Everything is derived from current data — nothing stored.
+ * The invitation is always live, so nothing here waits on a publish step.
  */
-import type { CheckInRecord, Event, InvitationParty, PublishState, RSVPResponse, Table, Tone } from './types';
+import type { CheckInRecord, Event, InvitationParty, RSVPResponse, Table, Tone } from './types';
 import { countParties, type PartyCounts } from './parties';
 import { eventPhase, type EventPhase } from './event';
 import { seatingWarnings } from './seating';
@@ -29,7 +30,8 @@ export type Target =
 
 export interface OverviewInput {
   event: Event;
-  publish: PublishState;
+  /** a design has been saved for this event (a fresh event shows its occasion's default design until then) */
+  designed: boolean;
   parties: readonly InvitationParty[];
   tables: readonly Table[];
   responses: readonly RSVPResponse[];
@@ -39,24 +41,6 @@ export interface OverviewInput {
   dialect?: Dialect;
 }
 
-export interface ChecklistItem { id: string; label: string; detail: string; done: boolean; optional?: boolean; progress?: [number, number]; target: Target }
-
-export function checklist(i: OverviewInput, c: PartyCounts = countParties(i.parties)): ChecklistItem[] {
-  const shared = c.parties - c.notShared - c.failed;
-  const replied = c.parties - c.pendingParties;
-  const seated = c.confirmedParties - c.unassignedConfirmed;
-  const { c: w, f, k } = voice(i);
-  return [
-    { id: 'details', optional: true, label: w.ovMapLabel, detail: i.event.venue.mapUrl ? w.ovMapDone : w.ovMapHint, done: !!i.event.venue.mapUrl, target: { to: 'settings', focus: 'map' } },
-    { id: 'invitation', label: w.ovInvLabel, detail: i.publish === 'published' || i.publish === 'changed' ? w.ovInvPublished : i.publish === 'draft' ? w.ovInvDraft : w.ovInvNone, done: i.publish === 'published' || i.publish === 'changed', target: { to: 'invitation' } },
-    { id: 'guests', label: w.ovGuestsLabel, detail: c.parties ? f(w.ovGuestsDetail, { invitations: k(c.parties, 'invitation'), people: k(c.maxSeats, 'person', true) }) : w.ovGuestsHint, done: c.parties > 0, target: { to: 'guests' } },
-    { id: 'share', label: w.ovShareLabel, detail: c.parties ? f(w.ovShareDetail, { n: shared, of: c.parties }) : w.ovAfterGuests, done: c.parties > 0 && shared === c.parties, progress: c.parties ? [shared, c.parties] : undefined, target: { to: 'guests', filter: 'not_shared' } },
-    { id: 'rsvp', label: w.ovRsvpLabel, detail: c.parties ? f(w.ovRsvpDetail, { n: replied, pending: c.pendingParties }) : w.ovRsvpHint, done: c.parties > 0 && c.pendingParties === 0, progress: c.parties ? [replied, c.parties] : undefined, target: { to: 'rsvp' } },
-    { id: 'seating', optional: true, label: w.ovSeatLabel, detail: i.tables.length ? f(w.ovSeatDetail, { n: seated, of: c.confirmedParties }) : w.ovSeatHint, done: i.tables.length > 0 && c.confirmedParties > 0 && c.unassignedConfirmed === 0, progress: c.confirmedParties && i.tables.length ? [seated, c.confirmedParties] : undefined, target: { to: 'seating' } },
-    { id: 'checkin', label: w.ovCheckinLabel, detail: i.event.checkInPreparedAt ? w.ovCheckinDone : w.ovCheckinHint, done: !!i.event.checkInPreparedAt, target: { to: 'checkin' } },
-  ];
-}
-
 export interface NextAction { label: string; reason: string; target: Target }
 
 export function nextAction(i: OverviewInput, c: PartyCounts = countParties(i.parties)): NextAction {
@@ -64,7 +48,8 @@ export function nextAction(i: OverviewInput, c: PartyCounts = countParties(i.par
   const { c: w, f, k } = voice(i);
   if (phase === 'completed' || phase === 'archived') return { label: w.ovSummary, reason: w.ovEnded, target: { to: 'summary' } };
   if (phase === 'event_day') return { label: w.ovOpenGate, reason: w.ovEventDay, target: { to: 'gate' } };
-  if (i.publish === 'none' || i.publish === 'draft') return { label: w.ovReview, reason: w.ovReviewWhy, target: { to: 'design' } };
+  // design is a suggestion, never a gate: the default design already works, and once guests exist it is skipped
+  if (!i.designed && c.parties === 0) return { label: w.ovReview, reason: w.ovReviewWhy, target: { to: 'design' } };
   if (c.parties === 0) return { label: w.ovGuestsLabel, reason: w.ovAddWhy, target: { to: 'guests' } };
   if (c.notShared + c.failed > 0 && c.notShared + c.failed >= c.parties / 2) return { label: w.ovStartShare, reason: f(w.ovNotShared, { invitations: k(c.notShared + c.failed, 'invitation') }), target: { to: 'guests', filter: 'not_shared', share: 'unsent' } };
   if (phase === 'final_week' && i.tables.length > 0 && c.unassignedConfirmed > 0) return { label: w.ovSeating, reason: c.unassignedConfirmed ? f(w.ovNoTable, { invitations: k(c.unassignedConfirmed, 'invitation') }) : w.ovSoon, target: { to: 'seating' } };
@@ -86,8 +71,6 @@ export function needsAttention(i: OverviewInput, c: PartyCounts = countParties(i
   const { c: w, f, k } = voice(i);
   const inv = (count: number) => ({ invitations: k(count, 'invitation') });
 
-  if (i.publish === 'changed') add({ id: 'unpublished', tone: 'info', count: 1, text: w.ovUnpublished, action: w.ovReviewPublish, target: { to: 'invitation' } });
-  if ((i.publish === 'none' || i.publish === 'draft') && c.parties > 0) add({ id: 'not_published', tone: 'warning', count: 1, text: w.ovNotPublished, action: w.ovInvLabel, target: { to: 'invitation' } });
   if (phase !== 'completed') {
     add({ id: 'pending', tone: 'warning', count: c.pendingParties, text: f(w.ovNotReplied, { ...inv(c.pendingParties), opened: c.openedNoReply ? f(w.ovOpenedOf, { n: c.openedNoReply }) : '' }), action: w.ovShow, target: { to: 'guests', filter: 'pending' } });
     add({ id: 'unmatched', tone: 'warning', count: unmatched, text: f(w.ovToMatch, inv(unmatched)), action: w.ovMatch, target: { to: 'rsvp', tab: 'unmatched' } });

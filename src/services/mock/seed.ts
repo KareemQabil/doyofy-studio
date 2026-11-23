@@ -142,13 +142,14 @@ export function buildSeed(now: Date, scenario: ScenarioId): DbShape {
   events.push(e1);
   const d1 = defaultDesign(e1);
   d1.program = [{ time: '21:00', ar: 'استقبال الضيوف', en: 'Welcome of guests' }, { time: '22:00', ar: 'الزفّة', en: 'The Zaffa' }, { time: '23:00', ar: 'العشاء', en: 'Dinner' }, { time: '00:30', ar: 'قطع الكيك', en: 'Cake' }];
+  // `published`: legacy field from before the invitation was always live — kept so the demo also exercises old stored data
   designs.push({ id: 'dsg_wedding', eventId: e1.id, draft: d1, draftSavedAt: at(now, 60 * 24 * 30), published: structuredClone(d1), publishedAt: at(now, 60 * 24 * 30) });
 
   const tableCaps = [12, 10, 10, 10, 10, 10, 10, 10];
   tableCaps.forEach((cap, i) => tables.push({ id: `tbl_w${i + 1}`, eventId: e1.id, name: i === 0 ? 'طاولة 1 — كبار العائلة' : `طاولة ${i + 1}`, capacity: cap, order: i + 1 }));
 
   act(e1.id, 'event_created', 60 * 24 * 41);
-  act(e1.id, 'invitation_published', 60 * 24 * 30, { first: true });
+  act(e1.id, 'invitation_saved', 60 * 24 * 30);
   act(e1.id, 'parties_imported', 60 * 24 * 29, { count: 38, skipped: 2 });
   act(e1.id, 'invitation_shared', 60 * 24 * 28, { count: 35, how: 'simulated' });
   act(e1.id, 'table_created', 60 * 24 * 6, { name: '8 طاولات', capacity: 82 });

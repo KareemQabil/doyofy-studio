@@ -69,7 +69,7 @@ export async function run(){
  const event=await made.services.events.get('evt_wedding');
  await check('opening WhatsApp never marks delivery; explicit confirmation does',async()=>{
   const p=await made.services.parties.create(event.id,{primaryGuestName:'اختبار',phone:'0559876543',maxPartySize:2});
-  await render(wrap(<PartyDrawer event={event} party={p} all={[p]} tables={[]} publish="published" onClose={()=>{}}/>));
+  await render(wrap(<PartyDrawer event={event} party={p} all={[p]} tables={[]} onClose={()=>{}}/>));
   const link=document.querySelector('a[href^="https://wa.me"]')!;assert.ok(link);link.addEventListener('click',e=>e.preventDefault());await click(link);
   assert.equal((await made.services.parties.get(p.id)).delivery.status,'not_shared');await click(button('نعم، أرسلته'));assert.equal((await made.services.parties.get(p.id)).delivery.status,'shared');
  });
@@ -100,7 +100,7 @@ export async function run(){
  });
  await check('guest editing replaces parent dialog instead of stacking modals',async()=>{
   const p=await made.services.parties.create(event.id,{primaryGuestName:'ضيف الحوار',maxPartySize:2});
-  await render(wrap(<PartyDrawer event={event} party={p} all={[p]} tables={[]} publish="published" onClose={()=>{}}/>));await click(button('سجّل الرد يدويًا'));
+  await render(wrap(<PartyDrawer event={event} party={p} all={[p]} tables={[]} onClose={()=>{}}/>));await click(button('سجّل الرد يدويًا'));
   assert.equal(document.querySelectorAll('dialog[open]').length,1);assert.ok(document.documentElement.classList.contains('has-dialog'));
  });
  await check('general guest reply reaches the matching queue without cinematic playback',async()=>{
@@ -115,7 +115,7 @@ export async function run(){
  await check('general replies remain actionable with no invitation parties',async()=>{
   const created=await made.services.events.create({type:'graduation',names:{a:'رد بلا قائمة'},date:event.date,time:'19:00',venue:{name:'قاعة',city:'الرياض'}});
   const ev=await made.services.events.update(created.id,{settings:{...created.settings,allowGeneralLink:true}});
-  await made.services.invitations.publish(ev.id);
+  // always live: the general link takes replies the moment the event exists
   await made.services.guest.submitRsvp(ev.slug,null,{name:'ضيف من الرابط العام',attending:true,count:1});
   history.replaceState(null,'',paths.rsvp(ev.id));
   await render(wrap(<RsvpPage event={ev}/>));await settle();
@@ -556,10 +556,10 @@ export async function run(){
   const ev=await made.services.events.get(event.id);const rev=ev.guestExperience!.revision;
   await render(wrap(<SettingsPage event={ev}/>));await settle();
   const url=document.querySelector<HTMLInputElement>('.gxs-item input[type=url]')!;assert.ok(url);
-  await fill(url,'javascript:alert(1)');assert.ok((button('حفظ ونشر للضيوف') as HTMLButtonElement).disabled);
-  await fill(url,'https://shop.example.com/watch');assert.ok(!(button('حفظ ونشر للضيوف') as HTMLButtonElement).disabled);
+  await fill(url,'javascript:alert(1)');assert.ok((button('احفظ التغييرات') as HTMLButtonElement).disabled);
+  await fill(url,'https://shop.example.com/watch');assert.ok(!(button('احفظ التغييرات') as HTMLButtonElement).disabled);
   await click(document.querySelector('[aria-label="إخفاء كبسة لحم (اختاره ضيوف)"]')!);
-  await click(button('حفظ ونشر للضيوف'));await settle();
+  await click(button('احفظ التغييرات'));await settle();
   const x=(await made.services.events.get(event.id)).guestExperience!;
   assert.equal(x.revision,rev+1);
   assert.equal(x.meals.options.find(o=>o.id==='meal_meat')?.archived,true);

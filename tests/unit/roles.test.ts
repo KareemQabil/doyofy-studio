@@ -48,7 +48,6 @@ test('services: a coordinator adds, edits, shares, seats and checks in; owner-on
 
   await assert.rejects(s.parties.remove(p.id), forbidden);
   await assert.rejects(s.parties.transfer({ ids: [p.id], targetEventId: 'evt_katb', mode: 'copy' }), forbidden);
-  await assert.rejects(s.invitations.publish('evt_wedding'), forbidden);
   await assert.rejects(s.events.archive('evt_wedding'), forbidden);
   assert.equal((await s.parties.get(p.id)).primaryGuestName, 'عائلة المنسق', 'refused delete wrote nothing');
   assert.equal((await s.events.get('evt_wedding')).archivedAt, undefined);
