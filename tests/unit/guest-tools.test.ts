@@ -1,7 +1,7 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import type { InvitationParty } from '../../src/domain/types';
-import { arrivalOpen, canRemind, duplicateDestinationNames, guestNextAction, guestsCsv, isUnsent, phoneCell, remindHold, scopedGuests } from '../../src/domain/guest-tools';
+import { arrivalOpen, canRemind, duplicateDestinationNames, guestNextAction, guestsCsv, hasPhone, isUnsent, phoneCell, remindHold, scopedGuests } from '../../src/domain/guest-tools';
 import { activityText } from '../../src/domain/activity';
 import { canViewFood } from '../../src/domain/roles';
 
@@ -65,11 +65,15 @@ test('guest export respects selection/table/group scopes and prevents spreadshee
 
 test('next guest action follows reply/delivery/seating state and the event clock; food is caterer-only', () => {
   const phone = '+966555123456';
-  // always live: there is no «publish first» step — a guest without a number needs one, then the invitation is sent
-  assert.equal(guestNextAction(party(), true), 'phone');
-  assert.equal(guestNextAction(party({ phone: '12' }), true), 'phone', 'an invalid number cannot be shared');
+  // always live: there is no «publish first» step. The phone is optional for real: without a number the invitation
+  // goes as a link (share / copy), never an «add a number» chore
+  assert.equal(guestNextAction(party(), true), 'link');
+  assert.equal(guestNextAction(party({ phone: '12' }), true), 'link', 'an invalid number cannot open a chat — the link still goes');
   assert.equal(guestNextAction(party({ phone }), true), 'share');
   assert.equal(guestNextAction(party({ phone, delivery: { status: 'shared' } }), true), 'remind');
+  assert.equal(guestNextAction(party({ delivery: { status: 'shared' } }), true), 'remind', 'a link-only guest is reminded the same way');
+  assert.equal(guestNextAction(party({ delivery: { status: 'failed' } }), true), 'link');
+  assert.equal(hasPhone(party()), false); assert.equal(hasPhone(party({ phone })), true);
   assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed' }), true), 'seat');
   // before the event day a confirmed, seated guest needs nothing extra; arrival opens on the day
   assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed', tableId: 't1' }), true), 'details');

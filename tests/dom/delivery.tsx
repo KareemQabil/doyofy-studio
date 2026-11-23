@@ -31,7 +31,9 @@ export async function run() {
   await click(button('نسخ روابط المحددين'));
   const copy = document.querySelector<HTMLTextAreaElement>('textarea');
   assert.ok(copy?.value.includes(missing.primaryGuestName), 'copy includes selected guests without phones');
-  assert.ok(document.body.textContent?.includes('بلا رقم صحيح'));
+  assert.ok(document.body.textContent?.includes('بلا رقم'));
+  // one short line explains the queue — no stack of disclaimers
+  assert.equal(document.querySelectorAll('dialog[open] .stack > p.faint, dialog[open] .sq-note').length, 0, 'no extra disclaimers');
   await click(button('رسالة نصية'));
   const sms = document.querySelector<HTMLAnchorElement>('a[href^="sms:"]'); assert.ok(sms); sms.addEventListener('click', e => e.preventDefault());
   await click(sms); assert.equal((await made.services.parties.get(p.id)).delivery.status, 'not_shared');
@@ -61,9 +63,23 @@ export async function run() {
   await click(button('أرسلت الرسالة')); await settle();
   assert.equal(await status(q[2]!.id), 'shared');
   assert.ok(document.querySelector('.sq-done .sq-missing'), 'guests without numbers get a way out');
-  assert.ok(button('انسخ روابطها معًا'));
   await click(document.querySelector('.sq-missing-list button')); assert.equal(addPhone, missing.id);
   assert.equal(await status(missing.id), 'not_shared');
+  // the clipboard refuses (no permission): the links show to copy by hand and nothing is recorded until «أرسلتها»
+  await click(button('انسخ روابطها وسجّلها مُرسلة')); await settle();
+  assert.ok(document.querySelector<HTMLTextAreaElement>('.sq-done textarea')?.value.includes(missing.primaryGuestName));
+  assert.equal(await status(missing.id), 'not_shared', 'a failed copy records nothing');
+  assert.ok(button('أرسلتها، سجّلها مُرسلة'));
+  // with a working clipboard, copying their links and recording them is ONE tap (the button says both)
+  const nav = globalThis.navigator as Navigator & { clipboard?: unknown };
+  Object.defineProperty(nav, 'clipboard', { value: { writeText: async () => {} }, configurable: true });
+  const linkOnly = await made.services.parties.create(event.id, { primaryGuestName: 'ضيف رابط فقط', maxPartySize: 1 });
+  await render(<ShareQueue key="links-only" event={event} parties={[linkOnly]} urlFor={() => undefined} linkFor={linkFor} onClose={() => {}} />);
+  assert.equal(button('واتساب'), undefined, 'no dead «واتساب · 0» when nobody has a number');
+  await click(button('انسخ روابطها وسجّلها مُرسلة')); await settle();
+  assert.equal(await status(linkOnly.id), 'shared');
+  assert.ok(document.body.textContent?.includes('وسجّلناها مُرسلة'));
+  delete (nav as { clipboard?: unknown }).clipboard;
   console.log('PASS DOM WhatsApp queue: confirm + open next in one tap, n/N progress, no-number way out');
   // reminders: the same queue in «remind» mode — reminder text, and a guest counts as reminded only after «أرسلت التذكير»
   const r = await made.services.parties.create(event.id, { primaryGuestName: 'ضيف تذكير', phone: '+966550000009', maxPartySize: 1 });

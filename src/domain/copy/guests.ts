@@ -15,10 +15,13 @@ export const GUESTS = voiced({
   invReady: 'جاهزة للمشاركة', invShared: 'أُرسلت', invOpened: 'فتح الدعوة', invFailed: 'تعذّر الإرسال', invManual: 'أرسلتها بنفسك',
   srcPlatform: 'سجّلته المنصة', srcManual: 'حدّدته بنفسك', srcSimulated: 'تجريبي', demoBadge: 'تجريبي',
   fAll: 'الكل', fPending: 'لم يردوا', fConfirmed: 'أكدوا', fDeclined: 'اعتذروا', fNotShared: 'لم تُرسل', fUnassigned: 'بلا طاولة', fCheckedIn: 'وصلوا', fAttention: 'تحتاج انتباهًا',
-  flagNoPhone: 'بلا رقم جوال', flagDuplicate: 'رقم مكرر', flagFailed: 'تعذّر الإرسال', flagOpenedNoReply: 'فتح الدعوة ولم يرد', flagOver: 'العدد أكبر من المسموح', flagDeclinedSeated: 'اعتذر وما زال على طاولة',
+  flagDuplicate: 'رقم مكرر', flagFailed: 'تعذّر الإرسال', flagOpenedNoReply: 'فتح الدعوة ولم يرد', flagOver: 'العدد أكبر من المسموح', flagDeclinedSeated: 'اعتذر وما زال على طاولة',
   // the list
-  glEmptySub: 'أضف من ستدعوهم: شخصًا شخصًا أو من ملف', glImport: 'استيراد', glEmptyTitle: 'لا ضيوف بعد', glImportFile: 'استيراد من ملف',
-  glEmptyText: 'كل دعوة قد تشمل شخصًا أو عائلة. تحدد العدد المسموح، والضيف يرد بالعدد الفعلي.',
+  glEmptySub: 'أضف من ستدعوهم: شخصًا شخصًا أو من ملف', glImport: 'استيراد', glEmptyTitle: 'أضف ضيفك الأول', glImportFile: 'استيراد من ملف',
+  // a guest without a number: the invitation goes as a link (device share, WhatsApp without a number, or copied)
+  glShareLink: 'شارك الرابط', glCopyLink: 'انسخ الرابط', glLinkCopied: 'نسخنا رابط دعوة {name}', glCopyFailed: 'تعذّر النسخ. افتح الضيف وانسخ رابطه من هناك.',
+  // the add sheet stays open for the next guest
+  glAddedMore: 'تمت إضافة {name} · أضف آخر',
   glSearch: 'ابحث بالاسم أو الجوال أو الرمز', glList: 'قائمة', glFood: 'الطعام', glSelectedCount: '{n} محددة', glPickInvitations: 'اختر الدعوات', glShownCount: ' · {n} ظاهرة',
   glClearAll: 'إلغاء الكل', glVisible: 'الظاهر', glUnsentPick: 'لم تصلهم', glManualDone: 'تم التواصل يدويًا', glSimulateSend: 'إرسال تجريبي',
   glActionFailed: 'لم يكتمل الإجراء', glDidRemind: 'هل أرسلت التذكير؟', glDidSend: 'هل أرسلت الرسالة؟', glYesSent: 'نعم، أرسلتها', glLater: 'لاحقًا',
@@ -27,7 +30,7 @@ export const GUESTS = voiced({
   glShowing: 'يعرض {n} من {all}', glDemoLinks: ' · روابط الدعوة تحمل نسخة المعاينة، والردود من جهاز آخر تجريبية.', glGone: 'هذا الضيف لم يعد في القائمة.',
   glConfirmedPeople: '{people} أكدوا', glNoConfirmations: 'لا تأكيدات بعد', glNoTable: 'بلا طاولة', glUpTo: 'حتى {n}', glCompanions: '+{n} مرافقين',
   glDetails: 'التفاصيل', glDeselect: 'إلغاء', glSelect: 'تحديد',
-  glAdded: 'تمت إضافة {name}', glOpen: 'افتح', glSimulated: 'إرسال تجريبي: {sent}', glSimFailed: ' · تعذّر إرسال {n} بلا رقم', glMarkedManual: 'حدّدناها مُرسلة يدويًا',
+  glSimulated: 'إرسال تجريبي: {sent}', glSimFailed: ' · تعذّر إرسال {n} بلا رقم', glMarkedManual: 'حدّدناها مُرسلة يدويًا',
   glReminded: 'سجّلنا التذكير', glContacted: 'سجّلنا التواصل اليدوي', glUnseated: 'أزلنا دعوة {name} من الطاولة', glAddGuestTitle: 'إضافة ضيف',
   glCatering: 'الضيافة', glCateringSub: 'الوجبات والاحتياجات الغذائية حسب الطاولة · عرض لفريق الضيافة',
   glFilterLabel: 'تصفية الضيوف', glViewLabel: 'طريقة العرض', glBulkLabel: 'إجراءات على المحدد', glQuickPick: 'تحديد سريع', glClearAllLabel: 'إلغاء تحديد الكل', glMoreActions: 'إجراءات أخرى', glEndSelection: 'إنهاء التحديد', glSelectName: 'تحديد {name}', glOpenedTitle: 'فُتح رابط الدعوة — ليس إشعار قراءة من واتساب',
@@ -46,15 +49,17 @@ export const GUESTS = voiced({
   // the share / reminder queue
   sqRemindDone: 'انتهت قائمة التذكير', sqRemindSms: 'تذكير برسالة نصية', sqRemindWhatsapp: 'تذكير عبر واتساب', sqRemindTitle: 'تذكير بالرد',
   sqShareDone: 'انتهت قائمة المشاركة', sqShareSms: 'مشاركة برسالة نصية', sqShareWhatsapp: 'مشاركة عبر واتساب', sqWaiting: '{n} بانتظار الرد', sqSelected: '{n} محددة',
-  sqRemindIntro: 'رسالة تذكير لطيفة برابط كل ضيف. نسجّل التذكير بعد أن تؤكد «أرسلتها» فقط.', sqShareIntro: 'اختر طريقة واحدة للمحددين. لكل ضيف رابطه الشخصي.',
+  
   sqCopiedReminders: 'نسخنا رسائل التذكير، ولم نسجّل تذكيرًا بعد.', sqCopiedLinks: 'نسخنا روابط المحددين، ولم تتغير حالة الإرسال.', sqCopyReminders: 'انسخ رسائل التذكير', sqCopyLinks: 'انسخ روابط المحددين',
-  sqNoPhoneNote: '{n} بلا رقم صحيح، ونعرض لها حلًا في آخر القائمة.', sqResume: 'تقدّم محفوظ: {i} من {n}. اختر طريقة لتكمل من حيث توقفت.',
-  sqHowItWorks: 'يفتح واتساب أو الرسالة النصية رسالة واحدة في كل مرة، وأنت ترسلها وتؤكد. قد تطول الرسالة بسبب رابط التجربة، وتُطبّق تكلفة شركة الاتصالات على الرسائل النصية.',
-  sqProgress: 'تقدم المشاركة', sqReminded: 'ذكّرت {n} بالرد', sqMarked: '{n} سجّلتها مُرسلة يدويًا', sqSkipped: ' · تخطيت {n}', sqHonest: 'هذه حالة أكّدتها أنت، وفتح تطبيق الرسائل وحده لا يثبت الإرسال.',
+  sqResume: 'تقدّم محفوظ: {i} من {n}. اختر طريقة لتكمل من حيث توقفت.',
+  
+  sqProgress: 'تقدم المشاركة', sqReminded: 'ذكّرت {n} بالرد', sqMarked: '{n} سجّلتها مُرسلة يدويًا', sqSkipped: ' · تخطيت {n}',
   sqSkip: 'تخطَّ هذه الدعوة', sqAskRemind: 'هل أرسلت التذكير إلى {name}؟', sqAskSend: 'هل أرسلت الرسالة إلى {name}؟', sqSentOnly: 'أرسلتها فقط', sqOpenAgain: 'افتحها مرة أخرى', sqNotSent: 'لم أرسلها، تخطَّ',
   sqNothingSaved: ' — لم نسجّل شيئًا، حاول مجددًا.', sqChangeWay: 'تغيير طريقة المشاركة', sqPause: 'أوقف مؤقتًا وأكمل لاحقًا',
-  sqWithoutPhone: '{n} بلا رقم جوال صحيح', sqWithoutPhoneHint: 'انسخ روابطها معًا وأرسلها بطريقتك، أو أضف رقمًا ثم شاركها من القائمة.',
-  sqCopiedNoPhoneReminders: 'نسخنا رسائل التذكير لـ{n}. أرسلها بطريقتك، ولم نسجّل تذكيرًا بعد.', sqCopiedNoPhoneLinks: 'نسخنا روابط {n}. أرسلها بطريقتك، ولم تتغير حالة الإرسال.',
+  sqOneLine: 'رسالة واحدة في كل مرة، وتؤكد أنت بعد إرسالها.', sqNoPhoneLine: ' {n} بلا رقم: نعرض روابطها في النهاية.',
+  sqCopyAndMark: 'انسخ روابطها وسجّلها مُرسلة', sqCopyAndMarkRemind: 'انسخ التذكيرات وسجّلها', sqCopiedMarked: 'نسخنا روابط {n} وسجّلناها مُرسلة. الصقها في محادثاتك.', sqCopiedMarkedRemind: 'نسخنا التذكير لـ{n} وسجّلناه. الصقه في محادثاتك.',
+  sqWithoutPhone: '{n} بلا رقم جوال صحيح', sqWithoutPhoneHint: 'أرسل روابطها بطريقتك، أو أضف رقمًا ثم شاركها من القائمة.',
+  
   sqSentRecordReminder: 'أرسلتها، سجّل التذكير', sqSentRecordShared: 'أرسلتها، سجّلها مُرسلة', sqRecordedReminders: 'سجّلنا التذكير لـ{n}.', sqRecordedShared: 'سجّلنا {n} مُرسلة يدويًا.',
   sqCopyManually: 'حدّد النص وانسخه يدويًا.', sqLinksLabel: 'روابط الدعوات', sqDeviceDone: 'انتهت المشاركة من جهازك، ولم نغيّر حالة الإرسال تلقائيًا.', sqDeviceFailed: 'تعذّرت المشاركة. يمكنك نسخ الروابط.',
 }, {
@@ -64,9 +69,10 @@ export const GUESTS = voiced({
   invReady: 'جاهزة تتبعت', invShared: 'اتبعتت', invOpened: 'فتح الدعوة', invFailed: 'الإرسال فشل', invManual: 'بعتّها بنفسك',
   srcPlatform: 'المنصة سجّلته', srcManual: 'إنت حدّدته', srcSimulated: 'تجريبي', demoBadge: 'تجريبي',
   fAll: 'الكل', fPending: 'لسه ما ردّوش', fConfirmed: 'أكدوا', fDeclined: 'اعتذروا', fNotShared: 'متبعتتش', fUnassigned: 'من غير ترابيزة', fCheckedIn: 'وصلوا', fAttention: 'محتاجة متابعة',
-  flagNoPhone: 'من غير رقم موبايل', flagDuplicate: 'رقم متكرر', flagFailed: 'الإرسال فشل', flagOpenedNoReply: 'فتح الدعوة ولسه ما ردّش', flagOver: 'العدد أكتر من المسموح', flagDeclinedSeated: 'اعتذر ولسه على ترابيزة',
-  glEmptySub: 'زوّد اللي هتعزمهم: واحد واحد أو من ملف', glImport: 'استيراد', glEmptyTitle: 'لسه مفيش ضيوف', glImportFile: 'استورد من ملف',
-  glEmptyText: 'كل دعوة ممكن تكون لشخص أو لعيلة. إنت تحدد العدد المسموح، والضيف يرد بالعدد الحقيقي.',
+  flagDuplicate: 'رقم متكرر', flagFailed: 'الإرسال فشل', flagOpenedNoReply: 'فتح الدعوة ولسه ما ردّش', flagOver: 'العدد أكتر من المسموح', flagDeclinedSeated: 'اعتذر ولسه على ترابيزة',
+  glEmptySub: 'زوّد اللي هتعزمهم: واحد واحد أو من ملف', glImport: 'استيراد', glEmptyTitle: 'ضيف أول ضيف عندك', glImportFile: 'استورد من ملف',
+  glShareLink: 'شارك اللينك', glCopyLink: 'انسخ اللينك', glLinkCopied: 'نسخنا لينك دعوة {name}', glCopyFailed: 'النسخ ما نفعش. افتح الضيف وانسخ اللينك من هناك.',
+  glAddedMore: 'اتضاف {name} · ضيف كمان',
   glSearch: 'دوّر بالاسم أو الموبايل أو الكود', glList: 'قايمة', glFood: 'الأكل', glSelectedCount: 'اخترت {n}', glPickInvitations: 'اختار الدعوات', glShownCount: ' · {n} ظاهرة',
   glClearAll: 'الغي الكل', glVisible: 'الظاهر', glUnsentPick: 'موصلتلهمش', glManualDone: 'اتواصلت بنفسي', glSimulateSend: 'إرسال تجريبي',
   glActionFailed: 'الإجراء مكملش', glDidRemind: 'بعتّ التذكير؟', glDidSend: 'بعتّ الرسالة؟', glYesSent: 'أيوه، بعتّها', glLater: 'بعدين',
@@ -75,7 +81,7 @@ export const GUESTS = voiced({
   glShowing: 'ظاهر {n} من {all}', glDemoLinks: ' · لينكات الدعوة فيها نسخة المعاينة، والردود من جهاز تاني تجريبية.', glGone: 'الضيف ده مبقاش في القايمة.',
   glConfirmedPeople: '{people} أكدوا', glNoConfirmations: 'لسه محدش أكد', glNoTable: 'من غير ترابيزة', glUpTo: 'لحد {n}', glCompanions: '+{n} معاه',
   glDetails: 'التفاصيل', glDeselect: 'الغي', glSelect: 'حدد',
-  glAdded: 'ضفنا {name}', glOpen: 'افتح', glSimulated: 'إرسال تجريبي: {sent}', glSimFailed: ' · {n} متبعتوش عشان مفيش رقم', glMarkedManual: 'علّمناها إنها اتبعتت بإيدك',
+  glSimulated: 'إرسال تجريبي: {sent}', glSimFailed: ' · {n} متبعتوش عشان مفيش رقم', glMarkedManual: 'علّمناها إنها اتبعتت بإيدك',
   glReminded: 'سجّلنا التذكير', glContacted: 'سجّلنا إنك اتواصلت', glUnseated: 'شلنا دعوة {name} من الترابيزة', glAddGuestTitle: 'ضيف جديد',
   glCatering: 'الضيافة', glCateringSub: 'الوجبات واحتياجات الأكل حسب الترابيزة · عرض لفريق الضيافة',
   glFilterLabel: 'تصفية الضيوف', glViewLabel: 'طريقة العرض', glBulkLabel: 'إجراءات على المحددين', glQuickPick: 'تحديد سريع', glClearAllLabel: 'الغي تحديد الكل', glMoreActions: 'حاجات تانية', glEndSelection: 'خلّص التحديد', glSelectName: 'حدد {name}', glOpenedTitle: 'لينك الدعوة اتفتح — ده مش إشعار قراءة من واتساب',
@@ -92,15 +98,17 @@ export const GUESTS = voiced({
   pdSavedEdits: 'التعديلات اتحفظت', pdDeleted: '{name} اتمسح', pdMarkedManual: 'علّمنا الدعوة إنها اتبعتت بإيدك', pdSimSent: 'إرسال تجريبي: تمام', pdSimNoPhone: 'إرسال تجريبي: مفيش رقم موبايل صح',
   sqRemindDone: 'قايمة التذكير خلصت', sqRemindSms: 'تذكير برسالة نصية', sqRemindWhatsapp: 'تذكير على واتساب', sqRemindTitle: 'فكّرهم بالرد',
   sqShareDone: 'قايمة المشاركة خلصت', sqShareSms: 'ابعت برسالة نصية', sqShareWhatsapp: 'ابعت على واتساب', sqWaiting: '{n} مستنيين ردهم', sqSelected: 'اخترت {n}',
-  sqRemindIntro: 'رسالة تذكير لطيفة باللينك بتاع كل ضيف. هنسجّل التذكير بس لما تدوس «بعتّها».', sqShareIntro: 'اختار طريقة واحدة للمحددين. كل ضيف ليه اللينك بتاعه.',
+  
   sqCopiedReminders: 'نسخنا رسايل التذكير، ولسه مسجّلناش تذكير.', sqCopiedLinks: 'نسخنا لينكات المحددين، وحالة الإرسال متغيرتش.', sqCopyReminders: 'انسخ رسايل التذكير', sqCopyLinks: 'انسخ لينكات المحددين',
-  sqNoPhoneNote: '{n} من غير رقم صح، وهنوريك حل في آخر القايمة.', sqResume: 'كمّلنا من {i} من {n}. اختار الطريقة وكمّل من مكان ما وقفت.',
-  sqHowItWorks: 'واتساب أو الرسالة النصية بيفتحوا رسالة واحدة كل مرة، وإنت تبعتها وتأكد. الرسالة ممكن تطوّل بسبب لينك التجربة، والرسايل النصية عليها تكلفة شركة الاتصالات.',
-  sqProgress: 'المشاركة وصلت لفين', sqReminded: 'فكّرت {n} بالرد', sqMarked: '{n} سجّلتها إنها اتبعتت', sqSkipped: ' · عدّيت {n}', sqHonest: 'دي حالة إنت أكدتها، وفتح تطبيق الرسايل لوحده مش دليل إنها اتبعتت.',
+  sqResume: 'كمّلنا من {i} من {n}. اختار الطريقة وكمّل من مكان ما وقفت.',
+  
+  sqProgress: 'المشاركة وصلت لفين', sqReminded: 'فكّرت {n} بالرد', sqMarked: '{n} سجّلتها إنها اتبعتت', sqSkipped: ' · عدّيت {n}',
   sqSkip: 'عدّي الدعوة دي', sqAskRemind: 'بعتّ التذكير لـ{name}؟', sqAskSend: 'بعتّ الرسالة لـ{name}؟', sqSentOnly: 'بعتّها وبس', sqOpenAgain: 'افتحها تاني', sqNotSent: 'مبعتّهاش، عدّيها',
   sqNothingSaved: ' — مسجّلناش حاجة، جرّب تاني.', sqChangeWay: 'غيّر طريقة المشاركة', sqPause: 'وقّف دلوقتي وكمّل بعدين',
-  sqWithoutPhone: '{n} من غير رقم موبايل صح', sqWithoutPhoneHint: 'انسخ لينكاتهم مع بعض وابعتها بطريقتك، أو حط رقم وشاركها من القايمة.',
-  sqCopiedNoPhoneReminders: 'نسخنا رسايل التذكير لـ{n}. ابعتها بطريقتك، ولسه مسجّلناش تذكير.', sqCopiedNoPhoneLinks: 'نسخنا لينكات {n}. ابعتها بطريقتك، وحالة الإرسال متغيرتش.',
+  sqOneLine: 'رسالة واحدة كل مرة، وإنت تأكد بعد ما تبعتها.', sqNoPhoneLine: ' {n} من غير رقم: هنوريك لينكاتهم في الآخر.',
+  sqCopyAndMark: 'انسخ لينكاتهم وسجّلهم اتبعتوا', sqCopyAndMarkRemind: 'انسخ التذكيرات وسجّلها', sqCopiedMarked: 'نسخنا لينكات {n} وسجّلناها اتبعتت. الزقها في محادثاتك.', sqCopiedMarkedRemind: 'نسخنا التذكير لـ{n} وسجّلناه. الزقه في محادثاتك.',
+  sqWithoutPhone: '{n} من غير رقم موبايل صح', sqWithoutPhoneHint: 'ابعت لينكاتهم بطريقتك، أو حط رقم وشاركها من القايمة.',
+  
   sqSentRecordReminder: 'بعتّها، سجّل التذكير', sqSentRecordShared: 'بعتّها، علّمها إنها اتبعتت', sqRecordedReminders: 'سجّلنا التذكير لـ{n}.', sqRecordedShared: 'سجّلنا {n} إنها اتبعتت بإيدك.',
   sqCopyManually: 'حدد الكلام وانسخه بإيدك.', sqLinksLabel: 'لينكات الدعوات', sqDeviceDone: 'المشاركة من جهازك خلصت، ومغيّرناش حالة الإرسال.', sqDeviceFailed: 'المشاركة منفعتش. تقدر تنسخ اللينكات.',
 }, {
@@ -110,9 +118,10 @@ export const GUESTS = voiced({
   invReady: 'جاهزة للإرسال', invShared: 'انرسلت', invOpened: 'فتح الدعوة', invFailed: 'ما انرسلت', invManual: 'أرسلتها بنفسك',
   srcPlatform: 'سجّلته المنصة', srcManual: 'حدّدته بنفسك', srcSimulated: 'تجريبي', demoBadge: 'تجريبي',
   fAll: 'الكل', fPending: 'ما ردّوا', fConfirmed: 'أكدوا', fDeclined: 'اعتذروا', fNotShared: 'ما انرسلت', fUnassigned: 'بدون طاولة', fCheckedIn: 'وصلوا', fAttention: 'تحتاج متابعة',
-  flagNoPhone: 'بدون رقم جوال', flagDuplicate: 'رقم مكرر', flagFailed: 'ما انرسلت', flagOpenedNoReply: 'فتح الدعوة وما ردّ', flagOver: 'العدد أكثر من المسموح', flagDeclinedSeated: 'اعتذر وباقي على طاولة',
-  glEmptySub: 'أضف اللي بتعزمهم: واحد واحد أو من ملف', glImport: 'استيراد', glEmptyTitle: 'ما فيه ضيوف للحين', glImportFile: 'استورد من ملف',
-  glEmptyText: 'كل دعوة ممكن تكون لشخص أو لعائلة. أنت تحدد العدد المسموح، والضيف يرد بالعدد الفعلي.',
+  flagDuplicate: 'رقم مكرر', flagFailed: 'ما انرسلت', flagOpenedNoReply: 'فتح الدعوة وما ردّ', flagOver: 'العدد أكثر من المسموح', flagDeclinedSeated: 'اعتذر وباقي على طاولة',
+  glEmptySub: 'أضف اللي بتعزمهم: واحد واحد أو من ملف', glImport: 'استيراد', glEmptyTitle: 'أضف أول ضيف عندك', glImportFile: 'استورد من ملف',
+  glShareLink: 'شارك الرابط', glCopyLink: 'انسخ الرابط', glLinkCopied: 'نسخنا رابط دعوة {name}', glCopyFailed: 'ما قدرنا ننسخ. افتح الضيف وانسخ رابطه من هناك.',
+  glAddedMore: 'انضاف {name} · أضف ثاني',
   glSearch: 'دوّر بالاسم أو الجوال أو الرمز', glList: 'قائمة', glFood: 'الأكل', glSelectedCount: '{n} محددة', glPickInvitations: 'اختر الدعوات', glShownCount: ' · {n} ظاهرة',
   glClearAll: 'ألغِ الكل', glVisible: 'الظاهر', glUnsentPick: 'ما وصلتهم', glManualDone: 'تواصلت بنفسي', glSimulateSend: 'إرسال تجريبي',
   glActionFailed: 'ما اكتمل الإجراء', glDidRemind: 'أرسلت التذكير؟', glDidSend: 'أرسلت الرسالة؟', glYesSent: 'إيه، أرسلتها', glLater: 'بعدين',
@@ -121,7 +130,7 @@ export const GUESTS = voiced({
   glShowing: 'ظاهر {n} من {all}', glDemoLinks: ' · روابط الدعوة فيها نسخة المعاينة، والردود من جهاز ثاني تجريبية.', glGone: 'هالضيف ما عاد موجود في القائمة.',
   glConfirmedPeople: '{people} أكدوا', glNoConfirmations: 'ما أكد أحد للحين', glNoTable: 'بدون طاولة', glUpTo: 'حتى {n}', glCompanions: '+{n} معه',
   glDetails: 'التفاصيل', glDeselect: 'إلغاء', glSelect: 'حدّد',
-  glAdded: 'أضفنا {name}', glOpen: 'افتح', glSimulated: 'إرسال تجريبي: {sent}', glSimFailed: ' · {n} ما انرسلت لأن ما فيه رقم', glMarkedManual: 'حدّدناها مرسلة بنفسك',
+  glSimulated: 'إرسال تجريبي: {sent}', glSimFailed: ' · {n} ما انرسلت لأن ما فيه رقم', glMarkedManual: 'حدّدناها مرسلة بنفسك',
   glReminded: 'سجّلنا التذكير', glContacted: 'سجّلنا إنك تواصلت', glUnseated: 'شلنا دعوة {name} من الطاولة', glAddGuestTitle: 'أضف ضيف',
   glCatering: 'الضيافة', glCateringSub: 'الوجبات واحتياجات الأكل حسب الطاولة · عرض لفريق الضيافة',
   glFilterLabel: 'تصفية الضيوف', glViewLabel: 'طريقة العرض', glBulkLabel: 'إجراءات على المحددين', glQuickPick: 'تحديد سريع', glClearAllLabel: 'ألغِ تحديد الكل', glMoreActions: 'إجراءات ثانية', glEndSelection: 'خلّص التحديد', glSelectName: 'حدّد {name}', glOpenedTitle: 'انفتح رابط الدعوة — مو إشعار قراءة من واتساب',
@@ -138,15 +147,17 @@ export const GUESTS = voiced({
   pdSavedEdits: 'حفظنا التعديلات', pdDeleted: 'حذفنا {name}', pdMarkedManual: 'حدّدنا الدعوة مرسلة بنفسك', pdSimSent: 'إرسال تجريبي: تم', pdSimNoPhone: 'إرسال تجريبي: ما فيه رقم جوال صحيح',
   sqRemindDone: 'خلصت قائمة التذكير', sqRemindSms: 'تذكير برسالة نصية', sqRemindWhatsapp: 'تذكير على واتساب', sqRemindTitle: 'ذكّرهم بالرد',
   sqShareDone: 'خلصت قائمة المشاركة', sqShareSms: 'أرسل برسالة نصية', sqShareWhatsapp: 'أرسل على واتساب', sqWaiting: '{n} بدون رد', sqSelected: '{n} محددة',
-  sqRemindIntro: 'رسالة تذكير لطيفة برابط كل ضيف. نسجّل التذكير بس لما تضغط «أرسلتها».', sqShareIntro: 'اختر طريقة وحدة للمحددين. كل ضيف له رابطه.',
+  
   sqCopiedReminders: 'نسخنا رسائل التذكير، وما سجّلنا تذكير للحين.', sqCopiedLinks: 'نسخنا روابط المحددين، وحالة الإرسال ما تغيّرت.', sqCopyReminders: 'انسخ رسائل التذكير', sqCopyLinks: 'انسخ روابط المحددين',
-  sqNoPhoneNote: '{n} بدون رقم صحيح، ونعرض لك حل في آخر القائمة.', sqResume: 'كمّلنا من {i} من {n}. اختر الطريقة وكمّل من وين وقفت.',
-  sqHowItWorks: 'واتساب أو الرسالة النصية تفتح رسالة وحدة كل مرة، وأنت ترسلها وتأكد. ممكن تطول الرسالة بسبب رابط التجربة، والرسائل النصية عليها تكلفة شركة الاتصالات.',
-  sqProgress: 'تقدم المشاركة', sqReminded: 'ذكّرت {n} بالرد', sqMarked: '{n} سجّلتها مرسلة بنفسك', sqSkipped: ' · تخطيت {n}', sqHonest: 'هذي حالة أكدتها أنت، وفتح تطبيق الرسائل لحاله ما يثبت إنها انرسلت.',
+  sqResume: 'كمّلنا من {i} من {n}. اختر الطريقة وكمّل من وين وقفت.',
+  
+  sqProgress: 'تقدم المشاركة', sqReminded: 'ذكّرت {n} بالرد', sqMarked: '{n} سجّلتها مرسلة بنفسك', sqSkipped: ' · تخطيت {n}',
   sqSkip: 'تخطَّ هالدعوة', sqAskRemind: 'أرسلت التذكير لـ{name}؟', sqAskSend: 'أرسلت الرسالة لـ{name}؟', sqSentOnly: 'أرسلتها بس', sqOpenAgain: 'افتحها مرة ثانية', sqNotSent: 'ما أرسلتها، تخطّاها',
   sqNothingSaved: ' — ما سجّلنا شي، جرّب مرة ثانية.', sqChangeWay: 'غيّر طريقة المشاركة', sqPause: 'وقّف الحين وكمّل بعدين',
-  sqWithoutPhone: '{n} بدون رقم جوال صحيح', sqWithoutPhoneHint: 'انسخ روابطهم مع بعض وأرسلها بطريقتك، أو أضف رقم وشاركها من القائمة.',
-  sqCopiedNoPhoneReminders: 'نسخنا رسائل التذكير لـ{n}. أرسلها بطريقتك، وما سجّلنا تذكير للحين.', sqCopiedNoPhoneLinks: 'نسخنا روابط {n}. أرسلها بطريقتك، وحالة الإرسال ما تغيّرت.',
+  sqOneLine: 'رسالة وحدة كل مرة، وأنت تأكد بعد ما ترسلها.', sqNoPhoneLine: ' {n} بدون رقم: نعرض روابطهم في الأخير.',
+  sqCopyAndMark: 'انسخ روابطهم وسجّلها مرسلة', sqCopyAndMarkRemind: 'انسخ التذكيرات وسجّلها', sqCopiedMarked: 'نسخنا روابط {n} وسجّلناها مرسلة. الصقها في محادثاتك.', sqCopiedMarkedRemind: 'نسخنا التذكير لـ{n} وسجّلناه. الصقه في محادثاتك.',
+  sqWithoutPhone: '{n} بدون رقم جوال صحيح', sqWithoutPhoneHint: 'أرسل روابطهم بطريقتك، أو أضف رقم وشاركها من القائمة.',
+  
   sqSentRecordReminder: 'أرسلتها، سجّل التذكير', sqSentRecordShared: 'أرسلتها، سجّلها مرسلة', sqRecordedReminders: 'سجّلنا التذكير لـ{n}.', sqRecordedShared: 'سجّلنا {n} مرسلة بنفسك.',
   sqCopyManually: 'حدّد النص وانسخه بنفسك.', sqLinksLabel: 'روابط الدعوات', sqDeviceDone: 'خلصت المشاركة من جهازك، وما غيّرنا حالة الإرسال.', sqDeviceFailed: 'ما زبطت المشاركة. تقدر تنسخ الروابط.',
 });
@@ -160,5 +171,5 @@ export const SOURCE_KEY = { platform: 'srcPlatform', manual: 'srcManual', simula
 export const FILTER_KEY = { all: 'fAll', pending: 'fPending', confirmed: 'fConfirmed', declined: 'fDeclined', not_shared: 'fNotShared', unassigned: 'fUnassigned', checked_in: 'fCheckedIn', attention: 'fAttention' } as const satisfies Record<PartyFilter, GuestKey>;
 /** partyNeedsAttention's reasons (domain/parties) → their words */
 export const FLAG_KEY: Readonly<Record<string, GuestKey>> = {
-  'بلا رقم جوال': 'flagNoPhone', 'رقم مكرر': 'flagDuplicate', 'تعذر الإرسال': 'flagFailed', 'فتح الدعوة ولم يرد': 'flagOpenedNoReply', 'العدد أكبر من المسموح': 'flagOver', 'اعتذر وما زال على طاولة': 'flagDeclinedSeated',
+  'رقم مكرر': 'flagDuplicate', 'تعذر الإرسال': 'flagFailed', 'فتح الدعوة ولم يرد': 'flagOpenedNoReply', 'العدد أكبر من المسموح': 'flagOver', 'اعتذر وما زال على طاولة': 'flagDeclinedSeated',
 };

@@ -68,7 +68,8 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
       <Link to={paths.events} className="ws-allevents"><Icon name="back" size="sm" />{t('wsAllEvents')}</Link>
       <p className="ws-event-title">{e.title}</p>
       <p className="ws-event-meta"><span>{formatEventDate(e.date, { year: false })}</span><span aria-hidden="true">·</span><span>{countdownLabel(e.date, todayFor(e, now), dialect)}</span></p>
-      <Badge tone={PHASE_LABEL[phase].tone} dot>{t(PHASE_KEY[phase])}</Badge>
+      {/* an upcoming event is just «بعد ٩ أيام» (the line above) — no «قيد التجهيز» state to learn (polish 3, Team B) */}
+      {phase !== 'upcoming' && <Badge tone={PHASE_LABEL[phase].tone} dot>{t(PHASE_KEY[phase])}</Badge>}
     </div>
   ) : <Skeleton lines={3} />;
 
@@ -77,7 +78,7 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
       <Link to={paths.events} className="btn btn-ghost btn-icon" aria-label={t('wsAllEvents')}><Icon name="back" /></Link>
       <span className="ws-mobile-head">
         <span className="ws-mobile-title truncate">{e?.title ?? ''}</span>
-        {e && <span className="ws-mobile-meta"><span className={`ws-mobile-phase tone-${PHASE_LABEL[phase].tone}`} aria-hidden="true" />{t(PHASE_KEY[phase])} · {countdownLabel(e.date, todayFor(e, now), dialect)}</span>}
+        {e && <span className="ws-mobile-meta"><span className={`ws-mobile-phase tone-${PHASE_LABEL[phase].tone}`} aria-hidden="true" />{phase !== 'upcoming' && `${t(PHASE_KEY[phase])} · `}{countdownLabel(e.date, todayFor(e, now), dialect)}</span>}
       </span>
     </>
   );

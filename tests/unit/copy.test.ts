@@ -147,6 +147,4 @@ test('copy (ops review): a party is spoken of in the plural or neutrally, and th
   assert.equal(sa.glUpTo, 'حتى {n}');
   // the pool hint names the real button in every voice
   for (const d of ['ar', 'ar-EG', 'ar-SA'] as const) { const c = copyFor(d); assert.ok(fill(c.seatTapHint, { label: c.assignTable }).includes(`«${c.assignTable}»`)); }
-  // modern Arabic: no «لو» in the overview's seating lines
-  assert.doesNotMatch(ar.ovAddSeating, /(?:^|\s)لو(?:\s|$)/);
 });

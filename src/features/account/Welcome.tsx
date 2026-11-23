@@ -212,7 +212,6 @@ export function WelcomePage() {
             <p className="wl-sub">{t('wlSub')}</p>
             <div className="wl-actions">
               <LinkButton to="/app/signup" variant="primary" size="lg" iconEnd="forward">{t('wlStart')}</LinkButton>
-              <LinkButton to="/app/login" variant="secondary" size="lg">{t('wlHaveAccount')}</LinkButton>
             </div>
             <button type="button" className="wl-demo-link" onClick={demo}>{t('wlExplore')}<Icon name="forward" size="sm" /></button>
           </div>

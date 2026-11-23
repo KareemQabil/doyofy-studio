@@ -54,7 +54,7 @@ export function nextAction(i: OverviewInput, c: PartyCounts = countParties(i.par
   if (c.notShared + c.failed > 0 && c.notShared + c.failed >= c.parties / 2) return { label: w.ovStartShare, reason: f(w.ovNotShared, { invitations: k(c.notShared + c.failed, 'invitation') }), target: { to: 'guests', filter: 'not_shared', share: 'unsent' } };
   if (phase === 'final_week' && i.tables.length > 0 && c.unassignedConfirmed > 0) return { label: w.ovSeating, reason: c.unassignedConfirmed ? f(w.ovNoTable, { invitations: k(c.unassignedConfirmed, 'invitation') }) : w.ovSoon, target: { to: 'seating' } };
   if (c.notShared + c.failed > 0) return { label: w.ovContinueShare, reason: f(w.ovNotShared, { invitations: k(c.notShared + c.failed, 'invitation') }), target: { to: 'guests', filter: 'not_shared', share: 'unsent' } };
-  if (c.pendingParties > 0) return { label: w.ovRsvpLabel, reason: f(w.ovPending, { invitations: k(c.pendingParties, 'invitation') }), target: { to: 'rsvp' } };
+  if (c.awaitingReply > 0) return { label: w.ovRsvpLabel, reason: f(w.ovPending, { invitations: k(c.awaitingReply, 'invitation') }), target: { to: 'rsvp' } };
   if (i.tables.length > 0 && c.unassignedConfirmed > 0) return { label: w.ovSeating, reason: f(w.ovNoTable, { invitations: k(c.unassignedConfirmed, 'invitation') }), target: { to: 'seating' } };
   return { label: w.ovCheckinLabel, reason: w.ovAlmost, target: { to: 'checkin' } };
 }
@@ -72,11 +72,12 @@ export function needsAttention(i: OverviewInput, c: PartyCounts = countParties(i
   const inv = (count: number) => ({ invitations: k(count, 'invitation') });
 
   if (phase !== 'completed') {
-    add({ id: 'pending', tone: 'warning', count: c.pendingParties, text: f(w.ovNotReplied, { ...inv(c.pendingParties), opened: c.openedNoReply ? f(w.ovOpenedOf, { n: c.openedNoReply }) : '' }), action: w.ovShow, target: { to: 'guests', filter: 'pending' } });
+    // only invitations that went out can be waiting for a reply
+    add({ id: 'pending', tone: 'warning', count: c.awaitingReply, text: f(w.ovNotReplied, { ...inv(c.awaitingReply), opened: c.openedNoReply ? f(w.ovOpenedOf, { n: c.openedNoReply }) : '' }), action: w.ovShow, target: { to: 'guests', filter: 'pending' } });
     add({ id: 'unmatched', tone: 'warning', count: unmatched, text: f(w.ovToMatch, inv(unmatched)), action: w.ovMatch, target: { to: 'rsvp', tab: 'unmatched' } });
     add({ id: 'failed', tone: 'danger', count: c.failed, text: f(w.ovFailed, { invitations: k(c.failed, 'invitation', true) }), action: w.retry, target: { to: 'guests', filter: 'not_shared' } });
   }
-  add({ id: 'missing_phone', tone: 'warning', count: c.missingPhone, text: f(w.ovNoPhone, inv(c.missingPhone)), action: w.ovFillPhones, target: { to: 'guests', filter: 'attention' } });
+  // no phone is not an exception: those invitations go as a link, so there is nothing to nag about
   add({ id: 'duplicates', tone: 'warning', count: c.duplicatePhones, text: f(w.ovDupPhones, inv(c.duplicatePhones)), action: w.ovCheckDup, target: { to: 'guests', filter: 'attention' } });
   add({ id: 'over_allowed', tone: 'danger', count: c.overAllowed, text: f(w.ovOverAllowed, inv(c.overAllowed)), action: w.ovReviewShort, target: { to: 'guests', filter: 'attention' } });
   add({ id: 'unassigned', tone: phase === 'final_week' || phase === 'event_day' ? 'warning' : 'info', count: i.tables.length ? sw.unassigned.length : 0, text: f(w.ovUnseated, { guests: k(sw.unassigned.reduce((n, p) => n + (p.confirmedPartySize ?? 0), 0), 'guest') }), action: w.ovSeatThem, target: { to: 'seating' } });
@@ -94,7 +95,7 @@ export function keyCounts(i: OverviewInput, c: PartyCounts = countParties(i.part
     invitedPeople: c.maxSeats,
     confirmedPeople: c.confirmedPeople,
     declined: c.declinedParties,
-    pending: c.pendingParties,
+    pending: c.awaitingReply,
     checkedIn: c.checkedInPeople,
     showCheckIn: phase === 'event_day' || phase === 'completed' || c.checkedInPeople > 0,
   };

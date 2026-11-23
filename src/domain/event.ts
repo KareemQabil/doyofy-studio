@@ -124,7 +124,7 @@ export function eventPhase(ev: Event, now: Date): EventPhase {
 }
 
 export const PHASE_LABEL: Record<EventPhase, { label: string; tone: Tone }> = {
-  upcoming: { label: 'قيد التجهيز', tone: 'info' },
+  upcoming: { label: 'قادمة', tone: 'info' },
   final_week: { label: 'الأسبوع الأخير', tone: 'warning' },
   event_day: { label: 'يوم المناسبة', tone: 'accent' },
   completed: { label: 'انتهت', tone: 'neutral' },

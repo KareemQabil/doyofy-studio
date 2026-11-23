@@ -2,6 +2,9 @@
  * Guest list (spec §11, feedback F021–F045).
  *   · the counters ARE the filters: tapping «أكدوا» opens exactly that list (F037)
  *   · the name is the anchor; ONE primary action sits under it, chosen by state and the event clock (F032, F039, F045)
+ *   · the phone is optional for real: a guest without one gets «شارك الرابط» (device share, or WhatsApp without a
+ *     number) and «انسخ الرابط» — never an «add a number» chore, and no «needs attention» flag
+ *   · adding guests is a run: the sheet stays open after each one («تمت إضافة X · أضف آخر»; Enter adds the next)
  *   · state reads at a glance: coloured start edge + text label (confirmed / pending / declined / arrived)
  *   · one compact top (organizer review): header row, a slim capacity line, ONE row of filter chips with counts,
  *     search, and — while invitations are unsent — a clear primary «أرسل لمن لم تصلهم الدعوة» that opens the share queue
@@ -33,10 +36,10 @@ import { PartyDrawer } from './PartyDrawer';
 import { PartyFormDialog } from './PartyForm';
 import { ShareQueue } from './ShareQueue';
 import { inviteMessage, reminderMessage, whatsappUrl } from './share';
-import { arrivalOpen, canRemind, guestNextAction, isUnsent, remindHold, type GuestNextAction } from '../../domain/guest-tools';
-import { normalisePhone } from '../../domain/phone';
+import { arrivalOpen, canRemind, guestNextAction, hasPhone, isUnsent, remindHold, type GuestNextAction } from '../../domain/guest-tools';
 import { can, canManageGuests, canViewFood } from '../../domain/roles';
 import { ExportGuestsDialog, TransferGuestsDialog } from './GuestToolsDialog';
+import { copyText } from '../shared/CopyField';
 import { OwnerOnly } from '../shared/OwnerOnly';
 import { useCopy } from '../../ui/copy';
 import type { CopyKey } from '../../domain/copy';
@@ -72,6 +75,8 @@ export function GuestsPage({ event }: { event: Event }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectMode, setSelectMode] = useState(false);
   const [adding, setAdding] = useState(false);
+  // the add sheet stays open after each guest: the last name added and how many so far (resets the form for the next)
+  const [addedRun, setAddedRun] = useState<{ name: string; n: number } | null>(null);
   // «did you send it?» after a direct WhatsApp link: an invitation counts as shared, a reminder as reminded — only on «yes»
   const [sharePrompt, setSharePrompt] = useState<{ id: string; kind: 'share' | 'remind' } | null>(null);
   const [queue, setQueue] = useState<{ ids: string[]; mode: 'invite' | 'remind' } | null>(null);
@@ -90,7 +95,7 @@ export function GuestsPage({ event }: { event: Event }) {
   };
 
   const add = useMutation((s, input: Parameters<typeof s.parties.create>[1]) => s.parties.create(event.id, input), {
-    onSuccess: (p) => { setAdding(false); toast({ tone: 'success', text: t('glAdded', { name: p.primaryGuestName }), action: { label: t('glOpen'), run: () => setParam('party', p.id) } }); },
+    onSuccess: (p) => { haptic('success'); setAddedRun((r) => ({ name: p.primaryGuestName, n: (r?.n ?? 0) + 1 })); },
   });
   const clearSelection = () => { setSelected(new Set()); setSelectMode(false); };
   const bulkSend = useMutation((s, ids: string[]) => s.parties.simulateSend(ids), {
@@ -116,8 +121,15 @@ export function GuestsPage({ event }: { event: Event }) {
   const selecting = selectMode || sel.length > 0;
   const toggle = (id: string) => { haptic('tick'); setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); };
   const guestLink = useGuestLink(event);
-  const shareUrl = (p: InvitationParty) => p.phone && normalisePhone(p.phone).ok ? whatsappUrl(p.phone, inviteMessage(event, p, guestLink(p), dialect)) : undefined;
-  const remindUrl = (p: InvitationParty) => p.phone && normalisePhone(p.phone).ok ? whatsappUrl(p.phone, reminderMessage(event, p, guestLink(p), dialect)) : undefined;
+  // without a number WhatsApp opens on «wa.me/?text=» and the organizer picks the chat — the link still goes out
+  const shareUrl = (p: InvitationParty) => whatsappUrl(hasPhone(p) ? p.phone : undefined, inviteMessage(event, p, guestLink(p), dialect));
+  const remindUrl = (p: InvitationParty) => whatsappUrl(hasPhone(p) ? p.phone : undefined, reminderMessage(event, p, guestLink(p), dialect));
+  // the ShareQueue opens composers for guests with a number only (the rest get the links at its end)
+  const queueUrl = (mode: 'invite' | 'remind') => (p: InvitationParty) => hasPhone(p) ? (mode === 'remind' ? remindUrl(p) : shareUrl(p)) : undefined;
+  const copyLink = async (p: InvitationParty) => {
+    if (await copyText(inviteMessage(event, p, guestLink(p), dialect))) { haptic('success'); toast({ tone: 'success', text: t('glLinkCopied', { name: p.primaryGuestName }) }); setSharePrompt({ id: p.id, kind: 'share' }); }
+    else toast({ tone: 'warning', text: t('glCopyFailed') });
+  };
   const unsent = useMemo(() => all.filter(isUnsent).sort((a, b) => a.primaryGuestName.localeCompare(b.primaryGuestName, 'ar')), [all]);
   // «أرسل لمن لم تصلهم الدعوة» follows the list on screen: with a filter or a search it counts only the guests shown
   const unsentShown = useMemo(() => { if (filter === 'all' && !q.trim()) return unsent; const shown = new Set(visible.map((p) => p.id)); return unsent.filter((p) => shown.has(p.id)); }, [unsent, visible, filter, q]);
@@ -152,14 +164,14 @@ export function GuestsPage({ event }: { event: Event }) {
   const rowProps = (p: InvitationParty, i: number) => ({
     p, table: tableName(p.tableId), seatingEnabled: tableList.length > 0, arrivalTime, now, attention: partyNeedsAttention(p, dup), checked: selected.has(p.id), selecting, foodAccess, manage,
     hint: hintRow && i === 0, onToggle: () => toggle(p.id), onSelectStart: () => { setSelectMode(true); setSelected((s) => new Set(s).add(p.id)); },
-    onOpen: () => setParam('party', p.id), shareUrl: shareUrl(p), remindUrl: remindUrl(p), onShare: (kind: 'share' | 'remind') => setSharePrompt({ id: p.id, kind }), event,
+    onOpen: () => setParam('party', p.id), shareUrl: shareUrl(p), remindUrl: remindUrl(p), onShare: (kind: 'share' | 'remind') => setSharePrompt({ id: p.id, kind }), onCopy: () => void copyLink(p), event,
+    shareText: (kind: 'share' | 'remind') => (kind === 'remind' ? reminderMessage : inviteMessage)(event, p, guestLink(p), dialect),
     busy: unseat.pending && unseating === p.id,
     onNext: (action: GuestNextAction) => {
       if (action === 'seat') navigate(`${paths.seating(event.id)}?party=${encodeURIComponent(p.id)}`);
       else if (action === 'unseat') { setUnseating(p.id); void unseat.run(p.id); }
       else if (action === 'arrival') navigate(paths.checkin(event.id));
       else if (action === 'share') setQueue({ ids: [p.id], mode: 'invite' });
-      else if (action === 'phone') { setEditPhone(p.id); setParam('party', p.id); }
       else setParam('party', p.id);
     },
   });
@@ -190,9 +202,8 @@ export function GuestsPage({ event }: { event: Event }) {
       <GuestViews eventId={event.id} active="list" />
       {manage && all.length > 0 && <CapacityMeter eventId={event.id} parties={all} slim />}
       {parties.loading ? <PageLoader /> : all.length === 0 ? (
-        <EmptyState icon="users" title={t('glEmptyTitle')} action={<><Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!manage}>{t('addGuest')}</Button>{manage && <LinkButton to={paths.importGuests(event.id)} icon="upload">{t('glImportFile')}</LinkButton>}</>}>
-          {t('glEmptyText')}
-        </EmptyState>
+        // no lesson about allowances here: a name is all it takes (the allowance waits in the form as a chip)
+        <EmptyState icon="users" title={t('glEmptyTitle')} action={<><Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!manage}>{t('addGuest')}</Button>{manage && <LinkButton to={paths.importGuests(event.id)} icon="upload">{t('glImportFile')}</LinkButton>}</>} />
       ) : (
         <div className="g2-body">
 
@@ -284,10 +295,10 @@ export function GuestsPage({ event }: { event: Event }) {
       {exporting && can(role, 'guests.export') && <ExportGuestsDialog event={event} parties={all} tables={tableList} visibleIds={new Set(visible.map((p) => p.id))} selectedIds={new Set(sel)} onClose={() => setExporting(false)} />}
       {transferring && can(role, 'guests.transfer') && <TransferGuestsDialog event={event} parties={all.filter((p) => selected.has(p.id))} onClose={() => setTransferring(false)} onDone={clearSelection} />}
       {adding && (
-        <PartyFormDialog open key="new" title={t('glAddGuestTitle')} eventId={event.id} existing={all} defaultSize={event.settings.defaultPartySize}
-          onClose={() => { setAdding(false); add.reset(); }} pending={add.pending} error={add.error} onSubmit={(input) => void add.run(input)} />
+        <PartyFormDialog open key="new" title={t('glAddGuestTitle')} eventId={event.id} existing={all} defaultSize={event.settings.defaultPartySize} added={addedRun}
+          onClose={() => { setAdding(false); setAddedRun(null); add.reset(); }} pending={add.pending} error={add.error} onSubmit={(input) => void add.run(input)} />
       )}
-      {queue && <ShareQueue event={event} mode={queue.mode} parties={queue.ids.map((id) => all.find((p) => p.id === id)).filter((p): p is InvitationParty => !!p)} urlFor={queue.mode === 'remind' ? remindUrl : shareUrl} linkFor={guestLink}
+      {queue && <ShareQueue event={event} mode={queue.mode} parties={queue.ids.map((id) => all.find((p) => p.id === id)).filter((p): p is InvitationParty => !!p)} urlFor={queueUrl(queue.mode)} linkFor={guestLink}
         onClose={(done) => { setQueue(null); if (done) clearSelection(); }} onAddPhone={manage ? (id) => { setQueue(null); setEditPhone(id); setParam('party', id); } : undefined} />}
       {open && tables.data && <PartyDrawer key={open.id} event={event} party={open} all={all} tables={tables.data} startEditing={editPhone === open.id} onClose={() => { setEditPhone(null); setParam('party', null); }} />}
       {openId && !open && !parties.loading && <Banner tone="info">{t('glGone')}</Banner>}
@@ -319,15 +330,16 @@ function DeliveryTicks({ p, when }: { p: InvitationParty; when?: string }) {
   );
 }
 
-const ACTION_ICON: Record<Exclude<GuestNextAction, 'details' | 'wait'>, IconName> = { phone: 'plus', share: 'chat', remind: 'bell', seat: 'table', unseat: 'minus', arrival: 'check' };
+const ACTION_ICON: Record<Exclude<GuestNextAction, 'details' | 'wait'>, IconName> = { link: 'share', share: 'chat', remind: 'bell', seat: 'table', unseat: 'minus', arrival: 'check' };
 
 /**
  * A compact card (≈6–7 per phone screen): the whole card opens the guest, ONE primary action per guest (never a
  * second button for the same job), and the guest's state shows as a coloured edge plus its text label.
  */
-function GuestCard({ p, table, grouped = false, seatingEnabled, arrivalTime, now, attention, checked, selecting, hint, onToggle, onSelectStart, onOpen, shareUrl, remindUrl, onShare, event, foodAccess, manage, busy, onNext }: {
+function GuestCard({ p, table, grouped = false, seatingEnabled, arrivalTime, now, attention, checked, selecting, hint, onToggle, onSelectStart, onOpen, shareUrl, remindUrl, onShare, onCopy, shareText, event, foodAccess, manage, busy, onNext }: {
   p: InvitationParty; table?: string; grouped?: boolean; seatingEnabled: boolean; arrivalTime: boolean; now: Date; attention: string[]; checked: boolean; selecting: boolean; hint: boolean; event: Event;
-  onToggle: () => void; onSelectStart: () => void; onOpen: () => void; shareUrl?: string; remindUrl?: string; onShare: (kind: 'share' | 'remind') => void; foodAccess: boolean; manage: boolean; busy: boolean; onNext: (action: GuestNextAction) => void;
+  onToggle: () => void; onSelectStart: () => void; onOpen: () => void; shareUrl: string; remindUrl: string; onShare: (kind: 'share' | 'remind') => void; onCopy: () => void; shareText: (kind: 'share' | 'remind') => string;
+  foodAccess: boolean; manage: boolean; busy: boolean; onNext: (action: GuestNextAction) => void;
 }) {
   const { t, dialect } = useCopy();
   const next = guestNextAction(p, seatingEnabled, arrivalTime, now);
@@ -335,14 +347,22 @@ function GuestCard({ p, table, grouped = false, seatingEnabled, arrivalTime, now
   const held = next === 'wait' ? remindHold(p, now) : null;
   const heldWhen = held ? relativeTime(held.at, now, dialect) : undefined;
   const ticksWhen = held?.kind === 'sent' && p.delivery.status === 'shared' ? heldWhen : undefined;
-  const share = () => { if (!shareUrl) return; window.open(shareUrl, '_blank', 'noopener'); onShare('share'); };
-  const swipe = useSwipeReveal({ start: true, end: true, tray: 92, onCommit: (side) => { if (side === 'start') { if (shareUrl) share(); else onOpen(); } else onToggle(); } });
+  const phone = hasPhone(p);
+  // no number: the device's own share sheet when there is one (the organizer picks the chat), else WhatsApp without a number
+  const native = !phone && typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+  const send = (kind: 'share' | 'remind', e?: { preventDefault(): void }) => {
+    if (!native) { onShare(kind); return; }
+    e?.preventDefault();
+    navigator.share({ title: event.title, text: shareText(kind) }).then(() => onShare(kind), () => { /* cancelled: nothing changes */ });
+  };
+  const share = () => { if (native) send('share'); else { window.open(shareUrl, '_blank', 'noopener'); onShare('share'); } };
+  const swipe = useSwipeReveal({ start: true, end: true, tray: 92, onCommit: (side) => { if (side === 'start') share(); else onToggle(); } });
   const press = useLongPress(onSelectStart, { enabled: !selecting });
   const name = p.primaryGuestName;
   const cardRef = useRef<HTMLLIElement>(null);
   useEffect(() => { if (hint) cardRef.current?.setAttribute('data-hint', 'true'); else cardRef.current?.removeAttribute('data-hint'); }, [hint]);
   // a flag never repeats what the card already says (the action, the ticks or the state label)
-  const flagged = attention.find((f) => !(f === 'بلا رقم جوال' && (next === 'phone' || p.rsvpStatus !== 'pending')) && f !== 'فتح الدعوة ولم يرد' && !(f === 'اعتذر وما زال على طاولة' && next === 'unseat'));
+  const flagged = attention.find((f) => f !== 'فتح الدعوة ولم يرد' && !(f === 'اعتذر وما زال على طاولة' && next === 'unseat'));
   const flag = flagged && (FLAG_KEY[flagged] ? t(FLAG_KEY[flagged]!) : flagged);
   const arrived = p.checkedInCount > 0;
   // nobody can reply to an invitation they never received: an unsent one says so instead of «لم يرد بعد»
@@ -350,19 +370,18 @@ function GuestCard({ p, table, grouped = false, seatingEnabled, arrivalTime, now
   const state = arrived ? 'arrived' : unsentState ? 'unsent' : p.rsvpStatus;
   const stateLabel = t(arrived ? ARRIVAL_KEY[p.checkInStatus] : unsentState ? 'stUnsent' : RSVP_KEY[p.rsvpStatus]);
   const stateCount = arrived ? p.checkedInCount : p.rsvpStatus === 'confirmed' ? p.confirmedPartySize : undefined;
-  const label = next === 'details' || next === 'wait' ? '' : { phone: t('addPhone'), share: t('shareWhatsapp'), remind: t('remindReply'), seat: t('assignTable'), unseat: t('removeFromTable'), arrival: t('recordArrival') }[next];
+  const label = next === 'details' || next === 'wait' ? '' : { link: t('glShareLink'), share: t('shareWhatsapp'), remind: t('remindReply'), seat: t('assignTable'), unseat: t('removeFromTable'), arrival: t('recordArrival') }[next];
   // share and remind are plain links to WhatsApp (no popup blocker); the «did you send?» prompt follows
-  const href = next === 'share' ? shareUrl : next === 'remind' ? remindUrl : undefined;
+  const href = next === 'share' || next === 'link' ? shareUrl : next === 'remind' ? remindUrl : undefined;
   const action = !manage || next === 'details' ? null : next === 'wait'
     ? (ticksWhen ? null : <span className="g2-held">{t(held!.kind === 'reminded' ? 'rpHeldReminded' : 'rpHeldSent', { when: heldWhen! })}</span>)
     : href
-    ? <a className="btn btn-primary btn-sm g2-act" href={href} target="_blank" rel="noopener noreferrer" data-gesture-surface="" onClick={() => onShare(next === 'remind' ? 'remind' : 'share')} aria-label={`${label} — ${name}`}><Icon name={ACTION_ICON[next]} size="sm" />{label}</a>
+    ? <a className="btn btn-primary btn-sm g2-act" href={href} target="_blank" rel="noopener noreferrer" data-gesture-surface="" onClick={(e) => send(next === 'remind' ? 'remind' : 'share', e)} aria-label={`${label} — ${name}`}><Icon name={ACTION_ICON[next]} size="sm" />{label}</a>
     : <Button size="sm" variant="primary" className="g2-act" icon={ACTION_ICON[next]} loading={busy} data-gesture-surface="" onClick={() => onNext(next)} aria-label={`${label} — ${name}`}>{label}</Button>;
   return (
     <li ref={cardRef} className={`g2-row swipe-row${checked ? ' is-selected' : ''}${selecting ? ' is-selecting' : ''} rsvp-${p.rsvpStatus} state-${state}`}>
       <div className="swipe-tray swipe-tray-start" aria-hidden="true">
-        {shareUrl ? <a className="swipe-action is-whatsapp" href={shareUrl} target="_blank" rel="noopener noreferrer" tabIndex={-1} onClick={() => { onShare('share'); swipe.close(); }}><Icon name="chat" />{t('sendWhatsapp')}</a>
-          : <button type="button" className="swipe-action is-muted" tabIndex={-1} onClick={() => { swipe.close(); onOpen(); }}><Icon name="chat" />{t('addPhone')}</button>}
+        <a className="swipe-action is-whatsapp" href={shareUrl} target="_blank" rel="noopener noreferrer" tabIndex={-1} onClick={(e) => { send('share', e); swipe.close(); }}><Icon name={native ? 'share' : 'chat'} />{t(native ? 'glShareLink' : 'sendWhatsapp')}</a>
       </div>
       <div className="swipe-tray swipe-tray-end" aria-hidden="true">
         <button type="button" className="swipe-action is-muted" tabIndex={-1} onClick={() => { swipe.close(); onOpen(); }}><Icon name="eye" />{t('glDetails')}</button>
@@ -384,8 +403,9 @@ function GuestCard({ p, table, grouped = false, seatingEnabled, arrivalTime, now
         </span>
         <span className="g2-foot-line">
           {action}
-          {/* no number yet: «جاهزة للمشاركة» beside «أضف رقمًا» would contradict the action */}
-          {next !== 'phone' && <DeliveryTicks p={p} when={ticksWhen} />}
+          {/* the link can also be copied and pasted anywhere — the one extra tool for a guest without a number */}
+          {manage && next === 'link' && <button type="button" className="btn btn-ghost btn-sm btn-icon g2-copy" data-gesture-surface="" onClick={onCopy} aria-label={`${t('glCopyLink')} — ${name}`} title={t('glCopyLink')}><Icon name="copy" size="sm" /></button>}
+          <DeliveryTicks p={p} when={ticksWhen} />
         </span>
         {foodAccess && <FoodLine event={event} p={p} />}
       </div>

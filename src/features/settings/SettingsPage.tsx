@@ -1,13 +1,16 @@
 /**
- * Event settings (spec §19) — limited on purpose. Essentials first: the names, the date and time, and the optional
- * place (venue, city, map link). Everything else — occasion type and title, English text, time zone and duration,
- * reply rules — sits folded under «خيارات متقدمة». Each fact is asked once. One save bar; leaving with unsaved edits
- * asks first. Guest experience, capacity, the invitation and archiving follow, each saved on its own.
+ * Event settings (spec §19) — limited on purpose, and nothing asked twice. The event's details (names, date, time,
+ * place, map) live in ONE place, the editor's «النص»: here they are a short summary row that opens it. What remains
+ * are the options only — occasion type and title, time zone and duration, reply rules (people per invitation, the
+ * table, the general link). One save bar; leaving with unsaved edits asks first. Guest experience, capacity and
+ * archiving follow, each saved on its own.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Event, EventType, UpdateEventInput } from '../../domain/types';
-import { EVENT_TYPES, isCoupleEvent, suggestTitle } from '../../domain/event';
-import { Banner, Button, ConfirmDialog, Field, Icon, Input, LinkButton, PageHeader, Panel, Select, Stepper, Switch } from '../../ui';
+import { EVENT_TYPES, hasVenue, namesLine, placeLine, suggestTitle } from '../../domain/event';
+import { formatEventDate, formatTime } from '../../domain/format';
+import { Banner, Button, ConfirmDialog, Field, Icon, Input, PageHeader, Panel, Select, Stepper, Switch } from '../../ui';
+import { Link } from '../../app/router';
 import { useMutation, useServices } from '../../app/data';
 import { useBlocker, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -17,18 +20,15 @@ import { useParties } from '../shared/queries';
 import { CapacityMeter, useCapacityVersion } from '../billing/CapacityMeter';
 import { ReceiptList } from '../billing/Receipt';
 import { receiptsFor } from '../../domain/billing';
-import { localDateOf } from '../../domain/format';
 import { TIME_ZONES } from '../events/CreateEvent';
 import { GuestExperienceSettings } from './GuestExperienceSettings';
 import { useCopy } from '../../ui/copy';
 
 type Form = {
-  type: EventType; title: string; a: string; b: string; aEn: string; bEn: string; date: string; time: string; timeZone: string; durationHours: number;
-  venue: string; city: string; venueEn: string; cityEn: string; mapUrl: string; defaultPartySize: number; revealTableToGuests: boolean; allowGeneralLink: boolean;
+  type: EventType; title: string; timeZone: string; durationHours: number; defaultPartySize: number; revealTableToGuests: boolean; allowGeneralLink: boolean;
 };
 const fromEvent = (e: Event): Form => ({
-  type: e.type, title: e.title, a: e.names.a, b: e.names.b ?? '', aEn: e.names.aEn ?? '', bEn: e.names.bEn ?? '', date: e.date, time: e.time, timeZone: e.timeZone, durationHours: e.durationHours,
-  venue: e.venue.name, city: e.venue.city, venueEn: e.venue.nameEn ?? '', cityEn: e.venue.cityEn ?? '', mapUrl: e.venue.mapUrl ?? '',
+  type: e.type, title: e.title, timeZone: e.timeZone, durationHours: e.durationHours,
   defaultPartySize: e.settings.defaultPartySize, revealTableToGuests: e.settings.revealTableToGuests, allowGeneralLink: e.settings.allowGeneralLink,
 });
 
@@ -40,14 +40,12 @@ export function SettingsPage({ event }: { event: Event }) {
   const loc = useLocation();
   const [f, setF] = useState<Form>(() => fromEvent(event));
   const [archiveOpen, setArchiveOpen] = useState(false);
-  // the folded options mount only while open: no hidden controls in the tab order or the page's focus checks
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const mapRef = useRef<HTMLInputElement>(null);
   const base = fromEvent(event);
   const dirty = JSON.stringify(f) !== JSON.stringify(base);
   useBlocker(dirty, t('setLeave'));
   useEffect(() => {
-    if (loc.search.get('focus') === 'map') setTimeout(() => { mapRef.current?.focus(); mapRef.current?.scrollIntoView({ block: 'center' }); }, 150);
+    // the place (and its map link) is edited with the other details, in the editor's «النص»
+    if (loc.search.get('focus') === 'map') navigate(paths.design(event.id, 'content'), { replace: true });
     if (loc.search.get('focus') === 'guest-experience') setTimeout(() => document.getElementById('guest-experience')?.scrollIntoView({ block: 'start' }), 150);
     if (loc.search.get('focus') === 'capacity') setTimeout(() => document.getElementById('capacity')?.scrollIntoView({ block: 'start' }), 150);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -57,90 +55,56 @@ export function SettingsPage({ event }: { event: Event }) {
     onSuccess: (e) => { setArchiveOpen(false); toast({ tone: 'neutral', text: t(e.archivedAt ? 'setArchived' : 'setRestored') }); if (e.archivedAt) navigate(paths.events, { force: true }); },
   });
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((x) => ({ ...x, [k]: v }));
-  const couple = isCoupleEvent(f.type);
   const err = (field: string) => (isAppError(save.error) && save.error.field === field ? errorMessage(save.error) : null);
-  const today = localDateOf(services.clock.now(), f.timeZone);
+  const names = { a: event.names.a, b: event.names.b };
 
   const submit = () => void save.run({
-    type: f.type, title: f.title.trim() || suggestTitle(f.type, { a: f.a, b: f.b }),
-    names: { a: f.a.trim(), b: couple ? f.b.trim() || undefined : undefined, aEn: f.aEn.trim() || undefined, bEn: couple ? f.bEn.trim() || undefined : undefined },
-    date: f.date, time: f.time, timeZone: f.timeZone, durationHours: f.durationHours,
-    venue: { name: f.venue.trim(), city: f.city.trim(), nameEn: f.venueEn.trim() || undefined, cityEn: f.cityEn.trim() || undefined, mapUrl: f.mapUrl.trim() || undefined },
+    type: f.type, title: f.title.trim() || suggestTitle(f.type, names), timeZone: f.timeZone, durationHours: f.durationHours,
     settings: { defaultPartySize: f.defaultPartySize, revealTableToGuests: f.revealTableToGuests, allowGeneralLink: f.allowGeneralLink },
   });
-  // the place is optional (an event needs only names + date); the time always has a value
-  const missing = !f.a.trim() || (couple && !f.b.trim()) || !f.date || !f.time;
-  const badMap = !!f.mapUrl.trim() && !/^https?:\/\//.test(f.mapUrl.trim());
+  // the details as guests read them, in one line: «سارة وأحمد · 16 أبريل · 8:00 مساءً · قاعة الريم»
+  const summary = [namesLine({ ...event, type: f.type }), formatEventDate(event.date, { weekday: false }), formatTime(event.time), hasVenue(event.venue) ? placeLine(event.venue) : null].filter(Boolean).join(' · ');
 
   return (
     <>
       <PageHeader title={t('setTitle')} subtitle={t('setSub')} />
-      <form className="stack gap-6 settings" onSubmit={(e) => { e.preventDefault(); if (!missing && !badMap) submit(); }} noValidate>
+      <form className="stack gap-6 settings" onSubmit={(e) => { e.preventDefault(); submit(); }} noValidate>
         {save.error && !(isAppError(save.error) && save.error.field) ? <Banner tone="danger" title={t('setNotSaved')}>{errorMessage(save.error)}</Banner> : null}
-        {/* essentials: what every organizer may want to change — the names, when, and (optionally) where */}
-        <Panel title={t('setBasics')}>
+        {/* the details live in the invitation's «النص» (one source of truth): a summary that opens it, never a second form */}
+        <Link to={paths.design(event.id, 'content')} className="settings-details" aria-label={`${t('setDetailsRow')} · ${t('setDetailsWhere')} — ${summary}`}>
+          <span className="settings-details-icon" aria-hidden="true"><Icon name="edit" size="sm" /></span>
+          <span className="grow"><span className="settings-details-title">{t('setDetailsRow')} <span className="settings-details-where">· {t('setDetailsWhere')}</span></span><span className="settings-details-line">{summary}</span></span>
+          <Icon name="forward" size="sm" />
+        </Link>
+
+        <Panel title={t('setOccasion')}>
           <div className="stack gap-4">
             <div className="grid-2">
-              <Field label={t(couple ? 'setFirstName' : 'setHost')} required error={!f.a.trim() ? t('setRequired') : null}><Input value={f.a} onChange={(e) => set('a', e.target.value)} /></Field>
-              {couple && <Field label={t('setSecondName')} required error={!f.b.trim() ? t('setRequired') : null}><Input value={f.b} onChange={(e) => set('b', e.target.value)} /></Field>}
+              <Field label={t('setType')}><Select value={f.type} onChange={(e) => set('type', e.target.value as EventType)}>{EVENT_TYPES.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}</Select></Field>
+              <Field label={t('setEventTitle')} hint={t('setEventTitleHint')} error={err('title')}><Input value={f.title} onChange={(e) => set('title', e.target.value)} placeholder={suggestTitle(f.type, names)} /></Field>
             </div>
             <div className="grid-2">
-              <Field label={t('setDate')} required error={err('date')}><Input type="date" value={f.date} min={today} onChange={(e) => set('date', e.target.value)} /></Field>
-              <Field label={t('setTime')} required><Input type="time" value={f.time} onChange={(e) => set('time', e.target.value)} /></Field>
+              <Field label={t('setZone')}><Select value={f.timeZone} onChange={(e) => set('timeZone', e.target.value)}>{TIME_ZONES.map(([z, l]) => <option key={z} value={z}>{l}</option>)}</Select></Field>
             </div>
-            <div className="grid-2">
-              <Field label={t('setVenue')} optional hint={!f.venue.trim() && !f.city.trim() ? t('setPlaceHint') : undefined}><Input value={f.venue} onChange={(e) => set('venue', e.target.value)} /></Field>
-              <Field label={t('setCity')} optional><Input value={f.city} onChange={(e) => set('city', e.target.value)} /></Field>
-            </div>
-            <Field label={t('setMap')} optional error={badMap ? t('setMapHttps') : null} hint={t('setMapHint')}>
-              <Input ref={mapRef} ltr type="url" value={f.mapUrl} onChange={(e) => set('mapUrl', e.target.value)} placeholder="https://maps.app.goo.gl/…" />
-            </Field>
+            <Stepper label={t('setDuration')} value={f.durationHours} min={1} max={12} onChange={(n) => set('durationHours', n)} />
           </div>
         </Panel>
 
-        {/* advanced, folded: rarely changed, each still asked only here */}
-        <details className="settings-advanced" open={advancedOpen} onToggle={(e) => setAdvancedOpen(e.currentTarget.open)}>
-          <summary><span className="grow"><span className="settings-advanced-title">{t('setAdvanced')}</span><span className="settings-advanced-hint">{t('setAdvancedHint')}</span></span><Icon name="chevron-down" size="sm" /></summary>
-          {advancedOpen && <>
-          <Panel title={t('setOccasion')}>
-            <div className="stack gap-4">
-              <div className="grid-2">
-                <Field label={t('setType')}><Select value={f.type} onChange={(e) => set('type', e.target.value as EventType)}>{EVENT_TYPES.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}</Select></Field>
-                <Field label={t('setEventTitle')} hint={t('setEventTitleHint')}><Input value={f.title} onChange={(e) => set('title', e.target.value)} placeholder={suggestTitle(f.type, { a: f.a, b: f.b })} /></Field>
-              </div>
-              <div className="grid-2">
-                <Field label={t('setZone')}><Select value={f.timeZone} onChange={(e) => set('timeZone', e.target.value)}>{TIME_ZONES.map(([z, l]) => <option key={z} value={z}>{l}</option>)}</Select></Field>
-              </div>
-              <Stepper label={t('setDuration')} value={f.durationHours} min={1} max={12} onChange={(n) => set('durationHours', n)} />
-            </div>
-          </Panel>
-
-          <Panel title={t('setEnglishText')} subtitle={t('setEnglishTextHint')}>
-            <div className="grid-2">
-              <Field label={`${t(couple ? 'setFirstName' : 'setHost')} ${t('setEnglish')}`} optional><Input ltr value={f.aEn} onChange={(e) => set('aEn', e.target.value)} /></Field>
-              {couple && <Field label={`${t('setSecondName')} ${t('setEnglish')}`} optional><Input ltr value={f.bEn} onChange={(e) => set('bEn', e.target.value)} /></Field>}
-              <Field label={t('setVenueEn')} optional><Input ltr value={f.venueEn} onChange={(e) => set('venueEn', e.target.value)} /></Field>
-              <Field label={t('setCityEn')} optional><Input ltr value={f.cityEn} onChange={(e) => set('cityEn', e.target.value)} /></Field>
-            </div>
-          </Panel>
-
-          <Panel title={t('setReplies')}>
-            <div className="stack gap-3">
-              <Stepper label={t('setDefaultSize')} value={f.defaultPartySize} min={1} max={20} onChange={(n) => set('defaultPartySize', n)} />
-              <p className="field-hint">{t('setDefaultSizeHint')}</p>
-              <Switch label={t('setShowTable')} hint={t('setShowTableHint')} checked={f.revealTableToGuests} onChange={(v) => set('revealTableToGuests', v)} />
-              <Switch label={t('setGeneral')} hint={t('setGeneralHint')} checked={f.allowGeneralLink} onChange={(v) => set('allowGeneralLink', v)} />
-            </div>
-          </Panel>
-          </>}
-        </details>
+        <Panel title={t('setReplies')}>
+          <div className="stack gap-3">
+            <Stepper label={t('setDefaultSize')} value={f.defaultPartySize} min={1} max={20} onChange={(n) => set('defaultPartySize', n)} />
+            <p className="field-hint">{t('setDefaultSizeHint')}</p>
+            <Switch label={t('setShowTable')} hint={t('setShowTableHint')} checked={f.revealTableToGuests} onChange={(v) => set('revealTableToGuests', v)} />
+            <Switch label={t('setGeneral')} hint={t('setGeneralHint')} checked={f.allowGeneralLink} onChange={(v) => set('allowGeneralLink', v)} />
+          </div>
+        </Panel>
 
         {dirty && (
           <div className="save-bar" role="region" aria-label={t('setSaveRegion')}>
             <span className="t-sm">{t('setUnsaved')}</span>
             <div className="row gap-2">
               <Button variant="ghost" onClick={() => setF(base)}>{t('setDiscard')}</Button>
-              <Button variant="primary" type="submit" loading={save.pending} disabled={missing || badMap}>{t('setSaveChanges')}</Button>
+              <Button variant="primary" type="submit" loading={save.pending}>{t('setSaveChanges')}</Button>
             </div>
           </div>
         )}
@@ -151,14 +115,6 @@ export function SettingsPage({ event }: { event: Event }) {
         <GuestExperienceSettings event={event} />
 
         <CapacitySettings event={event} />
-
-        <Panel title={t('setInvitation')}>
-          <div className="row wrap between gap-3">
-            {/* always live: no state to report, only where to manage it */}
-            <p className="muted t-sm grow">{t('ivLiveSub')}</p>
-            <LinkButton to={paths.invitation(event.id)} size="sm">{t('setManageInvitation')}</LinkButton>
-          </div>
-        </Panel>
 
         <Panel className="settings-archive" title={t(event.archivedAt ? 'setArchivedTitle' : 'setArchive')}>
           <div className="row wrap between gap-3">

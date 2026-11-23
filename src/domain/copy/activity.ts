@@ -18,7 +18,7 @@ export const ACTIVITY = voiced({
   // guests moved or copied between events (the source and the destination each get their own line)
   acTransferredOut: 'نُقلت دعوة {name} إلى «{event}»', acCopiedOut: 'نُسخت {invitations} إلى «{event}»', acTransferredIn: 'انتقلت {invitations} من «{event}»', acCopiedIn: 'نُسخت {invitations} من «{event}»',
   // the event's phase
-  phUpcoming: 'قيد التجهيز', phFinalWeek: 'الأسبوع الأخير', phEventDay: 'يوم المناسبة', phCompleted: 'انتهت', phArchived: 'مؤرشفة',
+  phUpcoming: 'قادمة', phFinalWeek: 'الأسبوع الأخير', phEventDay: 'يوم المناسبة', phCompleted: 'انتهت', phArchived: 'مؤرشفة',
 }, {
   acCreated: 'المناسبة اتعملت', acUpdated: 'بيانات المناسبة اتعدّلت{what}', acSaved: 'تصميم الدعوة اتحفظ', acPublished: 'الدعوة جاهزة لضيوفك', acRepublished: 'الدعوة اتحدّثت لضيوفك',
   acAdded: '{name} اتضاف', acImported: '{guests} اتضافوا من ملف{skipped}', acImportSkipped: ' (من غير {rows})', acPartyUpdated: 'بيانات {name} اتعدّلت', acRemoved: '{name} اتمسح من القايمة',
@@ -31,7 +31,7 @@ export const ACTIVITY = voiced({
   acIn: '{name} وصلوا — {people}', acPartial: '{name}: وصلوا {n} من {of}', acException: 'دخول استثنائي: {name} — {reason}', acInUndone: 'لغينا دخول {name}',
   acWalkIn: 'دخول من برّه القايمة: {name} — {people}{note}', acArchived: 'المناسبة اتأرشفت', acByCoordinator: 'المنسّق', acByCaterer: 'فريق الضيافة',
   acTransferredOut: 'دعوة {name} اتنقلت لـ«{event}»', acCopiedOut: '{invitations} اتنسخت لـ«{event}»', acTransferredIn: '{invitations} اتنقلت من «{event}»', acCopiedIn: '{invitations} اتنسخت من «{event}»',
-  phUpcoming: 'لسه بتتجهّز', phFinalWeek: 'آخر أسبوع', phEventDay: 'يوم المناسبة', phCompleted: 'خلصت', phArchived: 'متأرشفة',
+  phUpcoming: 'جاية', phFinalWeek: 'آخر أسبوع', phEventDay: 'يوم المناسبة', phCompleted: 'خلصت', phArchived: 'متأرشفة',
 }, {
   acCreated: 'تم إنشاء المناسبة', acUpdated: 'تعدّلت بيانات المناسبة{what}', acSaved: 'انحفظ تصميم الدعوة', acPublished: 'الدعوة جاهزة لضيوفك', acRepublished: 'تحدّثت الدعوة لضيوفك',
   acAdded: 'انضاف {name}', acImported: 'انضاف {guests} من ملف{skipped}', acImportSkipped: ' (مع تخطي {rows})', acPartyUpdated: 'تعدّلت بيانات {name}', acRemoved: 'انحذف {name} من القائمة',
@@ -44,7 +44,7 @@ export const ACTIVITY = voiced({
   acIn: '{name} وصلوا — {people}', acPartial: '{name}: وصلوا {n} من {of}', acException: 'دخول باستثناء: {name} — {reason}', acInUndone: 'تراجعنا عن تسجيل دخول {name}',
   acWalkIn: 'دخول من برّا القائمة: {name} — {people}{note}', acArchived: 'تمت أرشفة المناسبة', acByCoordinator: 'المنسّق', acByCaterer: 'فريق الضيافة',
   acTransferredOut: 'انتقلت دعوة {name} إلى «{event}»', acCopiedOut: 'انتسخت {invitations} إلى «{event}»', acTransferredIn: 'انتقلت {invitations} من «{event}»', acCopiedIn: 'انتسخت {invitations} من «{event}»',
-  phUpcoming: 'قيد التجهيز', phFinalWeek: 'آخر أسبوع', phEventDay: 'يوم المناسبة', phCompleted: 'انتهت', phArchived: 'مؤرشفة',
+  phUpcoming: 'قادمة', phFinalWeek: 'آخر أسبوع', phEventDay: 'يوم المناسبة', phCompleted: 'انتهت', phArchived: 'مؤرشفة',
 });
 
 /** t(PHASE_KEY[phase]) — the words for domain/event PHASE_LABEL (which keeps the tone) */

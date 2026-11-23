@@ -155,21 +155,36 @@ async function run(vp) {
   });
 
   let code = '';
-  await step(vp, '08 add a guest', async () => {
+  await step(vp, '08 add 5 guests in one run (names only, one phone): the sheet stays open, Enter adds the next', async () => {
     await go(`/app/events/${eventId}/guests`);
-    await page.getByRole('button', { name: /^(إضافة ضيف|أضف ضيفًا)$/ }).first().click(); // the empty list's one «add»
-    await page.getByLabel('اسم الضيف أو العائلة').fill('عائلة الحربي');
+    let taps = 0;
+    await page.getByRole('button', { name: /^(إضافة ضيف|أضف ضيفًا)$/ }).first().click(); taps++; // the empty list's one «add»
     const hint = await page.locator('dialog[open]').innerText();
     if (/العروس|العريس/.test(hint)) throw new Error('wedding copy in the guest form');
     // only the name is needed: the allowance is a chip on the event default, not a stepper to set
     if (await page.locator('dialog[open] .stepper').count()) throw new Error('allowance stepper open by default');
     await page.locator('dialog[open] .pf-chip').waitFor();
-    await page.locator('dialog[open]').getByRole('button', { name: 'إضافة' }).click();
+    for (const [i, name] of ['عائلة الحربي', 'منى', 'خالد', 'عائلة القحطاني', 'سارة'].entries()) {
+      const input = page.getByLabel('اسم الضيف أو العائلة');
+      if (await input.inputValue()) throw new Error('the name field was not cleared for the next guest');
+      await input.fill(name);
+      if (i === 1) await page.getByLabel('رقم الجوال').fill('0551234567');
+      if (i === 0) { await page.locator('dialog[open]').getByRole('button', { name: 'إضافة', exact: true }).click(); taps++; }
+      else await input.press('Enter');
+      await page.locator('dialog[open] .pf-added').filter({ hasText: name }).waitFor({ timeout: 5000 });
+    }
+    await page.locator('dialog[open]').getByRole('button', { name: 'تم', exact: true }).click(); taps++;
     await page.getByText('عائلة الحربي').first().waitFor();
+    if (taps > 3) throw new Error(`${taps} taps for 5 guests`);
+    // a guest without a number shares a link — never an «add a number» chore
+    const row = page.locator('.g2-row', { hasText: 'خالد' });
+    const main = (await row.locator('.g2-act').innerText()).trim();
+    if (!/شارك الرابط/.test(main)) throw new Error(`no-phone main action «${main}»`);
+    if (await page.locator('.g2-row', { hasText: /أضف رقم/ }).count()) throw new Error('«add a number» on a card');
     await page.waitForTimeout(500); await shot('08-guests');
     code = await page.evaluate((id) => { const db = JSON.parse(localStorage.getItem('doyofy:db:v1')); return (db.parties || []).find((p) => p.eventId === id)?.code || ''; }, eventId);
     if (!code) throw new Error('no invitation code stored');
-    return `code ${code}; ` + await noScroll();
+    return `5 guests in 3 taps + 4 Enter; code ${code}; ` + await noScroll();
   });
   const slug = await page.evaluate((id) => { const db = JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}'); return (db.events || []).find((e) => e.id === id)?.slug || ''; }, eventId);
 
