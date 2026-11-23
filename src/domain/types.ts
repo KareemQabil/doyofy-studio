@@ -143,8 +143,6 @@ export interface InvitationDesign {
   publishedAt?: ISODateTime;
 }
 
-/** @deprecated the invitation has no publish state any more; kept only for code that still compiles against it */
-export type PublishState = 'none' | 'draft' | 'published' | 'changed';
 
 // ------------------------------------------------------------------ guests
 /** platform delivery state as stored; a `not_shared` invitation is shown as `ready` (its link works from the start) */

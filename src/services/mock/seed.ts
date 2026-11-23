@@ -142,8 +142,7 @@ export function buildSeed(now: Date, scenario: ScenarioId): DbShape {
   events.push(e1);
   const d1 = defaultDesign(e1);
   d1.program = [{ time: '21:00', ar: 'استقبال الضيوف', en: 'Welcome of guests' }, { time: '22:00', ar: 'الزفّة', en: 'The Zaffa' }, { time: '23:00', ar: 'العشاء', en: 'Dinner' }, { time: '00:30', ar: 'قطع الكيك', en: 'Cake' }];
-  // `published`: legacy field from before the invitation was always live — kept so the demo also exercises old stored data
-  designs.push({ id: 'dsg_wedding', eventId: e1.id, draft: d1, draftSavedAt: at(now, 60 * 24 * 30), published: structuredClone(d1), publishedAt: at(now, 60 * 24 * 30) });
+  designs.push({ id: 'dsg_wedding', eventId: e1.id, draft: d1, draftSavedAt: at(now, 60 * 24 * 30) });
 
   const tableCaps = [12, 10, 10, 10, 10, 10, 10, 10];
   tableCaps.forEach((cap, i) => tables.push({ id: `tbl_w${i + 1}`, eventId: e1.id, name: i === 0 ? 'طاولة 1 — كبار العائلة' : `طاولة ${i + 1}`, capacity: cap, order: i + 1 }));
@@ -239,7 +238,7 @@ export function buildSeed(now: Date, scenario: ScenarioId): DbShape {
   };
   events.push(e3);
   const d3 = { ...defaultDesign(e3), cardId: 'kit-seal-arch', sceneId: 'candlelit', experience: { dimension: '2d' as const, motion: 'animated' as const } };
-  designs.push({ id: 'dsg_katb', eventId: e3.id, draft: d3, draftSavedAt: at(now, 60 * 24 * 60), published: structuredClone(d3), publishedAt: at(now, 60 * 24 * 60) });
+  designs.push({ id: 'dsg_katb', eventId: e3.id, draft: d3, draftSavedAt: at(now, 60 * 24 * 60) });
   [10, 10, 10, 12].forEach((cap, i) => tables.push({ id: `tbl_k${i + 1}`, eventId: e3.id, name: `طاولة ${i + 1}`, capacity: cap, order: i + 1 }));
   const start3 = zonedToInstant(e3Date, '19:30', tz);
   let seatIdx = 0;

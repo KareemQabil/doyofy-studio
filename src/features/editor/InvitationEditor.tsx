@@ -27,7 +27,7 @@ import { usePointerGesture } from '../../ui/hooks/usePointerGesture';
 import { sheetSnapHeight, type SheetPoint } from '../../domain/gestures';
 import { useSwipePager } from '../../ui/hooks/useSwipePager';
 import { DraftQueue } from '../../domain/draft-queue';
-import { defaultDesign, publishState, toInvitationData } from '../../domain/invitation';
+import { defaultDesign, toInvitationData } from '../../domain/invitation';
 import { applyPreset, presetById } from '../../domain/templates';
 import { Button, ErrorState, Icon, IconButton, Segmented, PageLoader } from '../../ui';
 import { useServices } from '../../app/data';
@@ -37,7 +37,6 @@ import { useToast } from '../../ui/primitives/Feedback';
 import { useCopy } from '../../ui/copy';
 import type { CopyKey } from '../../domain/copy';
 import { useDesign, useEvent } from '../shared/queries';
-import { useCan } from '../shared/OwnerOnly';
 import { DesignSection, SoundSection, TextSection, eventFields, eventPatch, previewEvent, sameDraft, validateEventFields, type EditField, type EventDraft, type EventDraftErrors } from './sections';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
@@ -83,7 +82,6 @@ export function InvitationEditor({ eventId }: { eventId: string }) {
 
 function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null }) {
   const services = useServices();
-  const mayKeepLive = useCan('invitation.publish'); // owner only (domain/roles) — see keepGuestsCurrent
   const navigate = useNavigate();
   const loc = useLocation();
   const toast = useToast();
@@ -162,14 +160,14 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   // local edits waiting, so an autosave can never write an older design back
   useEffect(() => {
     if (!saved || save !== 'saved') return;
-    if (saved.draftSavedAt === design?.draftSavedAt && saved.publishedAt === design?.publishedAt) return;
+    if (saved.draftSavedAt === design?.draftSavedAt) return;
     if (design && saved.draftSavedAt < design.draftSavedAt) return; // our own newer save is not in the cache yet
     const next = ownNames(saved.draft);
     if (!queue.replace(next)) return;
     contentRef.current = next;
     setContent(next);
     setDesign(saved);
-  }, [saved?.draftSavedAt, saved?.publishedAt, save]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [saved?.draftSavedAt, save]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // the event was saved (here or in another tab): take the new values unless there are local edits still waiting
   useEffect(() => {
@@ -260,15 +258,7 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   };
   const editField = (field: EditField) => { setIntro(false); if (pages.includes(FIELD_PAGE[field])) setPage(FIELD_PAGE[field]); reveal(FIELD_SELECTOR[field]); };
 
-  /**
-   * Bridge for decision 1 (the invitation is always live): until guest links resolve to the latest saved design by
-   * themselves, leaving the editor brings the guests' copy up to the saved design. Quiet — nothing about it is shown.
-   */
-  const keepGuestsCurrent = async (d: InvitationDesign | null) => {
-    if (!mayKeepLive || !d || publishState(d) === 'published') return;
-    try { await services.invitations.publish(event.id); } catch { /* the saved design is still the organizer's; the next leave retries */ }
-  };
-  /** everything saved (and valid) before leaving the editor */
+  /** everything saved (and valid) before leaving the editor — what is saved is what guests get */
   const settle = async (): Promise<boolean> => {
     clearTimeout(timer.current);
     const errors = sameDraft(evRef.current, evBase.current) ? {} : validateEventFields(server.current, evRef.current, services.clock.now(), copy);
@@ -276,7 +266,6 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
     if (bad) { setEvErrors(errors); setEvSave('invalid'); toast({ tone: 'danger', text: t('edCheckFields') }); reveal(`[data-event-field="${bad}"]`); return false; }
     const d = queue.dirty || save !== 'saved' ? await persist() : design;
     if (!d || !(await saveEvent())) { toast({ tone: 'danger', text: t('edSaveFailedLeave') }); return false; }
-    await keepGuestsCurrent(d);
     return true;
   };
   const leave = (to: string) => void settle().then((ok) => { if (ok) navigate(to, { force: true }); });

@@ -162,16 +162,6 @@ export function mockInvitations({ store, now }: Ctx): InvitationRepository {
       else { d.draft = content; d.draftSavedAt = t; }
       return clone(d);
     }), 'write'),
-    // @deprecated: the invitation is always live (guests get the latest saved design). Kept for callers compiled
-    // against it: it only makes sure a design is saved, and records the legacy snapshot so older readers agree.
-    publish: (eventId) => store.request(() => store.write((db) => {
-      const ev = findEvent(db, eventId);
-      const t = now().toISOString();
-      let d = db.designs.find((x) => x.eventId === eventId);
-      if (!d) { d = { id: makeId('dsg'), eventId, draft: defaultDesign(ev), draftSavedAt: t }; db.designs.push(d); }
-      d.published = clone(d.draft); d.publishedAt = t;
-      return clone(d);
-    }), 'write'),
   };
 }
 

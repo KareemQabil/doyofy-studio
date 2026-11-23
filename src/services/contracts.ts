@@ -35,8 +35,6 @@ export interface InvitationRepository {
   get(eventId: string): Promise<InvitationDesign | null>;
   /** saves the design; guests see it from the next time they open their link */
   saveDraft(eventId: string, content: InvitationDesignContent): Promise<InvitationDesign>;
-  /** @deprecated there is nothing to publish: makes sure a design is saved and returns it. Removed once no caller remains. */
-  publish(eventId: string): Promise<InvitationDesign>;
 }
 
 export type ShareHow = 'manual' | 'link_copied';

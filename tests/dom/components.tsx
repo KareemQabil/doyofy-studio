@@ -320,10 +320,10 @@ export async function run(){
    assert.equal((await api.events.get(event.id)).names.a,'نورة الاستوديو');assert.equal((await api.invitations.get(event.id)).draft.message.ar,'كلمة من الاستوديو');
    await click(document.querySelector('.ed-send')!);await wait(60);
    assert.ok(location.pathname.endsWith('/guests'),`«أرسل للضيوف» opens the guests: ${location.pathname}`);
-   const live=await api.invitations.get(event.id);assert.deepEqual(live.published,live.draft,'guests get what was saved');
+   const view=await api.guest.open(before.slug);assert.equal(view.design.message.ar,'كلمة من الاستوديو','guests get what was saved, at once');
   }); } finally {
    globalThis.matchMedia=originalMedia;
-   await api.events.update(event.id,{names:before.names,title:before.title});await api.invitations.saveDraft(event.id,original);await api.invitations.publish(event.id);
+   await api.events.update(event.id,{names:before.names,title:before.title});await api.invitations.saveDraft(event.id,original);
   }
  });
  await check('an old design\'s separate card names still load; the card shows the event\'s names and the next save drops them',async()=>{
@@ -383,7 +383,7 @@ export async function run(){
    assert.ok(cardLabel().includes(pickedName));assert.notEqual((await api.invitations.get(event.id)).draft.cardId,'pf-gazebo');
   } finally {
    handle.prototype.update({latencyMs:0});
-   await api.invitations.saveDraft(event.id,original);await api.invitations.publish(event.id);
+   await api.invitations.saveDraft(event.id,original);
   }
  });
  await check('invitation without a draft starts directly in the editor and never claims single-name cards are missing',async()=>{
