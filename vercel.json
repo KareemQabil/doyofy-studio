@@ -7,6 +7,10 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/api/:route*",
+      "destination": "/api/router?route=:route*"
+    },
+    {
       "source": "/app/:path*",
       "destination": "/index.html"
     },
@@ -45,7 +49,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob:; connect-src 'self' data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob: https://*.public.blob.vercel-storage.com; connect-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://vercel.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
         }
       ]
     },
@@ -85,5 +89,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/router.ts": {
+      "maxDuration": 15
+    }
+  }
 }

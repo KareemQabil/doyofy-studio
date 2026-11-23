@@ -159,6 +159,21 @@ export interface SessionService {
 }
 export interface Clock { now(): Date }
 
+/**
+ * The small Vercel backend (api/router.ts, docs/BACKEND.md), seen from the organizer's screens. The organizer's local
+ * store stays the source of truth; the sync layer (services/cloud) publishes each event's public snapshot and merges guests'
+ * replies back. Everything here is synchronous so share links and honesty lines can render at once.
+ */
+export interface CloudService {
+  /** true once /api/health said a storage is connected; false = off (portable ?d= links); null = not known yet */
+  status(): boolean | null;
+  /** the short guest path /i/<slug>[/<code>] once that event (and that guest) reached the backend; null = use the portable link */
+  guestPath(eventId: string, code?: string): string | null;
+  /** bumps on every change above (useSyncExternalStore snapshot) */
+  version(): number;
+  subscribe(fn: () => void): () => void;
+}
+
 export interface Services {
   events: EventRepository;
   invitations: InvitationRepository;
@@ -170,6 +185,7 @@ export interface Services {
   guest: GuestApi;
   session: SessionService;
   clock: Clock;
+  cloud: CloudService;
   /** cache invalidation channel: fires after any data change (local or other tab) */
   onChange(fn: () => void): () => void;
 }

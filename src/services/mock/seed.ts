@@ -107,6 +107,9 @@ const COMPLETED: Array<[string, number, 'c' | 'd', number, number]> = [
 
 function at(base: Date, minutesAgo: number) { return new Date(base.getTime() - minutesAgo * 60000).toISOString(); }
 
+/** the demo events' guest-link slugs (prototype tools and screen review link to them); anything else is a real event's link */
+export const DEMO_SLUGS: readonly string[] = ['noura-faisal', 'reem-khaled', 'hind-mazen'];
+
 export function buildSeed(now: Date, scenario: ScenarioId): DbShape {
   // a brand-new account (sign-up): nothing but the account itself — no one else's wedding in «مناسباتي»
   if (scenario === 'empty') return { version: 1, scenario, seededAt: now.toISOString(), events: [], designs: [], parties: [], responses: [], tables: [], checkIns: [], activity: [] };
