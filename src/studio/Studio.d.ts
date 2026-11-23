@@ -21,8 +21,9 @@ export interface StudioOptions {
   muted?: boolean;
   params?: URLSearchParams;
   guest?: StudioGuest | null;
-  /** an extra button on the thank-you screen; with autoAfter (ms) the screen moves on by itself */
-  doneAction?: { ar: string; en?: string; onClick: () => void; autoAfter?: number } | null;
+  /** an extra button on the thank-you screen; with autoAfter (ms) the screen moves on by itself. `declined`: its label
+   *  after a decline (default: the same) */
+  doneAction?: { ar: string; en?: string; declined?: { ar: string; en?: string }; onClick: () => void; autoAfter?: number } | null;
   /** organizer-only hints on controls (never on guest pages) */
   authorNotes?: boolean;
   /** the organizer's voice carried with a guest link: the engine's own words follow it, not this device's preference */

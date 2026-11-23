@@ -171,7 +171,7 @@ function DietaryField({ count, value, onChange, error }: { count: number; value:
               <span className="gx-sub">{t('gxAffects')}</span>
               <button type="button" className={`gx-pill is-sm${value?.affectedCount == null ? ' is-on' : ''}`} aria-pressed={value?.affectedCount == null} onClick={() => onChange({ answered: true, needs, note: value?.note })}>{t('gxNotSure')}</button>
               {Array.from({ length: count }, (_, i) => i + 1).map((n) => (
-                <button key={n} type="button" className={`gx-pill is-sm num${value?.affectedCount === n ? ' is-on' : ''}`} aria-pressed={value?.affectedCount === n} aria-label={t('geAffectsN', { people: N.text(countOf(dialect, n, 'person')) })} onClick={() => onChange({ answered: true, needs, affectedCount: n, note: value?.note })}>{N.num(n)}</button>
+                <button key={n} type="button" className={`gx-pill is-sm num${value?.affectedCount === n ? ' is-on' : ''}`} aria-pressed={value?.affectedCount === n} aria-label={t('geAffectsN', { people: N.text(countOf(dialect, n, 'person', true)) })} onClick={() => onChange({ answered: true, needs, affectedCount: n, note: value?.note })}>{N.num(n)}</button>
               ))}
             </div>
           )}
@@ -185,14 +185,14 @@ function DietaryField({ count, value, onChange, error }: { count: number; value:
 // ------------------------------------------------------------------ follow-up questions: one set for every path
 /**
  * What a reply asks after «حضور / اعتذار» and the headcount. The cinematic invitation and the direct form ask exactly
- * this set, so both paths collect the same answers: companions' names (personal link, more than one person), food (when
+ * this set, so both paths collect the same answers: companions' names (more than one person, on either link), food (when
  * the host asks it after attending) and a message to the host (personal link).
  */
 export type FollowUp = { extras: ExtrasValue; companions: string[]; note: string };
-export const emptyFollowUp = (p?: GuestView['party']): FollowUp => ({ extras: emptyExtras(p ?? undefined), companions: p?.companionNames ?? [], note: p?.guestNote ?? '' });
+export const emptyFollowUp = (p?: { companionNames?: string[]; guestNote?: string; meals?: MealAllocation[]; dietary?: DietaryAnswer } | null): FollowUp => ({ extras: emptyExtras(p ?? undefined), companions: p?.companionNames ?? [], note: p?.guestNote ?? '' });
 export function followUpAsks(view: GuestView, attending: boolean, count: number) {
   const x = view.experience;
-  return { companions: !!view.party && attending && count > 1, food: attending && !!x && asksAfterAttending(x), note: !!view.party };
+  return { companions: attending && count > 1, food: attending && !!x && asksAfterAttending(x), note: !!view.party };
 }
 export const asksFollowUp = (view: GuestView, attending: boolean, count: number) => Object.values(followUpAsks(view, attending, count)).some(Boolean);
 export function followUpError(view: GuestView, attending: boolean, count: number, v: FollowUp) {
@@ -203,8 +203,8 @@ export function followUpError(view: GuestView, attending: boolean, count: number
 export function followUpPayload(view: GuestView, attending: boolean, count: number, v: FollowUp): Partial<RsvpInput> {
   const a = followUpAsks(view, attending, count);
   return {
-    // a personal attending reply always restates its companions, so a smaller party drops the names that no longer apply
-    ...(view.party && attending ? { companionNames: v.companions.slice(0, Math.max(0, count - 1)).map((n) => n.trim()).filter(Boolean) } : {}),
+    // an attending reply always restates its companions, so a smaller party drops the names that no longer apply
+    ...(attending ? { companionNames: v.companions.slice(0, Math.max(0, count - 1)).map((n) => n.trim()).filter(Boolean) } : {}),
     ...(a.note ? { note: v.note.trim() || undefined } : {}),
     ...(a.food ? extrasPayload(view.experience, v.extras) : {}),
   };
@@ -233,7 +233,7 @@ export function FollowUpFields({ view, attending, count, value, onChange, error 
 /** the cinematic invitation collects the reply and headcount; this sheet asks the same follow-up before the one and only submit */
 export function FollowUpSheet({ view, attending, count, onSend, onBack }: { view: GuestView; attending: boolean; count: number; onSend: (v: FollowUp) => Promise<string | null>; onBack: () => void }) {
   const { t, n: countIn } = useCopy();
-  const [value, setValue] = useState<FollowUp>(() => emptyFollowUp(view.party));
+  const [value, setValue] = useState<FollowUp>(() => emptyFollowUp(view.party ?? view.reply));
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);

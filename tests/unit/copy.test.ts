@@ -77,6 +77,8 @@ test('copy: guests are addressed in the plural; the reply words follow each voic
     // the engine reads the same words
     const s = currentStrings(d);
     assert.equal(s.accept.ar, c.guestAccept); assert.equal((s.rsvpTitle as { ar: string }).ar, c.engRsvpTitle); assert.equal(s.thanks.no.ar, c.engThanksNo);
+    // the done screen's demo line and the controls' screen-reader names follow the voice too (never a hard-coded modern line)
+    assert.equal(s.demoOnly, c.demoOnly); assert.equal(s.backToCard, c.engBackToCard); assert.deepEqual(s.pageLabels[1], c.engPageDate);
   }
 });
 

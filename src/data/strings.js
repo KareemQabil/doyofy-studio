@@ -1,5 +1,5 @@
 import { currentDialect } from './copy-preference.js';
-import { copyFor } from '../domain/copy';
+import { copyFor, fill } from '../domain/copy';
 
 /** Bilingual UI copy of the canonical Studio (Arabic first, English second). */
 export const STRINGS = {
@@ -54,6 +54,11 @@ export function currentStrings(dialect = voice ?? currentDialect()) {
     accept: ar(STRINGS.accept, k.guestAccept), decline: ar(STRINGS.decline, k.guestDecline), sealSend: ar(STRINGS.sealSend, k.guestSendReply),
     need: ar(STRINGS.need, k.engNeed), tapToOpen: ar(STRINGS.tapToOpen, k.engTapToOpen), watchAgain: ar(STRINGS.watchAgain, k.engWatchAgain),
     voice: k.audioGuestVoice,
+    needName: { ar: k.engNeedName, en: 'Add your name' }, needReply: { ar: k.engNeedReply, en: 'Choose a reply' },
+    // the demo's honesty line and the controls' accessible names speak the same voice as the visible words
+    demoOnly: k.demoOnly, openCard: k.engOpenCard, sheet: k.engSheet, backToCard: k.engBackToCard, pages: k.engPages, prevPage: k.engPrevPage, nextPage: k.engNextPage,
+    page: (label) => fill(k.engPage, { page: label }), pageLabels: [k.engPageInvitation, k.engPageDate, k.engPageProgram, k.engPageVenue, k.engPageRsvp],
+    replyGroup: k.engReplyGroup, fewer: k.engFewer, more: k.engMore, replayAll: k.engReplayAll,
     thanks: { yes: ar(STRINGS.thanks.yes, k.engThanksYes), no: ar(STRINGS.thanks.no, k.engThanksNo) },
   };
 }

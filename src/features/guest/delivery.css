@@ -72,3 +72,7 @@ html:root:has(body.dy-guest .guest-page) { color-scheme: light; background: var(
 /* keyboard focus on the dark guest bar: the light stage ink, never the platform's dark ring on near-black */
 .guest-bar { --c-focus: var(--c-stage-ink); }
 .guest-bar :focus-visible, :root[data-theme] .guest-bar :focus-visible, :root[data-theme] .guest-bar .guest-demo > summary:focus-visible { outline: 2px solid var(--c-stage-ink); outline-offset: 3px; }
+/* guest touch targets (≥ 44px on touch): the cover's direct link was a bare text run, and at 320px the Wallet
+   preview's long title squeezed its close button below 44px */
+.sig-cover-actions .sig-cover-skip { display: inline-flex; align-items: center; justify-content: center; min-block-size: 44px; padding-inline: var(--s-3); }
+.wallet-dialog .dialog-close { flex: none; min-inline-size: 44px; min-block-size: 44px; }

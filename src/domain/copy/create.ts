@@ -16,6 +16,7 @@ export const CREATE = voiced({
   tfNoStyle: 'لا تصاميم بهذا الأسلوب بعد.', tfShowAll: 'اعرض كل التصاميم', tfFilterHint: 'اختر ما يناسب ذوقك. يبقى التصميم الحالي حتى تختار غيره.', tfReplay: 'إعادة من البداية',
   tfForYou: 'مختارة لمناسبتك', tfAll: 'كل التصاميم',
   tgLater: 'لاحقًا', tgBack: 'رجوع للتصميم', tgChooseLater: 'سأختار لاحقًا', tgCreated: 'أُنشئت «{title}». اختر شكلها.', tgOnlyLook: 'يتغيّر الشكل فقط، ونصوصك تبقى.', tgKeep: 'متابعة بالتصميم الحالي', tgFailed: 'لم يُطبَّق التصميم',
+  tfKeys: 'تنقّل بين التصاميم بالسهمين لأعلى ولأسفل',
 }, {
   wzWhat: 'مناسبتك إيه؟', wzSearchHint: 'اكتب اسم مناسبتك واختارها.', wzBrowseFine: 'قلّب الكروت بالأسهم، ودوس على مناسبتك.', wzBrowseTouch: 'اسحب الكروت، ودوس على مناسبتك.',
   wzSearchPlaceholder: 'مثال: تخرّج، سبوع، فطار', wzSearchLabel: 'دوّر على مناسبتك', wzNoMatch: 'ملقيناش «{q}». اختار «مناسبة تانية» واكتب اسمها في آخر خطوة.', wzOther: 'مناسبة تانية',
@@ -30,6 +31,7 @@ export const CREATE = voiced({
   tfNoStyle: 'لسه مفيش تصاميم بالستايل ده.', tfShowAll: 'وريني كل التصاميم', tfFilterHint: 'اختار اللي على ذوقك. التصميم الحالي هيفضل لحد ما تختار غيره.', tfReplay: 'شغّلها من الأول',
   tfForYou: 'مختارة لمناسبتك', tfAll: 'كل التصاميم',
   tgLater: 'بعدين', tgBack: 'ارجع للتصميم', tgChooseLater: 'هختار بعدين', tgCreated: '«{title}» اتعملت. اختار شكلها.', tgOnlyLook: 'الشكل بس اللي هيتغيّر، وكلامك هيفضل زي ما هو.', tgKeep: 'كمّل بالتصميم الحالي', tgFailed: 'التصميم متطبّقش',
+  tfKeys: 'اتنقّل بين التصاميم بالسهمين لفوق وتحت',
 }, {
   wzWhat: 'وش المناسبة؟', wzSearchHint: 'اكتب اسم مناسبتك واخترها.', wzBrowseFine: 'تصفّح البطاقات بالأسهم، واضغط على مناسبتك.', wzBrowseTouch: 'اسحب البطاقات، واضغط على مناسبتك.',
   wzSearchPlaceholder: 'مثال: تخرّج، عقيقة، فطور', wzSearchLabel: 'دوّر على مناسبتك', wzNoMatch: 'ما لقينا «{q}». اختر «مناسبة ثانية» واكتب اسمها في آخر خطوة.', wzOther: 'مناسبة ثانية',
@@ -44,6 +46,7 @@ export const CREATE = voiced({
   tfNoStyle: 'ما فيه تصاميم بهالأسلوب للحين.', tfShowAll: 'اعرض كل التصاميم', tfFilterHint: 'اختر اللي يناسب ذوقك. التصميم الحالي يبقى لين تختار غيره.', tfReplay: 'شغّلها من البداية',
   tfForYou: 'مختارة لمناسبتك', tfAll: 'كل التصاميم',
   tgLater: 'بعدين', tgBack: 'ارجع للتصميم', tgChooseLater: 'بختار بعدين', tgCreated: 'انضافت «{title}». اختر شكلها.', tgOnlyLook: 'يتغيّر الشكل بس، وكلامك يبقى مثل ما هو.', tgKeep: 'كمّل بالتصميم الحالي', tgFailed: 'ما انطبّق التصميم',
+  tfKeys: 'تنقّل بين التصاميم بالأسهم لفوق وتحت',
 });
 
 /** accessible names in the wizard and the feed */

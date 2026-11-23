@@ -8,7 +8,7 @@
  * land here, at the top of the page, with the same stamp and the same pass.
  */
 import { useEffect, useRef, useState } from 'react';
-import type { GuestApi, GuestView } from '../../services/contracts';
+import type { GuestApi, GuestGeneralReply, GuestView } from '../../services/contracts';
 import { countdownLabel, daysBetween, dateSeparator, invitationNumbers, localDateOf, type InvitationNumbers } from '../../domain/format';
 import { faceDigits } from '../../domain/templates';
 import { eventStart, eventEnd, isCoupleEvent } from '../../domain/event';
@@ -45,19 +45,23 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
   const N = invitationNumbers(faceDigits(view.design.cardId));
   const sep = dateSeparator(N.digits);
   const failed = submission && !submission.ok;
-  const [generalSubmitted, setGeneralSubmitted] = useState('');
-  // the general-link reply just sent (its id lets the guest correct it); `editingGeneral` reopens the form with it
-  const [generalReply, setGeneralReply] = useState<GeneralReply | null>(null);
+  // the general-link reply this device sent (now or before a reload, GuestView.reply; its id lets the guest correct it);
+  // `editingGeneral` reopens the form with it
+  const [generalReply, setGeneralReply] = useState<GeneralReply | null>(() => view.reply ? generalOf(view.reply) : null);
+  useEffect(() => { if (view.reply) setGeneralReply(generalOf(view.reply)); }, [view.reply]);
   const [editingGeneral, setEditingGeneral] = useState(false);
   const [editing, setEditing] = useState<boolean>(!!failed || (!!p && p.rsvpStatus === 'pending'));
   // a reply saved on this page (direct path); the cinematic path arrives with `submission`
   const [saved, setSaved] = useState(0);
   const result = useRef<HTMLHeadingElement>(null);
+  const declined = p ? p.rsvpStatus === 'declined' : generalReply?.attending === false;
   const replied = !!submission?.ok || saved > 0;
   // the entry pass: only a confirmed personal invitation, until the event ends, and not while the reply is being edited
   // (a party that has partly arrived keeps it for the rest)
   const pass = !!p && p.rsvpStatus === 'confirmed' && view.phase !== 'after' && !editing;
-  const formOpen = view.canEdit && (p ? editing : (!(submission?.ok || generalSubmitted) || editingGeneral));
+  const generalName = generalReply?.name ?? (submission?.ok ? submission.name : undefined);
+  const generalDone = !p && (!!submission?.ok || !!generalReply);
+  const formOpen = view.canEdit && (p ? editing : (!generalDone || editingGeneral));
 
   // after a reply, whichever path: the top of the page and its result, never somewhere mid-way down
   useEffect(() => {
@@ -77,7 +81,7 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
 
   return (
     <main className="guest-page theme-guest">
-      <SealStamp key={saved} show={replied} label={demo ? t('ghDemoSaved') : p?.rsvpStatus === 'declined' ? t('ghDeclineArrived') : t('guestReplyArrived')} tone={p?.rsvpStatus === 'declined' ? 'charcoal' : 'gold'} />
+      <SealStamp key={saved} show={replied} label={demo ? t('ghDemoSaved') : declined ? t('ghDeclineArrived') : t('guestReplyArrived')} tone={declined ? 'charcoal' : 'gold'} />
       <div className="hub">
         {demo && <DemoNote pass={pass} />}
 
@@ -107,17 +111,21 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
         {!pass && (
           <section className="hub-card" aria-labelledby="hub-status">
             {!p ? (
-              (submission?.ok || generalSubmitted) && !editingGeneral ? (
+              generalDone && !editingGeneral ? (
                 <div className="stack gap-2">
-                  <h2 id="hub-status" ref={result} tabIndex={-1} className="hub-h">{t('ghThanks')}{submission?.ok && submission.name ? <> <bdi>{submission.name}</bdi></> : generalSubmitted ? <> <bdi>{generalSubmitted}</bdi></> : ''}، {demo ? t('ghSaved') : t('guestReplyArrived')}</h2>
+                  {/* a demo reply's own line below says where it was saved: the heading only thanks (no «حُفظ ردكم» twice) */}
+                  <h2 id="hub-status" ref={result} tabIndex={-1} className="hub-h">{t('ghThanks')}{generalName ? <> <bdi>{generalName}</bdi></> : ''}{demo ? '' : `، ${t('guestReplyArrived')}`}</h2>
                   {generalReply && <p className="muted">{generalReply.attending ? `${t('guestAccept')}${sep}${N.text(n(generalReply.count, 'person'))}` : t('guestDecline')}</p>}
+                  {generalReply?.attending && view.experience && generalReply.more.extras.meals.length ? <p className="gx-mine">{t('ghDinner', { meals: N.text(mealSummary(view.experience, generalReply.more.extras.meals, sep, dialect)) })}</p> : null}
+                  {generalReply?.attending && generalReply.more.extras.dietary?.needs.length ? <p className="gx-mine">{t('ghWeCare', { needs: dietaryLabel(generalReply.more.extras.dietary, dialect) })}</p> : null}
+                  {generalReply?.attending && generalReply.more.companions.length ? <p className="faint t-sm">{t('ghCompanions', { names: generalReply.more.companions.join('، ') })}</p> : null}
                   <p className="muted">{t(demo ? 'ghSavedHere' : 'ghReview')}</p>
                   {generalReply && view.canEdit && <div><Button variant="secondary" icon="edit" onClick={() => setEditingGeneral(true)}>{t('guestEditReply')}</Button></div>}
                 </div>
               ) : (
                 <div className="stack gap-4"><h2 id="hub-status" className="hub-h">{t('ghHappy')}</h2>{view.canEdit
                   ? <GeneralResponse view={view} N={N} guestApi={guestApi} initial={editingGeneral ? generalReply : null} onCancel={editingGeneral ? () => setEditingGeneral(false) : undefined}
-                    onSaved={(v, reply) => { onView(v); setGeneralSubmitted(reply.name); setGeneralReply(reply); setEditingGeneral(false); setSaved((n) => n + 1); }} />
+                    onSaved={(v, reply) => { onView(v); setGeneralReply(reply); setEditingGeneral(false); setSaved((n) => n + 1); }} />
                   : <p className="muted">{t('ghClosed')}</p>}</div>
               )
             ) : p.checkedInCount > 0 ? (
@@ -240,6 +248,7 @@ function RsvpForm({ view, N, code, onSaved, onRefresh, onCancel, guestApi }: { v
 }
 
 type GeneralReply = { id: string; name: string; attending: boolean; count: number; more: FollowUp };
+const generalOf = (r: GuestGeneralReply): GeneralReply => ({ id: r.id, name: r.name, attending: r.attending, count: r.count, more: emptyFollowUp(r) });
 
 /** the general link's reply: the same question, answers and wording as a personal link, with the guest's name first.
  *  Validation is ours, in Arabic, next to the field (never the browser's English bubble). With `initial` it corrects

@@ -1,7 +1,7 @@
 /** Public, self-contained demo snapshot. It carries no organizer notes, phone numbers or account data.
  * Replies to this snapshot stay on the guest's device; they never mutate the organizer's store. */
 import type { Event, InvitationDesignContent, InvitationParty } from './types';
-import type { GuestApi, GuestView, GuestRsvpInput } from '../services/contracts';
+import type { GuestApi, GuestGeneralReply, GuestView, GuestRsvpInput } from '../services/contracts';
 import { validateRsvp, RSVP_ERROR_TEXT } from './parties';
 import { checkAnswers, cleanAnswers } from './guest-experience';
 import { EVENT_TYPES, eventEnd, eventStart } from './event';
@@ -51,6 +51,7 @@ export function readPortableView(raw: unknown, slug: string, code?: string): Gue
     const dialect = parseDialect(copy.dialect);
     if (dialect === 'ar') delete copy.dialect; else copy.dialect = dialect;
     if (copy.party) copy.party = { code: copy.party.code, name: copy.party.name, maxPartySize: copy.maxGuests, rsvpStatus: 'pending', checkedInCount: 0 };
+    delete copy.reply;
     copy.phase = 'before'; copy.canEdit = true;
     return copy;
   } catch { return null; }
@@ -66,7 +67,9 @@ export function createPortableGuestApi(initial: GuestView, storage?: Pick<Storag
     return structuredClone(current);
   };
   try {
-    const saved = JSON.parse(storage?.getItem(key) ?? 'null') as { party?: GuestView['party'] } | null;
+    const saved = JSON.parse(storage?.getItem(key) ?? 'null') as { party?: GuestView['party']; reply?: GuestGeneralReply } | null;
+    // the general link keeps this device's own reply (name, answer and follow-up), so a reload shows it, ready to correct
+    if (!current.party && saved?.reply) { const r = readGeneralReply(saved.reply, current.maxGuests); if (r) current.reply = r; }
     if (saved?.party && current.party && saved.party.code === current.party.code && saved.party.maxPartySize === current.maxGuests && ['confirmed', 'declined'].includes(saved.party.rsvpStatus)) {
       const count = saved.party.confirmedPartySize ?? 0;
       if (saved.party.rsvpStatus === 'declined' || (Number.isInteger(count) && count > 0 && count <= current.maxGuests)) current.party = { ...current.party, ...saved.party, name: current.party.name, checkedInCount: 0 };
@@ -88,8 +91,25 @@ export function createPortableGuestApi(initial: GuestView, storage?: Pick<Storag
       if (current.party) {
         current.party = { ...current.party, rsvpStatus: input.attending ? 'confirmed' : 'declined', confirmedPartySize: input.attending ? input.count : undefined, companionNames: input.companionNames, guestNote: input.note, ...(current.experience ? cleanAnswers(current.experience, input) : {}) };
         try { storage?.setItem(key, JSON.stringify({ party: current.party })); } catch { /* the current view still works without persistence */ }
+      } else {
+        const answers = current.experience && input.attending ? cleanAnswers(current.experience, input) : {};
+        const companions = input.attending ? (input.companionNames ?? []).map((n) => n.trim()).filter(Boolean).slice(0, Math.max(0, input.count - 1)) : [];
+        current.reply = { id: 'device-demo', name: input.name!.trim(), attending: input.attending, count: input.attending ? input.count : 0, ...(companions.length ? { companionNames: companions } : {}), ...answers };
+        try { storage?.setItem(key, JSON.stringify({ reply: current.reply })); } catch { /* the current view still works without persistence */ }
       }
       return { ...refreshPhase(), responseId: 'device-demo' };
     },
+  };
+}
+
+/** a stored general-link reply, checked before it is shown again (damaged or out-of-range entries are dropped) */
+function readGeneralReply(raw: unknown, maxGuests: number): GuestGeneralReply | null {
+  const r = raw as GuestGeneralReply;
+  if (!r || typeof r !== 'object' || typeof r.name !== 'string' || !r.name.trim() || typeof r.attending !== 'boolean' || typeof r.id !== 'string') return null;
+  if (r.attending ? !(Number.isInteger(r.count) && r.count >= 1 && r.count <= maxGuests) : r.count !== 0) return null;
+  const companions = Array.isArray(r.companionNames) ? r.companionNames.filter((n): n is string => typeof n === 'string').slice(0, Math.max(0, r.count - 1)) : [];
+  return {
+    id: r.id, name: r.name.trim(), attending: r.attending, count: r.count, ...(companions.length ? { companionNames: companions } : {}),
+    ...(Array.isArray(r.meals) ? { meals: r.meals } : {}), ...(r.dietary && typeof r.dietary === 'object' ? { dietary: r.dietary } : {}),
   };
 }

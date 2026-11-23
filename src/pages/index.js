@@ -112,7 +112,7 @@ const rsvp = {
       <label for="st-name" style="display: flex; justify-content: center; gap: 8px; align-items: baseline"><span class="ar" style="font-size: 15px">${T.yourName.ar}</span><span dir="ltr" style="font-size: 13px; font-style: italic; color: ${t.muted}">${T.yourName.en}</span></label>
       <input id="st-name" name="name" class="st-field" type="text" autocomplete="name" value="${e(r.name)}" placeholder="${T.namePlaceholder}" style="border-bottom-color: ${t.accent}${r.locked ? '; border-bottom-style: dotted; opacity: .92' : ''}" aria-describedby="st-need"${r.locked ? ' readonly aria-readonly="true"' : ''}>
     </div>
-    <div class="fx-rise fx-d3" role="group" aria-label="رد الحضور" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+    <div class="fx-rise fx-d3" role="group" aria-label="${T.replyGroup}" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
       <button type="button" class="st-pill" data-attend="yes" aria-pressed="false" style="border-color: ${t.accent}">
         <span class="ar" style="font-size: 15px; line-height: 1.4">${T.accept.ar}</span><span dir="ltr" style="font-size: 13px; font-style: italic">${T.accept.en}</span>
       </button>
@@ -123,9 +123,9 @@ const rsvp = {
     <div class="fx-rise fx-d4 rsvp-guests-row" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-top: 1px solid ${t.accent}; border-bottom: 1px solid ${t.accent}">
       <div style="display: flex; flex-direction: column; align-items: flex-start"><span class="ar" id="st-guests-l" style="font-size: 15px">${T.guests.ar}</span><span dir="ltr" style="font-size: 13px; font-style: italic; color: ${t.muted}">${T.guests.en}</span></div>
       <div dir="ltr" style="display: flex; align-items: center; gap: 4px" role="group" aria-labelledby="st-guests-l" aria-describedby="st-guests-h">
-        <button type="button" class="st-round" data-guests="-1" aria-label="إنقاص عدد الحاضرين"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button>
+        <button type="button" class="st-round" data-guests="-1" aria-label="${T.fewer}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button>
         <output class="rsvp-guests" aria-live="polite" style="font-size: 28px; width: 32px; text-align: center">${e(localDigits(r.guests, c.digits))}</output>
-        <button type="button" class="st-round" data-guests="1" aria-label="زيادة عدد الحاضرين"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+        <button type="button" class="st-round" data-guests="1" aria-label="${T.more}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
       </div>
     </div>
     <p id="st-guests-h" class="ar rsvp-guests-row rsvp-hint" style="margin: -12px 0 0; font-size: 12px; text-align: center; color: ${t.muted}">${T.guestsHint}</p>
@@ -133,7 +133,7 @@ const rsvp = {
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M9 12.5l2 2 4-4.5"></path></svg>
       <span class="ar" style="font-size: 16px">${T.sealSend.ar}</span><span dir="ltr" style="font-size: 14px; font-style: italic">${T.sealSend.en}</span>
     </button>
-    <p id="st-need" class="rsvp-need" aria-live="assertive" style="margin: -6px 0 0; font-size: 13.5px; text-align: center; color: ${t.aText}"><span class="ar">${T.need.ar}</span> · <span dir="ltr">${T.need.en}</span></p>
+    <p id="st-need" class="rsvp-need" aria-live="assertive" style="margin: -6px 0 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0 5px; font-size: 14px; font-weight: 600; text-align: center; color: ${t.ink}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5.5M12 16.5v.01"></path></svg><span class="ar rsvp-need-ar">${T.need.ar}</span> · <span class="rsvp-need-en" dir="ltr">${T.need.en}</span></p>
     <p class="rsvp-save-error" role="alert" hidden style="margin: -6px 0 0; font-size: 13.5px; text-align: center; color: #9b2729"></p>
   </form>`; },
 };

@@ -47,6 +47,31 @@ test('general portable responses never invent a personal QR identity', async () 
   assert.equal(saved.party, null);
 });
 
+test('a general-link reply is kept on this device: a reload shows it, a correction replaces it, a damaged entry is ignored', async () => {
+  const mem = new Map<string, string>();
+  const storage = { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v) };
+  const general = () => portableView(event, defaultDesign(event));
+  assert.equal((await createPortableGuestApi(general(), storage).open(event.slug)).reply, undefined, 'a fresh device has no reply');
+  const sent = await createPortableGuestApi(general(), storage).submitRsvp(event.slug, null, { name: ' سلمى ', attending: true, count: 2, companionNames: ['نوف', 'زائد'] });
+  assert.deepEqual(sent.reply && { name: sent.reply.name, count: sent.reply.count, companions: sent.reply.companionNames }, { name: 'سلمى', count: 2, companions: ['نوف'] });
+  // «reload»: a new API over the same device storage
+  const reopened = await createPortableGuestApi(general(), storage).open(event.slug);
+  assert.equal(reopened.reply?.name, 'سلمى'); assert.equal(reopened.reply?.attending, true); assert.equal(reopened.reply?.count, 2);
+  assert.equal(reopened.party, null, 'still no personal identity');
+  await createPortableGuestApi(general(), storage).submitRsvp(event.slug, null, { name: 'سلمى', attending: false, count: 0, replaces: reopened.reply!.id });
+  const corrected = await createPortableGuestApi(general(), storage).open(event.slug);
+  assert.equal(corrected.reply?.attending, false); assert.equal(corrected.reply?.count, 0);
+  // a stored reply that does not fit this invitation is dropped, never shown
+  for (const bad of ['{"reply":{"id":"x","name":"","attending":true,"count":1}}', '{"reply":{"id":"x","name":"س","attending":true,"count":9}}', 'not json']) {
+    const [key] = [...mem.keys()];
+    mem.set(key!, bad);
+    assert.equal((await createPortableGuestApi(general(), storage).open(event.slug)).reply, undefined, bad);
+  }
+  // a shared link never carries someone's reply
+  const carried = decodePortableView(encodePortableView({ ...general(), reply: { id: 'r', name: 'غريب', attending: true, count: 1 } }), event.slug);
+  assert.equal(carried?.reply, undefined);
+});
+
 test('SMS and WhatsApp encode one validated normalized recipient; copied links include guests without phone', () => {
   assert.equal(smsUrl('05 5987 6543', 'مرحبا & رابط', false), 'sms:+966559876543?body=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%20%26%20%D8%B1%D8%A7%D8%A8%D8%B7');
   assert.ok(smsUrl('+966559876543', 'رابط', true)?.startsWith('sms:+966559876543&body='));
