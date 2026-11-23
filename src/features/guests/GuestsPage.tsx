@@ -143,6 +143,8 @@ export function GuestsPage({ event }: { event: Event }) {
   useEffect(() => {
     if (shareParam !== 'unsent' || parties.loading || design.loading) return;
     if (unsent.length && manage) setQueue({ ids: unsent.map((p) => p.id), mode: 'invite' });
+    // the editor's «أرسل للضيوف» with nobody on the list yet: the first step is adding a guest, so its sheet opens
+    else if (!all.length && manage) setAdding(true);
     setParam('share', null);
   }, [shareParam, parties.loading, design.loading]); // eslint-disable-line react-hooks/exhaustive-deps
 

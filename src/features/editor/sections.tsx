@@ -37,10 +37,10 @@ function SecHead({ title, hint, children }: { title: string; hint?: ReactNode; c
 }
 
 // ------------------------------------------------------------------ the event's own details (shared, single source)
-export interface EventDraft { a: string; b: string; aEn: string; bEn: string; date: string; time: string; venue: string; city: string; mapUrl: string }
+export interface EventDraft { a: string; b: string; aEn: string; bEn: string; date: string; time: string; venue: string; city: string; venueEn: string; cityEn: string; mapUrl: string }
 export const eventFields = (e: Event): EventDraft => ({
   a: e.names.a, b: e.names.b ?? '', aEn: e.names.aEn ?? '', bEn: e.names.bEn ?? '',
-  date: e.date, time: e.time, venue: e.venue.name, city: e.venue.city, mapUrl: e.venue.mapUrl ?? '',
+  date: e.date, time: e.time, venue: e.venue.name, city: e.venue.city, venueEn: e.venue.nameEn ?? '', cityEn: e.venue.cityEn ?? '', mapUrl: e.venue.mapUrl ?? '',
 });
 export const sameDraft = (x: EventDraft, y: EventDraft) => (Object.keys(x) as Array<keyof EventDraft>).every((k) => x[k] === y[k]);
 export type EventDraftErrors = Partial<Record<keyof EventDraft, string>>;
@@ -77,9 +77,12 @@ export function eventPatch(e: Event, d: EventDraft): UpdateEventInput {
   }
   if (d.date !== was.date) patch.date = d.date;
   if (d.time !== was.time) patch.time = d.time;
-  if (d.venue !== was.venue || d.city !== was.city || d.mapUrl !== was.mapUrl) patch.venue = { ...e.venue, name: d.venue.trim(), city: d.city.trim(), mapUrl: d.mapUrl.trim() || undefined };
+  if (d.venue !== was.venue || d.city !== was.city || d.venueEn !== was.venueEn || d.cityEn !== was.cityEn || d.mapUrl !== was.mapUrl) patch.venue = venueOf(e, d);
   return patch;
 }
+
+/** the place as typed; the English names of the place are optional (in «إضافة نص إنجليزي») */
+const venueOf = (e: Event, d: EventDraft): Event['venue'] => ({ ...e.venue, name: d.venue.trim(), city: d.city.trim(), nameEn: d.venueEn.trim() || undefined, cityEn: d.cityEn.trim() || undefined, mapUrl: d.mapUrl.trim() || undefined });
 
 /** the event as the card should show it: valid edits appear as they are typed, before the event is saved */
 export function previewEvent(e: Event, d: EventDraft): Event {
@@ -89,7 +92,7 @@ export function previewEvent(e: Event, d: EventDraft): Event {
     names: { ...names, a: names.a || e.names.a, b: isCoupleEvent(e.type) ? names.b || e.names.b : undefined },
     date: /^\d{4}-\d{2}-\d{2}$/.test(d.date) ? d.date : e.date,
     time: /^\d{2}:\d{2}$/.test(d.time) ? d.time : e.time,
-    venue: { ...e.venue, name: d.venue.trim(), city: d.city.trim(), mapUrl: d.mapUrl.trim() || undefined },
+    venue: venueOf(e, d),
   };
 }
 
@@ -164,6 +167,8 @@ export function TextSection({ event, draft, onDraft, errors, content, update }: 
         <div className="ed-fields">
           <Field label={t('esNameEn', { label: labelA })}><Input ltr data-event-field="aEn" {...ev('aEn')} /></Field>
           {couple && <Field label={t('esNameEn', { label: labelB })}><Input ltr data-event-field="bEn" {...ev('bEn')} /></Field>}
+          <Field label={t('esNameEn', { label: t('esVenue') })}><Input ltr data-event-field="venueEn" {...ev('venueEn')} /></Field>
+          <Field label={t('esNameEn', { label: t('esCity') })}><Input ltr data-event-field="cityEn" {...ev('cityEn')} /></Field>
           <Field label={t('esMessageEn')}><Textarea rows={3} dir="ltr" value={content.message.en} onChange={(e) => { setArEdited(false); update({ message: { ...content.message, en: e.target.value } }); }} /></Field>
         </div>
       </details>

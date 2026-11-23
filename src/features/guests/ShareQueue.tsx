@@ -7,6 +7,7 @@
  *     (the button says so; if the clipboard fails, the links show to copy by hand and nothing is recorded until
  *     «أرسلتها»), or add a number
  *   · one short line explains the queue — no stack of disclaimers
+ *   · the general link (one link without a name, for groups) can be switched on and copied here, under the channels
  *   · mode «remind»: the same queue with the reply-reminder text; a guest counts as reminded only after «أرسلتها»
  *     (there is no simulated reminder anywhere — opening WhatsApp proves nothing)
  */
@@ -21,6 +22,7 @@ import { errorMessage } from '../../services/errors';
 import { haptic } from '../../ui/motion/motion';
 import { useCopy } from '../../ui/copy';
 import { copyText } from '../shared/CopyField';
+import { GeneralLinkCard } from '../shared/GeneralLinkCard';
 import { inviteMessage, reminderMessage, smsUrl, whatsappUrl } from './share';
 
 type Channel = 'whatsapp' | 'sms';
@@ -125,6 +127,8 @@ export function ShareQueue({ event, parties, urlFor, linkFor, onClose, onAddPhon
         {typeof navigator.share === 'function' && <Button icon="share" onClick={() => void nativeShare()}>{t('pdDeviceShare')}</Button>}
       </div>
       {noPhone.length > 0 && !ready.length && withoutPhone}
+      {/* one link without a name, for groups: its switch and the link to copy (it used to sit on the invitation page) */}
+      {!remind && <GeneralLinkCard event={event} />}
       {resumed && index > 0 && index < ready.length && <p className="faint t-sm">{t('sqResume', { i: index, n: ready.length })}</p>}
       {status}
     </div> : <>

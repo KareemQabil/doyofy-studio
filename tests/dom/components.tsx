@@ -371,6 +371,11 @@ export async function run(){
   const draft=(await made.services.invitations.get(ev.id))?.draft;if(draft){assert.equal(draft.message.en,'');assert.deepEqual(draft.program,[]);}
   // back goes to the event, not to a summary page
   assert.equal(document.querySelector('.ed-close')!.getAttribute('aria-label'),'حفظ والعودة إلى المناسبة');
+  // the place's English names live with the other English (they left the settings page)
+  const placeEn=document.querySelector<HTMLInputElement>('.ed-english [data-event-field="venueEn"]')!;assert.ok(placeEn,'English place name in «إضافة نص إنجليزي»');
+  assert.ok(document.querySelector('.ed-english [data-event-field="cityEn"]'));
+  await fill(placeEn,'Rayhan Hall');await wait(1100);
+  const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services;assert.equal((await api.events.get(ev.id)).venue.nameEn,'Rayhan Hall');
  });
  await check('review index exposes every journey surface using actual event and guest data',async()=>{
   history.replaceState(null,'','/prototype/screen-review?theme=horizon');await render(<App mode="history"/>);await settle();assert.equal(document.querySelectorAll('.screen-review-group').length,6);assert.ok(document.querySelector('.screen-review-group a[href$="/invitation/preview"]'));assert.ok(document.querySelector('.screen-review-group a[href^="/i/"]'));assert.ok(document.querySelector('.screen-review-group a[href$="/more"]'));
