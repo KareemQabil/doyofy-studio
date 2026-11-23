@@ -2,8 +2,9 @@
  * The account's own sounds: uploaded music and a recorded voice welcome. This module holds the small METADATA
  * (name, kind, start point, fade) in localStorage so React and the engine can read it synchronously; the bytes go
  * through the AudioStore (audio-store.ts — IndexedDB in this prototype, a server store later).
- * Links carry a track id, never bytes: until a server store is connected, uploads play on this device only and
- * guests elsewhere silently get the built-in sound.
+ * Links carry a track id, never bytes. With the backend on (services/cloud/sync.ts) the bytes are also uploaded and what
+ * guests receive carries their public URL; without it, uploads play on this device only and guests elsewhere silently get
+ * the built-in sound.
  */
 import { audioStore, type AudioStore } from './audio-store';
 
@@ -36,7 +37,14 @@ export interface AudioLibrary { tracks: AudioTrack[]; defaultTrackId?: string }
  * The invitation's sound choice. `default` = the account default (a track, or built-in); after resolution it never
  * remains: `builtin` | `library` | `off`. The voice welcome is independent of the music choice.
  */
-export interface AudioSelection { mode: 'default' | 'builtin' | 'library' | 'off'; trackId?: string; trackName?: string; voiceId?: string; voiceName?: string }
+export interface AudioSelection {
+  mode: 'default' | 'builtin' | 'library' | 'off'; trackId?: string; trackName?: string; voiceId?: string; voiceName?: string;
+  /** added by the backend sync to what guests receive (never stored in the design): the uploaded files' public URLs and
+   *  the music's start point and fade, so a guest's device can play them without this account's library */
+  trackUrl?: string; trackStart?: number; trackFade?: number; voiceUrl?: string;
+}
+/** only Vercel Blob public audio paths are ever fetched (vercel.json CSP allows exactly that host) */
+export const isRemoteAudioUrl = (u: unknown): u is string => typeof u === 'string' && /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/a\/[a-z0-9-]+\/[A-Za-z0-9._-]+$/.test(u);
 
 /** Error codes; the UI words live in copy.ts (audioErr*). */
 export type AudioIssue = 'type' | 'empty' | 'size' | 'full' | 'storage' | 'decode' | 'voiceLong';
@@ -208,12 +216,21 @@ export function legacyBlob(entry: { mime: string; bytes: number; dataUrl: string
   } catch { return null; }
 }
 
-/** The bytes for a track: the store first, then (until migrated) the v1 inline copy. Null = not on this device. */
-export async function loadAudioTrackBlob(id: string, store: AudioStore = audioStore()): Promise<Blob | null> {
+/**
+ * The bytes for a track: the store first, then (until migrated) the v1 inline copy, then — on a guest's device — the
+ * uploaded copy at `remoteUrl`. Null = not available here.
+ */
+export async function loadAudioTrackBlob(id: string, store: AudioStore = audioStore(), remoteUrl?: string): Promise<Blob | null> {
   const saved = await store.get(id).catch(() => null);
   if (saved) return saved;
   const legacy = legacyEntries().find(t => t.id === id);
-  return legacy ? legacyBlob(legacy) : null;
+  if (legacy) return legacyBlob(legacy);
+  if (!isRemoteAudioUrl(remoteUrl)) return null;
+  try {
+    const r = await fetch(remoteUrl);
+    const blob = r.ok ? await r.blob() : null;
+    return blob && blob.size > 0 && blob.size <= MAX_AUDIO_BYTES ? blob : null;
+  } catch { return null; }
 }
 
 let migrating: Promise<number> | null = null;
@@ -244,18 +261,22 @@ export function migrateLegacyAudioLibrary(store: AudioStore = audioStore()): Pro
 // ---------------------------------------------------------------- the invitation's choice
 /** Resolve the account default at render/share time; missing deleted uploads keep their reference (the engine falls back to built-in). */
 export function resolveAudioSelection(selection?: AudioSelection, library = readAudioLibrary()): AudioSelection {
-  const voice: Pick<AudioSelection, 'voiceId' | 'voiceName'> = {};
+  const voice: Pick<AudioSelection, 'voiceId' | 'voiceName' | 'voiceUrl'> = {};
   if (selection?.voiceId) {
     const v = library.tracks.find(t => t.id === selection.voiceId && t.kind === 'voice');
     voice.voiceId = selection.voiceId; voice.voiceName = v?.name ?? selection.voiceName;
     if (!voice.voiceName) delete voice.voiceName;
+    if (!v && isRemoteAudioUrl(selection.voiceUrl)) voice.voiceUrl = selection.voiceUrl;
   }
+  // a guest's device: the uploaded copy and how the organizer trimmed it travel with the invitation
+  const remote: Pick<AudioSelection, 'trackUrl' | 'trackStart' | 'trackFade'> = isRemoteAudioUrl(selection?.trackUrl)
+    ? { trackUrl: selection.trackUrl, trackStart: Math.max(0, Number(selection.trackStart) || 0), trackFade: clampFadeIn(selection.trackFade ?? 0) } : {};
   if (selection?.mode === 'off') return { mode: 'off', ...voice };
   if (selection?.mode === 'builtin') return { mode: 'builtin', ...voice };
   const id = selection?.mode === 'library' ? selection.trackId : library.defaultTrackId;
   const track = library.tracks.find(t => t.id === id && t.kind === 'music');
   if (track) return { mode: 'library', trackId: track.id, trackName: track.name, ...voice };
   // Keep a shared upload reference so the receiving device can explain its absence (organizer only).
-  if (selection?.mode === 'library' && selection.trackId) return { mode: 'library', trackId: selection.trackId, ...(selection.trackName ? { trackName: selection.trackName } : {}), ...voice };
+  if (selection?.mode === 'library' && selection.trackId) return { mode: 'library', trackId: selection.trackId, ...(selection.trackName ? { trackName: selection.trackName } : {}), ...remote, ...voice };
   return { mode: 'builtin', ...voice };
 }

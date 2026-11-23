@@ -121,7 +121,9 @@ export interface ProgramItem { time: LocalTime; ar: string; en: string }
 /** Everything about the invitation that is NOT event data. Event data (date, venue…) is merged in at render time. */
 export interface InvitationDesignContent {
   /** sound choice (none / built-in / my music) + optional voice welcome; see domain/audio-library.ts */
-  audio?: { mode: 'default' | 'builtin' | 'library' | 'off'; trackId?: string; trackName?: string; voiceId?: string; voiceName?: string };
+  audio?: { mode: 'default' | 'builtin' | 'library' | 'off'; trackId?: string; trackName?: string; voiceId?: string; voiceName?: string;
+    /** only in what guests receive from the backend (see AudioSelection) */
+    trackUrl?: string; trackStart?: number; trackFade?: number; voiceUrl?: string };
   experience: { dimension: Dimension; motion: Motion };
   cardId: string;
   sceneId: string;

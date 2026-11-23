@@ -8,7 +8,8 @@
   "include": [
     "../../src/**/*.ts",
     "../../src/**/*.tsx",
-    "./*.ts"
+    "./*.ts",
+    "../../api/**/*.ts"
   ],
   "exclude": [
     "../../src/vendor/**"

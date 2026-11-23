@@ -22,6 +22,7 @@ import { normalisePhone } from '../../domain/phone';
 import { validateTable } from '../../domain/seating';
 import { validateRsvp, RSVP_ERROR_TEXT } from '../../domain/parties';
 import { validateRemoteConfig, type RemoteConfig } from './config';
+import { CLOUD_OFF } from '../cloud/state';
 import { appError, appErrorFromEnvelope, reasonOf } from './remoteErrors';
 import { eq, isNetworkError, SupabaseRest } from './supabaseRest';
 import {
@@ -312,6 +313,8 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
 
     session: { currentUser: () => config.currentUser?.() ?? anonymousUser },
     clock: { now },
+    // the Supabase adapter is its own server: the Vercel sync layer stays off
+    cloud: CLOUD_OFF,
     /** fires after this tab's own successful writes. Cross-device live updates need Supabase Realtime (not implemented). */
     onChange: (fn) => { listeners.add(fn); return () => { listeners.delete(fn); }; },
 
