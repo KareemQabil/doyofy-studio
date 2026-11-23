@@ -41,7 +41,7 @@
 .gx-pill:active, .gx-chip:active { transform: scale(.97); }
 .gx-pill.is-on, .gx-chip.is-on { background: var(--c-text); color: var(--c-surface); box-shadow: none; }
 .gx-chip.is-allergy.is-on { background: var(--c-danger); color: #fff; }
-.gx-pill.is-sm { min-block-size: 40px; min-inline-size: 40px; padding: 0 var(--s-3); justify-content: center; }
+.gx-pill.is-sm { min-block-size: 44px; min-inline-size: 44px; padding: 0 var(--s-3); justify-content: center; }
 .gx-needs { display: grid; gap: var(--s-2); padding: var(--s-4); border-radius: var(--r-md); background: var(--c-surface-sunken); animation: gx-unfold .32s cubic-bezier(.2,.8,.2,1); }
 .gx-needs .gx-sub:not(:first-child) { margin-block-start: var(--s-2); }
 .gx-affected { margin-block-start: var(--s-2); }

@@ -128,7 +128,7 @@ const coreSaudi: Variants<typeof coreModern> = {
  
   addGuest: 'أضف ضيف', guestsSearch: 'ابحث بالاسم أو رقم الجوال', noGuests: 'ما لقينا ضيوف بهالبيانات', pendingReply: 'بانتظار الرد', confirmedReply: 'أكد حضوره', moveGuest: 'انقل الضيف', moveGuests: 'انقل الضيوف', exportFile: 'نزّل ملف', exportSelected: 'نزّل المحدد', selectAll: 'حدّد الكل', tableGesture: 'اسحب الضيف لطاولته، أو اختر «نقل»', assignTable: 'اختر طاولة',
   guestSendReply: 'أرسلوا الرد',
-  guestSealHint: 'اسحبوا الختم لفوق', guestSealLabel: 'افتحوا الدعوة: اضغطوا على الختم أو اسحبوه لفوق', guestSkipToDetails: 'الموعد وتأكيد الحضور على طول',
+  guestSealHint: 'اسحبوا الختم لفوق', guestSealLabel: 'افتحوا الدعوة: اضغطوا على الختم أو اسحبوه لفوق', guestSkipToDetails: 'الموعد وتأكيد الحضور مباشرة',
   guestAttendQuestion: 'بتشرّفونا؟', guestAccept: 'بنحضر بإذن الله', guestDecline: 'نعتذر ما نقدر نحضر', guestChooseReply: 'اختاروا بتحضرون أو لا', guestNameRequired: 'اكتبوا اسمكم عشان صاحب المناسبة يعرف مين ردّ.',
   guestConfirmed: 'تم تأكيد حضوركم', guestDeclined: 'وصلنا اعتذاركم', guestReplyArrived: 'وصلنا ردّكم', guestEditReply: 'عدّلوا ردّكم', guestShowCode: 'اعرضوا الرمز على فريق الاستقبال أول ما توصلون.',
   guestZoomCode: 'اضغطوا عشان يكبر عند الباب', guestCodeTip: 'ارفعوا إضاءة الشاشة إذا احتجتوا، واسحبوا لتحت عشان ترجعون.', guestWatchAgain: 'شوفوا الدعوة مرة ثانية',

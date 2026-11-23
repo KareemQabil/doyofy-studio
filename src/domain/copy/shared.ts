@@ -7,7 +7,7 @@ import { voiced } from './group';
 export const SHARED = voiced({
   // the guest's invitation page before it opens (guests are always addressed in the plural)
   shOpening: 'جارٍ فتح الدعوة', shLinkBroken: 'الرابط غير مكتمل', shAskAgain: 'اطلبوا رابط الدعوة مرة أخرى من صاحب المناسبة.', shNotYet: 'الدعوة غير متاحة بعد', shNotFound: 'لم نجد هذه الدعوة',
-  shRetryGuests: 'أعيدوا المحاولة', shPlayFailed: 'تعذّر تشغيل الدعوة', shPrivateTo: 'دعوة خاصة إلى', shForYou: 'دعوة لكم',
+  shRetryGuests: 'أعيدوا المحاولة', shPlayFailed: 'تعذّر تشغيل الدعوة', shPrivateTo: 'دعوة خاصة إلى {name}', shForYou: 'دعوة لكم',
   shZoomQr: 'تكبير رمز الدخول لـ{name}', shQrFor: 'رمز QR لدخول {name}', shQrBig: 'رمز الدخول بحجم كبير', shPassFor: 'بطاقة دخول {name}',
   // previews of the invitation
   shGuestName: 'اسم الضيف', shPreviewPublished: 'معاينة الدعوة المنشورة', shPreviewDraft: 'معاينة المسودة — هذه التعديلات ليست منشورة للضيوف', shNoReply: 'لن يُسجل أي رد',
@@ -33,7 +33,7 @@ export const SHARED = voiced({
   shEditParty: 'تعديل {name}', shScope: 'نطاق التوزيع', shSides: 'الجهات', shNoSide: 'بلا جهة', shOverCapB: 'فوق السعة', shSuggestedOf: '، منها {n} مقترحة', shOverByB: '، فوق السعة بـ{n}',
 }, {
   shOpening: 'بنفتح الدعوة', shLinkBroken: 'اللينك ناقص', shAskAgain: 'اطلبوا لينك الدعوة تاني من صاحب المناسبة.', shNotYet: 'الدعوة لسه مش متاحة', shNotFound: 'ملقيناش الدعوة دي',
-  shRetryGuests: 'جرّبوا تاني', shPlayFailed: 'الدعوة ما اشتغلتش', shPrivateTo: 'دعوة خاصة باسم', shForYou: 'دعوة ليكم',
+  shRetryGuests: 'جرّبوا تاني', shPlayFailed: 'الدعوة ما اشتغلتش', shPrivateTo: 'دعوة خاصة لـ{name}', shForYou: 'دعوة ليكم',
   shZoomQr: 'كبّروا كود الدخول لـ{name}', shQrFor: 'كود QR لدخول {name}', shQrBig: 'كود الدخول كبير', shPassFor: 'كارت دخول {name}',
   shGuestName: 'اسم الضيف', shPreviewPublished: 'معاينة الدعوة المنشورة', shPreviewDraft: 'معاينة المسودة — التعديلات دي لسه ما اتنشرتش للضيوف', shNoReply: 'مفيش رد هيتسجل',
   shPreviewShort: 'معاينة', shDraftShort: 'معاينة المسودة', shClosePreview: 'اقفل المعاينة', shPreparing: 'بنجهّز المعاينة', shLiveLabel: 'معاينة مباشرة للدعوة', shPreparingDots: 'بنجهّز المعاينة…',
@@ -54,7 +54,7 @@ export const SHARED = voiced({
   shEditParty: 'عدّل {name}', shScope: 'نطاق التوزيع', shSides: 'الجهات', shNoSide: 'من غير جهة', shOverCapB: 'فوق السعة', shSuggestedOf: '، منهم {n} مقترحين', shOverByB: '، فوق السعة بـ{n}',
 }, {
   shOpening: 'نفتح الدعوة', shLinkBroken: 'الرابط ناقص', shAskAgain: 'اطلبوا رابط الدعوة مرة ثانية من صاحب المناسبة.', shNotYet: 'الدعوة مو متاحة للحين', shNotFound: 'ما لقينا هالدعوة',
-  shRetryGuests: 'جرّبوا مرة ثانية', shPlayFailed: 'ما اشتغلت الدعوة', shPrivateTo: 'دعوة خاصة باسم', shForYou: 'دعوة لكم',
+  shRetryGuests: 'جرّبوا مرة ثانية', shPlayFailed: 'ما اشتغلت الدعوة', shPrivateTo: 'دعوة خاصة لـ{name}', shForYou: 'دعوة لكم',
   shZoomQr: 'كبّروا رمز الدخول لـ{name}', shQrFor: 'رمز QR لدخول {name}', shQrBig: 'رمز الدخول بحجم كبير', shPassFor: 'بطاقة دخول {name}',
   shGuestName: 'اسم الضيف', shPreviewPublished: 'معاينة الدعوة المنشورة', shPreviewDraft: 'معاينة المسودة — هالتعديلات ما نُشرت للضيوف', shNoReply: 'ما راح يتسجّل أي رد',
   shPreviewShort: 'معاينة', shDraftShort: 'معاينة المسودة', shClosePreview: 'سكّر المعاينة', shPreparing: 'نجهّز المعاينة', shLiveLabel: 'معاينة مباشرة للدعوة', shPreparingDots: 'نجهّز المعاينة…',

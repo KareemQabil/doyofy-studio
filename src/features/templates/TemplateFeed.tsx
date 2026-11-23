@@ -21,6 +21,7 @@ import { CardThumb } from '../invitation/CardThumb';
 import { LivePreview } from '../invitation/LivePreview';
 import { CopyField } from '../shared/CopyField';
 import { useTemplateShare } from './template-share';
+import { useMedia } from '../signature/useMedia';
 
 export type FeedFilter = { id: string; label: string; count: number };
 
@@ -57,6 +58,8 @@ export function TemplateFeed({ presets, preset, event, base, current, currentLab
   emptyAction?: () => void;
 }) {
   const { t } = useCopy();
+  // a mouse and keyboard browse with the arrows; only touch is told to swipe
+  const fine = useMedia('(hover: hover) and (pointer: fine)');
   const { share, copyUrl } = useTemplateShare(event.type);
   const frame = useRef<HTMLDivElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
@@ -116,7 +119,7 @@ export function TemplateFeed({ presets, preset, event, base, current, currentLab
   const content = shown ? applyPreset(base, shown) : base;
 
   return <div ref={frame} className={`tf${fit.bottom ? ' is-row-rail' : ''}`} style={{ '--tf-card': `${fit.card}px`, '--tf-pad-end': `${fit.padEnd}px`, '--tf-rail-inset': `${fit.railInset}px`, '--tf-bottom': `${fit.bottom}px` } as React.CSSProperties}>
-    <div ref={scroll} className="tf-scroll template-feed-scroll" tabIndex={0} role="region" aria-label={`${t('templateBrowse')} — ${t('templateSwipe')}`} aria-roledescription={t('tfRole')} onKeyDown={keyDown}
+    <div ref={scroll} className="tf-scroll template-feed-scroll" tabIndex={0} role="region" aria-label={`${t('templateBrowse')} — ${t(fine ? 'tfKeys' : 'templateSwipe')}`} aria-roledescription={t('tfRole')} onKeyDown={keyDown}
       onScroll={() => {
         clearTimeout(settle.current);
         settle.current = setTimeout(() => {

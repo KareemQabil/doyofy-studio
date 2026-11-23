@@ -48,7 +48,7 @@ export const studioMarkup = () => { const T = currentStrings(); return `
             <div class="st-edge st-el"></div><div class="st-edge st-er"></div><div class="st-edge st-et"></div><div class="st-edge st-eb"></div>
             <div class="st-face st-front"><div class="st-face-slot"></div><div class="st-glint"></div></div>
             <div class="st-face st-back"></div>
-            <button type="button" class="st-cardbtn" aria-label="افتحوا الدعوة"></button>
+            <button type="button" class="st-cardbtn" aria-label="${T.openCard}"></button>
           </div>
         </div>
       </div>
@@ -59,15 +59,17 @@ export const studioMarkup = () => { const T = currentStrings(); return `
     <span class="ar" style="font-size: 14px">${T.tapToOpen.ar}</span><span dir="ltr" style="font-size: 12px; font-style: italic">${T.tapToOpen.en}</span>
   </div></div>
 
-  <section class="st-sheet" aria-label="الدعوة" tabindex="-1">
+  <section class="st-sheet" aria-label="${T.sheet}" tabindex="-1">
     <div class="st-sheet-frame" style="position: absolute; inset: 10px; border: 1px solid; border-radius: 12px; opacity: 0.55; pointer-events: none"></div>
-    <div class="st-close"><button type="button" class="st-round" data-act="close" aria-label="العودة إلى البطاقة">${ICON.close}</button></div>
+    <div class="st-close"><button type="button" class="st-round" data-act="close" aria-label="${T.backToCard}">${ICON.close}</button></div>
     <div style="position: absolute; top: 24px; left: 0; right: 0; text-align: center; pointer-events: none"><span class="st-sheet-mono" style="font-size: 18px"></span></div>
-    <div class="st-page" aria-live="polite"></div>
-    <nav class="st-nav" dir="ltr" aria-label="صفحات الدعوة">
-      <button type="button" class="st-round" data-act="prev" aria-label="الصفحة السابقة">${ICON.up}</button>
+    <div class="st-page"></div>
+    <!-- the one polite live line of the pages: the name of the page just turned to (never the whole page again) -->
+    <p class="st-sr st-page-said" aria-live="polite"></p>
+    <nav class="st-nav" dir="ltr" aria-label="${T.pages}">
+      <button type="button" class="st-round" data-act="prev" aria-label="${T.prevPage}">${ICON.up}</button>
       <div class="st-dots" style="display: flex; align-items: center"></div>
-      <button type="button" class="st-round" data-act="next" aria-label="الصفحة التالية">${ICON.down}</button>
+      <button type="button" class="st-round" data-act="next" aria-label="${T.nextPage}">${ICON.down}</button>
     </nav>
   </section>
 
@@ -95,11 +97,14 @@ export const studioMarkup = () => { const T = currentStrings(); return `
 
   <div class="st-credit" style="position: absolute; top: 343px" aria-hidden="true"></div>
 
-  <div class="st-done" role="status">
+  <!-- the thank-you as a screen reader meets it: focus lands here the moment the reply is sent (the visible screen
+       is still animating in, and a live region would re-read it all, English included) -->
+  <h2 class="st-sr st-done-said" tabindex="-1"></h2>
+  <div class="st-done">
     <svg class="st-dl st-e1" width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="none" stroke="#C9A15F" stroke-width="1"></circle><path d="M21 33 L29 41 L44 24" fill="none" stroke="#F6E2AE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-    <span class="fx-foil st-dl st-e2 done-ar" style="font-size: 60px; line-height: 1.5; margin-top: 10px"></span>
-    <span class="st-dl st-e3 done-en" dir="ltr" style="font-size: 20px; font-style: italic; max-width: 290px; line-height: 1.35"></span>
-    <span class="st-dl st-e4 done-demo" hidden style="font: 500 13px/1.6 'IBM Plex Sans Arabic', sans-serif; color: #F2EAD9; background: rgba(0,0,0,.35); padding: 6px 12px; border-radius: 999px; margin-top: 14px; max-width: 300px">نسخة تجريبية — ردّكم على هذا الجهاز فقط ولا يصل إلى صاحب المناسبة.</span>
+    <span class="fx-foil st-dl st-e2 done-ar" aria-hidden="true" style="font-size: 60px; line-height: 1.5; margin-top: 10px"></span>
+    <span class="st-dl st-e3 done-en" dir="ltr" aria-hidden="true" style="font-size: 20px; font-style: italic; max-width: 290px; line-height: 1.35"></span>
+    <span class="st-dl st-e4 done-demo" aria-hidden="true" hidden style="font: 500 13px/1.6 'IBM Plex Sans Arabic', sans-serif; color: #F2EAD9; background: rgba(0,0,0,.35); padding: 6px 12px; border-radius: 999px; margin-top: 14px; max-width: 300px"></span>
     <span class="st-dl st-e4 done-who" dir="ltr" style="font-size: 12.5px; letter-spacing: 0.3em; color: #E3C58C; margin-top: 18px; max-width: 320px"></span>
     <button type="button" class="st-cta st-dl st-e5" data-act="replay" style="margin-top: 32px; border-color: rgba(227,197,140,.6); color: #F4EAE0; background: transparent">
       ${ICON.replay.replace('width="19" height="19"', 'width="16" height="16"')}
@@ -119,7 +124,7 @@ export const studioMarkup = () => { const T = currentStrings(); return `
     </div>
     <div style="display: flex; gap: 8px">
       <button type="button" class="st-icon" data-act="voice" aria-label="${T.voice}" aria-pressed="false" hidden>${ICON.voice}</button>
-      <button type="button" class="st-icon" data-act="replay" aria-label="إعادة العرض من البداية">${ICON.replay}</button>
+      <button type="button" class="st-icon" data-act="replay" aria-label="${T.replayAll}">${ICON.replay}</button>
       <button type="button" class="st-icon" data-act="sound" aria-label="${T.sound}" aria-pressed="true">${ICON.soundOn}</button>
     </div>
   </div>

@@ -10,7 +10,10 @@ import { FollowUpSheet } from '../../src/features/guest/GuestExtras';
 import { portableView, encodePortableView } from '../../src/domain/portable-invite';
 import { defaultDesign } from '../../src/domain/invitation';
 import { setDialect } from '../../src/data/copy-preference.js';
-import { currentStrings } from '../../src/data/strings.js';
+import { currentStrings, setStringsVoice } from '../../src/data/strings.js';
+import { Studio } from '../../src/studio/Studio.js';
+import { studioMarkup } from '../../src/studio/markup.js';
+import { copyFor } from '../../src/domain/copy';
 
 export async function run() {
   const made = createServices(); made.prototype.update({ latencyMs: 0 }); made.prototype.reset('before');
@@ -180,5 +183,102 @@ export async function run() {
   createServices();
   assert.ok(localStorage.getItem('doyofy:db:v1'), 'organizer routes keep the demo');
   console.log('PASS DOM guest-link visit on a fresh device seeds no organizer data; organizer routes still do');
+
+  // the general link keeps this device's reply: after a reload the page shows it (summary + «تعديل الرد»), not an empty
+  // form, and a correction replaces it
+  localStorage.clear();
+  const general = portableView({ ...event, date: '2099-08-12', guestExperience: undefined, settings: { ...event.settings, allowGeneralLink: true, defaultPartySize: 3 } }, defaultDesign(event));
+  history.replaceState(null, '', `/i/${event.slug}?d=${encodePortableView(general)}`);
+  const guestPhone = createServices(); guestPhone.prototype.update({ latencyMs: 0 });
+  const onPhone = (node: React.ReactNode) => <ServicesProvider {...guestPhone}><RouterProvider mode="history">{node}</RouterProvider></ServicesProvider>;
+  const typeInto = async (el: HTMLInputElement | null | undefined, value: string) => {
+    assert.ok(el);
+    const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+    await act(async () => { set.call(el, value); el.dispatchEvent(new Event('input', { bubbles: true })); });
+  };
+  const genRoot = createRoot(document.getElementById('root')!);
+  await act(async () => genRoot.render(onPhone(<GuestInvite slug={event.slug} />))); await settle();
+  await click(button('الموعد وتأكيد الحضور مباشرة')); await settle();
+  await typeInto(document.querySelector<HTMLInputElement>('main input[autocomplete="name"]'), 'سلمى العتيبي');
+  await click(document.querySelector('input[type="radio"][value="yes"]')); await settle();
+  // more than one person: the general link asks the companions' names too (as a personal link does)
+  assert.ok([...document.querySelectorAll('legend')].some((x) => x.textContent?.includes('أسماء المرافقين')), 'general link asks companions');
+  await typeInto(document.querySelector<HTMLInputElement>('input[aria-label^="اسم المرافق"]'), 'نوف');
+  await click(button('إرسال الرد')); await settle();
+  const hubText = () => document.querySelector('main')?.textContent ?? '';
+  assert.ok(hubText().includes('سلمى العتيبي') && hubText().includes('سنحضر بكل سرور') && hubText().includes('نوف'), 'the reply is summarised');
+  await act(async () => genRoot.unmount());
+  // «reload»: a new page on the same device, same link
+  const reloadRoot = createRoot(document.getElementById('root')!);
+  await act(async () => reloadRoot.render(onPhone(<GuestInvite slug={event.slug} />))); await settle();
+  assert.ok(!document.querySelector('.sig-cover'), 'a guest who replied comes back to the reply, not the cover');
+  assert.ok(hubText().includes('سلمى العتيبي') && hubText().includes('سنحضر بكل سرور'), 'the reply survives a reload');
+  assert.ok(!document.querySelector('main input[autocomplete="name"]'), 'no empty form after a reload');
+  assert.equal((hubText().match(/حُفظ ردكم/g) ?? []).length + (hubText().match(/حُفظ ردّكم/g) ?? []).length, 1, 'the saved line is said once');
+  await click(button('تعديل الرد')); await settle();
+  assert.equal(document.querySelector<HTMLInputElement>('main input[autocomplete="name"]')?.value, 'سلمى العتيبي', 'editing starts from the saved reply');
+  await click(document.querySelector('input[type="radio"][value="no"]'));
+  await click(button('إرسال الرد')); await settle();
+  await act(async () => reloadRoot.unmount());
+  const again = createRoot(document.getElementById('root')!);
+  await act(async () => again.render(onPhone(<GuestInvite slug={event.slug} />))); await settle();
+  assert.ok(hubText().includes('نعتذر عن الحضور') && !hubText().includes('سنحضر بكل سرور'), 'the correction replaced the reply');
+  await act(async () => again.unmount());
+  console.log('PASS DOM general link: the reply persists across a reload with its summary and «تعديل الرد»; a correction replaces it');
+
+  // the same memory on the organizer's own demo service (no ?d=): this device's unhandled general reply comes back
+  const demo = createServices(); demo.prototype.update({ latencyMs: 0 }); demo.prototype.reset('before');
+  const wedding = await demo.services.events.get('evt_wedding');
+  assert.equal((await demo.services.guest.open(wedding.slug)).reply, undefined);
+  const firstReply = await demo.services.guest.submitRsvp(wedding.slug, null, { name: 'ريم', attending: true, count: 2, companionNames: ['هند'] });
+  const back = await demo.services.guest.open(wedding.slug);
+  assert.deepEqual(back.reply && [back.reply.id, back.reply.name, back.reply.count, back.reply.companionNames], [firstReply.responseId, 'ريم', 2, ['هند']]);
+  await demo.services.guest.submitRsvp(wedding.slug, null, { name: 'ريم', attending: false, count: 0, replaces: firstReply.responseId });
+  assert.equal((await demo.services.rsvp.listResponses(wedding.id)).filter((r) => r.name === 'ريم').length, 1, 'a correction stays one reply');
+  const target = (await demo.services.parties.list(wedding.id)).find((x) => x.rsvpStatus === 'pending')!;
+  await demo.services.rsvp.matchResponse(firstReply.responseId, target.id);
+  assert.equal((await demo.services.guest.open(wedding.slug)).reply, undefined, 'once the organizer handled it, the general page starts fresh');
+  console.log('PASS DOM demo service: the device remembers its own unhandled general reply');
+
+  // the invitation engine, on its own markup (jsdom: behaviour only)
+  type Fake = Record<string, unknown> & { host: HTMLElement; sm: { state: string; send: (e: string) => void } };
+  const proto = Studio.prototype as unknown as Record<string, (this: Fake, ...a: unknown[]) => unknown>;
+  const stage = (voice: 'ar' | 'ar-EG' | 'ar-SA'): Fake => {
+    setStringsVoice(voice);
+    const host = document.createElement('div'); host.innerHTML = studioMarkup(); document.body.append(host);
+    const sent: string[] = [];
+    return { host, sent, voice, cleanups: [], embedded: false, swOpen: false, page: 4, leaving: false, stageRect: { scale: 1 },
+      sm: { state: 'pages', send: (e: string) => { sent.push(e); } }, audio: { unlock: () => false, emit: () => {} },
+      el: { sheet: host.querySelector('.st-sheet'), page: host.querySelector('.st-page'), done: host.querySelector('.st-done') },
+      rsvp: { name: '', attending: 'yes', guests: 2, receipt: { demo: true } }, data: { c: { enAU: 'NOURA', arA: 'نورة', dateShort: '12.08' }, digits: 'arab' },
+      theme: { fAr: 'serif' }, doneAction: null, _labelDoneAction: proto._labelDoneAction };
+  };
+  const esc = () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+  // Escape while the follow-up sheet (a dialog above the invitation) is open is the sheet's: the reply page stays
+  const keys = stage('ar');
+  proto._wireInput.call(keys);
+  const sheet = document.createElement('dialog'); sheet.setAttribute('open', ''); document.body.append(sheet);
+  esc();
+  assert.deepEqual(keys.sent, [], 'Escape on an open dialog leaves the invitation on its reply page');
+  sheet.remove();
+  esc();
+  assert.deepEqual(keys.sent, ['close'], 'with no dialog open, Escape still closes the pages');
+  for (const f of keys.cleanups as Array<() => void>) f();
+  keys.host.remove();
+  // the demo's honesty line and the screen-reader labels speak the organizer's voice
+  for (const voice of ['ar', 'ar-EG', 'ar-SA'] as const) {
+    const done = stage(voice), k = copyFor(voice);
+    proto._renderDone.call(done);
+    const line = done.host.querySelector('.done-demo');
+    assert.equal(line?.textContent, k.demoOnly, `${voice}: the demo line is voiced`);
+    assert.equal(line?.hasAttribute('hidden'), false);
+    assert.ok(done.host.querySelector('.st-done-said')?.textContent?.includes(k.demoOnly), `${voice}: focus lands on the thanks with the demo line`);
+    assert.equal(done.host.querySelector('[data-act="close"]')?.getAttribute('aria-label'), k.engBackToCard, `${voice}: the close label is voiced`);
+    assert.ok(!done.host.querySelector('.st-done')?.hasAttribute('role'), 'the done screen is no live region (focus carries it)');
+    done.host.remove();
+  }
+  setStringsVoice(null);
+  assert.equal(copyFor('ar-EG').demoOnly, 'في النسخة دي ردكم بيتحفظ على الجهاز ده بس ومش بيوصل لصاحب المناسبة.');
+  console.log('PASS DOM engine: Escape on the follow-up sheet keeps the reply page; the demo line and SR labels are voiced');
 }
 

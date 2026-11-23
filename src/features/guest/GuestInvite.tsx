@@ -54,7 +54,8 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
       const play = loc.search.get('play') != null;
       if (v.phase === 'after') setMode('hub');
       else if (play) setMode('invitation');
-      else setMode(v.party && v.party.rsvpStatus !== 'pending' ? 'hub' : 'cover');
+      // a guest who has replied (personal, or this device's general-link reply) comes back to their reply, not the cover
+      else setMode((v.party && v.party.rsvpStatus !== 'pending') || (!v.party && v.reply) ? 'hub' : 'cover');
     } catch (e) { setError(e); }
   }, [guestApi, slug, code]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -103,8 +104,13 @@ function InvitationPlayer({ view, code, onSubmitted, onDone, guestApi, demo = fa
   cb.current = { onSubmitted, onDone };
   const send = async (r: EngineReply, more?: FollowUp): Promise<EngineResult> => {
     const count = r.attending ? r.guests : 0;
+    const extra = more ? followUpPayload(view, r.attending, count, more) : {};
+    // a general-link guest who replied before (this device) corrects that reply instead of sending a second one
+    const earlier = !view.party ? view.reply?.id : undefined;
     try {
-      const v = await (guestApi ?? services.guest).submitRsvp(view.event.slug, code, { name: r.name, attending: r.attending, count, ...(more ? followUpPayload(view, r.attending, count, more) : {}) });
+      const sent = await (guestApi ?? services.guest).submitRsvp(view.event.slug, code, { name: r.name, attending: r.attending, count, ...extra, ...(earlier ? { replaces: earlier } : {}) });
+      // the general link's hub shows what was sent and offers to correct it, whether or not the service echoes it back
+      const v = view.party || sent.reply ? sent : { ...sent, reply: { id: sent.responseId, name: r.name.trim(), attending: r.attending, count, ...(extra.companionNames?.length ? { companionNames: extra.companionNames } : {}), ...(extra.meals ? { meals: extra.meals } : {}), ...(extra.dietary ? { dietary: extra.dietary } : {}) } };
       cb.current.onSubmitted(v, { ok: true, name: r.name });
       return { ok: true, id: v.responseId, ...(demo ? { demo: true } : {}) };
     } catch (e) {
@@ -125,8 +131,10 @@ function InvitationPlayer({ view, code, onSubmitted, onDone, guestApi, demo = fa
         invitation: toInvitationData(view.event, view.design, view.maxGuests),
         card: view.design.cardId, scene: view.design.sceneId, experience: view.design.experience,
         showSwitcher: false, params: new URLSearchParams(), voice: view.dialect ?? 'ar',
-        guest: p ? { name: p.name, nameLocked: true, maxGuests: p.maxPartySize, attending: p.rsvpStatus === 'confirmed' ? 'yes' : p.rsvpStatus === 'declined' ? 'no' : null, guests: p.confirmedPartySize || undefined } : { maxGuests: view.maxGuests },
-        doneAction: { ar: p ? t('guestYourDetails') : t('ghContinue'), en: p ? 'Your details' : 'Continue', autoAfter: DONE_HOLD_MS, onClick: () => cb.current.onDone() },
+        guest: p ? { name: p.name, nameLocked: true, maxGuests: p.maxPartySize, attending: p.rsvpStatus === 'confirmed' ? 'yes' : p.rsvpStatus === 'declined' ? 'no' : null, guests: p.confirmedPartySize || undefined }
+          : view.reply ? { name: view.reply.name, maxGuests: view.maxGuests, attending: view.reply.attending ? 'yes' : 'no', guests: view.reply.count || undefined } : { maxGuests: view.maxGuests },
+        // after a decline the guest's page holds their reply, not attendance details
+        doneAction: { ar: p ? t('guestYourDetails') : t('ghContinue'), en: p ? 'Your details' : 'Continue', ...(p ? { declined: { ar: t('ghYourReply'), en: 'Your reply' } } : {}), autoAfter: DONE_HOLD_MS, onClick: () => cb.current.onDone() },
         rsvp: {
           // the same follow-up as the direct form (companions, food, message) before the one and only submit
           submit: (r) => {

@@ -21,7 +21,11 @@
 .audio-wave-range::-moz-range-track{height:100%;background:transparent}
 .audio-wave-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:44px;height:64px;border:0;background:linear-gradient(var(--c-primary),var(--c-primary)) center/4px 100% no-repeat}
 .audio-wave-range::-moz-range-thumb{width:44px;height:64px;border:0;border-radius:0;background:linear-gradient(var(--c-primary),var(--c-primary)) center/4px 100% no-repeat}
-.audio-wave-range:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+/* the strip clips its own content, so the range's ring is drawn on the strip; the handle also thickens while focused */
+.audio-wave-range:focus-visible{outline:none}
+.audio-wave:has(.audio-wave-range:focus-visible){outline:2px solid var(--c-focus);outline-offset:2px}
+.audio-wave-range:focus-visible::-webkit-slider-thumb{background:linear-gradient(var(--c-focus),var(--c-focus)) center/6px 100% no-repeat}
+.audio-wave-range:focus-visible::-moz-range-thumb{background:linear-gradient(var(--c-focus),var(--c-focus)) center/6px 100% no-repeat}
 .audio-wave-scale{display:flex;justify-content:space-between;font-size:var(--fs-xs);color:var(--c-text-2);font-variant-numeric:tabular-nums}
 .audio-trim-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s-2)}
 .audio-trim-at{font-variant-numeric:tabular-nums}

@@ -3,7 +3,7 @@
  * guests hear first. Like every audio editor the timeline runs left → right even on this RTL page (the strip is
  * dir="ltr" and says so); the handle is a native range input, so it works with touch, mouse and arrow keys.
  */
-import { useEffect, useId, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { DEFAULT_FADE_IN_SEC, clampStartSec, formatClock, previewWindow } from '../../domain/audio-library';
 import { Button, Switch } from '../../ui';
 import { useCopy } from '../../ui/copy';
@@ -72,6 +72,15 @@ export function AudioTrim({ src, summary, start, fadeIn, onStart, onFadeIn }: {
     if (span > 0) pick((e.clientX - r.left - HANDLE_HALF) / span * duration);
   };
 
+  // the range keeps 0.1 s precision for dragging; from the keyboard an arrow moves a whole second and Page Up/Down ten
+  // (the strip runs left → right, so → and ↑ move later)
+  const stepBy = (e: KeyboardEvent<HTMLInputElement>) => {
+    const by = ({ ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1, PageUp: 10, PageDown: -10 } as Record<string, number>)[e.key];
+    if (!by) return;
+    e.preventDefault();
+    pick(Math.round(start) + by);
+  };
+
   return <div className="audio-trim">
     <p id={hintId} className="field-hint">{t('audioTrimHint')}</p>
     <div className="audio-wave" dir="ltr">
@@ -79,7 +88,7 @@ export function AudioTrim({ src, summary, start, fadeIn, onStart, onFadeIn }: {
       <canvas ref={canvas} aria-hidden="true" />
       <input type="range" className="audio-wave-range" min={0} max={Math.round(duration * 10) / 10} step={0.1} value={start}
         aria-label={t('audioStartLabel')} aria-valuetext={formatClock(start)} aria-describedby={hintId}
-        onPointerDown={tapTo} onChange={e => pick(Number(e.target.value))} />
+        onPointerDown={tapTo} onChange={e => pick(Number(e.target.value))} onKeyDown={stepBy} />
     </div>
     <div className="audio-wave-scale" dir="ltr" aria-hidden="true"><span>0:00</span><span>{t('audioTimeline')}</span><span>{formatClock(duration)}</span></div>
     <div className="audio-trim-row">

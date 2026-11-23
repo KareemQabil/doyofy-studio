@@ -126,6 +126,19 @@ export interface GuestView {
   /** the organizer's voice (modern · Egyptian · Saudi), stored with the invitation: the guest pages speak it whatever
    *  this device prefers. Absent (older links) = modern. Names and the organizer's own texts are never changed. */
   dialect?: Dialect;
+  /** general link only: the reply this device already sent (and may still correct), so the page shows it again after a
+   *  reload instead of an empty form. Absent = none from this device. */
+  reply?: GuestGeneralReply;
+}
+/** a general-link reply as its guest sees it again: `id` is the responseId a correction replaces */
+export interface GuestGeneralReply {
+  id: string;
+  name: string;
+  attending: boolean;
+  count: number;
+  companionNames?: string[];
+  meals?: MealAllocation[];
+  dietary?: DietaryAnswer;
 }
 export interface GuestRsvpInput extends RsvpInput {
   name?: string;

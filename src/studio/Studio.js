@@ -129,7 +129,7 @@ export class Studio {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'st-cta st-dl st-e5'; b.dataset.act = 'done-action';
       b.style.cssText = 'margin-top: 32px; background: #F4EAE0; color: #2A1418; border-color: #F4EAE0';
-      b.innerHTML = `<span class="ar" style="font-size: 15px">${e(this.doneAction.ar)}</span>${this.doneAction.en ? `<span dir="ltr" style="font-size: 14px; font-style: italic">${e(this.doneAction.en)}</span>` : ''}`;
+      this._labelDoneAction(b, this.doneAction);
       const replayBtn = this.el.done.querySelector('[data-act="replay"]');
       this.el.done.insertBefore(b, replayBtn);
       replayBtn.style.marginTop = '12px';
@@ -194,6 +194,8 @@ export class Studio {
       el.className = el.className.replace(/\bs-[a-z]+\b/g, '').trim() + ' ' + cls;
     }
     this.host.dataset.state = state;
+    // the card (its face's words and its button) is for screen readers only while it is the thing on stage
+    this.el.st.querySelector('.st-rig')?.setAttribute('aria-hidden', String(state !== 'card' && state !== 'intro'));
     if (state === 'intro') this.introT0 = performance.now();
     this.scene?.setStage?.(state, from);
     clearInterval(this.clock); clearTimeout(this.sealTimer); clearTimeout(this._doneTimer);
@@ -227,6 +229,10 @@ export class Studio {
         requestAnimationFrame(() => this.el.sheet.focus({ preventScroll: true }));
         break;
       case 'pack':
+        // the reply is sent: the thank-you is known now, so keyboard and screen-reader focus lands on it at once
+        // instead of dropping to the page while the envelope seals and flies (the visible screen follows)
+        this._renderDone();
+        this.host.querySelector('.st-done-said')?.focus({ preventScroll: true });
         this.el.sheet.inert = true;
         this.audio.stopMusic(); this.audio.duckAmbience(0.3);
         this.audio.emit('pack');
@@ -238,7 +244,8 @@ export class Studio {
       case 'done':
         this._renderDone();
         this.audio.emit('done');
-        setTimeout(() => this.host.querySelector('.st-done [data-act="replay"]')?.focus({ preventScroll: true }), 1950);
+        // a done screen reached without a send (start='done') still gives focus a place: the thank-you
+        { const a = document.activeElement; if (!a || a === document.body || !a.isConnected || this.el.sheet.contains(a)) this.host.querySelector('.st-done-said')?.focus({ preventScroll: true }); }
         if (this.doneAction?.autoAfter != null) this._doneTimer = setTimeout(() => this.sm.state === 'done' && this.doneAction?.onClick(), this.doneAction.autoAfter);
         break;
       default:
@@ -358,7 +365,7 @@ export class Studio {
     this.el.page.innerHTML = PageRegistry.get(id).render(v);
     this.el.page.classList.toggle('instant', instant);
     this.el.page.dataset.page = id;
-    this.el.dots.innerHTML = PAGE_ORDER.map((p, i) => `<button type="button" class="st-dotbtn ${i === this.page ? 'on' : ''}" data-go="${i}" aria-label="صفحة ${T.pageLabels[i]}" aria-current="${i === this.page ? 'page' : 'false'}"><span class="st-dot"></span></button>`).join('');
+    this.el.dots.innerHTML = PAGE_ORDER.map((p, i) => `<button type="button" class="st-dotbtn ${i === this.page ? 'on' : ''}" data-go="${i}" aria-label="${T.page(T.pageLabels[i])}" aria-current="${i === this.page ? 'page' : 'false'}"><span class="st-dot"></span></button>`).join('');
     this.host.querySelector('[data-act="prev"]').disabled = this.page === 0;
     this.host.querySelector('[data-act="next"]').disabled = this.page === 4;
     if (id === 'date') this._tickCountdown();
@@ -390,6 +397,8 @@ export class Studio {
       this.el.page.classList.remove('leaving');
       delete this.el.page.dataset.exit;
       this._renderPage();
+      // the page's name is the one thing announced (the live line), so turning a page never re-reads a whole page
+      const said = this.host.querySelector('.st-page-said'); if (said) said.textContent = T.pageLabels[n];
       const from = this._focusAfter; this._focusAfter = null;
       if (from && (from.dataset.go || from.disabled || !from.isConnected)) this.el.sheet.focus({ preventScroll: true });
     }, this.sm.timing.pageLeave);
@@ -410,10 +419,17 @@ export class Studio {
     const [dn, up] = root.querySelectorAll('[data-guests]');
     if (dn) dn.disabled = r.guests <= this.data.rsvp.minGuests;
     if (up) up.disabled = r.guests >= this.data.rsvp.maxGuests;
-    const need = root.querySelector('.rsvp-need');
-    if (need) need.classList.toggle('is-on', r.tried && (!r.name.trim() || !r.attending));
+    // the error names exactly what is missing: the name, the reply, or both
+    const need = root.querySelector('.rsvp-need'), noName = !r.name.trim(), noReply = !r.attending;
+    if (need) {
+      need.classList.toggle('is-on', r.tried && (noName || noReply));
+      const msg = noName && noReply ? T.need : noName ? T.needName : T.needReply;
+      const ar = need.querySelector('.rsvp-need-ar'), en = need.querySelector('.rsvp-need-en');
+      if (ar && ar.textContent !== msg.ar) ar.textContent = msg.ar;
+      if (en && en.textContent !== msg.en) en.textContent = msg.en;
+    }
     const input = root.querySelector('#st-name');
-    if (input) input.setAttribute('aria-invalid', String(r.tried && !r.name.trim()));
+    if (input) input.setAttribute('aria-invalid', String(r.tried && noName));
     const submit = root.querySelector('.rsvp-submit');
     if (submit) submit.disabled = r.submitting;
     const error = root.querySelector('.rsvp-save-error');
@@ -455,6 +471,12 @@ export class Studio {
     q('.done-en').textContent = demo ? '' : th.en;
     q('.done-en').hidden = demo;
     q('.done-demo').hidden = !demo;
+    q('.done-demo').textContent = demo ? S.demoOnly : '';
+    // what focus lands on (st-done-said): the thanks, and for a demo the honest line with it
+    const said = this.host.querySelector('.st-done-said');
+    if (said) said.textContent = demo ? `${th.ar}. ${S.demoOnly}` : th.ar;
+    const act = this.el.done.querySelector('[data-act="done-action"]');
+    if (act && this.doneAction) this._labelDoneAction(act, declined && this.doneAction.declined ? this.doneAction.declined : this.doneAction);
     // who replied: Arabic in the invitation's own number system («أم نورة — خالة العروس، ٣ أشخاص»), its own direction
     // and no letter-spacing (spacing breaks Arabic joining); a reply without a name keeps the Latin monogram line
     const who = q('.done-who'), name = r.name.trim();
@@ -465,6 +487,10 @@ export class Studio {
       who.dir = 'ltr'; who.lang = 'en'; who.classList.remove('is-ar');
       who.textContent = `${[c.enAU, c.arB ? c.enBU : ''].filter(Boolean).join(' & ') || c.arA} · ${c.dateShort}`;
     }
+  }
+
+  _labelDoneAction(b, l) {
+    b.innerHTML = `<span class="ar" style="font-size: 15px">${e(l.ar)}</span>${l.en ? `<span dir="ltr" style="font-size: 14px; font-style: italic">${e(l.en)}</span>` : ''}`;
   }
 
   // ---------------------------------------------------------------- input
@@ -563,6 +589,9 @@ export class Studio {
 
     // keyboard
     on(window, 'keydown', (ev) => {
+      // a key another layer already handled is not ours: an open dialog above the invitation (the follow-up sheet)
+      // closes itself on Escape and must leave the invitation, and the reply page, where they were
+      if (ev.defaultPrevented || document.querySelector('dialog[open], [role="dialog"][aria-modal="true"]')) return;
       if (ev.target.closest?.('input, textarea, select')) return;
       if (this.embedded && !host.contains(document.activeElement)) return; // inside the wizard: only when the preview has focus
       if (ev.key === 'Escape') {

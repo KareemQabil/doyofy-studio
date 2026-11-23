@@ -40,7 +40,7 @@
 .g2-toolbar.is-food .g2-toolbar-row { flex: 1 1 auto; }
 .g2-switch { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--c-surface-subtle); }
 .g2-toolbar.is-food .g2-switch { margin-inline-end: auto; }
-.g2-switch button { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--c-text-2); font: 500 13.5px/1 var(--font-display); cursor: pointer; transition: background-color 200ms, color 200ms; }
+.g2-switch button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--c-text-2); font: 500 13.5px/1 var(--font-display); cursor: pointer; transition: background-color 200ms, color 200ms; }
 .g2-switch button[aria-pressed='true'] { background: var(--c-surface); color: var(--c-text); box-shadow: 0 1px 0 rgba(38,38,38,.06), 0 4px 10px -6px rgba(38,38,38,.3); font-weight: 650; }
 @keyframes g2-drop { from { opacity: 0; transform: translateY(-6px); } }
 
@@ -100,7 +100,8 @@
 .g2-check { grid-area: check; align-self: center; position: relative; z-index: 2; margin: -8px -6px -8px 0; }
 .g2-check input { width: 20px; height: 20px; accent-color: var(--c-text); }
 .g2-card > .avatar { grid-area: avatar; align-self: start; width: 36px; height: 36px; font-size: 15px; }
-.g2-name { grid-area: name; justify-self: start; max-width: 100%; min-height: 26px; padding: 0; border: 0; background: none; color: var(--c-text); font: 700 15.5px/1.4 var(--font-display); text-align: start; cursor: pointer; overflow-wrap: anywhere; }
+/* the button's own box is 44px tall too (negative margins keep the row as it was) */
+.g2-name { grid-area: name; justify-self: start; max-width: 100%; min-height: 44px; margin-block: -9px; padding: 0; border: 0; background: none; color: var(--c-text); font: 700 15.5px/1.4 var(--font-display); text-align: start; cursor: pointer; overflow-wrap: anywhere; }
 /* the whole card is the target for the name (≥ 44px); actions sit above it */
 .g2-name::after { content: ''; position: absolute; inset: 0; z-index: 0; border-radius: inherit; }
 .g2-name:focus-visible { outline: none; }
@@ -229,7 +230,7 @@
   .g2-toolbar-row { flex: none; flex-wrap: nowrap; gap: 6px; }
   .g2-toolbar.is-food .g2-toolbar-row { flex: 1 1 auto; }
   /* beside the search the view switch is icons (named for screen readers); in the food view it has the room for words */
-  .g2-toolbar:not(.is-food) .g2-switch button { width: 42px; padding: 0; justify-content: center; }
+  .g2-toolbar:not(.is-food) .g2-switch button { width: 44px; padding: 0; justify-content: center; }
   .g2-toolbar:not(.is-food) .g2-switch-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .g2-toolbar.is-food .g2-switch { flex: 1 1 auto; min-width: 0; }
   .g2-toolbar.is-food .g2-switch button { flex: 1 1 0; min-width: 0; padding: 0 8px; font-size: 13px; }

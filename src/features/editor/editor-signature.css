@@ -43,6 +43,8 @@
 :root[data-theme='signature'] .ed-options.is-text .ed-option-text { padding-inline-end: 36px; }
 :root[data-theme='signature'] .ed-option-mark { width: 20px; height: 20px; }
 :root[data-theme='signature'] .ed-option.is-on { border-color: var(--brand-charcoal); background: var(--brand-ivory); box-shadow: inset 0 0 0 1px var(--brand-charcoal); }
+/* dark: ivory under light text read 1:1 — the selected card takes the dark selected surface and a light ring instead */
+:root[data-appearance='dark'][data-theme='signature'] .ed-option.is-on { border-color: var(--c-selected); background: var(--c-selected-soft); box-shadow: inset 0 0 0 1px var(--c-selected); }
 :root[data-theme='signature'] .ed-save-row { margin: 0 -20px -40px; padding: 20px 20px 24px; bottom: -40px; }
 /* Workbench and preview share the same light platform shell. */
 :root[data-theme='signature'] .ed-stage { background: var(--c-canvas); min-width: 0; padding: 28px 32px; gap: 22px; }

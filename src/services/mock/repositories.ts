@@ -3,7 +3,7 @@
  * API: validation, activity entries, consistent state changes across entities.
  */
 import type {
-  ActivityRepository, CheckInRepository, EventRepository, GuestApi, GuestView, InvitationRepository, PartyRepository,
+  ActivityRepository, CheckInRepository, EventRepository, GuestApi, GuestGeneralReply, GuestView, InvitationRepository, PartyRepository,
   RsvpRepository, SeatingRepository,
 } from '../contracts';
 import type { Event, InvitationParty, PartyInput } from '../../domain/types';
@@ -22,7 +22,7 @@ import { duplicateDestinationNames } from '../../domain/guest-tools';
 import { assertGuestCapacity } from '../../domain/billing';
 import { findEvent, findParty, log as baseLog, touch, type Ctx } from './helpers';
 import { actorFor, can, FORBIDDEN_TEXT, type Permission } from '../../domain/roles';
-import type { MockStore } from './store';
+import type { DbShape, MockStore } from './store';
 import { currentDialect as organizerDialect } from '../../data/copy-preference.js';
 
 const clone = <T>(v: T): T => structuredClone(v);
@@ -569,6 +569,14 @@ export function mockActivity({ store }: Ctx): ActivityRepository {
 // ------------------------------------------------------------------ public guest API
 export function mockGuest({ store, now }: Ctx): GuestApi {
   const log = logger(store);
+  // the general link has no identity: this device remembers its own last reply (as a real backend would with a cookie),
+  // so the guest sees it again after a reload and corrects it rather than sending a second one
+  const deviceKey = (slug: string) => `doyofy:guest-general:${slug}`;
+  const ownReply = (db: Readonly<DbShape>, eventId: string, slug: string): GuestGeneralReply | undefined => {
+    const id = store.storage?.getItem(deviceKey(slug));
+    const r = id ? db.responses.find((x) => x.id === id && x.eventId === eventId && !x.partyId && !x.resolution && x.channel === 'general_link') : undefined;
+    return r && { id: r.id, name: r.name, attending: r.attending, count: r.count, ...(r.companionNames?.length ? { companionNames: r.companionNames } : {}), ...(r.meals ? { meals: r.meals } : {}), ...(r.dietary ? { dietary: r.dietary } : {}) };
+  };
   const view = (slug: string, code: string | undefined | null, recordOpen: boolean): GuestView => {
     const db = store.read();
     const ev = db.events.find((e) => e.slug === slug && !e.archivedAt);
@@ -601,6 +609,7 @@ export function mockGuest({ store, now }: Ctx): GuestApi {
       phase: phase === 'completed' || phase === 'archived' ? 'after' : phase === 'event_day' ? 'event_day' : 'before',
       maxGuests: party?.maxPartySize ?? ev.settings.defaultPartySize,
       experience: publicExperience(ev),
+      ...(!code ? { reply: ownReply(db, ev.id, slug) } : {}),
       // the organizer's voice: in this prototype it is the account preference on the organizer's device
       ...(organizerDialect() !== 'ar' ? { dialect: organizerDialect() } : {}),
     });
@@ -631,17 +640,19 @@ export function mockGuest({ store, now }: Ctx): GuestApi {
         const err = validateRsvp(input, ev.settings.defaultPartySize);
         if (err) throw new AppError('validation', RSVP_ERROR_TEXT[err], 'count');
         const answers = guestAnswers(ev, input);
-        const reply = { name, attending: input.attending, count: input.attending ? input.count : 0, note: input.note, ...answers, channel: 'general_link' as const, at: t.toISOString() };
+        const companionNames = input.attending ? (input.companionNames ?? []).map((n) => n.trim()).filter(Boolean).slice(0, Math.max(0, input.count - 1)) : [];
+        const reply = { name, attending: input.attending, count: input.attending ? input.count : 0, ...(companionNames.length ? { companionNames } : {}), note: input.note, ...answers, channel: 'general_link' as const, at: t.toISOString() };
         // a guest correcting their own general-link reply before the organizer handled it: one reply, updated in place
         const earlier = input.replaces ? db.responses.find((r) => r.id === input.replaces && r.eventId === ev.id && !r.partyId && !r.resolution && r.channel === 'general_link') : undefined;
         if (earlier) {
-          for (const k of ['note', 'meals', 'dietary', 'experienceRevision'] as const) delete earlier[k];
+          for (const k of ['companionNames', 'note', 'meals', 'dietary', 'experienceRevision'] as const) delete earlier[k];
           Object.assign(earlier, reply);
           return { id: earlier.id };
         }
         const id = makeId('rsp');
         db.responses.push({ id, eventId: ev.id, ...reply });
         log(db, t, ev.id, 'rsvp_unmatched', { name }, 'guest');
+        try { store.storage?.setItem(deviceKey(slug), id); } catch { /* without device memory the reply still arrives */ }
         return { id };
       });
     }, 'write').then(({ id }) => ({ ...view(slug, code, false), responseId: id })),

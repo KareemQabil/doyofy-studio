@@ -149,7 +149,8 @@ export function CreateEvent() {
     requestAnimationFrame(() => {
       window.scrollTo({ top: 0 });
       if (next === 3 && desktop) formRef.current?.querySelector<HTMLInputElement>('input')?.focus();
-      else document.querySelector<HTMLElement>(next === 2 ? '.tf-scroll' : '#main')?.focus({ preventScroll: true });
+      // step 3 on a phone: focus starts on the step's own heading (what it asks), not on the whole page
+      else document.querySelector<HTMLElement>(next === 2 ? '.tf-scroll' : '.wz-details-title')?.focus({ preventScroll: true });
     });
   };
   const shown = feed.list.find(p => p.cardId === browsed?.cardId) ?? feed.list.find(p => p.cardId === selectedTemplate?.cardId) ?? feed.list[0] ?? null;
@@ -205,7 +206,7 @@ export function CreateEvent() {
             {!desktop && <SignatureCreatePreview compact fields={fields} today={today} template={selectedTemplate} onChangeDesign={() => go(2)} />}
             <form id="create-event" ref={formRef} className="wz-form" onSubmit={submit} noValidate>
               <header className="wz-head wz-head-start">
-                <h2>{t('wzEssentials', { type: info?.label ?? '' })}</h2>
+                <h2 className="wz-details-title" tabIndex={-1}>{t('wzEssentials', { type: info?.label ?? '' })}</h2>
                 <p>{t('createEssentials')}</p>
               </header>
               {create.error ? <Banner tone="danger" title={t('wzNotCreated')}>{errorMessage(create.error)}</Banner> : null}
