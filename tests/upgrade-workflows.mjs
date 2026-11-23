@@ -179,10 +179,13 @@ try {
     await go(page, '/app/events/evt_wedding/invitation/design?section=motion');
     await page.getByRole('switch', { name: 'رسالة ترحيب صوتية', exact: true }).click();
     await page.waitForFunction(id => JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}').designs?.find(d => d.eventId === 'evt_wedding')?.draft.audio?.voiceId === id, voice.id);
-    await page.getByRole('group', { name: 'عرض الاستوديو' }).getByRole('button', { name: 'معاينة' }).click();
-    // the organizer preview carries the voice: its replay/stop control appears once the bytes are found on this device
-    await page.waitForFunction(() => { const b = document.querySelector('.live-preview [data-act="voice"]'); return !!b && !b.hidden; }, null, { timeout: 6000 });
-    return `voice welcome recorded (${voice.durationSec.toFixed(1)} s, ${voice.mime}) and reached the preview engine`;
+    // one surface: the editor has no preview mode — «معاينة كضيف» saves and opens the guest preview, which carries the voice
+    await page.locator('.ed-bar').getByRole('button', { name: 'معاينة كضيف', exact: true }).click();
+    await page.waitForURL(/invitation\/preview/);
+    await page.getByRole('button', { name: 'افتحوا الدعوة', exact: true }).click();
+    // its replay/stop control appears once the bytes are found on this device
+    await page.waitForFunction(() => { const b = document.querySelector('.preview-host [data-act="voice"]'); return !!b && !b.hidden; }, null, { timeout: 8000 });
+    return `voice welcome recorded (${voice.durationSec.toFixed(1)} s, ${voice.mime}) and reached the guest preview engine`;
   });
 
   await scenario('04-table-order', { width: 1440, height: 1000 }, async page => {

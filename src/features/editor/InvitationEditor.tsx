@@ -1,64 +1,68 @@
 /**
- * Invitation editor — a controlled, template-based studio (not a free canvas). The card is the hero.
+ * Invitation editor — one surface, the card is the hero (decision 2). A controlled, template-based studio, not a free canvas.
  *
- * One hierarchy on every size:
- *   header  — close · title with a calm save/publish status · «معاينة كضيف» · the ONE primary action (publish / publish
- *             changes / to the guests), always in the same place
- *   stage   — the live card standing on the invitation's own setting, with one small row under it: the page
- *             (البطاقة · الكلمة · البرنامج), replay and «بحجم أكبر»
- *   tools   — four sections: المحتوى · الشكل · التجربة · المناسبة
- * Desktop: the tools are an RTL side panel and the stage can switch to the playing invitation in a device frame.
- * Phone: the tools are a bottom sheet whose tab row is the only toolbar (peek). A section opens it (half / full);
- *   the stage above always keeps the card in view and shrinks smoothly — while typing it becomes a live mini card.
- *   Leaving a field restores the previous height; «إخفاء» and publishing return to the full card. «معاينة كضيف»
- *   opens the full-bleed guest preview.
+ *   header — back · title with a calm save status («تم الحفظ» · «التعديلات تصل لضيوفك تلقائيًا») · «معاينة كضيف» ·
+ *            the one forward action «أرسل للضيوف» (the guests' send flow). There is no publish step and no publish word.
+ *   stage  — the live card on the invitation's own setting. Its pages (البطاقة · الكلمة · البرنامج) are swiped on the card
+ *            (RTL: a swipe to the right shows the next page) and dotted under it, beside replay and «بحجم أكبر».
+ *            Every text on the card (names, date, place, message) is a button that opens «النص» at its field.
+ *   tools  — three tabs: النص · الشكل · الصوت.
+ * Desktop: the tools are an RTL side panel beside the stage.
+ * Phone: the tools are a bottom sheet whose tab row is the only toolbar (peek). A tab opens it (half / full); the stage
+ *   above always keeps the card in view and shrinks smoothly — while typing it becomes a live mini card. Leaving a field
+ *   restores the previous height; «إخفاء» returns to the full card.
  *
- * Rules kept from the platform designer:
- * - every invitation change autosaves to the draft (debounced) and the header always says so, calmly
- * - publishing snapshots the draft for guests; draft / published / unpublished changes are explicit
- * - event data (date, time, venue) is edited in its own section and saved to the EVENT, with a clear
- *   notice that it changes everywhere — the preview shows edits instantly, before saving
- * - "تغيير القالب" saves first, then opens the gallery; a template never erases texts
+ * Rules:
+ * - every invitation change autosaves (debounced) and the header always says so, calmly
+ * - names, date and place are the EVENT's own details (one source for everywhere): edited in «النص» or by tapping them on
+ *   the card, shown on the card as they are typed, and saved to the event once valid (debounced, like the design)
+ * - names on the card ARE the event's names: an old design's separate card names still load, but the editor no longer
+ *   offers them and its first save drops them
+ * - "غيّر التصميم" saves first, then opens the gallery; a template never erases texts
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Event, InvitationDesign, InvitationDesignContent } from '../../domain/types';
-import { Logo } from '../../ui/brand';
 import { EditorWorkbench, ExpandedCard, type WorkbenchPage } from './EditorWorkbench';
-import { AccountMenu } from '../account/AccountMenu';
 import { usePointerGesture } from '../../ui/hooks/usePointerGesture';
 import { sheetSnapHeight, type SheetPoint } from '../../domain/gestures';
 import { useSwipePager } from '../../ui/hooks/useSwipePager';
-import { SealStamp } from '../signature/SealStamp';
 import { DraftQueue } from '../../domain/draft-queue';
-import { CARD_NAMES, defaultDesign, publishState, toInvitationData } from '../../domain/invitation';
+import { defaultDesign, publishState, toInvitationData } from '../../domain/invitation';
 import { applyPreset, presetById } from '../../domain/templates';
-import { Banner, Button, ErrorState, Icon, IconButton, Segmented, PageLoader } from '../../ui';
+import { Button, ErrorState, Icon, IconButton, Segmented, PageLoader } from '../../ui';
 import { useServices } from '../../app/data';
 import { useBlocker, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
 import { useCopy } from '../../ui/copy';
 import type { CopyKey } from '../../domain/copy';
-import { errorMessage } from '../../services/errors';
 import { useDesign, useEvent } from '../shared/queries';
 import { useCan } from '../shared/OwnerOnly';
-import { LivePreview } from '../invitation/LivePreview';
-import { ContentSection, DesignSection, EventSection, MotionSection, eventFields, previewEvent, validateEventFields, type EventDraft, type EventDraftErrors } from './sections';
+import { DesignSection, SoundSection, TextSection, eventFields, eventPatch, previewEvent, sameDraft, validateEventFields, type EditField, type EventDraft, type EventDraftErrors } from './sections';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
-export type EditorSection = 'content' | 'design' | 'motion' | 'event';
+/** النص · الشكل · الصوت (the values stay those of the links already in use: ?section=content|design|motion) */
+export type EditorSection = 'content' | 'design' | 'motion';
 /** labels are dictionary keys, read in the organizer's voice when the tabs render */
-const SECTIONS: Array<{ value: EditorSection; label: CopyKey; icon: 'type' | 'palette' | 'motion' | 'calendar' }> = [
+const SECTIONS: Array<{ value: EditorSection; label: CopyKey; icon: 'type' | 'palette' | 'volume' }> = [
   { value: 'content', label: 'edContent', icon: 'type' },
   { value: 'design', label: 'edDesign', icon: 'palette' },
-  { value: 'motion', label: 'edMotion', icon: 'motion' },
-  { value: 'event', label: 'edEvent', icon: 'calendar' },
+  { value: 'motion', label: 'edMotion', icon: 'volume' },
 ];
-const PAGES: Array<{ value: WorkbenchPage; label: CopyKey }> = [{ value: 'card', label: 'edPageCard' }, { value: 'message', label: 'edPageMessage' }, { value: 'program', label: 'edPageProgram' }];
+/** the old «المناسبة» tab lives in «النص» now */
+const sectionOf = (v: string | null): EditorSection | null => v === 'event' ? 'content' : SECTIONS.some((s) => s.value === v) ? v as EditorSection : null;
+const PAGE_LABEL: Record<WorkbenchPage, CopyKey> = { card: 'edPageCard', message: 'edPageMessage', program: 'edPageProgram' };
+/** what a tap on the card focuses in «النص» */
+const FIELD_SELECTOR: Record<EditField, string> = { names: '[data-edit-field="names"]', date: '[data-edit-field="date"]', venue: '[data-edit-field="venue"]', message: '[data-edit-field="message"]', program: '[data-edit-field="program"]' };
+const FIELD_PAGE: Record<EditField, WorkbenchPage> = { names: 'card', date: 'card', venue: 'card', message: 'message', program: 'program' };
 const STOPS: SheetPoint[] = ['peek', 'half', 'full'];
+/** the room under the card for its page dots and tools */
+const BAR_ROOM = 56;
 /** fields that raise the phone keyboard (pickers — date, time, select — do not) */
 const isTextField = (el: Element | null): el is HTMLElement =>
   el?.tagName === 'TEXTAREA' || (el?.tagName === 'INPUT' && /^(text|search|url|email|tel|number|)$/.test((el as HTMLInputElement).type));
+/** names on the card are the event's names: the old per-design names are not offered any more */
+const ownNames = (c: InvitationDesignContent): InvitationDesignContent => Object.values(c.displayNames ?? {}).some((v) => v?.trim()) ? { ...c, displayNames: {} } : c;
 
 function useMedia(q: string) {
   const get = () => typeof matchMedia === 'function' && matchMedia(q).matches;
@@ -79,47 +83,50 @@ export function InvitationEditor({ eventId }: { eventId: string }) {
 
 function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null }) {
   const services = useServices();
-  const mayPublish = useCan('invitation.publish'); // owner only (domain/roles)
+  const mayKeepLive = useCan('invitation.publish'); // owner only (domain/roles) — see keepGuestsCurrent
   const navigate = useNavigate();
   const loc = useLocation();
   const toast = useToast();
   const { t, copy } = useCopy();
   const phone = useMedia('(max-width: 959px)');
 
-  const [content, setContent] = useState<InvitationDesignContent>(() => { const base = saved?.draft ?? defaultDesign(event); const selected = !saved && presetById(loc.search.get('template') ?? ''); return selected ? applyPreset(base, selected) : base; });
+  const [content, setContent] = useState<InvitationDesignContent>(() => { const base = ownNames(saved?.draft ?? defaultDesign(event)); const selected = !saved && presetById(loc.search.get('template') ?? ''); return selected ? applyPreset(base, selected) : base; });
   const contentRef = useRef(content);
   const [save, setSave] = useState<SaveState>(saved ? 'saved' : 'dirty');
   const [design, setDesign] = useState<InvitationDesign | null>(saved);
-  const [publishing, setPublishing] = useState(false);
-  const [publishError, setPublishError] = useState<string | undefined>();
-  const initial = loc.search.get('section') as EditorSection | null;
-  const linked = SECTIONS.some((s) => s.value === initial);
-  const [section, setSection] = useState<EditorSection>(linked ? initial! : 'content');
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const linked = sectionOf(loc.search.get('section'));
+  const [section, setSection] = useState<EditorSection>(linked ?? 'content');
   const [page, setPage] = useState<WorkbenchPage>('card');
+  const pages: WorkbenchPage[] = content.program.length ? ['card', 'message', 'program'] : ['card', 'message'];
+  const shownPage = pages.includes(page) ? page : 'card';
   const [expanded, setExpanded] = useState(false);
+  const [intro, setIntro] = useState(loc.search.get('first') === '1');
   // the face's entrance plays when the editor opens and on request; typing never restarts it
   const [cardMotion, setCardMotion] = useState(0);
-  // phones: swipe the stage sideways to turn the invitation's pages (RTL: the page follows the finger, right = next)
-  const pager = useSwipePager<HTMLDivElement>({
-    canStep: (d) => { const i = PAGES.findIndex((p) => p.value === page) + d; return i >= 0 && i < PAGES.length; },
-    onStep: (d) => setPage((p) => PAGES[Math.max(0, Math.min(PAGES.length - 1, PAGES.findIndex((x) => x.value === p) + d))]!.value),
-  });
+  // swipe the card sideways to turn the invitation's pages (RTL: the page follows the finger, right = next)
+  const step = (d: 1 | -1) => { const i = pages.indexOf(shownPage) + d; return i >= 0 && i < pages.length ? pages[i]! : null; };
+  const pager = useSwipePager<HTMLDivElement>({ canStep: (d) => !!step(d), onStep: (d) => { const p = step(d); if (p) setPage(p); } });
   // a section linked from elsewhere (?section=…) opens with its tools showing; otherwise the card leads
   const [sheet, setSheet] = useState<SheetPoint>(linked ? 'half' : 'peek');
   const sheetRef = useRef(sheet);
   sheetRef.current = sheet;
   const [typing, setTyping] = useState(false);
   const beforeTyping = useRef<SheetPoint | null>(null);
-  const [replay, setReplay] = useState(0);
-  const [sound, setSound] = useState(false);
-  const [evDraft, setEvDraft] = useState<EventDraft>(() => eventFields(event));
-  const [eventErrors, setEventErrors] = useState<EventDraftErrors>({});
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [queue] = useState(() => new DraftQueue(content, (value: InvitationDesignContent) => services.invitations.saveDraft(event.id, value), !saved));
-  const [justPublished, setJustPublished] = useState(false);
   const mounted = useRef(true);
   const panel = useRef<HTMLElement>(null);
+  const body = useRef<HTMLDivElement>(null);
+
+  // ---- the event's own details: edited here, saved to the event (debounced, only when valid)
+  const server = useRef(event);
+  if (event.updatedAt > server.current.updatedAt) server.current = event;
+  const [evDraft, setEvDraft] = useState<EventDraft>(() => eventFields(event));
+  const evRef = useRef(evDraft);
+  const evBase = useRef(eventFields(event)); // what the event holds (as far as this editor knows)
+  const [evSave, setEvSave] = useState<SaveState | 'invalid'>('saved');
+  const [evErrors, setEvErrors] = useState<EventDraftErrors>({});
+  const evTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // phones: a text field raises the keyboard → the sheet takes the room the keyboard leaves and the stage keeps a live
   // mini card above it; leaving the field restores the height the sheet had before
@@ -151,23 +158,31 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
     return () => { clearTimeout(leave); vp?.removeEventListener('resize', sync); document.removeEventListener('focusin', sync); document.removeEventListener('focusout', sync); document.documentElement.style.removeProperty('--editor-viewport'); };
   }, [phone]);
 
-  // the draft or publication changed outside this editor (another tab, a template applied elsewhere):
-  // take it while there are no local edits waiting, so an autosave can never write an older design back
+  // the design changed outside this editor (another tab, a template applied elsewhere): take it while there are no
+  // local edits waiting, so an autosave can never write an older design back
   useEffect(() => {
     if (!saved || save !== 'saved') return;
     if (saved.draftSavedAt === design?.draftSavedAt && saved.publishedAt === design?.publishedAt) return;
     if (design && saved.draftSavedAt < design.draftSavedAt) return; // our own newer save is not in the cache yet
-    if (!queue.replace(saved.draft)) return;
-    contentRef.current = saved.draft;
-    setContent(saved.draft);
+    const next = ownNames(saved.draft);
+    if (!queue.replace(next)) return;
+    contentRef.current = next;
+    setContent(next);
     setDesign(saved);
   }, [saved?.draftSavedAt, saved?.publishedAt, save]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const evDirty = JSON.stringify(evDraft) !== JSON.stringify(eventFields(event));
-  // the event was saved (or changed in another tab): take the new values
-  useEffect(() => { setEvDraft(eventFields(event)); }, [event.updatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
+  // the event was saved (here or in another tab): take the new values unless there are local edits still waiting
+  useEffect(() => {
+    const fresh = eventFields(event);
+    if (sameDraft(evRef.current, evBase.current)) { evRef.current = fresh; setEvDraft(fresh); }
+    evBase.current = fresh;
+  }, [event.updatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useBlocker(save !== 'saved' || evDirty, t(evDirty ? 'edLeaveEvent' : 'edLeave'));
+  // a tab opens at its top (a tap on the card then scrolls to its field)
+  useEffect(() => { body.current?.scrollTo?.(0, 0); }, [section]);
+
+  const evPending = !sameDraft(evDraft, evBase.current);
+  useBlocker(save !== 'saved' || evPending, t(evPending ? 'edLeaveEvent' : 'edLeave'));
 
   const persist = async () => {
     clearTimeout(timer.current);
@@ -181,78 +196,103 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
       return null;
     }
   };
-  useEffect(() => { mounted.current = true; if (!saved) void persist(); return () => { mounted.current = false; clearTimeout(timer.current); }; }, []);
+  useEffect(() => { mounted.current = true; if (!saved) void persist(); return () => { mounted.current = false; clearTimeout(timer.current); clearTimeout(evTimer.current); }; }, []);
 
   const update = (patch: Partial<InvitationDesignContent>) => {
     const next = { ...contentRef.current, ...patch };
     contentRef.current = next;
     queue.update(next);
-    setJustPublished(false);
     setContent(next);
     setSave('dirty');
+    setIntro(false);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => void persist(), 650);
   };
 
-  const flushThen = async (go: () => void) => {
-    if (save !== 'saved') {
-      const d = await persist();
-      if (!d) { toast({ tone: 'danger', text: t('edSaveFailedLeave') }); return; }
+  /** saves the event's details when they are valid; invalid ones stay on screen, marked, and are not saved */
+  const saveEvent = async (): Promise<boolean> => {
+    clearTimeout(evTimer.current);
+    const d = evRef.current;
+    if (sameDraft(d, evBase.current)) { setEvSave('saved'); return true; }
+    const errors = validateEventFields(server.current, d, services.clock.now(), copy);
+    if (Object.keys(errors).length) { setEvErrors(errors); setEvSave('invalid'); return false; }
+    setEvSave('saving');
+    try {
+      const next = await services.events.update(event.id, eventPatch(server.current, d));
+      if (next.updatedAt >= server.current.updatedAt) server.current = next;
+      evBase.current = d;
+      if (!mounted.current) return true;
+      if (sameDraft(evRef.current, d)) setEvSave('saved');
+      else { setEvSave('dirty'); evTimer.current = setTimeout(() => void saveEvent(), 900); }
+      return true;
+    } catch {
+      if (mounted.current) setEvSave('error');
+      return false;
     }
-    go();
+  };
+  const editEvent = (patch: Partial<EventDraft>) => {
+    const next = { ...evRef.current, ...patch };
+    evRef.current = next;
+    setEvDraft(next);
+    setEvErrors((e) => { const rest = { ...e }; for (const k of Object.keys(patch)) delete rest[k as keyof EventDraft]; return rest; });
+    setEvSave('dirty');
+    setIntro(false);
+    clearTimeout(evTimer.current);
+    evTimer.current = setTimeout(() => void saveEvent(), 900);
   };
 
-  const designState = publishState(design ? { ...design, draft: content } : null);
-  const ps = evDirty && (designState === 'published' || designState === 'changed') ? 'changed' : designState;
-  const doPublish = async () => {
-    if (publishing) return;
-    setPublishError(undefined);
-    const errors = validateEventFields(event, evDraft, services.clock.now(), copy);
-    setEventErrors(errors);
-    if (Object.keys(errors).length) {
-      setSection('event');
-      if (phone) setSheet('full');
-      setPublishError(t('edCheckFields'));
-      requestAnimationFrame(() => { panel.current?.querySelector<HTMLElement>(`[data-event-field="${Object.keys(errors)[0]}"]`)?.focus(); });
-      return;
-    }
-    setPublishing(true);
-    if (save !== 'saved' && !(await persist())) { setPublishing(false); setPublishError(t('edNotSavedNotPublished')); return; }
-    try {
-      if (evDirty) await services.events.update(event.id, {
-        date: evDraft.date, time: evDraft.time,
-        venue: { ...event.venue, name: evDraft.venue.trim(), city: evDraft.city.trim(), mapUrl: evDraft.mapUrl.trim() || undefined },
-        settings: { defaultPartySize: evDraft.partySize },
-      });
-      const d = await services.invitations.publish(event.id);
-      setDesign(d);
-      setJustPublished(true);
-      // the published card takes the stage again
-      if (phone) { (document.activeElement as HTMLElement | null)?.blur?.(); beforeTyping.current = null; setTyping(false); setSheet('peek'); setPage('card'); }
-    } catch (e) {
-      setPublishError(errorMessage(e));
-    } finally {
-      setPublishing(false);
-    }
+  /** opens «النص» at a field: a tap on the card, or a field that needs a look before leaving */
+  const reveal = (selector: string) => {
+    const go = () => {
+      const el = panel.current?.querySelector<HTMLElement>(selector);
+      if (!el) return false;
+      const details = el.closest('details');
+      if (details && !details.open) details.open = true;
+      el.focus({ preventScroll: true });
+      el.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+      return true;
+    };
+    // already in view: focus in the same tap, so a phone raises its keyboard
+    if (section === 'content' && (!phone || sheetRef.current !== 'peek') && go()) return;
+    setSection('content');
+    if (phone && sheetRef.current === 'peek') setSheet('half');
+    requestAnimationFrame(() => requestAnimationFrame(() => { go(); }));
   };
+  const editField = (field: EditField) => { setIntro(false); if (pages.includes(FIELD_PAGE[field])) setPage(FIELD_PAGE[field]); reveal(FIELD_SELECTOR[field]); };
+
+  /**
+   * Bridge for decision 1 (the invitation is always live): until guest links resolve to the latest saved design by
+   * themselves, leaving the editor brings the guests' copy up to the saved design. Quiet — nothing about it is shown.
+   */
+  const keepGuestsCurrent = async (d: InvitationDesign | null) => {
+    if (!mayKeepLive || !d || publishState(d) === 'published') return;
+    try { await services.invitations.publish(event.id); } catch { /* the saved design is still the organizer's; the next leave retries */ }
+  };
+  /** everything saved (and valid) before leaving the editor */
+  const settle = async (): Promise<boolean> => {
+    clearTimeout(timer.current);
+    const errors = sameDraft(evRef.current, evBase.current) ? {} : validateEventFields(server.current, evRef.current, services.clock.now(), copy);
+    const bad = Object.keys(errors)[0] as keyof EventDraft | undefined;
+    if (bad) { setEvErrors(errors); setEvSave('invalid'); toast({ tone: 'danger', text: t('edCheckFields') }); reveal(`[data-event-field="${bad}"]`); return false; }
+    const d = queue.dirty || save !== 'saved' ? await persist() : design;
+    if (!d || !(await saveEvent())) { toast({ tone: 'danger', text: t('edSaveFailedLeave') }); return false; }
+    await keepGuestsCurrent(d);
+    return true;
+  };
+  const leave = (to: string) => void settle().then((ok) => { if (ok) navigate(to, { force: true }); });
 
   const shown = useMemo(() => previewEvent(event, evDraft), [event, evDraft]);
   const invitation = useMemo(() => toInvitationData(shown, content, event.settings.defaultPartySize), [shown, content, event.settings.defaultPartySize]);
-  const guestPreview = () => void flushThen(() => navigate(`${paths.preview(event.id)}?from=design&section=${section}`, { force: !evDirty }));
-  const changeTemplate = () => void flushThen(() => navigate(paths.templates(event.id), { force: !evDirty }));
-  const close = () => void flushThen(() => navigate(paths.invitation(event.id), { force: !evDirty }));
+  const guestPreview = () => leave(`${paths.preview(event.id)}?from=design&section=${section}`);
+  const changeTemplate = () => leave(paths.templates(event.id));
+  const close = () => leave(paths.invitation(event.id));
+  // «أرسل للضيوف»: the guests' send flow (it opens the share sheet for those not sent yet)
+  const send = () => leave(paths.guests(event.id, { share: 'unsent' }));
   // the account's sound library, with a way straight back to this tab («ارجع للتصميم»)
   const accountPath = paths.account({ section: 'audio', back: paths.design(event.id, 'motion') });
-  const toAccount = { href: accountPath, go: () => void flushThen(() => navigate(accountPath, { force: !evDirty })) };
+  const toAccount = { href: accountPath, go: () => leave(accountPath) };
 
-  const publishBtn = ps !== 'published' && !mayPublish
-    // a team member sees where publishing lives and who does it, in the button's place (domain/roles)
-    ? <span className="ed-publish ed-publish-owner" role="note"><Icon name="lock" size="sm" />{t('edOwnerPublishes')}</span>
-    : ps === 'published'
-    ? <Button variant="secondary" className="ed-publish is-done" icon="users" onClick={() => void flushThen(() => navigate(paths.guests(event.id)))}>{t('edToGuests')}</Button>
-    : <Button variant="primary" className="ed-publish" loading={publishing} icon="send" onClick={() => void doPublish()}>{t(ps === 'changed' ? 'edPublishChanges' : 'edPublish')}</Button>;
-
-  // phone sheet: three stops (peek = the section toolbar only · half · full, which still keeps a mini card above).
+  // phone sheet: three stops (peek = the tab row only · half · full, which still keeps a mini card above).
   // The handle follows the finger, snaps by position and velocity, a tap toggles, arrow keys step between stops.
   const clearDrag = () => { panel.current?.style.removeProperty('--drag'); panel.current?.removeAttribute('data-dragging'); };
   const handleGesture = usePointerGesture({ axis: 'y', enabled: phone,
@@ -274,52 +314,47 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
     e.preventDefault();
     setSheet((s) => STOPS[Math.max(0, Math.min(2, STOPS.indexOf(s) + (e.key === 'ArrowUp' ? 1 : -1)))]!);
   };
-  // phones: the tab row is the toolbar — a section opens the sheet; the open section's tab hides it again
+  // phones: the tab row is the toolbar — a tab opens the sheet; the open tab hides it again
   const onTabs = (e: React.MouseEvent) => {
     if (!phone) return;
     const tab = (e.target as HTMLElement).closest('[role="tab"]');
     if (!tab) return;
     const value = tab.id.replace('ed-tab-', '') as EditorSection;
-    if (sheet === 'peek') setSheet(value === 'design' || value === 'event' ? 'full' : 'half');
+    if (sheet === 'peek') setSheet(value === 'design' ? 'full' : 'half');
     else if (value === section) setSheet('peek');
   };
 
-  const live = mode === 'preview' && !phone;
-  const saveLabel = save === 'error' ? <><Icon name="alert" size="sm" />{t('edSaveFailed')}</>
-    : save === 'saved' ? <><Icon name="check" size="sm" />{t('edSaved')}</>
-    // pending and in-flight read the same, so the status does not flicker while typing
+  // one status for the design and the event: pending and in-flight read the same, so it does not flicker while typing
+  const status: SaveState | 'invalid' = save === 'error' || evSave === 'error' ? 'error' : evSave === 'invalid' ? 'invalid' : save === 'saved' && evSave === 'saved' ? 'saved' : 'saving';
+  const saveLabel = status === 'error' ? <><Icon name="alert" size="sm" />{t('edSaveFailed')}</>
+    : status === 'invalid' ? <><Icon name="alert" size="sm" />{t('edFixField')}</>
+    : status === 'saved' ? <><Icon name="check" size="sm" />{t('edSaved')}</>
     : <><span className="ed-save-dot" aria-hidden="true" />{t('edSaving')}</>;
-  const pubLabel = t(ps === 'published' ? 'edPublished' : ps === 'changed' ? 'edChangedUnpublished' : 'edDraft');
+  const retry = () => { if (save === 'error') void persist(); if (evSave === 'error') void saveEvent(); };
+  const mini = phone && typing;
 
   return (
-    <div className={`ed ed-v3 mode-${live ? 'preview' : 'edit'} at-${sheet}${typing ? ' is-typing' : ''}`} data-sheet={sheet}>
+    <div className={`ed ed-v3 at-${sheet}${typing ? ' is-typing' : ''}`} data-sheet={sheet}>
       <a href="#editor-controls" className="skip-link">{t('edSkip')}</a>
       <header className="ed-bar">
-        <div className="ed-brand-cluster">
-          <button type="button" className="ed-brand" aria-label={t('edBrand')} onClick={close}><Logo height={28} /></button>
-          <button type="button" className="ed-close" aria-label={t('edCloseLabel')} onClick={close}><Icon name="back" /></button>
-        </div>
+        <button type="button" className="ed-close" aria-label={t('edCloseLabel')} onClick={close}><Icon name="back" /></button>
         <div className="ed-title">
           <h1 className="ed-h">{t('edTitle')}</h1>
-          <span className="ed-sub truncate">{event.title}</span>
-          <span className="ed-status-line" aria-hidden="true"><span className={`ed-status-save is-${save}`}>{saveLabel}</span><span className={`ed-status-pub is-${ps}`}>{pubLabel}</span></span>
-        </div>
-        <div className="ed-status">
-          <AccountMenu />
-          <span className={`save-state is-${save}`} role="status" aria-live="polite">{saveLabel}</span>
-          {save === 'error' && <Button size="sm" onClick={() => void persist()}>{t('retry')}</Button>}
-          <span className={`ed-pub is-${ps}`}><span className="ed-pub-dot" aria-hidden="true" />{t(ps === 'published' ? 'edPublished' : ps === 'changed' ? 'edPublishedChanged' : 'edDraft')}</span>
+          <p className="ed-status-line">
+            <span className={`save-state is-${status}`} role="status" aria-live="polite">{saveLabel}</span>
+            {status === 'error' ? <button type="button" className="link-btn ed-retry" onClick={retry}>{t('retry')}</button>
+              : status !== 'invalid' && <span className="ed-live">{t('edLive')}</span>}
+          </p>
         </div>
         <div className="ed-actions">
           <Button variant="secondary" icon="eye" className="ed-preview-btn" onClick={guestPreview}>{t('editorPreview')}</Button>
           <IconButton variant="secondary" icon="eye" className="ed-preview-icon" label={t('editorPreview')} onClick={guestPreview} />
-          {publishBtn}
+          <Button variant="primary" icon="send" className="ed-send" onClick={send}>{t('edSend')}</Button>
         </div>
       </header>
 
-      <SealStamp show={justPublished} label={t('edJustPublished')} />
       <div className="ed-main">
-        <aside ref={panel} inert={publishing} className="ed-panel" aria-label={t('edToolsLabel')}>
+        <aside ref={panel} className="ed-panel" aria-label={t('edToolsLabel')}>
           <div className="ed-handle-row">
             <button type="button" className="ed-handle" aria-label={t('shSheet', { state: t(sheet === 'full' ? 'shSheetFull' : sheet === 'peek' ? 'shSheetPeek' : 'shSheetHalf') })} aria-expanded={sheet !== 'peek'}
               data-gesture-surface data-stop={sheet}
@@ -331,45 +366,35 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
           <div className="ed-tabs-wrap" onClick={onTabs}>
             <Segmented label={t('edTabsLabel')} panels="ed" value={section} onChange={(v: EditorSection) => setSection(v)} options={SECTIONS.map((s) => ({ ...s, label: t(s.label) }))} className="ed-tabs" />
           </div>
-          <div className="ed-panel-body" role="tabpanel" id={`ed-${section}`} aria-labelledby={`ed-tab-${section}`} onFocusCapture={(e) => { const node = e.target as HTMLElement; if (node.closest('.ed-content-message')) setPage('message'); else if (node.closest('.ed-program-disclosure')) setPage('program'); else if (node.closest('.ed-content-names')) setPage('card'); }}>
+          <div ref={body} className="ed-panel-body" role="tabpanel" id={`ed-${section}`} aria-labelledby={`ed-tab-${section}`}
+            onFocusCapture={(e) => { const p = (e.target as HTMLElement).closest('[data-page-for]')?.getAttribute('data-page-for') as WorkbenchPage | null; if (p && pages.includes(p)) setPage(p); }}>
             <span id="editor-controls" tabIndex={-1} />
-            {publishError && <Banner tone="danger" compact title={t('edNotPublished')}>{publishError}</Banner>}
-            {loc.search.get('first') === '1' && section === 'content' && <div className="ed-simple-intro"><Icon name="check-circle" size="sm" /><p><strong>{t('edReadyTitle')}</strong> {t('edReadyText')}</p></div>}
-            {section === 'content' && <ContentSection event={event} content={content} update={update} />}
+            {section === 'content' && <TextSection event={event} draft={evDraft} onDraft={editEvent} errors={evErrors} content={content} update={update} />}
             {section === 'design' && <DesignSection event={shown} content={content} invitation={invitation} update={update} onChangeTemplate={changeTemplate} />}
-            {section === 'motion' && <MotionSection content={content} invitation={invitation} update={update} sound={sound} onSound={setSound} toAccount={toAccount} />}
-            {section === 'event' && <EventSection event={event} draft={evDraft} onDraft={(d) => { setEvDraft(d); setEventErrors({}); }} validationErrors={eventErrors} />}
+            {section === 'motion' && <SoundSection content={content} update={update} toAccount={toAccount} />}
           </div>
         </aside>
 
         <section className="ed-stage" aria-label={t('edStageLabel')}>
-          <div className="ed-stage-heading">
-            <div><p className="ed-stage-kicker">{t(live ? 'edFullKicker' : 'edDeskKicker')}</p><p className="ed-stage-caption">{t(live ? 'edFullCaption' : 'edDeskCaption')}</p></div>
-            <Segmented label={t('edModeLabel')} value={mode} onChange={setMode} options={[{ value: 'edit', label: t('edModeEdit'), icon: 'edit' }, { value: 'preview', label: t('edModePreview'), icon: 'play' }]} />
-          </div>
-          {justPublished && <div className="ed-published" role="status"><Icon name="check-circle" size="sm" /><p><strong>{t('edGuestsReady')}</strong> {t('edGuestsReadyText')}</p></div>}
-          {!live ? <>
-            <div className="ed-page-swipe" key={page} ref={pager.ref} data-pager="" data-enter={pager.enter} {...pager.gesture}>
-              <EditorWorkbench event={shown} content={content} page={page} motion={cardMotion} />
+          {intro && <p className="ed-intro" role="note"><Icon name="check-circle" size="sm" /><span><strong>{t('edReadyTitle')}</strong> {t('edReadyText')}</span></p>}
+          <div className="ed-canvas">
+            <div className="ed-page-swipe" key={shownPage} ref={pager.ref} data-pager="" data-enter={pager.enter} {...pager.gesture}>
+              <EditorWorkbench event={shown} content={content} page={shownPage} motion={cardMotion} bottom={mini ? 0 : BAR_ROOM} onEdit={editField} />
             </div>
-            <div className="ed-stage-tools ed-canvas-bar">
-              <Segmented className="ed-canvas-tabs" size="sm" label={t('edCanvasLabel')} value={page} onChange={setPage} options={PAGES.map((p) => ({ ...p, label: t(p.label) }))} />
-              <span className="ed-canvas-caption">{CARD_NAMES[content.cardId] ?? t('edYourInvitation')} <span aria-hidden="true">·</span> {t('edChangesAsYouType')}</span>
+            {!mini && <div className="ed-canvas-bar">
+              <div className="ed-dots" role="group" aria-label={t('edPagesLabel')}>
+                {pages.map((p, i) => <button key={p} type="button" className="ed-dot" aria-current={p === shownPage ? 'page' : undefined}
+                  aria-label={t('edPageOf', { name: t(PAGE_LABEL[p]), n: i + 1, total: pages.length })} onClick={() => setPage(p)}><span aria-hidden="true" /></button>)}
+              </div>
               <span className="ed-canvas-actions">
-                {page === 'card' && <IconButton size="sm" variant="ghost" icon="play" className="ed-motion-replay" label={t('edReplayCard')} onClick={() => setCardMotion((n) => n + 1)} />}
+                {shownPage === 'card' && <IconButton size="sm" variant="ghost" icon="play" className="ed-motion-replay" label={t('edReplayCard')} onClick={() => setCardMotion((n) => n + 1)} />}
                 <IconButton size="sm" variant="ghost" icon="expand" className="ed-workbench-expand" label={t('edExpand')} onClick={() => setExpanded(true)} />
               </span>
-            </div>
-          </> : <>
-            <div className="ed-screen-wrap"><div className="ed-screen"><LivePreview start="intro" invitation={invitation} content={content} replayToken={replay} muted={!sound} /></div></div>
-            <div className="ed-stage-tools">
-              <Button size="sm" variant="ghost" icon="play" onClick={() => setReplay((n) => n + 1)}>{t('edReplay')}</Button>
-              <IconButton size="sm" icon={sound ? 'volume' : 'mute'} label={t(sound ? 'edSoundOff' : 'edSoundOn')} aria-pressed={sound} onClick={() => setSound((v) => !v)} />
-            </div>
-          </>}
+            </div>}
+          </div>
         </section>
       </div>
-      {expanded && <ExpandedCard event={shown} content={content} page={page} onClose={() => setExpanded(false)} />}
+      {expanded && <ExpandedCard event={shown} content={content} page={shownPage} onClose={() => setExpanded(false)} />}
     </div>
   );
 }

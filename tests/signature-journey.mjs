@@ -1,7 +1,7 @@
 // «توقيع» journey in a real browser (Chromium via Playwright), at 390 / 768 / 1440.
 //   node tests/signature-journey.mjs [phone|tab|desk|all]
 // Graduation (single person), created from scratch: occasion deck (keyboard) → details → prepared invitation →
-// publish (stamp) → add a guest → guest link: envelope cover → RSVP → reception gate check-in → summary.
+// «أرسل للضيوف» → add a guest → guest link: envelope cover → RSVP → reception gate check-in → summary.
 // Couple (seeded wedding): overview → invitation → guests → replies → reception → summary → guest cover.
 // Also checks: no horizontal page scroll, no wedding copy on the graduation surfaces, reduced-motion cover,
 // sheet keyboard steps on phone, no page errors. Writes review/screenshots-or-captures/journey/<vp>-*.png
@@ -119,11 +119,24 @@ async function run(vp) {
     return `up: ${/at-full/.test(up) ? 'full' : 'half'} · down: peek`;
   });
 
-  await step(vp, '06 publish → seal stamp', async () => {
-    await page.locator('.ed-publish:visible').first().click();
-    await page.getByText('نُشرت دعوتك').first().waitFor({ timeout: 8000 });
-    await page.waitForTimeout(300); await shot('06-published');
-    return 'stamp shown';
+  await step(vp, '05c editor: one surface — tap the name on the card to edit it; no publish state', async () => {
+    const header = await page.locator('.ed-bar').innerText();
+    if (/نشر|منشورة|مسودة/.test(header)) throw new Error(`publish words in the header: ${header}`);
+    if ((await page.locator('.ed-tabs [role=tab]').count()) !== 3) throw new Error('expected three tabs');
+    const name = page.locator('.ed-tap[data-edit-target="names"]').first();
+    await name.waitFor({ timeout: 6000 });
+    await name.click();
+    await page.waitForFunction(() => document.activeElement?.getAttribute('data-event-field') === 'a', null, { timeout: 4000 });
+    await shot('05c-tap-name');
+    await page.evaluate(() => document.activeElement?.blur()); await page.waitForTimeout(400);
+    return `${await page.locator('.ed-dot').count()} pages dotted on the card`;
+  });
+
+  await step(vp, '06 «أرسل للضيوف» → the guests', async () => {
+    await page.locator('.ed-send:visible').first().click();
+    await page.waitForURL(/\/guests/, { timeout: 8000 });
+    await page.waitForTimeout(300); await shot('06-to-guests');
+    return page.url().replace(BASE, '');
   });
 
   await step(vp, '07 graduation invitation summary has no wedding copy', async () => {

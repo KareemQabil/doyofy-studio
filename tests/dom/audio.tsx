@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { IDBFactory } from 'fake-indexeddb';
 import { AudioLibrary } from '../../src/features/account/AudioLibrary';
 import { audioMedia } from '../../src/features/account/audio-media';
-import { MotionSection } from '../../src/features/editor/sections';
+import { SoundSection } from '../../src/features/editor/sections';
 import { RouterProvider } from '../../src/app/router';
 import { AUDIO_LIBRARY_KEY, MAX_AUDIO_BYTES, readAudioLibrary } from '../../src/domain/audio-library';
 import { indexedDbAudioStore, setAudioStore, audioStore } from '../../src/domain/audio-store';
@@ -79,7 +79,7 @@ export async function run() {
     const [track] = readAudioLibrary().tracks;
     const content = { audio: { mode: 'builtin' }, experience: { dimension: '2d', motion: 'animated' } } as unknown as InvitationDesignContent;
     let last: Partial<InvitationDesignContent> = {};
-    await render(<MotionSection content={content} invitation={null} update={p => { last = p; }} sound={false} onSound={() => {}} />);
+    await render(<SoundSection content={content} update={p => { last = p; }} />);
     const group = document.querySelector(`[role=radiogroup][aria-label="${k.audioChoiceLabel}"]`)!;
     const radios = [...group.querySelectorAll('[role=radio]')];
     assert.deepEqual(radios.map(r => r.querySelector('.ed-option-title')?.textContent), [k.audioChoiceNone, k.audioChoiceBuiltin, k.audioChoiceMine]);
@@ -91,7 +91,7 @@ export async function run() {
     assert.ok(voiceSwitch.disabled, 'no recording yet: the voice toggle waits, with a link to record one');
     assert.ok(text().includes(k.audioRecordInAccount));
     // a chosen upload shows the honest device-only line
-    await render(<MotionSection content={{ ...content, audio: last.audio } as InvitationDesignContent} invitation={null} update={p => { last = p; }} sound={false} onSound={() => {}} />);
+    await render(<SoundSection content={{ ...content, audio: last.audio } as InvitationDesignContent} update={p => { last = p; }} />);
     assert.ok(text().includes(k.audioDeviceOnly));
     assert.equal(document.querySelector<HTMLSelectElement>('select[data-audio-track]')?.value, track!.id);
   });
@@ -137,7 +137,7 @@ export async function run() {
 
     let last: Partial<InvitationDesignContent> = {};
     const content = { audio: { mode: 'off' }, experience: { dimension: '2d', motion: 'animated' } } as unknown as InvitationDesignContent;
-    await render(<MotionSection content={content} invitation={null} update={p => { last = p; }} sound={false} onSound={() => {}} />);
+    await render(<SoundSection content={content} update={p => { last = p; }} />);
     const voiceSwitch = [...document.querySelectorAll('[role=switch]')].find(s => document.getElementById(s.getAttribute('aria-labelledby') ?? '')?.textContent === k.audioVoiceToggle) as HTMLButtonElement;
     assert.equal(voiceSwitch.disabled, false);
     await click(voiceSwitch);

@@ -242,54 +242,101 @@ export async function run(){
   await pointer(handle,'pointerdown',100,80,400);await pointer(handle,'pointermove',100,200,600);await pointer(handle,'pointercancel',100,200,700);assert.ok(document.querySelector('.ed.at-full'));
   await pointer(handle,'pointerdown',100,80,800);await pointer(handle,'pointermove',100,200,1000);await pointer(handle,'pointerup',100,200,1100);assert.ok(document.querySelector('.ed.at-half'));
  });
- await check('phone editor: the tab row opens and hides the tools, typing keeps a live mini card, publishing and «بحجم أكبر» return to the card',async()=>{
+ // jsdom has no layout: give every element a box so the card's «tap to edit» targets are laid out
+ const withBoxes=async(fn:()=>Promise<void>)=>{
+  const proto=(window as unknown as {Element:typeof Element}).Element.prototype,original=proto.getBoundingClientRect;
+  proto.getBoundingClientRect=function(this:Element){const layer=this.classList.contains('ed-tap-layer');const w=layer?300:100,h=layer?420:20;return {x:0,y:0,left:layer?0:10,top:layer?0:10,right:w,bottom:h,width:w,height:h,toJSON(){return this;}} as DOMRect;};
+  try{await fn();}finally{proto.getBoundingClientRect=original;}
+ };
+ const fillText=async(el:HTMLTextAreaElement|HTMLInputElement,value:string)=>{await act(async()=>{Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el),'value')!.set!.call(el,value);el.dispatchEvent(new Event('input',{bubbles:true}));});};
+ const wait=async(ms:number)=>{await act(async()=>{await new Promise(r=>setTimeout(r,ms));});await settle();};
+ await check('phone editor: one surface — three tabs, the card\'s pages on the card, typing keeps a live mini card, no publish state',async()=>{
   history.replaceState(null,'','/app/events/evt_wedding/invitation/design');await render(<App mode="history"/>);await settle();
-  const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services,original=(await api.invitations.get(event.id)).draft;
+  const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services,before=await api.events.get(event.id);
   const ed=()=>document.querySelector('.ed')!.className,tab=()=>document.querySelector('#ed-tab-content')!;
   try {
    assert.ok(/at-peek/.test(ed()),'the card leads');assert.equal(document.querySelectorAll('.ed-dock').length,0,'no second action bar');
-   assert.equal(document.querySelectorAll('.ed-publish').length,1,'one primary action, in the header');
-   await click(tab());assert.ok(/at-half/.test(ed()),'a section opens the tools');
-   await click(tab());assert.ok(/at-peek/.test(ed()),'the open section hides them again');
+   assert.equal(document.querySelectorAll('.ed-tabs [role="tab"]').length,3,'three tabs only');
+   assert.deepEqual(Array.from(document.querySelectorAll('.ed-tabs [role="tab"]')).map(t=>t.textContent),['النص','الشكل','الصوت']);
+   const bar=document.querySelector('.ed-bar')!.textContent!;
+   assert.equal(document.querySelectorAll('.ed-send').length,1,'one forward action, in the header');assert.ok(bar.includes('أرسل للضيوف'));assert.ok(bar.includes('التعديلات تصل لضيوفك تلقائيًا'));
+   assert.ok(!/نشر|منشورة|مسودة/.test(bar),`no publish state in the header: «${bar}»`);
+   assert.equal(document.querySelector('.ed-stage-heading'),null,'no desk heading');assert.equal(document.querySelector('.ed-canvas-tabs'),null,'no page tabs');
+   // the pages are dotted (and swiped) on the card itself
+   const dots=()=>Array.from(document.querySelectorAll<HTMLButtonElement>('.ed-dot'));
+   assert.equal(dots().length,3);assert.equal(dots()[0]!.getAttribute('aria-current'),'page');assert.ok(dots()[1]!.getAttribute('aria-label')!.includes('الكلمة'));
+   await click(dots()[1]!);assert.equal(document.querySelector('.ed-workbench')!.getAttribute('data-page'),'message');
+   await click(dots()[0]!);
+   await click(tab());assert.ok(/at-half/.test(ed()),'a tab opens the tools');
+   await click(tab());assert.ok(/at-peek/.test(ed()),'the open tab hides them again');
    await click(tab());
    const name=document.querySelector<HTMLInputElement>('.ed-content-names input')!;
+   assert.equal(name.value,before.names.a,'the names are the event\'s names');
    await act(async()=>{name.focus();});
    assert.ok(/at-full/.test(ed())&&/is-typing/.test(ed()),'typing: the sheet takes the room the keyboard leaves');
    await fill(name,'نورة المصغّرة');assert.ok(document.querySelector('.ed-stage .ed-workbench .card-thumb-inner')!.textContent?.includes('نورة المصغّرة'),'the mini card updates live while typing');
+   assert.equal(document.querySelector('.ed-dots'),null,'the mini card keeps all the room');
    await act(async()=>{name.blur();await new Promise(r=>setTimeout(r,220));});
    assert.ok(/at-half/.test(ed())&&!/is-typing/.test(ed()),'leaving the field restores the sheet');
-   await act(async()=>{await new Promise(r=>setTimeout(r,750));});await settle();
-   assert.ok(document.querySelector('.ed-actions .ed-publish')!.textContent?.includes('انشر التعديلات'));
-   await click(document.querySelector('.ed-actions .ed-publish')!);await settle();
-   assert.ok(/at-peek/.test(ed()),'publishing returns to the full card');assert.ok(document.querySelector('.ed-published'));
-   assert.ok(document.querySelector('.ed-actions .ed-publish')!.textContent?.includes('إلى الضيوف'));
+   await wait(1100);
+   const saved=await api.events.get(event.id);assert.equal(saved.names.a,'نورة المصغّرة','names are saved to the EVENT');
+   assert.equal(saved.title,before.title.replace(before.names.a,'نورة المصغّرة'),'an automatic title follows the names');
+   assert.deepEqual((await api.invitations.get(event.id)).draft.displayNames,{},'no second set of names on the card');
+   assert.ok(document.querySelector('.save-state.is-saved'));
    await click(document.querySelector('.ed-workbench-expand')!);await settle();
    const dialog=document.querySelector('.ed-expanded-dialog')!;assert.ok(dialog?.hasAttribute('open'));assert.ok(dialog.querySelector('.card-thumb'));
    const zoom=Array.from(dialog.querySelectorAll<HTMLButtonElement>('button[aria-pressed]'))[0]!;await click(zoom);
    assert.equal(dialog.querySelector('.ed-expanded-scroll')!.getAttribute('data-zoom'),'2');assert.equal(zoom.getAttribute('aria-pressed'),'true');
-  } finally { await api.invitations.saveDraft(event.id,original);await api.invitations.publish(event.id); }
+  } finally { await api.events.update(event.id,{names:before.names,title:before.title}); }
  });
- await check('Signature desktop studio edits a live card, saves, previews and publishes the same draft',async()=>{
+ await check('Signature desktop studio: tap any text on the card to edit it, three tabs, «أرسل للضيوف» goes to the guests',async()=>{
   const originalMedia=globalThis.matchMedia;
   globalThis.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}} as unknown as MediaQueryList);
+  let api=made.services,before=event,original=defaultDesign(event);
+  try { await withBoxes(async()=>{
+   history.replaceState(null,'','/app/events/evt_wedding/invitation/design');await render(<App mode="history"/>);await settle();await wait(60);
+   api=(window as unknown as {__doyofy:typeof made}).__doyofy.services;before=await api.events.get(event.id);original=(await api.invitations.get(event.id)).draft;
+   assert.ok(document.querySelector('.ed-workbench .card-thumb-inner'));assert.equal(document.querySelector('.live-preview'),null,'no edit/preview toggle: one surface');
+   assert.equal(document.querySelectorAll('.ed-tabs [role="tab"]').length,3);assert.equal(document.querySelector('#ed-tab-event'),null,'no «المناسبة» tab');
+   // every text on the card is a labelled button, once in the tab order per field
+   const targets=()=>Array.from(document.querySelectorAll<HTMLButtonElement>('.ed-tap'));
+   const focusable=targets().filter(b=>b.tabIndex===0).map(b=>[b.dataset.editTarget,b.getAttribute('aria-label')]);
+   assert.deepEqual(focusable,[['names','عدّل الأسماء'],['date','عدّل الموعد'],['venue','عدّل المكان']]);
+   await click(document.querySelector('#ed-tab-design')!);
+   assert.ok(document.querySelector('.ed-cards'));assert.ok(document.querySelector('[role=radiogroup][aria-label="الحركة"]'),'motion lives in «الشكل»');
+   await click(targets().find(b=>b.dataset.editTarget==='date')!);await wait(30);
+   assert.equal(document.querySelector('#ed-tab-content')!.getAttribute('aria-selected'),'true','a tap on the date opens «النص»');
+   assert.equal(document.activeElement?.getAttribute('data-event-field'),'date','…and focuses the date');
+   await click(targets().find(b=>b.dataset.editTarget==='venue')!);assert.equal(document.activeElement?.getAttribute('data-event-field'),'venue');
+   await click(targets().find(b=>b.dataset.editTarget==='names')!);
+   const name=document.activeElement as HTMLInputElement;assert.equal(name.getAttribute('data-event-field'),'a');
+   await fill(name,'نورة الاستوديو');assert.ok(document.querySelector('.ed-workbench .card-thumb-inner')!.textContent?.includes('نورة الاستوديو'));
+   // the message page: its message is a target too
+   await click(document.querySelectorAll<HTMLButtonElement>('.ed-dot')[1]!);await wait(30);
+   await click(targets().find(b=>b.dataset.editTarget==='message')!);assert.equal(document.activeElement?.getAttribute('data-edit-field'),'message');
+   await fillText(document.activeElement as HTMLTextAreaElement,'كلمة من الاستوديو');
+   await click(document.querySelector('#ed-tab-motion')!);assert.ok(document.querySelector('[role=radiogroup][aria-label="صوت الدعوة"]'),'«الصوت» holds the sound choice');
+   await wait(1100);
+   assert.equal((await api.events.get(event.id)).names.a,'نورة الاستوديو');assert.equal((await api.invitations.get(event.id)).draft.message.ar,'كلمة من الاستوديو');
+   await click(document.querySelector('.ed-send')!);await wait(60);
+   assert.ok(location.pathname.endsWith('/guests'),`«أرسل للضيوف» opens the guests: ${location.pathname}`);
+   const live=await api.invitations.get(event.id);assert.deepEqual(live.published,live.draft,'guests get what was saved');
+  }); } finally {
+   globalThis.matchMedia=originalMedia;
+   await api.events.update(event.id,{names:before.names,title:before.title});await api.invitations.saveDraft(event.id,original);await api.invitations.publish(event.id);
+  }
+ });
+ await check('an old design\'s separate card names still load; the card shows the event\'s names and the next save drops them',async()=>{
+  const prev=(window as unknown as {__doyofy:typeof made}).__doyofy.services,original=(await prev.invitations.get(event.id)).draft;
+  await prev.invitations.saveDraft(event.id,{...original,displayNames:{a:'اسم قديم على البطاقة'}});
+  await render(null);history.replaceState(null,'',paths.design(event.id));await render(<App mode="history"/>);await settle();
+  const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services;
   try {
-   history.replaceState(null,'','/app/events/evt_wedding/invitation/design');await render(<App mode="history"/>);await settle();
-   const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services;
-   const before=await api.events.get(event.id),original=(await api.invitations.get(event.id)).draft;
-   assert.ok(document.querySelector('.ed-brand .logo'));assert.ok(document.querySelector('.ed-workbench .card-thumb-inner'));assert.equal(document.querySelector('.live-preview'),null);
-   assert.equal(document.querySelectorAll('.ed-tabs [role="tab"]').length,4);
-   const name=document.querySelector<HTMLInputElement>('.ed-group input')!;await fill(name,'نورة الاستوديو');await settle();
-   assert.ok(document.querySelector('.ed-workbench .card-thumb-inner')!.textContent?.includes('نورة الاستوديو'));
-   await act(async()=>{await new Promise(r=>setTimeout(r,750));});await settle();
-   assert.equal((await api.invitations.get(event.id)).draft.displayNames.a,'نورة الاستوديو');
-   assert.deepEqual(await api.events.get(event.id),before);
-   const stageButton=(label:string)=>Array.from(document.querySelectorAll<HTMLButtonElement>('.ed-stage-heading button')).find(x=>x.textContent===label)!;
-   await click(stageButton('معاينة'));await settle();assert.ok(document.querySelector('.live-preview'));assert.equal(document.querySelector('.ed-workbench'),null);
-   await click(stageButton('تعديل'));await settle();assert.ok(document.querySelector('.ed-workbench .card-thumb-inner')!.textContent?.includes('نورة الاستوديو'));
-   await click(document.querySelector('#ed-tab-design')!);assert.ok(document.querySelector('.ed-cards'));await click(document.querySelector('#ed-tab-motion')!);assert.ok(document.querySelector('.ed-options'));await click(document.querySelector('#ed-tab-event')!);assert.ok(document.querySelector('input[type="date"]'));
-   await click(document.querySelector('.ed-actions .ed-publish')!);await settle();const published=await api.invitations.get(event.id);assert.deepEqual(published.published,published.draft);assert.equal(published.published!.displayNames.a,'نورة الاستوديو');
-   await api.invitations.saveDraft(event.id,original);await api.invitations.publish(event.id);
-  } finally {globalThis.matchMedia=originalMedia;}
+   assert.ok(!document.querySelector('.ed-workbench .card-thumb-inner')!.textContent?.includes('اسم قديم'),'the card shows the event\'s names');
+   assert.equal(document.querySelector<HTMLInputElement>('[data-event-field="a"]')!.value,event.names.a,'names are entered once: the event\'s');
+   await fillText(document.querySelector<HTMLTextAreaElement>('[data-edit-field="message"]')!,'كلمة بعد الأسماء القديمة');await wait(900);
+   const saved=(await api.invitations.get(event.id)).draft;assert.deepEqual(saved.displayNames,{});assert.equal(saved.message.ar,'كلمة بعد الأسماء القديمة');
+  } finally { await api.invitations.saveDraft(event.id,original); }
  });
  await check('the in-event gallery is the same full-screen feed, and browsing keeps the draft until explicit use',async()=>{
   history.replaceState(null,'','/app/events/evt_wedding/invitation/templates');await render(<App mode="history"/>);await settle();
@@ -303,16 +350,15 @@ export async function run(){
   const after=(await api.invitations.get(event.id)).draft;assert.notEqual(after.cardId,before.cardId);assert.deepEqual(after.displayNames,before.displayNames);assert.deepEqual(after.message,before.message);assert.deepEqual(after.program,before.program);
   await api.invitations.saveDraft(event.id,before);
  });
- await check('an applied template reaches the editor, survives typing and offers publishing the change (P0)',async()=>{
+ await check('an applied template reaches the editor and survives typing (P0)',async()=>{
   // real latency: the gallery's write invalidates the design while its refetch is still in flight on arrival
   const until=async(ok:()=>boolean,what:string)=>{for(let i=0;i<80&&!ok();i++)await act(async()=>{await new Promise(r=>setTimeout(r,25));});assert.ok(ok(),what);};
   const cardLabel=()=>document.querySelector('.ed-workbench .card-thumb')?.getAttribute('aria-label')??'';
-  const publishText=()=>document.querySelector('.ed-actions .ed-publish')?.textContent??'';
+  const message=()=>document.querySelector<HTMLTextAreaElement>('[data-edit-field="message"]')!;
   history.replaceState(null,'','/app/events/evt_wedding/invitation/design');await render(<App mode="history"/>);await settle();
   const first=(window as unknown as {__doyofy:typeof made}).__doyofy.services;
   const original=(await first.invitations.get(event.id)).draft;
-  await act(async()=>{await first.invitations.publish(event.id);});await settle();
-  assert.notEqual(original.cardId,'pf-gazebo');assert.ok(publishText().includes('إلى الضيوف'));
+  assert.notEqual(original.cardId,'pf-gazebo');
   // 1) the gallery: open the design from its link and use it (a new App instance: re-read its services)
   await render(null);history.replaceState(null,'','/app/events/evt_wedding/invitation/templates?template=pf-gazebo-garden');await render(<App mode="history"/>);
   const handle=(window as unknown as {__doyofy:typeof made}).__doyofy,api=handle.services;
@@ -322,21 +368,19 @@ export async function run(){
    await click(document.querySelector('.focus-foot .btn-primary')!);
    await until(()=>location.pathname.endsWith('/invitation/design')&&!!document.querySelector('.ed-workbench .card-thumb'),'editor opens');
    assert.ok(cardLabel().includes('شرفة الحديقة'),`editor shows the applied design, got «${cardLabel()}»`);
-   assert.ok(publishText().includes('انشر التعديلات'),`publish offers the change, got «${publishText()}»`);
-   const name=document.querySelector<HTMLInputElement>('.ed-group input')!;await fill(name,'نورة بعد القالب');
+   await fillText(message(),'كلمة بعد القالب');
    await until(()=>document.querySelector('.save-state.is-saved')!==null,'autosave settles');
    const saved=(await api.invitations.get(event.id)).draft;
-   assert.equal(saved.cardId,'pf-gazebo','typing must not write the previous design back');assert.equal(saved.displayNames.a,'نورة بعد القالب');
-   assert.ok(cardLabel().includes('شرفة الحديقة'));assert.ok(publishText().includes('انشر التعديلات'));
+   assert.equal(saved.cardId,'pf-gazebo','typing must not write the previous design back');assert.equal(saved.message.ar,'كلمة بعد القالب');
+   assert.ok(cardLabel().includes('شرفة الحديقة'));
    // 2) the editor's own card picker
    await click(document.querySelector('#ed-tab-design')!);
    const pick=Array.from(document.querySelectorAll<HTMLButtonElement>('.ed-cards [role="radio"]')).find(b=>b.getAttribute('aria-checked')==='false')!;
    const pickedName=pick.querySelector('.ed-pick-name')!.textContent!;await click(pick);
-   await click(document.querySelector('#ed-tab-content')!);await fill(document.querySelector<HTMLInputElement>('.ed-group input')!,'نورة بعد البطاقة');
-   await until(()=>document.querySelector('.save-state.is-saved')!==null&&(document.querySelector<HTMLInputElement>('.ed-group input')!.value==='نورة بعد البطاقة'),'second autosave settles');
+   await click(document.querySelector('#ed-tab-content')!);await fillText(message(),'كلمة بعد البطاقة');
+   await until(()=>document.querySelector('.save-state.is-saved')!==null&&message().value==='كلمة بعد البطاقة','second autosave settles');
    await act(async()=>{await new Promise(r=>setTimeout(r,800));});
    assert.ok(cardLabel().includes(pickedName));assert.notEqual((await api.invitations.get(event.id)).draft.cardId,'pf-gazebo');
-   assert.ok(publishText().includes('انشر التعديلات'));
   } finally {
    handle.prototype.update({latencyMs:0});
    await api.invitations.saveDraft(event.id,original);await api.invitations.publish(event.id);
@@ -622,22 +666,26 @@ export async function run(){
   const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services;const id=location.pathname.split('/')[3]!;
   assert.equal((await api.invitations.get(id)).draft.cardId,selected.cardId);assert.equal(window.localStorage.getItem('doyofy:create-draft:v1:usr_owner'),null);
   // typing in the editor keeps the design chosen from the link
-  await fill(document.querySelector<HTMLInputElement>('.ed-group input')!,'خريجة الرابط');await act(async()=>{await new Promise(r=>setTimeout(r,800));});await settle();
-  const typed=(await api.invitations.get(id)).draft;assert.equal(typed.cardId,selected.cardId);assert.equal(typed.displayNames.a,'خريجة الرابط');
+  await fillText(document.querySelector<HTMLTextAreaElement>('[data-edit-field="message"]')!,'كلمة الرابط');await act(async()=>{await new Promise(r=>setTimeout(r,800));});await settle();
+  const typed=(await api.invitations.get(id)).draft;assert.equal(typed.cardId,selected.cardId);assert.equal(typed.message.ar,'كلمة الرابط');
   assert.ok(document.querySelector('.ed-workbench .card-thumb')!.getAttribute('aria-label')!.includes('نحو السماء'));
  });
- await check('one publish saves event-only changes and focuses invalid details before publishing',async()=>{
-  history.replaceState(null,'',paths.design(event.id));await render(<App mode="history"/>);await settle();
-  const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services;
-  await act(async()=>{await api.invitations.publish(event.id);});await settle();
-  await click(document.querySelector('#ed-tab-event')!);
-  const venue=document.querySelector<HTMLInputElement>('[data-event-field="venue"]')!;await fill(venue,'قاعة النشر بخطوة واحدة');
-  const publish=document.querySelector<HTMLButtonElement>('.ed-actions .ed-publish')!;assert.ok(publish.textContent?.includes('انشر التعديلات'));
-  await click(publish);await settle();assert.equal((await api.events.get(event.id)).venue.name,'قاعة النشر بخطوة واحدة');
-  assert.ok(document.querySelector('.ed-actions .ed-publish')!.textContent?.includes('إلى الضيوف'));
-  const map=document.querySelector<HTMLInputElement>('[data-event-field="mapUrl"]')!;await fill(map,'javascript:alert(1)');
-  await click(document.querySelector('.ed-actions .ed-publish')!);await settle();
-  assert.equal(document.activeElement,map);assert.equal(map.getAttribute('aria-invalid'),'true');assert.ok(!String((await api.events.get(event.id)).venue.mapUrl).startsWith('javascript:'));
+ await check('the event\'s details autosave to the event; an invalid one stays marked, unsaved, and holds «أرسل للضيوف»',async()=>{
+  history.replaceState(null,'',paths.design(event.id,'event'));await render(<App mode="history"/>);await settle();
+  const api=(window as unknown as {__doyofy:typeof made}).__doyofy.services,before=await api.events.get(event.id);
+  try {
+   assert.equal(document.querySelector('#ed-tab-content')!.getAttribute('aria-selected'),'true','an old «المناسبة» link opens «النص»');
+   const venue=document.querySelector<HTMLInputElement>('[data-event-field="venue"]')!;await fill(venue,'قاعة الحفظ التلقائي');
+   await wait(1100);assert.equal((await api.events.get(event.id)).venue.name,'قاعة الحفظ التلقائي');assert.ok(document.querySelector('.save-state.is-saved'));
+   await fill(venue,'');await wait(1100);assert.equal((await api.events.get(event.id)).venue.name,'','the place is optional');
+   const map=document.querySelector<HTMLInputElement>('[data-event-field="mapUrl"]')!;await fill(map,'javascript:alert(1)');
+   await wait(1100);
+   assert.equal(map.getAttribute('aria-invalid'),'true');assert.ok(document.querySelector('.save-state.is-invalid'));assert.ok(!String((await api.events.get(event.id)).venue.mapUrl).startsWith('javascript:'));
+   await act(async()=>{(document.activeElement as HTMLElement|null)?.blur();});
+   await click(document.querySelector('.ed-send')!);await wait(60);
+   assert.ok(location.pathname.endsWith('/invitation/design'),'an invalid detail keeps the organizer here');assert.equal(document.activeElement,map);
+   await fill(map,'');await wait(1100);assert.ok(document.querySelector('.save-state.is-saved'));
+  } finally { await api.events.update(event.id,{venue:before.venue}); }
  });
  console.log(`DOM behavior: ${passed}/${passed} passed + malformed-route check.`);
  const routes=[

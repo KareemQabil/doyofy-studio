@@ -38,7 +38,7 @@ export function GuestPreview({ eventId }: { eventId: string }) {
       studio = new eng.Studio(host.current, {
         invitation: toInvitationData(event, content, event.settings.defaultPartySize),
         card: content.cardId, scene: content.sceneId, experience: content.experience, start: phase.start,
-        embedded: true, showSwitcher: false, params: new URLSearchParams(),
+        embedded: true, showSwitcher: false, params: new URLSearchParams(), authorNotes: true, // organizer-only hints (an upload missing on this device)
         guest: { name: t('shGuestName'), nameLocked: true, maxGuests: event.settings.defaultPartySize },
         rsvp: { submit: async () => ({ ok: true, id: 'preview' }) },
       });

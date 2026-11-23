@@ -55,7 +55,7 @@ test('copy: each voice keeps its own words (glossary) and the modern voice stays
   // table: طاولة / ترابيزة / طاولة; link: الرابط / اللينك / الرابط; design always «التصميم»
   assert.match(ar.tables, /الطاولات/); assert.match(eg.tables, /الترابيزات/); assert.match(sa.wsTables, /الطاولات/);
   assert.match(eg.copyLink, /اللينك/); assert.match(sa.copyLink, /الرابط/);
-  for (const c of [ar, eg, sa]) { assert.match(c.edDesign, /التصميم/); assert.match(c.esChangeDesign, /التصميم/); assert.doesNotMatch(c.tgFailed, /القالب/); }
+  for (const c of [ar, eg, sa]) { assert.equal(c.edDesign, 'الشكل', 'the editor tab is «الشكل» (owner decision 2)'); assert.match(c.esDesign, /التصميم/); assert.match(c.esChangeDesign, /التصميم/); assert.doesNotMatch(c.tgFailed, /القالب/); }
   // no Egyptianisms in Saudi lines, no Saudi markers in Egyptian lines
   const EGYPTIAN = /(?:^|[\s«])(?:دلوقتي|مش|عايز|كده|بتاع\S*|هن(?:يجي|جهّز|فتقد|وزّع|سجّل|حفظ|فرح)\S*|ترابيز\S*|اللينك|لينك\S*|إزاي|النهارده|تاني)(?=$|[\s،.؟!»:])/;
   const SAUDI = /(?:^|[\s«])(?:الحين|وش|تبي|كذا|مو|هال\S+|زبطت)(?=$|[\s،.؟!»:])/;

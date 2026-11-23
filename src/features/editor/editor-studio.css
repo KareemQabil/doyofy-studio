@@ -1,8 +1,9 @@
 /*
- * Invitation editor (round 2): the card is the hero. Loaded last so this one layout wins over the older editor layers
- * (editor.css, editor-signature.css and the editor rules in shared files). Every rule is scoped to `.ed-v3`.
- * Desktop: header · RTL tools panel · stage (card on its own setting + one tools row).
- * Phone: header (with the one primary action) · stage · bottom sheet whose tab row is the only toolbar.
+ * Invitation editor — one surface (decision 2): the card is the hero. Loaded last so this one layout wins over the older
+ * editor layers (editor.css, editor-signature.css and the editor rules in shared files). Every rule is scoped to `.ed-v3`.
+ * Header: back · title with the save status and the calm «تصل لضيوفك» line · «معاينة كضيف» · «أرسل للضيوف».
+ * Desktop: header · RTL tools panel (three tabs) · stage (the card on its own setting, its page dots and tools under it).
+ * Phone: header · stage · bottom sheet whose tab row is the only toolbar.
  */
 
 /* the invitation's own flat setting as a backdrop (SceneBackdrop): fills its positioned parent */
@@ -10,16 +11,35 @@
 
 /* ------------------------------------------------------------------ shared */
 :root[data-theme] .ed-v3 { --bar-h: 64px; min-height: 100dvh; display: flex; flex-direction: column; background: var(--c-canvas); }
-:root[data-theme] .ed-v3 .ed-status-line, :root[data-theme] .ed-v3 .ed-preview-icon { display: none; }
+:root[data-theme] .ed-v3 .ed-preview-icon { display: none; }
+
+/* header: back · title + status · preview · the one forward action */
+:root[data-theme] .ed-v3 .ed-bar { display: flex; align-items: center; gap: 16px; }
+:root[data-theme] .ed-v3 .ed-close { flex: none; }
+:root[data-theme] .ed-v3 .ed-title { flex: 1 1 auto; min-width: 0; gap: 2px; }
+:root[data-theme] .ed-v3 .ed-status-line { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 8px; margin: 0; min-width: 0; font-size: 12px; line-height: 1.5; color: var(--c-text-2); }
+:root[data-theme] .ed-v3 .ed-live { min-width: 0; color: var(--c-text-2); }
+:root[data-theme] .ed-v3 .ed-live::before { content: '·'; margin-inline-end: 8px; color: var(--c-text-3); }
+:root[data-theme] .ed-v3 .ed-retry { min-height: 32px; font-size: 12px; }
+:root[data-theme] .ed-v3 .ed-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 :root[data-theme] .ed-v3 .save-state { display: inline-flex; align-items: center; gap: 5px; color: var(--c-text-2); white-space: nowrap; }
-:root[data-theme] .ed-v3 .save-state.is-saved .icon, :root[data-theme] .ed-v3 .ed-status-save.is-saved .icon { color: var(--c-success); }
-:root[data-theme] .ed-v3 :is(.save-state, .ed-status-save).is-error { color: var(--c-danger); }
+:root[data-theme] .ed-v3 .save-state.is-saved .icon { color: var(--c-success); }
+:root[data-theme] .ed-v3 .save-state:is(.is-error, .is-invalid) { color: var(--c-danger); }
 .ed-save-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c-text-3); animation: ed-save-pulse 1.2s var(--ease-in-out) infinite; }
 @keyframes ed-save-pulse { 50% { opacity: .35; } }
 
-/* the workbench: the setting fills it, the page is scaled to the room (EditorWorkbench sets --paper-scale) */
+/* «النص»: short fields side by side when there is room (date · time) */
+:root[data-theme] .ed-v3 .ed-fields { display: grid; gap: 12px; }
+:root[data-theme] .ed-v3 .ed-fields.is-pair { grid-template-columns: repeat(auto-fit, minmax(136px, 1fr)); }
+
+/* first visit: one calm line above the card, gone at the first edit */
+.ed-intro { display: flex; align-items: flex-start; gap: 8px; flex: none; width: min(100%, 960px); margin: 0; padding: 10px 12px; border-radius: var(--r-md); background: var(--c-success-soft); color: var(--c-text); font-size: 13px; line-height: 1.7; }
+.ed-intro > .icon { flex: none; margin-top: 3px; color: var(--c-success); }
+
+/* the workbench: the setting fills it, the page is scaled to the room (EditorWorkbench sets --paper-scale and keeps
+   --wb-bottom free under the page for its dots and tools) */
 :root[data-theme] .ed-workbench { --paper-scale: .8; position: relative; isolation: isolate; overflow: hidden; background: var(--c-surface-subtle); }
-.ed-workbench-paper { position: absolute; z-index: 1; top: 50%; left: 50%; width: 300px; height: 420px; transform: translate(-50%, -50%) scale(var(--paper-scale)) perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 420ms var(--ease-out); }
+.ed-workbench-paper { position: absolute; z-index: 1; top: calc(50% - var(--wb-bottom, 0px) / 2); left: 50%; width: 300px; height: 420px; transform: translate(-50%, -50%) scale(var(--paper-scale)) perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 420ms var(--ease-out), top 420ms var(--ease-out); }
 .ed-workbench-paper.is-tilting { transition-duration: 90ms; }
 :root[data-theme] .ed-workbench-paper .card-thumb { display: block; border-radius: 4px; box-shadow: var(--shadow-art); }
 .ed-copy-frame { display: block; position: relative; }
@@ -28,37 +48,47 @@
 @keyframes ed-rise { from { opacity: 0; translate: 0 14px; } }
 .ed-workbench-caption { position: absolute; z-index: 2; bottom: 14px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 32px); border-radius: 999px; padding: 6px 12px; background: var(--c-surface); color: var(--c-text); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* one row under the card: page · caption · replay and «بحجم أكبر» — never on top of the card */
-:root[data-theme] .ed-v3 .ed-canvas-bar { display: flex; align-items: center; gap: 12px; flex: none; min-height: 44px; }
-:root[data-theme] .ed-v3 .ed-canvas-tabs { flex: none; min-height: 0; }
-:root[data-theme] .ed-v3 .ed-canvas-tabs .seg-btn { min-height: 36px; padding-inline: 14px; font-size: 13px; }
-/* page tabs read as quiet underlined tabs, the same in both appearances */
-:root[data-theme] .ed-v3 .ed-canvas-tabs { background: none; border: 0; padding: 0; box-shadow: none; }
-:root[data-theme] .ed-v3 .ed-canvas-tabs .seg-ind { display: none; }
-:root[data-theme] .ed-v3 .ed-canvas-tabs .seg-btn { position: relative; background: none; color: var(--c-text-2); }
-:root[data-theme] .ed-v3 .ed-canvas-tabs .seg-btn[data-on='true'] { color: var(--c-text); font-weight: var(--fw-bold); }
-:root[data-theme] .ed-v3 .ed-canvas-tabs .seg-btn[data-on='true']::after { content: ''; position: absolute; inset-inline: 10px; bottom: 3px; height: 2px; border-radius: 2px; background: var(--brand-red, var(--c-primary)); }
-.ed-canvas-caption { flex: 1 1 auto; min-width: 0; text-align: center; font-size: 12px; color: var(--c-text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ed-canvas-actions { display: flex; gap: 4px; flex: none; margin-inline-start: auto; }
-:root[data-theme] .ed-v3 .ed-canvas-actions .btn { position: static; inset: auto; transform: none; color: var(--c-text); background: none; border: 0; }
+/* tap to edit: a transparent button over each text on the page (in the page's own 300×420 space). A dashed outline on
+   hover, a two-tone ring on focus (it reads on light and dark faces alike) */
+.ed-tap-layer { position: absolute; inset: 0; z-index: 2; }
+.ed-tap { position: absolute; display: block; margin: 0; padding: 0; border: 0; border-radius: 6px; background: transparent; cursor: text; -webkit-tap-highlight-color: transparent; transition: background-color var(--dur-fast) var(--ease-in-out); }
+.ed-tap:focus-visible { outline: 2px solid var(--brand-charcoal); outline-offset: 1px; box-shadow: 0 0 0 4px var(--brand-ivory); }
+.ed-tap:active { background: color-mix(in srgb, var(--brand-gold) 18%, transparent); }
+@media (hover: hover) and (pointer: fine) {
+  .ed-tap:hover { outline: 1.5px dashed color-mix(in srgb, var(--brand-charcoal) 55%, transparent); outline-offset: -1px; background: color-mix(in srgb, var(--brand-gold) 10%, transparent); }
+}
+
+/* the card's own room: the page fills it; dots (pages) and tools (replay · «بحجم أكبر») sit under the page, never on it */
+:root[data-theme] .ed-v3 .ed-canvas { position: relative; display: flex; flex: 1 1 auto; min-height: 0; width: 100%; }
+:root[data-theme] .ed-v3 .ed-canvas > .ed-page-swipe { display: flex; flex: 1 1 auto; width: 100%; min-height: 0; }
+:root[data-theme] .ed-v3 .ed-canvas > .ed-page-swipe > .ed-workbench { flex: 1 1 auto; width: 100%; height: auto; min-height: 0; }
+:root[data-theme] .ed-v3 .ed-canvas-bar { position: absolute; z-index: 3; inset-inline: 0; bottom: 6px; display: flex; align-items: center; justify-content: center; height: 44px; pointer-events: none; }
+:root[data-theme] .ed-v3 .ed-canvas-bar > * { pointer-events: auto; }
+.ed-dots { display: flex; align-items: center; padding: 0 4px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--c-surface) 90%, transparent); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.ed-dot { display: grid; place-items: center; width: 36px; height: 36px; margin: 0; padding: 0; border: 0; border-radius: var(--r-pill); background: none; cursor: pointer; }
+.ed-dot > span { width: 8px; height: 8px; border-radius: var(--r-pill); background: var(--c-text-3); transition: width var(--dur) var(--ease-out), background-color var(--dur) var(--ease-out); }
+.ed-dot[aria-current] > span { width: 22px; background: var(--c-text); }
+.ed-dot:hover > span { background: var(--c-text-2); }
+.ed-dot[aria-current]:hover > span { background: var(--c-text); }
+:root[data-theme] .ed-v3 .ed-canvas-actions { position: absolute; inset-inline-end: 8px; top: 50%; transform: translateY(-50%); display: flex; gap: 2px; padding: 0 2px; border-radius: var(--r-pill); background: color-mix(in srgb, var(--c-surface) 90%, transparent); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+:root[data-theme] .ed-v3 .ed-canvas-actions .btn { position: static; inset: auto; transform: none; flex: none; width: 40px; min-width: 40px; height: 40px; padding: 0; color: var(--c-text); background: none; border: 0; }
+@media (pointer: coarse) {
+  .ed-dot { width: 44px; height: 44px; }
+  :root[data-theme] .ed-v3 .ed-canvas-actions .btn { width: 44px; min-width: 44px; height: 44px; }
+}
 /* the section tabs fill their row (the wrapper only listens for taps) */
 :root[data-theme] .ed-v3 .ed-tabs-wrap > .ed-tabs { display: flex; width: 100%; }
 :root[data-theme] .ed-v3 .ed-tabs .seg-btn { flex: 1 1 0; }
 @media (prefers-reduced-motion: reduce) { .ed-v3 .ed-motion-replay { display: none; } }
 
-/* published: a calm note with the next step, in the flow (never over the card) */
-.ed-published { display: flex; align-items: center; gap: 10px; flex: none; width: min(100%, 960px); padding: 10px 12px; border-radius: var(--r-md); background: var(--c-success-soft); color: var(--c-text); font-size: 13px; line-height: 1.6; animation: ed-rise 420ms var(--ease-out) both; }
-.ed-published > .icon { color: var(--c-success); flex: none; }
-.ed-published p { flex: 1; margin: 0; min-width: 0; }
-.ed-published .btn { flex: none; }
-
 /* disclosures: one style — a chevron that turns, no native marker */
-:root[data-theme] .ed-v3 :is(.ed-program-disclosure, .ed-advanced) > summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; font-weight: var(--fw-bold); font-size: 14px; color: var(--c-text); }
-:root[data-theme] .ed-v3 :is(.ed-program-disclosure, .ed-advanced) > summary::-webkit-details-marker { display: none; }
-:root[data-theme] .ed-v3 :is(.ed-program-disclosure, .ed-advanced) > summary > span { font-weight: 400; font-size: 12px; color: var(--c-text-3); }
-:root[data-theme] .ed-v3 :is(.ed-program-disclosure, .ed-advanced) > summary > .icon { margin-inline-start: auto; flex: none; color: var(--c-text-2); transition: transform var(--dur) var(--ease-out); }
-:root[data-theme] .ed-v3 :is(.ed-program-disclosure, .ed-advanced)[open] > summary > .icon { transform: rotate(180deg); }
-:root[data-theme] .ed-v3 .ed-program-disclosure[open] > summary { margin-bottom: 4px; }
+:root[data-theme] .ed-v3 :is(.ed-program-disclosure, .ed-english, .ed-advanced) > summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; font-weight: var(--fw-bold); font-size: 14px; color: var(--c-text); }
+:root[data-theme] .ed-v3 :is(.ed-program-disclosure, .ed-english, .ed-advanced) > summary::-webkit-details-marker { display: none; }
+:root[data-theme] .ed-v3 :is(.ed-program-disclosure, .ed-english, .ed-advanced) > summary > span { font-weight: 400; font-size: 12px; color: var(--c-text-3); }
+:root[data-theme] .ed-v3 :is(.ed-program-disclosure, .ed-english, .ed-advanced) > summary > .icon { margin-inline-start: auto; flex: none; color: var(--c-text-2); transition: transform var(--dur) var(--ease-out); }
+:root[data-theme] .ed-v3 :is(.ed-program-disclosure, .ed-english, .ed-advanced)[open] > summary > .icon { transform: rotate(180deg); }
+:root[data-theme] .ed-v3 :is(.ed-program-disclosure, .ed-english)[open] > summary { margin-bottom: 4px; }
+:root[data-theme] .ed-v3 :is(.ed-program-disclosure, .ed-english):not([open]) { padding-block: 8px; }
 /* the same treatment for the template preview's «تغيير الخلفية» (it has no icon of its own: a drawn chevron) */
 .template-scene-options > summary { list-style: none; display: flex; align-items: center; gap: 8px; min-height: 44px; }
 .template-scene-options > summary::-webkit-details-marker { display: none; }
@@ -85,23 +115,21 @@
   :root[data-theme] .ed-v3 .ed-handle-row { display: none; }
   :root[data-theme] .ed-v3 .ed-tabs { margin: 0; padding: 8px 12px 0; }
   :root[data-theme] .ed-v3 .ed-panel-body > .banner { margin-bottom: 12px; }
-  :root[data-theme] .ed-v3 .ed-stage { position: sticky; top: var(--bar-h); height: calc(100dvh - var(--bar-h)); min-height: 0; justify-content: flex-start; gap: 14px; padding: 20px 32px 16px; background: var(--c-canvas); background-image: none; }
-  :root[data-theme] .ed-v3 .ed-stage-heading { width: min(100%, 960px); flex: none; }
-  :root[data-theme] .ed-v3 .ed-page-swipe { display: flex; flex: 1 1 auto; width: min(100%, 960px); min-height: 0; }
-  :root[data-theme] .ed-v3 .ed-page-swipe > .ed-workbench { flex: 1 1 auto; width: 100%; height: auto; min-height: 320px; border: 1px solid var(--c-hairline); border-radius: 16px; box-shadow: none; }
-  :root[data-theme] .ed-v3 .ed-canvas-bar { width: min(100%, 960px); }
-  :root[data-theme] .ed-v3.mode-preview .ed-screen-wrap { height: min(calc(100dvh - var(--bar-h) - 170px), 720px); }
+  :root[data-theme] .ed-v3 .ed-stage { position: sticky; top: var(--bar-h); height: calc(100dvh - var(--bar-h)); min-height: 0; justify-content: flex-start; gap: 12px; padding: 20px 32px; background: var(--c-canvas); background-image: none; }
+  :root[data-theme] .ed-v3 .ed-canvas { width: min(100%, 960px); }
+  :root[data-theme] .ed-v3 .ed-canvas > .ed-page-swipe > .ed-workbench { min-height: 320px; border: 1px solid var(--c-hairline); border-radius: 16px; box-shadow: none; }
+  :root[data-theme] .ed-v3 .ed-canvas-bar { bottom: 10px; }
+  :root[data-theme] .ed-v3 .ed-canvas-actions { inset-inline-end: 12px; }
 }
 @media (min-width: 960px) and (max-width: 1199px) {
-  :root[data-theme] .ed-v3 .ed-canvas-caption { display: none; }
   :root[data-theme] .ed-v3 .ed-stage { padding-inline: 20px; }
 }
 
 /* ------------------------------------------------------------------ phone */
 @media (max-width: 959px) {
   :root[data-theme] .ed-v3 {
-    --bar-h: 60px; --vh: var(--editor-viewport, 100dvh);
-    --peek-h: calc(100px + env(safe-area-inset-bottom));
+    --bar-h: 64px; --vh: var(--editor-viewport, 100dvh);
+    --peek-h: calc(104px + env(safe-area-inset-bottom));
     --mini-h: clamp(128px, calc(var(--vh) * .3), 240px);
     --sheet-h: var(--peek-h);
     height: var(--vh); min-height: 0; overflow: hidden;
@@ -109,38 +137,29 @@
   :root[data-theme] .ed-v3.at-half { --sheet-h: calc(var(--vh) * .5); }
   :root[data-theme] .ed-v3.at-full { --sheet-h: calc(var(--vh) - var(--bar-h) - var(--mini-h)); }
 
-  /* header: close · title with the status · preview · the primary action */
-  :root[data-theme] .ed-v3 .ed-bar { position: relative; top: auto; z-index: 30; display: flex; align-items: center; flex: none; gap: 6px; height: var(--bar-h); padding: 0 8px; }
-  :root[data-theme] .ed-v3 .ed-brand-cluster { flex: none; gap: 0; padding: 0; border: 0; }
-  :root[data-theme] .ed-v3 .ed-brand { display: none; }
+  /* header: back · the save status and its calm line (two short lines; the title is for screen readers) · preview · send */
+  :root[data-theme] .ed-v3 .ed-bar { position: relative; top: auto; z-index: 30; flex: none; gap: 6px; height: var(--bar-h); padding: 0 8px; }
   :root[data-theme] .ed-v3 .ed-close { width: 44px; height: 44px; }
-  :root[data-theme] .ed-v3 .ed-title { flex: 1 1 auto; min-width: 0; gap: 2px; }
-  :root[data-theme] .ed-v3 .ed-h { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  :root[data-theme] .ed-v3 .ed-sub, :root[data-theme] .ed-v3 .ed-status { display: none; }
-  :root[data-theme] .ed-v3 .ed-status-line { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 11px; line-height: 1.4; color: var(--c-text-2); white-space: nowrap; overflow: hidden; }
-  .ed-status-save { display: inline-flex; align-items: center; gap: 4px; flex: none; }
-  .ed-status-save .icon { width: 13px; height: 13px; }
-  .ed-status-pub { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .ed-status-pub::before { content: '·'; margin-inline-end: 6px; color: var(--c-text-3); }
-  :root[data-theme] .ed-v3 .ed-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+  :root[data-theme] .ed-v3 .ed-h { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :root[data-theme] .ed-v3 .ed-status-line { flex-direction: column; align-items: flex-start; flex-wrap: nowrap; gap: 0; font-size: 11px; line-height: 1.45; }
+  :root[data-theme] .ed-v3 .save-state { font-size: 13px; font-weight: var(--fw-bold); color: var(--c-text); }
+  :root[data-theme] .ed-v3 .ed-live { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; max-width: 100%; }
+  :root[data-theme] .ed-v3 .ed-live::before { content: none; }
+  :root[data-theme] .ed-v3 .ed-actions { gap: 6px; }
   :root[data-theme] .ed-v3 .ed-preview-btn { display: none; }
   :root[data-theme] .ed-v3 .ed-preview-icon { display: inline-flex; width: 44px; min-height: 44px; }
-  :root[data-theme] .ed-v3 .ed-publish { min-height: 44px; padding-inline: 12px; font-size: 13px; white-space: nowrap; }
-  :root[data-theme] .ed-v3 .ed-publish .icon { display: none; }
+  :root[data-theme] .ed-v3 .ed-send { min-height: 44px; padding-inline: 12px; font-size: 13px; white-space: nowrap; }
+  :root[data-theme] .ed-v3 .ed-send .icon { display: none; }
 
   /* stage above, sheet below — in the flow, so the card always has the room the sheet leaves */
   :root[data-theme] .ed-v3 .ed-main { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-  :root[data-theme] .ed-v3 .ed-stage { order: 0; position: relative; inset: auto; z-index: 1; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; flex: 1 1 auto; height: auto; min-height: 0; padding: 0; gap: 0; background: var(--c-canvas); background-image: none; }
-  :root[data-theme] .ed-v3 .ed-stage-heading { display: none; }
-  :root[data-theme] .ed-v3 .ed-page-swipe { display: flex; flex: 1 1 auto; width: 100%; min-height: 0; }
-  :root[data-theme] .ed-v3 .ed-page-swipe > .ed-workbench { flex: 1 1 auto; width: 100%; height: auto; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
-  :root[data-theme] .ed-v3 .ed-canvas-bar { justify-content: space-between; gap: 8px; padding: 4px 8px; background: var(--c-surface); border-top: 1px solid var(--c-hairline); }
-  :root[data-theme] .ed-v3 .ed-canvas-tabs .seg-btn { min-height: 40px; padding-inline: 12px; font-size: 12px; }
-  :root[data-theme] .ed-v3 .ed-canvas-caption { display: none; }
-  :root[data-theme] .ed-v3.at-full .ed-canvas-bar, :root[data-theme] .ed-v3.at-full .ed-published { display: none; }
-  :root[data-theme] .ed-v3 .ed-published { width: auto; margin: 8px 10px 0; padding: 8px 10px; font-size: 12px; }
+  :root[data-theme] .ed-v3 .ed-stage { order: 0; position: relative; inset: auto; z-index: 1; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; flex: 1 1 auto; height: auto; min-height: 0; padding: 0 0 14px; gap: 0; background: var(--c-canvas); background-image: none; }
+  :root[data-theme] .ed-v3 .ed-intro { width: auto; margin: 8px 10px; padding: 8px 10px; font-size: 12px; }
+  :root[data-theme] .ed-v3.at-full .ed-intro { display: none; }
+  :root[data-theme] .ed-v3 .ed-canvas > .ed-page-swipe > .ed-workbench { border: 0; border-radius: 0; box-shadow: none; }
+  :root[data-theme] .ed-v3 .ed-canvas-actions { inset-inline-end: 6px; }
 
-  /* the sheet: peek is just the section toolbar; it never covers the card */
+  /* the sheet: peek is just the tab row; it never covers the card */
   :root[data-theme] .ed-v3 .ed-panel {
     order: 1; position: relative; inset: auto; top: auto; bottom: auto; z-index: 2; display: flex; flex-direction: column; flex: none;
     height: calc(var(--sheet-h) - var(--drag, 0px)); min-height: 0; max-height: calc(var(--vh) - var(--bar-h) - 96px);
@@ -148,8 +167,8 @@
     transition: height var(--dur-slow) var(--ease-out); overflow: hidden;
   }
   :root[data-theme] .ed-v3 .ed-panel[data-dragging] { transition: none; }
-  :root[data-theme] .ed-v3 .ed-handle-row { position: relative; flex: none; display: flex; align-items: center; justify-content: center; height: 40px; }
-  :root[data-theme] .ed-v3 .ed-handle { display: grid; place-items: center; width: 100%; height: 40px; min-height: 40px; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
+  :root[data-theme] .ed-v3 .ed-handle-row { position: relative; flex: none; display: flex; align-items: center; justify-content: center; height: 44px; }
+  :root[data-theme] .ed-v3 .ed-handle { display: grid; place-items: center; width: 100%; height: 44px; min-height: 44px; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
   :root[data-theme] .ed-v3 .ed-handle span { width: 40px; height: 5px; border-radius: var(--r-pill); background: var(--c-hairline-strong); }
   :root[data-theme] .ed-v3 .ed-sheet-hide { position: absolute; inset-inline-end: 6px; top: 50%; transform: translateY(-50%); }
   :root[data-theme] .ed-v3 .ed-tabs-wrap { flex: none; padding: 0 10px 6px; }
@@ -159,16 +178,18 @@
   :root[data-theme] .ed-v3.at-peek .ed-panel-body { visibility: hidden; }
   :root[data-theme] .ed-v3.is-typing .ed-tabs-wrap { display: none; }
   :root[data-theme] .ed-v3 .ed-panel-body > .banner { margin-bottom: 12px; }
-  :root[data-theme] .ed-v3 .ed-save-row { margin: 0 -14px -24px; bottom: -24px; padding: 14px; }
+}
+/* narrow phones: the dots move to the start so they never meet the tools at the end */
+@media (max-width: 419px) {
+  :root[data-theme] .ed-v3 .ed-canvas-bar { justify-content: flex-start; padding-inline: 6px; }
 }
 @media (max-width: 359px) {
   :root[data-theme] .ed-v3 .ed-bar { gap: 4px; padding-inline: 4px; }
-  :root[data-theme] .ed-v3 .ed-publish { padding-inline: 10px; font-size: 12.5px; }
-  :root[data-theme] .ed-v3 .ed-canvas-tabs .seg-btn { padding-inline: 9px; }
+  :root[data-theme] .ed-v3 .ed-send { padding-inline: 10px; font-size: 12.5px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  :root[data-theme] .ed-v3 .ed-panel, .ed-workbench-paper { transition: none; }
-  :root[data-theme] .ed-v3 .ed-page-swipe .ed-workbench-paper, .ed-published { animation: none; }
+  :root[data-theme] .ed-v3 .ed-panel, .ed-workbench-paper, .ed-tap, .ed-dot > span { transition: none; }
+  :root[data-theme] .ed-v3 .ed-page-swipe .ed-workbench-paper { animation: none; }
   .ed-save-dot { animation: none; }
 }
 
@@ -204,8 +225,3 @@
 :root[data-theme] .invite-card-panel .invite-card { position: relative; }
 :root[data-theme] .summary-closure:not(.has-editorial) .summary-closure-copy { align-items: center; text-align: center; }
 :root[data-theme] .summary-closure:not(.has-editorial) .summary-closure-copy > .journey-artwork { margin-inline: auto; }
-:root[data-theme] .ed-v3 .ed-program-disclosure:not([open]) { padding-block: 8px; }
-/* touch targets: page tabs, replay and expand are 44px on touch screens */
-:root[data-theme] .ed-v3 .ed-canvas-actions .btn { flex: none; width: 44px; min-width: 44px; height: 44px; padding: 0; }
-@media (pointer: coarse) { :root[data-theme] .ed-v3 .ed-canvas-tabs .seg-btn { min-height: 44px; } }
-@media (max-width: 959px) { :root[data-theme] .ed-v3 .ed-handle-row, :root[data-theme] .ed-v3 .ed-handle { height: 44px; min-height: 44px; } :root[data-theme] .ed-v3 { --peek-h: calc(104px + env(safe-area-inset-bottom)); } }
