@@ -602,6 +602,8 @@ export async function run(){
   const ev=await made.services.events.create({type:'wedding',names:{a:'سارة',b:'أحمد'},date:event.date});
   await render(wrap(<SettingsPage event={ev}/>));await settle();
   const adv=document.querySelector<HTMLDetailsElement>('details.settings-advanced')!;assert.ok(adv&&!adv.open,'advanced options start folded');
+  assert.equal(adv.querySelector('input, select, button'),null,'folded options are not in the tab order');
+  await act(async()=>{adv.open=true;adv.dispatchEvent(new Event('toggle'));});await settle();
   for(const label of ['نوع المناسبة','المنطقة الزمنية','بالإنجليزية','العدد المسموح الافتراضي'])assert.ok(adv.textContent!.includes(label),`${label} is advanced`);
   const essentials=document.querySelector('.settings .panel')!;assert.ok(essentials.querySelector('input[type=date]')&&essentials.querySelector('input[type=time]'));
   assert.equal(document.querySelectorAll('.settings input[type=date]').length,1,'the date is asked once');

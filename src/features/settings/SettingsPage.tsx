@@ -40,6 +40,8 @@ export function SettingsPage({ event }: { event: Event }) {
   const loc = useLocation();
   const [f, setF] = useState<Form>(() => fromEvent(event));
   const [archiveOpen, setArchiveOpen] = useState(false);
+  // the folded options mount only while open: no hidden controls in the tab order or the page's focus checks
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const mapRef = useRef<HTMLInputElement>(null);
   const base = fromEvent(event);
   const dirty = JSON.stringify(f) !== JSON.stringify(base);
@@ -97,8 +99,9 @@ export function SettingsPage({ event }: { event: Event }) {
         </Panel>
 
         {/* advanced, folded: rarely changed, each still asked only here */}
-        <details className="settings-advanced">
+        <details className="settings-advanced" open={advancedOpen} onToggle={(e) => setAdvancedOpen(e.currentTarget.open)}>
           <summary><span className="grow"><span className="settings-advanced-title">{t('setAdvanced')}</span><span className="settings-advanced-hint">{t('setAdvancedHint')}</span></span><Icon name="chevron-down" size="sm" /></summary>
+          {advancedOpen && <>
           <Panel title={t('setOccasion')}>
             <div className="stack gap-4">
               <div className="grid-2">
@@ -129,6 +132,7 @@ export function SettingsPage({ event }: { event: Event }) {
               <Switch label={t('setGeneral')} hint={t('setGeneralHint')} checked={f.allowGeneralLink} onChange={(v) => set('allowGeneralLink', v)} />
             </div>
           </Panel>
+          </>}
         </details>
 
         {dirty && (
