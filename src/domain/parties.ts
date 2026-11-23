@@ -23,19 +23,20 @@ export const INVITATION_STATUS: Record<InvitationStatus, { label: string; tone: 
 export const SOURCE_LABEL: Record<StateSource, string> = {
   platform: 'سجلته المنصة',
   manual: 'حددته يدويًا',
-  simulated: 'محاكاة',
+  simulated: 'تجريبي',
 };
 
 export const RSVP_STATUS: Record<RsvpStatus, { label: string; tone: Tone }> = {
-  pending: { label: 'لم يرد بعد', tone: 'warning' },
-  confirmed: { label: 'أكد الحضور', tone: 'success' },
-  declined: { label: 'اعتذر', tone: 'neutral' },
+  // a party is a family: the plural, as in the dictionary (domain/copy/guests stPending…)
+  pending: { label: 'لم يردوا بعد', tone: 'warning' },
+  confirmed: { label: 'أكدوا الحضور', tone: 'success' },
+  declined: { label: 'اعتذروا', tone: 'neutral' },
 };
 
 export const CHECKIN_STATUS: Record<CheckInStatus, { label: string; tone: Tone }> = {
-  not_arrived: { label: 'لم يصل', tone: 'neutral' },
-  partial: { label: 'وصل جزء', tone: 'warning' },
-  checked_in: { label: 'وصل', tone: 'success' },
+  not_arrived: { label: 'لم يصلوا', tone: 'neutral' },
+  partial: { label: 'وصل بعضهم', tone: 'warning' },
+  checked_in: { label: 'وصلوا', tone: 'success' },
 };
 
 // ------------------------------------------------------------------ counts
@@ -105,7 +106,7 @@ export type PartyFilter = 'all' | 'pending' | 'confirmed' | 'declined' | 'not_sh
 
 export const PARTY_FILTERS: Array<{ id: PartyFilter; label: string }> = [
   { id: 'all', label: 'الكل' },
-  { id: 'pending', label: 'لم يرد بعد' },
+  { id: 'pending', label: 'لم يردوا بعد' },
   { id: 'confirmed', label: 'أكدوا' },
   { id: 'declined', label: 'اعتذروا' },
   { id: 'not_shared', label: 'لم تُشارك' },

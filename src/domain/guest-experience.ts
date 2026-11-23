@@ -6,6 +6,8 @@
 import type {
   DietaryAnswer, DietaryNeed, GiftItem, GiftKind, GuestExperience, InvitationParty, MealAllocation, MealOption, RSVPResponse, RsvpInput,
 } from './types';
+import { copyFor, fill, type Dialect } from './copy';
+import { DIET_KEY, GIFT_KEY } from './copy/food';
 
 export const EMPTY_EXPERIENCE: GuestExperience = {
   revision: 0,
@@ -38,12 +40,17 @@ export const DIETARY: Record<DietaryNeed, { label: string; group: 'allergy' | 'd
 export const DIETARY_ORDER = Object.keys(DIETARY) as DietaryNeed[];
 export const isAllergy = (n: DietaryNeed) => DIETARY[n].group === 'allergy';
 export const hasAllergy = (d?: DietaryAnswer) => !!d?.needs.some(isAllergy);
+/** one need in the voice («حليب ومشتقاته» / «لبن ومنتجاته») */
+export const dietName = (n: DietaryNeed, dialect: Dialect = 'ar') => copyFor(dialect)[DIET_KEY[n]];
+/** a wish kind's label, hint and link in the voice (the guest pages pass the organizer's) */
+export const giftKindText = (k: GiftKind, dialect: Dialect = 'ar') => { const c = copyFor(dialect), g = GIFT_KEY[k]; return { label: c[g.label], hint: c[g.hint], link: c[g.link] }; };
 /** short label for chips and table cards: «حساسية مكسرات · حلال فقط» */
-export function dietaryLabel(d: DietaryAnswer): string {
-  const allergies = d.needs.filter(isAllergy).map((n) => DIETARY[n].label);
-  const rest = d.needs.filter((n) => !isAllergy(n) && n !== 'other').map((n) => DIETARY[n].label);
-  const parts = [...(allergies.length ? [`حساسية ${allergies.join('، ')}`] : []), ...rest];
-  if (d.needs.includes('other')) parts.push(d.note?.trim() || 'احتياج آخر');
+export function dietaryLabel(d: DietaryAnswer, dialect: Dialect = 'ar'): string {
+  const c = copyFor(dialect);
+  const allergies = d.needs.filter(isAllergy).map((n) => dietName(n, dialect));
+  const rest = d.needs.filter((n) => !isAllergy(n) && n !== 'other').map((n) => dietName(n, dialect));
+  const parts = [...(allergies.length ? [fill(c.dtAllergy, { list: allergies.join('، ') })] : []), ...rest];
+  if (d.needs.includes('other')) parts.push(d.note?.trim() || c.dtOtherNeed);
   return parts.join(' · ');
 }
 
@@ -231,10 +238,11 @@ export function dietaryReport(parties: readonly InvitationParty[]): DietaryRepor
 }
 
 /** «٢ لحم · ١ سمك» for a party card; empty when nothing was chosen */
-export function mealSummary(x: GuestExperience, meals?: MealAllocation[]): string {
+/** «2 كبسة لحم · 1 دجاج مشوي»; a guest page writing ١٢٣ passes «، » (a dot beside ١ reads as ١٠, format.ts dateSeparator) */
+export function mealSummary(x: GuestExperience, meals?: MealAllocation[], sep = ' · ', dialect: Dialect = 'ar'): string {
   if (!meals?.length) return '';
   const label = new Map(x.meals.options.map((o) => [o.id, o.label]));
-  return meals.filter((a) => a.count > 0).map((a) => `${a.count} ${label.get(a.optionId) ?? 'خيار محذوف'}`).join(' · ');
+  return meals.filter((a) => a.count > 0).map((a) => `${a.count} ${label.get(a.optionId) ?? copyFor(dialect).dtRemovedOption}`).join(sep);
 }
 
 // ------------------------------------------------------------------ export (T36)

@@ -230,6 +230,8 @@ html.has-dialog { overflow: hidden; }
 .chip.is-on { background: var(--c-text); border-color: var(--c-text); color: var(--c-text-inverse); }
 .chip-count { min-width: 22px; padding: 0 6px; border-radius: var(--r-pill); background: var(--c-surface-sunken); color: var(--c-text-2); font-size: var(--fs-xs); text-align: center; }
 .chip.is-on .chip-count { background: color-mix(in srgb, var(--c-text-inverse) 22%, transparent); color: var(--c-text-inverse); }
+/* touch: every filter chip is a full 44px target (import review, replies) */
+@media (pointer: coarse) { .chip { min-height: 44px; } }
 
 .progress { height: 6px; border-radius: var(--r-pill); background: var(--c-surface-sunken); overflow: hidden; }
 .progress-fill { display: block; height: 100%; border-radius: inherit; background: var(--c-primary); transition: width var(--dur-slow) var(--ease); }
@@ -249,6 +251,11 @@ html.has-dialog { overflow: hidden; }
 .menu-item:hover, .menu-item:focus-visible { background: var(--c-surface-sunken); outline: none; }
 .menu-item.is-danger { color: var(--c-danger); }
 .menu-item:disabled { opacity: .45; cursor: not-allowed; }
+/* an unavailable action that says why (e.g. «متاح لصاحب المناسبة»): kept readable, the reason in secondary text */
+.menu-item.has-hint { min-height: 48px; padding-block: 6px; }
+.menu-item.has-hint[aria-disabled='true'] { color: var(--c-text-3); cursor: not-allowed; }
+.menu-item-text { display: grid; gap: 2px; }
+.menu-hint { font-size: var(--fs-xs); color: var(--c-text-2); }
 
 .avatar { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--tone-soft); color: var(--tone); font-weight: var(--fw-bold); font-size: var(--fs-sm); }
 

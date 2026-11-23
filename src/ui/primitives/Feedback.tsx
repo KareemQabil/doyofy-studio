@@ -1,10 +1,12 @@
 /** Status & feedback: badges, banners, empty/error/loading states, toasts. Tones map to tokens in CSS. */
 import { Lottie } from './Lottie';
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Tone } from '../../domain/types';
 import { Icon, type IconName } from '../icons';
 import { JourneyArtwork, type JourneyArtKind } from './JourneyArtwork';
 import { Button } from './Button';
+import { useCopy } from '../copy';
+import { errorMessage, isAppError } from '../../services/errors';
 
 export function Badge({ tone = 'neutral', children, icon, dot, title }: { tone?: Tone; children: ReactNode; icon?: IconName; dot?: boolean; title?: string }) {
   return (
@@ -18,9 +20,22 @@ export function Badge({ tone = 'neutral', children, icon, dot, title }: { tone?:
 
 const TONE_ICON: Record<Tone, IconName> = { neutral: 'info', info: 'info', success: 'check-circle', warning: 'alert', danger: 'alert', accent: 'sparkle' };
 
-export function Banner({ tone = 'info', title, children, action, icon, compact }: { tone?: Tone; title?: ReactNode; children?: ReactNode; action?: ReactNode; icon?: IconName; compact?: boolean }) {
+/**
+ * `reveal`: when this value changes (and is not null/false), the banner scrolls into view and takes focus —
+ * for an error that appears away from where the person is looking (e.g. after closing a dialog).
+ */
+export function Banner({ tone = 'info', title, children, action, icon, compact, reveal }: { tone?: Tone; title?: ReactNode; children?: ReactNode; action?: ReactNode; icon?: IconName; compact?: boolean; reveal?: unknown }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const revealable = reveal !== undefined;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reveal === undefined || reveal === null || reveal === false) return;
+    const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView?.({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+    el.focus({ preventScroll: true });
+  }, [reveal]);
   return (
-    <div className={`banner tone-${tone}${compact ? ' banner-compact' : ''}`} role={tone === 'danger' || tone === 'warning' ? 'alert' : 'status'}>
+    <div ref={ref} tabIndex={revealable ? -1 : undefined} className={`banner tone-${tone}${compact ? ' banner-compact' : ''}`} role={tone === 'danger' || tone === 'warning' ? 'alert' : 'status'}>
       <Icon name={icon ?? TONE_ICON[tone]} className="banner-icon" />
       <div className="banner-text">
         {title && <p className="banner-title">{title}</p>}
@@ -42,21 +57,24 @@ export function EmptyState({ icon = 'sparkle', title, children, action, compact,
   );
 }
 
-export function ErrorState({ error, onRetry, title = 'تعذر تحميل البيانات' }: { error: unknown; onRetry?: () => void; title?: string }) {
-  const msg = error instanceof Error ? error.message : 'حدث خطأ غير متوقع.';
+export function ErrorState({ error, onRetry, title }: { error: unknown; onRetry?: () => void; title?: string }) {
+  const { t, dialect } = useCopy();
+  // service errors read back in the organizer's voice; anything else keeps its own words
+  const msg = isAppError(error) ? errorMessage(error, dialect) : error instanceof Error ? error.message : t('uiUnexpected');
   return (
     <div className="empty empty-error" role="alert">
       <JourneyArtwork kind="offline" />
-      <h2 className="empty-title">{title}</h2>
+      <h2 className="empty-title">{title ?? t('uiLoadError')}</h2>
       <div className="empty-body">{msg}</div>
-      {onRetry && <div className="empty-action"><Button icon="refresh" onClick={onRetry}>أعد المحاولة</Button></div>}
+      {onRetry && <div className="empty-action"><Button icon="refresh" onClick={onRetry}>{t('uiRetry')}</Button></div>}
     </div>
   );
 }
 
 export function Skeleton({ lines = 3, block }: { lines?: number; block?: boolean }) {
+  const { t } = useCopy();
   return (
-    <div className="skeleton" aria-busy="true" aria-label="جارٍ التحميل">
+    <div className="skeleton" aria-busy="true" aria-label={t('uiLoading')}>
       {block && <div className="skel skel-block" />}
       {Array.from({ length: lines }, (_, i) => <div key={i} className="skel skel-line" style={{ width: `${92 - ((i * 17) % 40)}%` }} />)}
     </div>
@@ -64,8 +82,9 @@ export function Skeleton({ lines = 3, block }: { lines?: number; block?: boolean
 }
 
 /** a standalone loading mark (the brand Lottie); buttons keep their own small inline spinner */
-export function Spinner({ label = 'جارٍ التحميل', size = 56 }: { label?: string; size?: number }) {
-  return <span className="spinner-lottie" role="status" aria-label={label}><Lottie name="loader" size={size} /></span>;
+export function Spinner({ label, size = 56 }: { label?: string; size?: number }) {
+  const { t } = useCopy();
+  return <span className="spinner-lottie" role="status" aria-label={label ?? t('uiLoading')}><Lottie name="loader" size={size} /></span>;
 }
 
 // ------------------------------------------------------------------ toasts

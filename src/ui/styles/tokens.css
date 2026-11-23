@@ -65,9 +65,25 @@
   --c-info: #1E6E70;    --c-info-soft: #DDEEEC;
   --c-neutral: #57514A; --c-neutral-soft: #EFE8DC;
 
+  /* ---- guest groups (side/section) in seating: a soft fill under --c-text + a strong edge ≥ 3:1 on surfaces.
+          The group name is always written next to the colour, so colour is never the only signal. */
+  --grp-1: #1E6E70; --grp-1-soft: #DDEEEC;
+  --grp-2: #A63E58; --grp-2-soft: #F6E1E6;
+  --grp-3: #7E5F25; --grp-3-soft: #F3EAD6;
+  --grp-4: #4A5A9C; --grp-4-soft: #E3E6F4;
+  --grp-5: #4F6B2F; --grp-5-soft: #E5ECD9;
+  --grp-6: #7A4A8C; --grp-6-soft: #EEE3F2;
+
   --c-stage: #0E0A08;             /* behind full-screen invitations */
   --c-qr-dark: #111111;           /* QR codes must stay black on white to scan */
   --c-qr-light: #FFFFFF;
+  --c-guest-page: #F4ECE8;        /* the guest pages' paper, also behind them (overscroll) in every appearance */
+  --c-stage-ink: #F4EAE0;         /* text on the stage band above the guest's invitation (16:1 on --c-stage) */
+  --c-stage-ink-2: #CDBFB2;       /* secondary text there (11:1) */
+  --c-stage-line: rgba(243, 217, 160, 0.4);
+  /* Google Wallet's own button colours (brand guidelines: black pill, light outline, four-colour mark) */
+  --gw-bg: #000000; --gw-ink: #FFFFFF; --gw-outline: #747775;
+  --gw-blue: #4285F4; --gw-red: #EA4335; --gw-yellow: #FBBC04; --gw-green: #34A853;
   --c-backdrop: rgba(38, 30, 22, 0.38);
 
   --shadow-1: 0 1px 2px rgba(48, 36, 20, 0.05);
@@ -142,7 +158,7 @@
 
 /* guest-facing pages (event hub): an invitation-flavoured scope, same roles (not part of the A/B) */
 .theme-guest {
-  --c-bg: #F4ECE8;
+  --c-bg: var(--c-guest-page);
   --c-surface: #FFFDFB;
   --c-surface-sunken: #EFE3DE;
   --c-line: #E1D2CC;
@@ -160,6 +176,25 @@
   --c-accent-soft: #F3E9D6;
   --c-focus: #6E1F2E;
   --font-display: 'Readex Pro', 'IBM Plex Sans Arabic', serif;
+  /* Guest pages stay light whatever the organizer's appearance (dark.css changes organizer surfaces only), so every
+     token a dark rule reads is pinned here too: fields, sheets and dialog footers inside the guest scope stay on paper. */
+  --c-canvas: var(--c-guest-page);
+  --c-surface-elevated: #FFFFFF;
+  --c-surface-subtle: #EFE3DE;
+  --c-surface-hover: #F6EEEA;
+  --c-hairline: #E1D2CC;
+  --c-hairline-strong: #CDB8B0;
+  --c-field-border: #8E7A74;      /* ≥ 3:1 on surface and page */
+  --c-text-inverse: #FFF8FC;
+  --c-logo: #9C7836;
+  --shadow-1: 0 1px 2px rgba(48, 36, 20, 0.05);
+  --shadow-2: 0 10px 28px -16px rgba(48, 36, 20, 0.22), 0 1px 2px rgba(48, 36, 20, 0.04);
+  --shadow-pop: 0 28px 64px -24px rgba(48, 36, 20, 0.34), 0 2px 8px rgba(48, 36, 20, 0.06);
+  /* the entry pass (Wallet preview): the guest brand colour with light ink (10.5:1 / 7.5:1 / 6.6:1) */
+  --c-pass-bg: #6E1F2E;
+  --c-pass-ink: #FFF8F2;
+  --c-pass-ink-2: #E9CFCF;
+  --c-pass-accent: #E3C58C;
 }
 
 /* gate (check-in) mode: dark, high-contrast, glanceable from a phone/tablet at the door */

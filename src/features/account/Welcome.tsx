@@ -1,7 +1,7 @@
 /**
  * Public landing (board 01; feedback F014, F016, F073).
- *   Hero     paper, envelope and ribbon (editorial photo) with a fan of REAL invitation faces dealt from
- *            the envelope. Drag/flick the fan on phones (spring physics), tilt with the pointer on desktop,
+ *   Hero     the design system's warm surface and brand pattern (no decorative photo) with a fan of REAL
+ *            invitation faces dealt in. Drag/flick the fan on phones (spring physics), tilt with the pointer on desktop,
  *            tap a card to bring it forward. Headline/CTA are live HTML, never baked into an image.
  *   Rail     every occasion as an object you can swipe through; each opens the creator for that occasion.
  *   Phone    «هكذا يراها ضيفك»: a small, clearly-labelled demo of the guest's side — lift the seal, open,
@@ -14,6 +14,7 @@ import { OCCASIONS_ORDERED, eventTypeInfo } from '../../domain/event';
 import { defaultDesign } from '../../domain/invitation';
 import { sealOpens } from '../../domain/gestures';
 import { Link, useNavigate } from '../../app/router';
+import { usePrototype } from '../../app/data';
 import { paths } from '../../app/paths';
 import { Logo } from '../../ui/brand';
 import { Icon, LinkButton } from '../../ui';
@@ -25,11 +26,13 @@ import { useTilt } from '../signature/useTilt';
 import { useMedia } from '../signature/useMedia';
 import { Seal } from '../signature/SignatureArt';
 import { saveDemoAccount } from './session';
+import { useCopy } from '../../ui/copy';
 
 const FAN: EventType[] = ['graduation', 'wedding', 'birthday'];
 
 /* ------------------------------------------------------------------ the dealt fan */
 function InvitationFan() {
+  const { t } = useCopy();
   const phone = useMedia('(max-width: 760px)');
   const [order, setOrder] = useState<number[]>([0, 1, 2]);
   const fan = useRef<HTMLDivElement>(null);
@@ -75,33 +78,34 @@ function InvitationFan() {
 
   return (
     <div className="wl-stage" ref={tilt} data-tilt-zone="">
-      <div ref={fan} className="wl-fan" {...gesture} role="group" aria-roledescription="معرض دعوات" aria-label="أمثلة دعوات — اسحب البطاقة أو اضغطها لتبديلها"
+      <div ref={fan} className="wl-fan" {...gesture} role="group" aria-roledescription={t('wlFanRole')} aria-label={t('wlFanLabel')}
         onKeyDown={(e) => { if (e.key === 'ArrowLeft') { e.preventDefault(); cycle(1); } if (e.key === 'ArrowRight') { e.preventDefault(); cycle(-1); } }}>
         {looks.map((l, i) => {
           const slot = order.indexOf(i);
           return (
             <button key={l.type} type="button" className={`wl-card slot-${slot}`} data-gesture-surface="" style={{ '--deal': slot } as CSSProperties}
-              tabIndex={slot === 0 ? 0 : -1} aria-label={slot === 0 ? `مثال: دعوة ${l.label}` : `اعرض مثال ${l.label}`}
+              tabIndex={slot === 0 ? 0 : -1} aria-label={t(slot === 0 ? 'wlFanFront' : 'wlFanShow', { label: l.label })}
               onClick={() => { if (slot === 0) cycle(1); else { haptic('tick'); setOrder((o) => [i, ...o.filter((x) => x !== i)]); } }}>
               <CardThumb event={l.event} content={l.content} width={width} />
             </button>
           );
         })}
       </div>
-      <p className="wl-fan-caption" aria-live="polite"><span className="num">{String(front + 1).padStart(2, '0')}</span>مثال: {looks[front]!.label}<span className="wl-fan-hint">· اسحب البطاقة</span></p>
+      <p className="wl-fan-caption" aria-live="polite"><span className="num">{String(front + 1).padStart(2, '0')}</span>{t('wlFanCaption', { label: looks[front]!.label })}<span className="wl-fan-hint">{t('wlFanHint')}</span></p>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ occasion rail */
 function OccasionRail() {
+  const { t } = useCopy();
   const rail = useRef<HTMLUListElement>(null);
   const step = (dir: 1 | -1) => { const el = rail.current; if (!el) return; el.scrollBy({ left: -dir * el.clientWidth * 0.7, behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); };
   return (
     <section className="wl-section wl-occasions" aria-labelledby="wl-occ">
       <header className="wl-section-head">
-        <h2 id="wl-occ">ما مناسبتك؟</h2>
-        <div className="wl-rail-arrows"><button type="button" className="wl-arrow v2-press" onClick={() => step(-1)} aria-label="السابق"><Icon name="back" /></button><button type="button" className="wl-arrow v2-press" onClick={() => step(1)} aria-label="التالي"><Icon name="forward" /></button></div>
+        <h2 id="wl-occ">{t('wlWhatOccasion')}</h2>
+        <div className="wl-rail-arrows"><button type="button" className="wl-arrow v2-press" onClick={() => step(-1)} aria-label={t('wlPrev')}><Icon name="back" /></button><button type="button" className="wl-arrow v2-press" onClick={() => step(1)} aria-label={t('wlNext')}><Icon name="forward" /></button></div>
       </header>
       <ul ref={rail} className="wl-rail">
         {OCCASIONS_ORDERED.map((o, i) => (
@@ -121,6 +125,7 @@ function OccasionRail() {
 /* ------------------------------------------------------------------ the guest's side, as a demo */
 type DemoStep = 'sealed' | 'open' | 'attend' | 'sent' | 'declined';
 function GuestDemo() {
+  const { t } = useCopy();
   const [step, setStep] = useState<DemoStep>('sealed');
   const [count, setCount] = useState(2);
   const seal = useRef<HTMLButtonElement>(null);
@@ -140,43 +145,43 @@ function GuestDemo() {
   return (
     <section className="wl-section wl-demo" aria-labelledby="wl-demo">
       <div className="wl-demo-copy">
-        <p className="wl-kicker">على جوال ضيفك</p>
-        <h2 id="wl-demo">هكذا تصل دعوتك.</h2>
-        <p>ظرف بختمٍ يفتحه الضيف بلمسة، ثم دعوتك كاملة، ورد واحد: سيحضر ومعه كم شخصًا، أو يعتذر بلطف. جرّبها هنا كما سيجرّبها ضيفك.</p>
+        <p className="wl-kicker">{t('wlOnPhone')}</p>
+        <h2 id="wl-demo">{t('wlDemoTitle')}</h2>
+        <p>{t('wlDemoText')}</p>
         <ol className="wl-demo-steps">
-          <li className={step === 'sealed' ? 'is-on' : ''}><b className="num">01</b>اسحب الختم للأعلى أو اضغطه</li>
-          <li className={step === 'open' ? 'is-on' : ''}><b className="num">02</b>اقرأ الدعوة واختر ردك</li>
-          <li className={step === 'attend' || step === 'sent' || step === 'declined' ? 'is-on' : ''}><b className="num">03</b>حضور بعدد، أو اعتذار</li>
+          <li className={step === 'sealed' ? 'is-on' : ''}><b className="num">01</b>{t('wlDemoStep1')}</li>
+          <li className={step === 'open' ? 'is-on' : ''}><b className="num">02</b>{t('wlDemoStep2')}</li>
+          <li className={step === 'attend' || step === 'sent' || step === 'declined' ? 'is-on' : ''}><b className="num">03</b>{t('wlDemoStep3')}</li>
         </ol>
       </div>
-      <div className="wl-phone" aria-label="تجربة توضيحية لدعوة الضيف">
+      <div className="wl-phone" aria-label={t('wlPhoneLabel')}>
         <span className="wl-phone-notch" aria-hidden="true" />
-        <p className="wl-phone-badge"><Icon name="eye" size="sm" />تجربة — لا يُسجَّل أي رد</p>
+        <p className="wl-phone-badge"><Icon name="eye" size="sm" />{t('wlPhoneBadge')}</p>
         <div className={`wl-envelope is-${step}`}>
           <span className="wl-env-back" aria-hidden="true" />
           <div className="wl-env-card" aria-hidden={step === 'sealed'}><CardThumb event={ev} content={content} width={196} /></div>
           <span className="wl-env-front" aria-hidden="true" />
           <span className="wl-env-flap" aria-hidden="true" />
           {step === 'sealed' && (
-            <button ref={seal} type="button" className="wl-seal" data-gesture-surface="" {...lift} onClick={open} aria-label="افتح الدعوة">
+            <button ref={seal} type="button" className="wl-seal" data-gesture-surface="" {...lift} onClick={open} aria-label={t('wlSealOpen')}>
               <Seal size={74} tone="red" />
-              <span className="wl-seal-hint"><Icon name="chevron-up" size="sm" />اسحب لأعلى</span>
+              <span className="wl-seal-hint"><Icon name="chevron-up" size="sm" />{t('wlSealHint')}</span>
             </button>
           )}
         </div>
         <div className="wl-phone-panel" aria-live="polite">
-          {step === 'sealed' && <p className="wl-phone-line">دعوة من نورة وفيصل</p>}
-          {step === 'open' && <div className="wl-answer"><button type="button" className="wl-btn is-primary v2-press" onClick={() => { haptic('tick'); setStep('attend'); }}>سأحضر</button><button type="button" className="wl-btn v2-press" onClick={() => { haptic('tick'); setStep('declined'); }}>أعتذر</button></div>}
+          {step === 'sealed' && <p className="wl-phone-line">{t('wlFrom', { names: 'نورة وفيصل' })}</p>}
+          {step === 'open' && <div className="wl-answer"><button type="button" className="wl-btn is-primary v2-press" onClick={() => { haptic('tick'); setStep('attend'); }}>{t('guestAccept')}</button><button type="button" className="wl-btn v2-press" onClick={() => { haptic('tick'); setStep('declined'); }}>{t('guestDecline')}</button></div>}
           {step === 'attend' && (
             <div className="wl-count">
-              <span>كم شخصًا سيحضر؟</span>
-              <div className="wl-stepper"><button type="button" className="v2-press" onClick={() => setCount((c) => Math.max(1, c - 1))} aria-label="أقل" disabled={count <= 1}><Icon name="minus" size="sm" /></button><b className="num" aria-live="polite">{count}</b><button type="button" className="v2-press" onClick={() => setCount((c) => Math.min(4, c + 1))} aria-label="أكثر" disabled={count >= 4}><Icon name="plus" size="sm" /></button></div>
-              <button type="button" className="wl-btn is-primary v2-press" onClick={() => { haptic('success'); setStep('sent'); }}>أكّد الحضور</button>
+              <span>{t('wlHowMany')}</span>
+              <div className="wl-stepper"><button type="button" className="v2-press" onClick={() => setCount((c) => Math.max(1, c - 1))} aria-label={t('wlFewer')} disabled={count <= 1}><Icon name="minus" size="sm" /></button><b className="num" aria-live="polite">{count}</b><button type="button" className="v2-press" onClick={() => setCount((c) => Math.min(4, c + 1))} aria-label={t('wlMore')} disabled={count >= 4}><Icon name="plus" size="sm" /></button></div>
+              <button type="button" className="wl-btn is-primary v2-press" onClick={() => { haptic('success'); setStep('sent'); }}>{t('wlConfirm')}</button>
             </div>
           )}
-          {step === 'sent' && <div className="wl-result"><Seal size={52} tone="gold" className="wl-result-seal" /><p><b>هكذا يرى ضيفك التأكيد.</b><br />في الدعوة الحقيقية يظهر بعد حفظ الرد فعلًا.</p></div>}
-          {step === 'declined' && <div className="wl-result"><p><b>نقدّر اعتذارك.</b><br />يصل الاعتذار لصاحب المناسبة دون أي خطوة إضافية.</p></div>}
-          {step !== 'sealed' && <button type="button" className="wl-replay" onClick={() => { setStep('sealed'); setCount(2); }}><Icon name="refresh" size="sm" />أعد التجربة</button>}
+          {step === 'sent' && <div className="wl-result"><Seal size={52} tone="gold" className="wl-result-seal" /><p><b>{t('wlSentTitle')}</b><br />{t('wlSentText')}</p></div>}
+          {step === 'declined' && <div className="wl-result"><p><b>{t('wlDeclinedTitle')}</b><br />{t('wlDeclinedText')}</p></div>}
+          {step !== 'sealed' && <button type="button" className="wl-replay" onClick={() => { setStep('sealed'); setCount(2); }}><Icon name="refresh" size="sm" />{t('wlReplay')}</button>}
         </div>
       </div>
     </section>
@@ -185,51 +190,50 @@ function GuestDemo() {
 
 /* ------------------------------------------------------------------ page */
 export function WelcomePage() {
+  const { t } = useCopy();
   const navigate = useNavigate();
-  const demo = () => { saveDemoAccount({ status: 'demo' }); navigate('/app/events'); };
+  const proto = usePrototype();
+  // the demo is the seeded events; after a fresh (empty) sign-up on this device, bring them back first
+  const demo = () => { saveDemoAccount({ status: 'demo' }); if (proto.scenario() === 'empty') proto.reset('before'); navigate('/app/events'); };
   const jump = (id: string) => document.getElementById(id)?.closest('section')?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
   return (
     <div className="wl">
       <header className="wl-header">
         <Link to="/app/welcome" className="wl-brand" aria-label="ضيوفي"><Logo height={30} /></Link>
         {/* in-page jumps are buttons: with <base href="/"> a bare #hash link would leave the SPA */}
-        <nav className="wl-nav" aria-label="روابط"><button type="button" onClick={() => jump('wl-occ')}>المناسبات</button><button type="button" onClick={() => jump('wl-demo')}>على جوال ضيفك</button><Link to="/app/help">كيف تعمل</Link></nav>
-        <Link to="/app/login" className="wl-login v2-press"><Icon name="user" size="sm" />دخول</Link>
+        <nav className="wl-nav" aria-label={t('wlNav')}><button type="button" onClick={() => jump('wl-occ')}>{t('wlOccasions')}</button><button type="button" onClick={() => jump('wl-demo')}>{t('wlOnPhone')}</button><Link to="/app/help">{t('wlHow')}</Link></nav>
+        <Link to="/app/login" className="wl-login v2-press"><Icon name="user" size="sm" />{t('wlLogin')}</Link>
       </header>
       <main id="main" tabIndex={-1}>
         <section className="wl-hero" aria-labelledby="wl-title">
-          <picture className="wl-hero-photo" aria-hidden="true">
-            <source srcSet="assets/editorial/stationery-still-life.avif" type="image/avif" />
-            <img src="assets/editorial/stationery-still-life.webp" alt="" width="1536" height="1024" decoding="async" fetchPriority="high" />
-          </picture>
           <div className="wl-hero-copy">
-            <p className="wl-kicker"><span aria-hidden="true" />دعوات رقمية لكل فرحة</p>
-            <h1 id="wl-title"><span className="wl-line">كل فرحة</span><span className="wl-line is-red">تستاهل دعوة.</span></h1>
-            <p className="wl-sub">من أول دعوة، إلى آخر ضيف. اكتب الأسماء والموعد، ونجهّز لك دعوة جاهزة للمشاركة، وردودًا واضحة حتى يوم الاستقبال.</p>
+            <p className="wl-kicker"><span aria-hidden="true" />{t('homeKicker')}</p>
+            <h1 id="wl-title"><span className="wl-line">{t('homeSloganA')}</span><span className="wl-line is-red">{t('homeSloganB')}</span></h1>
+            <p className="wl-sub">{t('wlSub')}</p>
             <div className="wl-actions">
-              <LinkButton to="/app/signup" variant="primary" size="lg" iconEnd="forward">ابدأ مناسبتك</LinkButton>
-              <LinkButton to="/app/login" variant="secondary" size="lg">عندي حساب</LinkButton>
+              <LinkButton to="/app/signup" variant="primary" size="lg" iconEnd="forward">{t('wlStart')}</LinkButton>
+              <LinkButton to="/app/login" variant="secondary" size="lg">{t('wlHaveAccount')}</LinkButton>
             </div>
-            <button type="button" className="wl-demo-link" onClick={demo}>أو استكشف بمناسبة جاهزة<Icon name="forward" size="sm" /></button>
+            <button type="button" className="wl-demo-link" onClick={demo}>{t('wlExplore')}<Icon name="forward" size="sm" /></button>
           </div>
           <InvitationFan />
         </section>
         <OccasionRail />
         <GuestDemo />
         <section className="wl-section wl-steps" aria-labelledby="wl-steps">
-          <h2 id="wl-steps">ثلاث خطوات، وفرحتك جاهزة.</h2>
+          <h2 id="wl-steps">{t('wlStepsTitle')}</h2>
           <ol>
-            <li><Seal size={54} tone="red" mark="١" /><strong>اختر مناسبتك</strong><p>زفاف، تخرّج، ميلاد أو إفطار — كل مناسبة تبدأ بدعوة مكتوبة لها.</p></li>
-            <li><Seal size={54} tone="gold" mark="٢" /><strong>أضف لمستك</strong><p>الأسماء والكلمة والبرنامج جاهزة، وغيّر الشكل متى شئت دون أن يضيع شيء.</p></li>
-            <li><Seal size={54} tone="charcoal" mark="٣" /><strong>رحّب بضيوفك</strong><p>رابط لكل ضيف، ردود واضحة، وطاولات واستقبال في مكان واحد.</p></li>
+            <li><Seal size={54} tone="red" mark="1" /><strong>{t('wlStep1')}</strong><p>{t('wlStep1Hint')}</p></li>
+            <li><Seal size={54} tone="gold" mark="2" /><strong>{t('wlStep2')}</strong><p>{t('wlStep2Hint')}</p></li>
+            <li><Seal size={54} tone="charcoal" mark="3" /><strong>{t('wlStep3')}</strong><p>{t('wlStep3Hint')}</p></li>
           </ol>
         </section>
-        <section className="wl-closing" aria-label="ابدأ">
-          <p className="wl-closing-line">فرحتك علينا.<br /><em>وضيوفك في انتظارك.</em></p>
-          <LinkButton to="/app/signup" variant="primary" size="lg" iconEnd="forward">ابدأ الآن</LinkButton>
+        <section className="wl-closing" aria-label={t('homeStartRegion')}>
+          <p className="wl-closing-line">{t('homeClosingA')}<br /><em>{t('homeClosingB')}</em></p>
+          <LinkButton to="/app/signup" variant="primary" size="lg" iconEnd="forward">{t('wlStartNow')}</LinkButton>
         </section>
       </main>
-      <footer className="wl-footer"><Logo height={22} /><span>من أول دعوة إلى آخر ضيف.</span><span className="wl-footer-note">نسخة تجربة — الحسابات والبيانات على هذا الجهاز.</span></footer>
+      <footer className="wl-footer"><Logo height={22} /><span>{t('wlFooter')}</span><span className="wl-footer-note">{t('wlFooterNote')}</span></footer>
     </div>
   );
 }

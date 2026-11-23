@@ -13,7 +13,9 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import type { InvitationParty } from '../../domain/types';
 import { checkAssign, type TableOccupancy } from '../../domain/seating';
 import { seatsFor } from '../../domain/parties';
-import { people } from '../../domain/format';
+import { useCopy } from '../../ui/copy';
+/** the lifted family's card height (seating-v2.css .lift-ghost), to place it above the finger or the dock */
+const GHOST_H = 58;
 import { Icon } from '../../ui';
 import { haptic } from '../../ui/motion/motion';
 
@@ -42,39 +44,56 @@ export function TableDisc({ o, preview }: { o: TableOccupancy; preview?: number 
   );
 }
 
-export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragOverTable }: {
+export function HallMap({ tables, focus, onFocus, onDropParty, dragOver, onDragOverTable, showFood = false, orderMode = false, onReorder, onOrderDone }: {
   tables: TableOccupancy[]; focus: string; onFocus: (id: string) => void;
   onDropParty?: (t: TableOccupancy) => (e: React.DragEvent) => void; dragOver?: string | null; onDragOverTable?: (id: string | null) => void;
+  showFood?: boolean; orderMode?: boolean; onReorder?: (source: string, target: string) => void; onOrderDone?: () => void;
 }) {
+  const { t } = useCopy();
+  const [orderSource, setOrderSource] = useState<string | null>(null);
+  const [orderTarget, setOrderTarget] = useState<string | null>(null);
+  const touchOrder = useRef<{ pointerId: number; source: string; target: string } | null>(null);
+  const clearOrder = () => { touchOrder.current = null; setOrderSource(null); setOrderTarget(null); };
   const total = tables.reduce((n, o) => n + o.table.capacity, 0), used = tables.reduce((n, o) => n + o.used, 0);
   return (
-    <section className="hall seat-overview" aria-label="خريطة الطاولات وتصفية القائمة">
+    <section className="hall seat-overview" aria-label={t('shHallLabel')}>
       <header className="hall-head">
         <div>
-          <p className="hall-kicker"><Icon name="table" size="sm" />خريطة القاعة</p>
-          <h2><span className="num">{used}</span> من <span className="num">{total}</span> مقعدًا مشغولة</h2>
+          <p className="hall-kicker"><Icon name="table" size="sm" />{t('hallKicker')}</p>
+          <h2>{t('hallUsed', { used, total })}</h2>
         </div>
-        <button type="button" className={`hall-all${focus === 'all' ? ' is-on' : ''}`} aria-pressed={focus === 'all'} onClick={() => onFocus('all')}>كل الطاولات</button>
+        <button type="button" className={`hall-all${focus === 'all' ? ' is-on' : ''}`} aria-pressed={focus === 'all'} onClick={() => onFocus('all')}>{t('hallAll')}</button>
       </header>
-      <div className="hall-stage" aria-hidden="true"><span>المنصّة</span></div>
-      <div className="hall-floor" style={{ '--hall-n': tables.length } as CSSProperties}>
+      <div className="hall-stage" aria-hidden="true"><span>{t('hallStage')}</span></div>
+      {/* the keyboard sentence only where a keyboard is likely (seating-v2.css hides it on touch screens) */}
+      {orderMode && <div className="hall-order-bar"><p className="hall-order-hint" id="hall-order-help">{t('hallOrderHint')}<span className="hall-order-keys">{t('hallOrderKeys')}</span></p>
+        {onOrderDone && <button type="button" className="hall-all is-on" onClick={onOrderDone}>{t('seatOrderDone')}</button>}</div>}
+      <div className={`hall-floor${orderMode ? ' is-ordering' : ''}`} style={{ '--hall-n': tables.length } as CSSProperties}>
         {tables.map((o, i) => (
           <button key={o.table.id} type="button" style={{ '--hall-i': i } as CSSProperties}
-            className={`hall-table seat-overview-table${focus === o.table.id ? ' is-active' : ''}${o.over ? ' is-over' : o.remaining === 0 ? ' is-full' : ''}${dragOver === o.table.id ? ' is-drop-target' : ''}`}
+            data-order-table={o.table.id} data-table={orderMode ? undefined : o.table.id} draggable={orderMode} aria-describedby={orderMode ? 'hall-order-help' : undefined}
+            className={`hall-table seat-overview-table${focus === o.table.id ? ' is-active' : ''}${o.over ? ' is-over' : o.remaining === 0 ? ' is-full' : ''}${dragOver === o.table.id || orderTarget === o.table.id ? ' is-drop-target' : ''}${orderSource === o.table.id ? ' is-order-source' : ''}`}
             aria-pressed={focus === o.table.id}
-            aria-label={`${o.table.name}: ${o.used} من ${o.table.capacity}${o.over ? `، زيادة ${-o.remaining}` : ''}${o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) ? '، عليها حساسية طعام' : ''}`}
-            onClick={() => { haptic('tick'); onFocus(o.table.id); }}
-            onDragOver={onDropParty ? (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDragOverTable?.(o.table.id); } : undefined}
+            aria-label={`${t('shTableUse', { name: o.table.name, used: o.used, cap: o.table.capacity })}${o.over ? t('shOverBy', { n: -o.remaining }) : ''}${showFood && o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) ? t('shHasAllergy') : ''}${orderMode ? t('shOrder', { n: i + 1 }) : ''}`}
+            onClick={() => { if (!orderMode) { haptic('tick'); onFocus(o.table.id); } }}
+            onDragStart={orderMode ? (e) => { e.dataTransfer.setData('application/x-doyofy-table', o.table.id); setOrderSource(o.table.id); } : undefined}
+            onDragEnd={orderMode ? clearOrder : undefined}
+            onPointerDown={orderMode ? (e) => { if (e.pointerType === 'mouse' || !e.isPrimary) return; claimPointer(e); e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); touchOrder.current = { pointerId: e.pointerId, source: o.table.id, target: o.table.id }; setOrderSource(o.table.id); } : undefined}
+            onPointerMove={orderMode ? (e) => { if (touchOrder.current?.pointerId !== e.pointerId) return; const id = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-order-table]')?.dataset.orderTable; if (id) { touchOrder.current.target = id; setOrderTarget(id); } } : undefined}
+            onPointerUp={orderMode ? (e) => { const drag = touchOrder.current; if (drag?.pointerId !== e.pointerId) return; if (drag.source !== drag.target) onReorder?.(drag.source, drag.target); clearOrder(); } : undefined}
+            onPointerCancel={orderMode ? clearOrder : undefined}
+            onKeyDown={orderMode ? (e) => { const delta = ['ArrowLeft', 'ArrowDown'].includes(e.key) ? 1 : ['ArrowRight', 'ArrowUp'].includes(e.key) ? -1 : 0; if (!delta) return; e.preventDefault(); const destination = tables[i + delta]; if (destination) onReorder?.(o.table.id, destination.table.id); } : undefined}
+            onDragOver={orderMode || onDropParty ? (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (orderMode) setOrderTarget(o.table.id); else onDragOverTable?.(o.table.id); } : undefined}
             onDragLeave={onDropParty ? () => onDragOverTable?.(null) : undefined}
-            onDrop={onDropParty?.(o)}>
+            onDrop={(e) => { const source = e.dataTransfer.getData('application/x-doyofy-table'); if (source) { e.preventDefault(); onReorder?.(source, o.table.id); clearOrder(); } else onDropParty?.(o)(e); }}>
             <span className="hall-table-art"><TableDisc o={o} /><strong className="hall-count num">{o.used}<small>/{o.table.capacity}</small></strong>
-              {o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) && <span className="hall-allergy" aria-hidden="true"><Icon name="alert" size="sm" /></span>}</span>
+              {showFood && o.parties.some((p) => p.rsvpStatus === 'confirmed' && hasAllergy(p.dietary)) && <span className="hall-allergy" aria-hidden="true"><Icon name="alert" size="sm" /></span>}</span>
             <span className="hall-name">{o.table.name}</span>
-            <span className="hall-status">{o.over ? `زيادة ${-o.remaining}` : o.remaining === 0 ? 'ممتلئة' : `${o.remaining} متاح`}</span>
+            <span className="hall-status">{o.over ? t('hallExtra', { n: -o.remaining }) : o.remaining === 0 ? t('hallFull') : t('hallFree', { n: o.remaining })}</span>
           </button>
         ))}
       </div>
-      <p className="hall-note">ترتيب للعرض فقط — ليس مخطط القاعة الفعلي.</p>
+      <p className="hall-note">{t('hallNote')}</p>
     </section>
   );
 }
@@ -84,18 +103,17 @@ export function SeatDock({ party, tables, hover, onPick, onCancel, onList }: {
   party: InvitationParty; tables: TableOccupancy[]; hover: string | null; onPick: (t: TableOccupancy) => void; onCancel: () => void; onList: () => void;
 }) {
   const need = seatsFor(party);
-  const strip = useRef<HTMLDivElement>(null);
-  // keep the hovered destination in view while dragging along the strip
-  useEffect(() => { if (hover) strip.current?.querySelector(`[data-table="${CSS.escape(hover)}"]`)?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' }); }, [hover]);
+  const { t, n } = useCopy();
+  // the strip scrolls only from its edge zones while a family is dragged (useLiftDrag), never by itself under a still finger
   return (
-    <div className="seat-dock" role="dialog" aria-label={`اختر طاولة لـ${party.primaryGuestName}`}>
+    <div className="seat-dock" onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onCancel(); } }} role="dialog" aria-label={t('shPickTableFor', { name: party.primaryGuestName })}>
       <div className="seat-dock-head">
-        <span className="seat-dock-chip"><b>{party.primaryGuestName}</b> · {people(need)}</span>
-        <span className="seat-dock-hint">{hover ? 'أفلِت لتأكيد النقل' : 'اضغط طاولة أو اسحب إليها'}</span>
-        <button type="button" className="seat-dock-list" onClick={onList}>قائمة</button>
-        <button type="button" className="seat-dock-cancel" onClick={onCancel} aria-label="إلغاء النقل"><Icon name="close" size="sm" /></button>
+        <span className="seat-dock-chip"><b>{party.primaryGuestName}</b> · {n(need, 'person')}</span>
+        <span className="seat-dock-hint">{t(hover ? 'dockDrop' : 'dockHint')}</span>
+        <button type="button" className="seat-dock-list" onClick={onList}>{t('dockList')}</button>
+        <button type="button" className="seat-dock-cancel" onClick={onCancel} aria-label={t('shCancelMove')}><Icon name="close" size="sm" /></button>
       </div>
-      <div className="seat-dock-strip" ref={strip}>
+      <div className="seat-dock-strip">
         {tables.map((o) => {
           const current = party.tableId === o.table.id;
           const check = checkAssign(party, o);
@@ -103,11 +121,11 @@ export function SeatDock({ party, tables, hover, onPick, onCancel, onList }: {
           return (
             <button key={o.table.id} type="button" data-table={o.table.id} disabled={current}
               className={`seat-dock-table${hover === o.table.id ? ' is-hover' : ''}${!current && !check.ok ? ' is-tight' : ''}${current ? ' is-current' : ''}`}
-              aria-label={`${o.table.name}: ${current ? 'الطاولة الحالية' : `تصبح ${after} من ${o.table.capacity}${check.ok ? '' : '، فوق السعة'}`}`}
+              aria-label={`${o.table.name}: ${current ? t('shCurrentTable') : `${t('shBecomes', { after, cap: o.table.capacity })}${check.ok ? '' : t('shOverCap')}`}`}
               onClick={() => onPick(o)}>
               <span className="hall-table-art"><TableDisc o={o} preview={hover === o.table.id && !current ? after : undefined} /><strong className="hall-count num">{hover === o.table.id && !current ? after : o.used}<small>/{o.table.capacity}</small></strong></span>
               <span className="hall-name">{o.table.name}</span>
-              <span className="hall-status">{current ? 'الحالية' : check.ok ? `→ ${after}/${o.table.capacity}` : 'لا تتسع'}</span>
+              <span className="hall-status">{current ? t('dockCurrent') : check.ok ? `→ ${after}/${o.table.capacity}` : t('dockNoFit')}</span>
             </button>
           );
         })}
@@ -123,6 +141,7 @@ export function SeatDock({ party, tables, hover, onPick, onCancel, onList }: {
 export function useLiftDrag({ onLift, onHover, onDrop, onCancel }: {
   onLift: (party: InvitationParty) => void; onHover: (tableId: string | null) => void; onDrop: (tableId: string | null) => void; onCancel: () => void;
 }) {
+  const { n } = useCopy();
   const [ghost, setGhost] = useState<{ party: InvitationParty; x: number; y: number } | null>(null);
   const live = useRef<{ id: number; party: InvitationParty } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -131,13 +150,50 @@ export function useLiftDrag({ onLift, onHover, onDrop, onCancel }: {
 
   useEffect(() => {
     if (!ghost) return;
-    const target = (x: number, y: number) => (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>('[data-table]:not(:disabled)')?.dataset.table ?? null;
-    const move = (e: PointerEvent) => {
-      if (live.current?.id !== e.pointerId) return;
-      setGhost((g) => g && { ...g, x: e.clientX, y: e.clientY });
-      const t = target(e.clientX, e.clientY);
+    // only the dock's tables are destinations: the hall map behind the dock carries data-table too, and a release over
+    // it must never seat a family on a table that did not light up (ops review: «seated on table 8, nothing highlighted»)
+    const DEST = '.seat-dock [data-table]:not(:disabled)';
+    const tableAt = (x: number, y: number) => (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>(DEST) ?? null;
+    const finger = { x: ghost.x, y: ghost.y };
+    const SLACK = 8;
+    const hover = () => {
+      let t = tableAt(finger.x, finger.y)?.dataset.table ?? null;
+      // hysteresis: the lit table stays lit until the finger is 8px past its edge, so the highlight never flickers
+      // on a border between two tables or while the strip slides under the finger
+      if (t !== hovered.current && hovered.current) {
+        const r = document.querySelector<HTMLElement>(`.seat-dock [data-table="${CSS.escape(hovered.current)}"]`)?.getBoundingClientRect();
+        if (r && finger.x >= r.left - SLACK && finger.x <= r.right + SLACK && finger.y >= r.top - SLACK && finger.y <= r.bottom + SLACK) t = hovered.current;
+      }
       if (t !== hovered.current) { hovered.current = t; if (t) haptic('tick'); onHover(t); }
     };
+    // edge zones: within 40px of either end of the strip it scrolls toward that end, faster the closer the finger is
+    const strip = document.querySelector<HTMLElement>('.seat-dock-strip');
+    const snap = strip?.style.scrollSnapType ?? '';
+    if (strip) strip.style.scrollSnapType = 'none'; // snapping would pull the strip back against the finger
+    const EDGE = 40, SPEED = 12;
+    let raf = 0;
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      if (!strip || !live.current) return;
+      const r = strip.getBoundingClientRect();
+      if (finger.y < r.top - 24 || finger.y > r.bottom + 24) return;
+      const left = finger.x - r.left, right = r.right - finger.x;
+      const v = left < EDGE ? -Math.ceil(((EDGE - Math.max(0, left)) / EDGE) * SPEED) : right < EDGE ? Math.ceil(((EDGE - Math.max(0, right)) / EDGE) * SPEED) : 0;
+      if (!v) return;
+      const before = strip.scrollLeft;
+      strip.scrollLeft += v;
+      if (strip.scrollLeft !== before) hover();
+    };
+    raf = requestAnimationFrame(tick);
+    const move = (e: PointerEvent) => {
+      if (live.current?.id !== e.pointerId) return;
+      finger.x = e.clientX; finger.y = e.clientY;
+      setGhost((g) => g && { ...g, x: e.clientX, y: e.clientY });
+      hover();
+    };
+    // when content slides under a still finger the table under it changes, so the highlight follows the scroll too…
+    const scrolled = () => { if (live.current) hover(); };
+    // …and the drop commits to the table that is highlighted, never to one the user did not see light up
     const up = (e: PointerEvent) => { if (live.current?.id !== e.pointerId) return; const t = hovered.current; end(); onDrop(t); };
     const cancel = (e: PointerEvent) => { if (live.current?.id !== e.pointerId) return; end(); onCancel(); };
     // once lifted, the finger drags the family — the page must not scroll underneath it
@@ -146,7 +202,11 @@ export function useLiftDrag({ onLift, onHover, onDrop, onCancel }: {
     window.addEventListener('pointerup', up);
     window.addEventListener('pointercancel', cancel);
     window.addEventListener('touchmove', block, { passive: false });
-    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel); window.removeEventListener('touchmove', block); };
+    window.addEventListener('scroll', scrolled, { capture: true, passive: true });
+    return () => {
+      cancelAnimationFrame(raf); if (strip) strip.style.scrollSnapType = snap;
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel); window.removeEventListener('touchmove', block); window.removeEventListener('scroll', scrolled, { capture: true });
+    };
   }, [ghost != null]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const end = () => { live.current = null; hovered.current = null; setGhost(null); onHover(null); };
@@ -170,6 +230,9 @@ export function useLiftDrag({ onLift, onHover, onDrop, onCancel }: {
     onContextMenu: (e: React.MouseEvent) => { if (timer.current || live.current) e.preventDefault(); },
   });
 
-  const ghostEl = ghost ? <div className="lift-ghost" style={{ transform: `translate3d(${ghost.x}px, ${ghost.y}px, 0)` }} aria-hidden="true"><b>{ghost.party.primaryGuestName}</b><span>{people(seatsFor(ghost.party))}</span></div> : null;
+  // the ghost rides above the finger; over the dock it waits just above the strip, so it never hides the lit table's count
+  const dockTop = ghost ? document.querySelector('.seat-dock')?.getBoundingClientRect().top : undefined;
+  const ghostTop = ghost ? Math.max(8, dockTop != null && ghost.y > dockTop - 16 ? dockTop - GHOST_H - 10 : ghost.y - GHOST_H - 28) : 0;
+  const ghostEl = ghost ? <div className="lift-ghost" style={{ transform: `translate3d(${Math.min(Math.max(ghost.x, 78), window.innerWidth - 78)}px, ${ghostTop}px, 0)` }} aria-hidden="true"><b>{ghost.party.primaryGuestName}</b><span>{n(seatsFor(ghost.party), 'person')}</span></div> : null;
   return { bind, ghost: ghostEl, lifting: !!ghost };
 }

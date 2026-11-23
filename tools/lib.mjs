@@ -27,8 +27,8 @@ export function ensureDir(p) { fs.mkdirSync(p, { recursive: true }); return p; }
 export const pub = (...p) => path.join(ROOT, 'public', 'assets', ...p);
 
 export function chromiumPath() {
-  const guess = '/opt/pw-browsers/chromium';
-  return fs.existsSync(guess) ? guess : undefined;
+  return [process.env.CHROMIUM_EXECUTABLE_PATH, '/opt/pw-browsers/chromium', '/usr/bin/chromium']
+    .find(guess => guess && fs.existsSync(guess));
 }
 
 export function copyDir(src, dst) {

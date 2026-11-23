@@ -54,6 +54,9 @@
 .tp-stage { position: relative; height: min(66dvh, 620px); aspect-ratio: 360 / 700; border-radius: var(--r-xl); overflow: hidden; background: var(--c-stage); isolation: isolate; box-shadow: var(--shadow-art); }
 .live-preview { position: absolute; inset: 0; }
 .live-preview > div { position: absolute; inset: 0; }
+/* organizer previews on phones are full-bleed: the cinematic letterbox (black date/city bands of the intro and the
+   last page) is a framed-screen effect, so it stays on desktop frames and steps aside on phones (organizer review) */
+@media (max-width: 959px) { .live-preview :is(.st-bar, .host-bar), .preview-device :is(.st-bar, .host-bar) { display: none; } }
 .tp-info { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-4); max-width: 380px; }
 .tp-line { font-family: var(--font-display); font-weight: var(--fw-display); font-size: var(--fs-xl); line-height: var(--lh-tight); }
 .tp-note { color: var(--c-text-2); font-size: var(--fs-sm); line-height: 1.8; }

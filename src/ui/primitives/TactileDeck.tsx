@@ -12,6 +12,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { deckDragPosition, deckPose, deckRelease } from '../../domain/gestures';
 import { usePointerGesture } from '../hooks/usePointerGesture';
 import { Icon } from '../icons';
+import { useCopy } from '../copy';
 import { SPRING } from '../../domain/motion';
 import { haptic, springTo } from '../motion/motion';
 
@@ -39,7 +40,8 @@ export interface TactileDeckProps<T> {
   hint?: string;
 }
 
-export function TactileDeck<T>({ items, index, onIndexChange, onActivate, getKey, renderCard, itemLabel, label, spread = 0.66, disabled = false, className = '', window: win = 3, activateHint, hint = 'اسحب البطاقات لتتصفّح' }: TactileDeckProps<T>) {
+export function TactileDeck<T>({ items, index, onIndexChange, onActivate, getKey, renderCard, itemLabel, label, spread = 0.66, disabled = false, className = '', window: win = 3, activateHint, hint }: TactileDeckProps<T>) {
+  const { t } = useCopy();
   const count = items.length;
   const stage = useRef<HTMLDivElement>(null);
   const cards = useRef<Array<HTMLElement | null>>([]);
@@ -148,7 +150,7 @@ export function TactileDeck<T>({ items, index, onIndexChange, onActivate, getKey
 
   const current = items[index];
   return (
-    <div className={`deck${disabled ? ' is-busy' : ''} ${className}`} role="group" aria-roledescription="معرض بطاقات" aria-label={label}>
+    <div className={`deck${disabled ? ' is-busy' : ''} ${className}`} role="group" aria-roledescription={t('uiDeckRole')} aria-label={label}>
       <div ref={stage} className="deck-stage" {...gesture} onKeyDown={onKeyDown}>
         {items.map((item, i) => {
           const near = Math.abs(i - mounted) <= win;
@@ -156,7 +158,7 @@ export function TactileDeck<T>({ items, index, onIndexChange, onActivate, getKey
           return (
             <button key={getKey(item)} ref={(el) => { cards.current[i] = el; }} type="button" className={`deck-card${active ? ' is-active' : ''}`}
               tabIndex={active ? 0 : -1} aria-current={active ? 'true' : undefined} disabled={disabled}
-              aria-label={`${itemLabel(item, i)} — ${i + 1} من ${count}${active && activateHint ? `، ${activateHint}` : ''}`}
+              aria-label={`${itemLabel(item, i)} — ${t('uiOf', { n: i + 1, count })}${active && activateHint ? `، ${activateHint}` : ''}`}
               data-gesture-surface="" style={{ '--deck-i': i } as CSSProperties}
               onClick={() => { if (active) onActivate?.(item, i); else go(i); }}>
               {near ? renderCard(item, { active, near }) : <span className="deck-card-placeholder" aria-hidden="true" />}
@@ -165,15 +167,15 @@ export function TactileDeck<T>({ items, index, onIndexChange, onActivate, getKey
         })}
       </div>
       <div className="deck-controls">
-        <button type="button" className="deck-arrow" onClick={() => go(index - 1)} disabled={disabled || index === 0} aria-label="البطاقة السابقة"><Icon name="back" /></button>
+        <button type="button" className="deck-arrow" onClick={() => go(index - 1)} disabled={disabled || index === 0} aria-label={t('uiDeckPrev')}><Icon name="back" /></button>
         <div className="deck-progress" aria-hidden="true">
           <span className="deck-count num"><b>{String(index + 1).padStart(2, '0')}</b> / {String(count).padStart(2, '0')}</span>
           <span className="deck-rail"><span style={{ width: `${((index + 1) / Math.max(1, count)) * 100}%` }} /></span>
         </div>
-        <button type="button" className="deck-arrow" onClick={() => go(index + 1)} disabled={disabled || index === count - 1} aria-label="البطاقة التالية"><Icon name="forward" /></button>
+        <button type="button" className="deck-arrow" onClick={() => go(index + 1)} disabled={disabled || index === count - 1} aria-label={t('uiDeckNext')}><Icon name="forward" /></button>
       </div>
-      {showHint && <p className="deck-hint" aria-hidden="true"><span className="deck-hint-hand" />{hint}</p>}
-      <p className="sr-only" aria-live="polite">{current ? `${itemLabel(current, index)}، ${index + 1} من ${count}` : ''}</p>
+      {showHint && <p className="deck-hint" aria-hidden="true"><span className="deck-hint-hand" />{hint ?? t('uiDeckHint')}</p>}
+      <p className="sr-only" aria-live="polite">{current ? `${itemLabel(current, index)}، ${t('uiOf', { n: index + 1, count })}` : ''}</p>
     </div>
   );
 }

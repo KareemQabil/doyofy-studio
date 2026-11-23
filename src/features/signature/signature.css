@@ -116,7 +116,7 @@
 .sig-header-nav { display: flex; align-items: center; gap: 4px; margin-inline-start: auto; }
 .sig-header-nav a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 999px; font: 500 15px/1 var(--font-display); color: var(--c-text); text-decoration: none; }
 .sig-header-nav a:hover { background: var(--c-surface-hover); }
-.sig-header-nav .sig-header-new { background: var(--brand-charcoal); color: #fff; }
+.sig-header-nav .sig-header-new { background: var(--brand-charcoal); color: #fff; white-space: nowrap; flex: none; }
 .sig-header-nav .sig-header-new:hover { background: var(--c-primary-hover); }
 .sig-header-tools { display: flex; align-items: center; gap: 10px; }
 .sig-header-tools .topbar-user-name { display: none; }
@@ -147,14 +147,15 @@
 /* the fan */
 .sig-fan-wrap { display: grid; justify-items: center; gap: 18px; }
 .sig-fan { position: relative; width: 100%; height: calc(var(--fan-w) * 1.4 + 60px); touch-action: pan-y; cursor: grab; --fan-w: 250px; }
-.sig-fan-card { position: absolute; top: 30px; left: 50%; margin-left: calc(var(--fan-w) / -2); padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; transform-origin: 50% 110%; transition: transform 620ms var(--ease-out); animation: sig-fan-in 900ms var(--ease-out) both; }
+.sig-fan-card { position: absolute; top: 30px; left: 50%; margin-left: calc(var(--fan-w) / -2); padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; transform-origin: 50% 110%; transition: transform 640ms var(--v2-spring, var(--ease-out)); animation: sig-fan-in 900ms var(--ease-out) both; }
 .sig-fan-card .card-thumb { border-radius: 6px; box-shadow: 0 46px 60px -34px rgba(40, 6, 10, 0.8), 0 2px 8px rgba(40, 6, 10, 0.18); }
-.sig-fan-card.is-front { z-index: 3; transform: translateX(var(--fan-drag, 0px)) rotate(-2deg); }
-.sig-fan-card.is-next { z-index: 2; transform: translateX(calc(-44% + var(--fan-drag, 0px))) translateY(26px) rotate(-12deg) scale(0.9); animation-delay: 120ms; }
-.sig-fan-card.is-prev { z-index: 1; transform: translateX(calc(40% + var(--fan-drag, 0px))) translateY(34px) rotate(10deg) scale(0.86); animation-delay: 220ms; }
+.sig-fan-card.is-front { z-index: 3; transform: translateX(var(--fan-drag, 0px)) rotate(calc(-2deg + var(--fan-turn, 0deg))); }
+/* the front card follows the finger 1:1; the side cards drift a third as far, so they read as cues behind it */
+.sig-fan-card.is-next { z-index: 2; transform: translateX(calc(-44% + var(--fan-drag, 0px) * .35)) translateY(26px) rotate(-12deg) scale(0.9); animation-delay: 120ms; }
+.sig-fan-card.is-prev { z-index: 1; transform: translateX(calc(40% + var(--fan-drag, 0px) * .35)) translateY(34px) rotate(10deg) scale(0.86); animation-delay: 220ms; }
 @media (hover: hover) and (pointer: fine) {
-  .sig-fan:hover .sig-fan-card.is-next { transform: translateX(calc(-52% + var(--fan-drag, 0px))) translateY(22px) rotate(-14deg) scale(0.9); }
-  .sig-fan:hover .sig-fan-card.is-prev { transform: translateX(calc(48% + var(--fan-drag, 0px))) translateY(30px) rotate(12deg) scale(0.86); }
+  .sig-fan:hover .sig-fan-card.is-next { transform: translateX(calc(-52% + var(--fan-drag, 0px) * .35)) translateY(22px) rotate(-14deg) scale(0.9); }
+  .sig-fan:hover .sig-fan-card.is-prev { transform: translateX(calc(48% + var(--fan-drag, 0px) * .35)) translateY(30px) rotate(12deg) scale(0.86); }
 }
 .sig-fan-card:focus-visible { outline: 2.5px solid #fff; outline-offset: 6px; }
 .sig-fan-controls { display: flex; align-items: center; gap: 14px; }
@@ -368,7 +369,7 @@
   .sig-rail-context .ws-event-title { font-size: 18px; }
   :root[data-theme='signature'] .ws-event-art { top: 16px; width: 32px; height: 32px; }
   .sig-content { padding: 18px 16px 44px; }
-  .sig-tabbar { position: fixed; inset-inline: 0; bottom: 0; z-index: 40; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px 6px max(6px, env(safe-area-inset-bottom)); background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(10px); border-top: 1px solid var(--c-hairline); }
+  .sig-tabbar { position: fixed; inset-inline: 0; bottom: 0; z-index: 40; display: grid; grid-template-columns: repeat(var(--tab-n, 5), minmax(0, 1fr)); /* --tab-n: the role decides how many tabs (caterer 3) */ padding: 6px 6px max(6px, env(safe-area-inset-bottom)); background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(10px); border-top: 1px solid var(--c-hairline); }
   .sig-tab { position: relative; display: grid; justify-items: center; gap: 3px; min-height: 56px; padding: 6px 2px; border-radius: 12px; color: var(--c-text-2); text-decoration: none; font: 500 11px/1.2 var(--font-display); }
   .sig-tab-icon { position: relative; display: grid; place-items: center; width: 48px; height: 30px; border-radius: 999px; }
   .sig-tab.is-active { color: var(--c-text); font-weight: 700; }

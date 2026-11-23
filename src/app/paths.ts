@@ -17,7 +17,7 @@ export const paths = {
   design: (id: string, section?: string) => `${ev(id)}/invitation/design${q({ section })}`,
   templates: (id: string, opts: { first?: boolean } = {}) => `${ev(id)}/invitation/templates${q({ first: opts.first ? '1' : undefined })}`,
   preview: (id: string) => `${ev(id)}/invitation/preview`,
-  guests: (id: string, opts: { filter?: string; party?: string; q?: string } = {}) => `${ev(id)}/guests${q(opts)}`,
+  guests: (id: string, opts: { filter?: string; party?: string; q?: string; share?: string } = {}) => `${ev(id)}/guests${q(opts)}`,
   importGuests: (id: string) => `${ev(id)}/guests/import`,
   rsvp: (id: string, tab?: string) => `${ev(id)}/rsvp${q({ tab })}`,
   seating: (id: string) => `${ev(id)}/seating`,
@@ -25,6 +25,8 @@ export const paths = {
   settings: (id: string, focus?: string) => `${ev(id)}/settings${q({ focus })}`,
   summary: (id: string) => `${ev(id)}/summary`,
   gate: (id: string) => `/check-in/${encodeURIComponent(id)}`,
+  /** the account; `section: 'audio'` opens the sound library, `back` is the editor to return to (see safeDesignReturn) */
+  account: (opts: { section?: 'audio'; back?: string } = {}) => `/app/account${q(opts)}`,
   guestLink: (slug: string, code?: string) => `/i/${encodeURIComponent(slug)}${code ? `/${code}` : ''}`,
 };
 
@@ -33,7 +35,7 @@ export function targetPath(eventId: string, t: Target): string {
     case 'settings': return paths.settings(eventId, t.focus);
     case 'invitation': return paths.invitation(eventId);
     case 'design': return paths.design(eventId);
-    case 'guests': return paths.guests(eventId, { filter: t.filter });
+    case 'guests': return paths.guests(eventId, { filter: t.filter, share: t.share });
     case 'import': return paths.importGuests(eventId);
     case 'rsvp': return paths.rsvp(eventId, t.tab);
     case 'seating': return paths.seating(eventId);

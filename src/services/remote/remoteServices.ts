@@ -14,7 +14,7 @@ import type {
   CheckInContext, GuestRsvpInput, GuestView, Services, ShareHow,
 } from '../contracts';
 import type { CreateEventInput, InvitationDesign, InvitationDesignContent, PartyInput, User } from '../../domain/types';
-import { AppError } from '../errors';
+import { AppError, copyError } from '../errors';
 import { makeCode, makeSlug, normaliseCode } from '../../domain/ids';
 import { suggestTitle, todayFor, validateEssentials } from '../../domain/event';
 import { defaultDesign } from '../../domain/invitation';
@@ -43,20 +43,20 @@ function cleanPartyInput(input: Partial<PartyInput>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (input.primaryGuestName !== undefined) {
     const name = input.primaryGuestName.replace(/\s+/g, ' ').trim();
-    if (!name) throw new AppError('validation', 'اكتب اسم الضيف أو العائلة.', 'primaryGuestName');
+    if (!name) throw copyError('validation', 'erNameRequired', { field: 'primaryGuestName' });
     out.primary_guest_name = name;
   }
   if (input.phone !== undefined) {
     if (!input.phone || !input.phone.trim()) out.phone = null;
     else {
       const r = normalisePhone(input.phone);
-      if (!r.ok) throw new AppError('validation', 'رقم الجوال غير صحيح. مثال: 0551234567 أو ‎+966551234567', 'phone');
+      if (!r.ok) throw copyError('validation', 'erBadPhone', { field: 'phone' });
       out.phone = r.e164;
     }
   }
   if (input.maxPartySize !== undefined) {
     if (!Number.isInteger(input.maxPartySize) || input.maxPartySize < 1 || input.maxPartySize > 20) {
-      throw new AppError('validation', 'العدد المسموح بين 1 و20.', 'maxPartySize');
+      throw copyError('validation', 'erPartySize', { field: 'maxPartySize' });
     }
     out.max_party_size = input.maxPartySize;
   }
@@ -174,11 +174,12 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
 
     // ---------------------------------------------------------------- parties
     parties: {
+      transfer: async () => { throw new AppError('forbidden', 'نقل الضيوف متاح في التجربة المحلية. يحتاج الخادم إلى عملية نقل آمنة قبل تفعيله.'); },
       list: async (eventId) => (await db.selectAll<PartyRow>('parties', [['select', '*'], ['event_id', eq(requireId(eventId, 'event_not_found'))], ['order', 'created_at.asc,id.asc']])).map(toParty),
       get: async (id) => toParty(await db.selectOne<PartyRow>('parties', [['select', '*'], ['id', eq(requireId(id, 'party_not_found'))]])),
       create: async (eventId, input) => {
         const clean = cleanPartyInput(input);
-        if (!clean.primary_guest_name) throw new AppError('validation', 'اكتب اسم الضيف أو العائلة.', 'primaryGuestName');
+        if (!clean.primary_guest_name) throw copyError('validation', 'erNameRequired', { field: 'primaryGuestName' });
         const [r] = await db.insert<PartyRow>('parties', { event_id: requireId(eventId, 'event_not_found'), ...clean });
         return changed(toParty(r!));
       },
@@ -200,7 +201,13 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
       },
       // No WhatsApp Business provider yet: refuse honestly instead of pretending delivery (D-008/D-031).
       simulateSend: async () => { throw appError('forbidden', 'messaging_not_configured'); },
-      sendReminder: async () => { throw appError('forbidden', 'messaging_not_configured'); },
+      // a reminder the organizer sent themselves and confirmed: stamp it on the invitations still waiting for a reply
+      markReminded: async (ids: string[]) => {
+        const at = now().toISOString();
+        const rows = await Promise.all(ids.map((id) => db.update<PartyRow>('parties', [['id', eq(requireId(id, 'party_not_found'))], ['rsvp_status', 'eq.pending']], { delivery_reminder_at: at })));
+        changed(undefined);
+        return rows.reduce((n, r) => n + r.length, 0);
+      },
     },
 
     // ---------------------------------------------------------------- RSVP (organizer side)
@@ -223,6 +230,10 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
 
     // ---------------------------------------------------------------- seating
     seating: {
+      reorderTables: async () => { throw new AppError('forbidden', 'ترتيب الطاولات متاح في التجربة المحلية. لم يُفعّل حفظ الترتيب على الخادم بعد.'); },
+      // many moves + new tables must land together or not at all: refuse until the API has one transactional endpoint
+      applyAutoSeating: async () => { throw new AppError('forbidden', 'التوزيع التلقائي متاح في التجربة المحلية. يحتاج الخادم إلى عملية توزيع آمنة قبل تفعيله.'); },
+      undoAutoSeating: async () => { throw new AppError('forbidden', 'التوزيع التلقائي متاح في التجربة المحلية. يحتاج الخادم إلى عملية توزيع آمنة قبل تفعيله.'); },
       listTables: async (eventId) => (await db.select<TableRow>('seating_tables', [['select', '*'], ['event_id', eq(requireId(eventId, 'event_not_found'))], ['order', 'sort_order.asc']])).map(toTable),
       createTables: async (eventId, tables) => {
         for (const t of tables) { const e = Object.values(validateTable(t))[0]; if (e) throw new AppError('validation', e); }
@@ -278,6 +289,7 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
         const r = await db.rpc<GateResult>('undo_check_in', { p_check_in_id: requireId(recordId, 'check_in_not_found') });
         return changed(toParty(r.party));
       },
+      recordWalkIn: async () => { throw new AppError('forbidden', 'تسجيل الضيف غير المدرج متاح في التجربة المحلية. يحتاج الخادم إلى عملية آمنة قبل تفعيله.'); },
     },
 
     activity: {

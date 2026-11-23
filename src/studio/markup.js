@@ -3,7 +3,7 @@
  * z-order, so styles/canon-motion.css drives it unchanged. Dynamic parts (card face, back,
  * pages, envelope colours, done text, switcher) are filled in by Studio.js.
  */
-import { STRINGS as T } from '../data/strings.js';
+import { currentStrings } from '../data/strings.js';
 
 const ICON = {
   close: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>',
@@ -13,13 +13,15 @@ const ICON = {
   palette: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4.1-4-7.4-9-7.4z"></path><circle cx="7.5" cy="11" r="1"></circle><circle cx="10" cy="7" r="1"></circle><circle cx="14.5" cy="7" r="1"></circle><circle cx="17" cy="11" r="1"></circle></svg>',
   soundOn: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></svg>',
   soundOff: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle><path d="M3 3l18 18"></path></svg>',
+  voice: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path><path d="M12 17.5V21"></path></svg>',
+  voiceStop: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"></rect></svg>',
   check: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M9 12.5l2 2 4-4.5"></path></svg>',
 };
 export { ICON };
 
 const SEAL_PATH = 'M32.0 -1.6 Q39.0 1.4 46.4 2.0 Q50.1 9.3 58.7 10.7 Q60.1 18.5 63.9 24.7 Q61.5 32.0 65.8 39.7 Q59.6 45.3 57.4 52.2 Q50.7 55.5 47.1 63.4 Q38.7 61.3 32.0 64.4 Q25.2 61.9 17.0 63.2 Q13.6 55.1 6.4 52.4 Q4.0 45.5 -1.4 39.6 Q2.9 32.0 -0.4 24.6 Q3.7 18.4 5.7 11.0 Q13.9 9.3 17.3 1.5 Q25.0 1.5 32.0 -1.6 Z';
 
-export const studioMarkup = () => `
+export const studioMarkup = () => { const T = currentStrings(); return `
 <div class="host-scene" aria-hidden="true"></div>
 <div class="host-ov host-dim" aria-hidden="true"></div>
 <div class="host-ov host-black" aria-hidden="true"></div>
@@ -46,7 +48,7 @@ export const studioMarkup = () => `
             <div class="st-edge st-el"></div><div class="st-edge st-er"></div><div class="st-edge st-et"></div><div class="st-edge st-eb"></div>
             <div class="st-face st-front"><div class="st-face-slot"></div><div class="st-glint"></div></div>
             <div class="st-face st-back"></div>
-            <button type="button" class="st-cardbtn" aria-label="Open the invitation"></button>
+            <button type="button" class="st-cardbtn" aria-label="${T.openCard}"></button>
           </div>
         </div>
       </div>
@@ -57,15 +59,17 @@ export const studioMarkup = () => `
     <span class="ar" style="font-size: 14px">${T.tapToOpen.ar}</span><span dir="ltr" style="font-size: 12px; font-style: italic">${T.tapToOpen.en}</span>
   </div></div>
 
-  <section class="st-sheet" aria-label="Invitation" tabindex="-1">
+  <section class="st-sheet" aria-label="${T.sheet}" tabindex="-1">
     <div class="st-sheet-frame" style="position: absolute; inset: 10px; border: 1px solid; border-radius: 12px; opacity: 0.55; pointer-events: none"></div>
-    <div class="st-close"><button type="button" class="st-round" data-act="close" aria-label="Back to the card">${ICON.close}</button></div>
+    <div class="st-close"><button type="button" class="st-round" data-act="close" aria-label="${T.backToCard}">${ICON.close}</button></div>
     <div style="position: absolute; top: 24px; left: 0; right: 0; text-align: center; pointer-events: none"><span class="st-sheet-mono" style="font-size: 18px"></span></div>
-    <div class="st-page" aria-live="polite"></div>
-    <nav class="st-nav" dir="ltr" aria-label="Invitation pages">
-      <button type="button" class="st-round" data-act="prev" aria-label="Previous page">${ICON.up}</button>
+    <div class="st-page"></div>
+    <!-- the one polite live line of the pages: the name of the page just turned to (never the whole page again) -->
+    <p class="st-sr st-page-said" aria-live="polite"></p>
+    <nav class="st-nav" dir="ltr" aria-label="${T.pages}">
+      <button type="button" class="st-round" data-act="prev" aria-label="${T.prevPage}">${ICON.up}</button>
       <div class="st-dots" style="display: flex; align-items: center"></div>
-      <button type="button" class="st-round" data-act="next" aria-label="Next page">${ICON.down}</button>
+      <button type="button" class="st-round" data-act="next" aria-label="${T.nextPage}">${ICON.down}</button>
     </nav>
   </section>
 
@@ -93,12 +97,15 @@ export const studioMarkup = () => `
 
   <div class="st-credit" style="position: absolute; top: 343px" aria-hidden="true"></div>
 
-  <div class="st-done" role="status">
+  <!-- the thank-you as a screen reader meets it: focus lands here the moment the reply is sent (the visible screen
+       is still animating in, and a live region would re-read it all, English included) -->
+  <h2 class="st-sr st-done-said" tabindex="-1"></h2>
+  <div class="st-done">
     <svg class="st-dl st-e1" width="64" height="64" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="none" stroke="#C9A15F" stroke-width="1"></circle><path d="M21 33 L29 41 L44 24" fill="none" stroke="#F6E2AE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-    <span class="fx-foil st-dl st-e2 done-ar" style="font-size: 60px; line-height: 1.5; margin-top: 10px"></span>
-    <span class="st-dl st-e3 done-en" dir="ltr" style="font-size: 20px; font-style: italic; max-width: 290px; line-height: 1.35"></span>
-    <span class="st-dl st-e4 done-demo" hidden style="font: 500 13px/1.6 'IBM Plex Sans Arabic', sans-serif; color: #F2EAD9; background: rgba(0,0,0,.35); padding: 6px 12px; border-radius: 999px; margin-top: 14px; max-width: 300px">هذه نسخة تجريبية — لم يُرسل ردّك للمنظّم.</span>
-    <span class="st-dl st-e4 done-who" dir="ltr" style="font-size: 12.5px; letter-spacing: 0.3em; color: #E3C58C; margin-top: 18px"></span>
+    <span class="fx-foil st-dl st-e2 done-ar" aria-hidden="true" style="font-size: 60px; line-height: 1.5; margin-top: 10px"></span>
+    <span class="st-dl st-e3 done-en" dir="ltr" aria-hidden="true" style="font-size: 20px; font-style: italic; max-width: 290px; line-height: 1.35"></span>
+    <span class="st-dl st-e4 done-demo" aria-hidden="true" hidden style="font: 500 13px/1.6 'IBM Plex Sans Arabic', sans-serif; color: #F2EAD9; background: rgba(0,0,0,.35); padding: 6px 12px; border-radius: 999px; margin-top: 14px; max-width: 300px"></span>
+    <span class="st-dl st-e4 done-who" dir="ltr" style="font-size: 12.5px; letter-spacing: 0.3em; color: #E3C58C; margin-top: 18px; max-width: 320px"></span>
     <button type="button" class="st-cta st-dl st-e5" data-act="replay" style="margin-top: 32px; border-color: rgba(227,197,140,.6); color: #F4EAE0; background: transparent">
       ${ICON.replay.replace('width="19" height="19"', 'width="16" height="16"')}
       <span class="ar" style="font-size: 15px">${T.watchAgain.ar}</span><span dir="ltr" style="font-size: 14px; font-style: italic">${T.watchAgain.en}</span>
@@ -113,13 +120,14 @@ export const studioMarkup = () => `
 
   <div class="st-ctrls" dir="ltr">
     <div style="display: flex; gap: 8px">
-      <button type="button" class="st-icon" data-act="switcher" aria-label="Choose card design and scene" aria-expanded="false">${ICON.palette}</button>
+      <button type="button" class="st-icon" data-act="switcher" aria-label="اختيار التصميم والخلفية" aria-expanded="false">${ICON.palette}</button>
     </div>
     <div style="display: flex; gap: 8px">
-      <button type="button" class="st-icon" data-act="replay" aria-label="Replay from the beginning">${ICON.replay}</button>
-      <button type="button" class="st-icon" data-act="sound" aria-label="Mute music" aria-pressed="true">${ICON.soundOn}</button>
+      <button type="button" class="st-icon" data-act="voice" aria-label="${T.voice}" aria-pressed="false" hidden>${ICON.voice}</button>
+      <button type="button" class="st-icon" data-act="replay" aria-label="${T.replayAll}">${ICON.replay}</button>
+      <button type="button" class="st-icon" data-act="sound" aria-label="${T.sound}" aria-pressed="true">${ICON.soundOn}</button>
     </div>
   </div>
   <div class="st-switch-slot"></div>
 </div>
-</div>`;
+</div>`; };

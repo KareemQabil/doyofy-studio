@@ -6,7 +6,7 @@
  * Only services/mock/* may touch this. Screens never call storage (spec §4).
  */
 import type { CheckInRecord, Event, EventActivity, InvitationDesign, InvitationParty, RSVPResponse, Table } from '../../domain/types';
-import { AppError } from '../errors';
+import { AppError, copyError } from '../errors';
 import { resolveDesign } from '../../domain/invitation';
 
 export interface DbShape {
@@ -22,13 +22,14 @@ export interface DbShape {
   activity: EventActivity[];
 }
 
-export type ScenarioId = 'before' | 'event_day';
+/** 'empty': a fresh account starts with no events (sign-up); the two demo scenarios are seeded */
+export type ScenarioId = 'before' | 'event_day' | 'empty';
 
 export interface PrototypeSettings {
   latencyMs: number;
   offline: boolean;
   clockOffsetMs: number;
-  role: 'organizer' | 'coordinator';
+  role: import('../../domain/types').Role;
   /** organizer appearance: light · dark · follow the device (the invitation keeps its own palette) */
   appearance: import('../../domain/appearance').Appearance;
 }
@@ -51,13 +52,17 @@ export class MockStore {
   private listeners = new Set<() => void>();
   readonly storage = safeStorage();
   settings: PrototypeSettings;
+  /** a guest-link visit on a device with no organizer data: an empty, in-memory store that is never written */
+  private ephemeral = false;
 
-  constructor(private seed: (now: Date, scenario: ScenarioId) => DbShape) {
+  /** `seedDemo: false` (a guest link that carries its own invitation): never plant the organizer's demo data on this device */
+  constructor(private seed: (now: Date, scenario: ScenarioId) => DbShape, opts: { seedDemo?: boolean } = {}) {
     // older builds stored a visual theme and a chooser variant; one identity remains, so those keys are dropped
     const { theme: _t, occasionChooser: _c, ...saved } = this.readJSON<Partial<PrototypeSettings> & { theme?: unknown; occasionChooser?: unknown }>(SETTINGS_KEY) ?? {};
     this.settings = { ...DEFAULT_SETTINGS, ...saved };
     const stored = this.readJSON<DbShape>(DB_KEY);
     if (stored && stored.version === 1) this.db = migrateFaces(stored);
+    else if (opts.seedDemo === false) { this.ephemeral = true; this.db = emptyDb(this.now()); }
     else this.reset('before');
     window.addEventListener('storage', (e) => {
       if (e.key === DB_KEY) { const d = this.readJSON<DbShape>(DB_KEY); if (d) { this.db = migrateFaces(d); this.emit(); } }
@@ -103,12 +108,12 @@ export class MockStore {
   async request<T>(fn: () => T, kind: 'read' | 'write' = 'read'): Promise<T> {
     const ms = this.settings.latencyMs * (kind === 'write' ? 1.4 : 1) * (0.7 + Math.random() * 0.6);
     if (ms > 0) await new Promise((r) => setTimeout(r, ms));
-    if (this.settings.offline) throw new AppError('network', 'لا يوجد اتصال الآن. لم يتم حفظ أي تغيير — أعد المحاولة بعد عودة الاتصال.');
+    if (this.settings.offline) throw copyError('network', 'erOffline');
     return fn();
   }
 
   private persist() {
-    if (!this.storage) return;
+    if (!this.storage || this.ephemeral) return;
     try { this.storage.setItem(DB_KEY, JSON.stringify(this.db)); }
     catch { /* storage full or blocked: keep working in memory */ }
   }
@@ -118,6 +123,10 @@ export class MockStore {
   private readJSON<T>(key: string): T | null {
     try { const s = this.storage?.getItem(key); return s ? (JSON.parse(s) as T) : null; } catch { return null; }
   }
+}
+
+function emptyDb(now: Date): DbShape {
+  return { version: 1, scenario: 'before', seededAt: now.toISOString(), events: [], designs: [], parties: [], responses: [], tables: [], checkIns: [], activity: [] };
 }
 
 /** invitations saved before the single card family keep working: a retired face opens as its occasion's face */

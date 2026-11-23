@@ -3,12 +3,14 @@ import type { Event, InvitationParty, PublishState } from './types';
 import { eventPhase, eventTypeInfo } from './event';
 import { countParties } from './parties';
 import type { AttentionItem, OverviewInput } from './overview';
+import { copyFor, fill, type Dialect } from './copy';
 
 export type JourneyStage = 'prepare' | 'invite' | 'arrange' | 'welcome' | 'remember';
+/** the stages in order; t(labelKey) gives each one's name */
 export const JOURNEY = [
-  { id: 'prepare', label: 'التجهيز' }, { id: 'invite', label: 'الدعوات' },
-  { id: 'arrange', label: 'الترتيبات' }, { id: 'welcome', label: 'الاستقبال' },
-  { id: 'remember', label: 'الذكريات' },
+  { id: 'prepare', labelKey: 'jrPrepare' }, { id: 'invite', labelKey: 'jrInvite' },
+  { id: 'arrange', labelKey: 'jrArrange' }, { id: 'welcome', labelKey: 'jrWelcome' },
+  { id: 'remember', labelKey: 'jrRemember' },
 ] as const;
 
 export function journeyStage(event: Event, publish: PublishState, parties: readonly InvitationParty[], now: Date): JourneyStage {
@@ -21,23 +23,25 @@ export function journeyStage(event: Event, publish: PublishState, parties: reado
   return 'invite';
 }
 
-export function occasionAction(type: Event['type'] | null): string {
-  return type ? `ابدأ تجهيز ${eventTypeInfo(type).label}` : 'اختر مناسبتك للمتابعة';
+export function occasionAction(type: Event['type'] | null, dialect: Dialect = 'ar'): string {
+  const c = copyFor(dialect);
+  return type ? fill(c.ovStartOccasion, { type: eventTypeInfo(type).label }) : c.ovChooseOccasion;
 }
 
 /** A calm summary uses people for attendance and invitations for unanswered replies. */
 export function overviewFacts(i: OverviewInput) {
   const c = countParties(i.parties);
   const phase = eventPhase(i.event, i.now);
+  const w = copyFor(i.dialect ?? 'ar');
   if (['event_day', 'completed', 'archived'].includes(phase)) return [
-    { label: 'وصلوا', value: c.checkedInPeople, unit: 'شخص', tone: 'success', filter: 'checked_in' },
-    { label: 'أكدوا الحضور', value: c.confirmedPeople, unit: 'شخص', tone: 'neutral', filter: 'confirmed' },
-    { label: phase === 'event_day' ? 'ننتظر وصولهم' : 'لم يُسجَّل وصولهم', value: i.parties.reduce((n, p) => n + (p.rsvpStatus === 'confirmed' ? Math.max(0, (p.confirmedPartySize ?? 0) - p.checkedInCount) : 0), 0), unit: 'شخص', tone: 'neutral', filter: 'confirmed' },
+    { label: w.ovArrived, value: c.checkedInPeople, unit: w.ovUnitPerson, tone: 'success', filter: 'checked_in' },
+    { label: w.ovConfirmedFact, value: c.confirmedPeople, unit: w.ovUnitPerson, tone: 'neutral', filter: 'confirmed' },
+    { label: phase === 'event_day' ? w.ovAwaiting : w.ovNotArrived, value: i.parties.reduce((n, p) => n + (p.rsvpStatus === 'confirmed' ? Math.max(0, (p.confirmedPartySize ?? 0) - p.checkedInCount) : 0), 0), unit: w.ovUnitPerson, tone: 'neutral', filter: 'confirmed' },
   ];
   return [
-    { label: 'أكدوا الحضور', value: c.confirmedPeople, unit: 'شخص', tone: 'success', filter: 'confirmed' },
-    { label: 'بانتظار الرد', value: c.pendingParties, unit: 'دعوة', tone: 'neutral', filter: 'pending' },
-    { label: 'قائمة ضيوفك', value: c.parties, unit: 'دعوة', tone: 'neutral', filter: 'all' },
+    { label: w.ovConfirmedFact, value: c.confirmedPeople, unit: w.ovUnitPerson, tone: 'success', filter: 'confirmed' },
+    { label: w.ovPendingFact, value: c.pendingParties, unit: w.ovUnitInvitation, tone: 'neutral', filter: 'pending' },
+    { label: w.ovListFact, value: c.parties, unit: w.ovUnitInvitation, tone: 'neutral', filter: 'all' },
   ];
 }
 

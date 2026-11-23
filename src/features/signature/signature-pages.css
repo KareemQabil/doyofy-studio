@@ -252,6 +252,8 @@
 :root[data-theme='signature'] .journey-artwork .journey-ill{display:none}
 :root[data-theme='signature'] .journey-artwork .journey-spot{display:block;width:46%;height:auto}
 :root[data-theme='signature'] .journey-artwork::after{content:'';position:absolute;inset-block-start:4%;inset-inline-end:2%;width:18%;aspect-ratio:1;border-radius:50%;background:#BC4749}
+/* ops review: on the import drop zone and the reception steps the red dot read as an unread badge — no dot there */
+:root[data-theme='signature'] :is(.dropzone, .reception-prep) .journey-artwork::after{content:none}
 :root[data-theme='signature'] .empty-compact>.journey-artwork{width:76px}
 :root[data-theme='signature'] .dropzone>.journey-artwork,:root[data-theme='signature'] .import-done>.journey-artwork{width:96px;margin-inline:auto}
 :root[data-theme='signature'] .summary-closure>.journey-artwork{width:96px;margin-inline:auto}

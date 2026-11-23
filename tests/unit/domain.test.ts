@@ -4,9 +4,9 @@ import type { InvitationParty, Table } from '../../src/domain/types';
 import { normalisePhone } from '../../src/domain/phone';
 import { applyRsvp, countParties, duplicatePhoneIds, invitationStatus, searchParties, validateRsvp } from '../../src/domain/parties';
 import { checkAssign, occupancy, seatingWarnings } from '../../src/domain/seating';
-import { assessCheckIn, codeFromScan, statusAfter } from '../../src/domain/checkin';
-import { SAMPLE_IMPORT_CSV, guessMapping, parseDelimited, reviewImport, rowsToPartyInputs, summarise, toRawTable } from '../../src/domain/import';
-import { plural, pluralOf, P, people, peopleOf, countdownLabel, zonedToInstant, offsetString } from '../../src/domain/format';
+import { assessCheckIn, codeFromScan, expectedArrivals, statusAfter } from '../../src/domain/checkin';
+import { SAMPLE_IMPORT_CSV, guessMapping, importTables, matchTable, newTableName, parseDelimited, reviewImport, rowsToPartyInputs, summarise, toRawTable } from '../../src/domain/import';
+import { plural, pluralOf, P, people, peopleOf, countdownLabel, zonedToInstant, offsetString, initialOf } from '../../src/domain/format';
 import { publishState } from '../../src/domain/invitation';
 
 const party = (o: Partial<InvitationParty> = {}): InvitationParty => ({
@@ -95,6 +95,19 @@ test('check-in: partial 2/4 then 2 later = complete; exceptions need decisions',
   assert.ok(assessCheckIn(party({ rsvpStatus: 'confirmed', confirmedPartySize: 2, maxPartySize: 4, tableId: 't' }), 3).exceptions.includes('over_confirmed'));
   assert.ok(assessCheckIn(party({ rsvpStatus: 'confirmed', confirmedPartySize: 4, maxPartySize: 4, tableId: 't' }), 5).exceptions.includes('over_allowed'));
   assert.ok(assessCheckIn(party({ rsvpStatus: 'confirmed', confirmedPartySize: 2 })).exceptions.includes('no_table'));
+});
+
+test('check-in: a declined guest let in is complete, never «waiting for the rest»; a lowered allowance caps what the gate expects', () => {
+  const declined = party({ rsvpStatus: 'declined', confirmedPartySize: 0 });
+  assert.equal(expectedArrivals(declined), 0);
+  assert.equal(statusAfter(declined, 1), 'checked_in');
+  // confirmed 5, then the organizer lowered the invitation to 4: the gate waits for 4, not 5
+  const lowered = party({ rsvpStatus: 'confirmed', confirmedPartySize: 5, maxPartySize: 4, tableId: 't', checkedInCount: 3, checkInStatus: 'partial' });
+  assert.equal(expectedArrivals(lowered), 4);
+  assert.equal(assessCheckIn(lowered).remaining, 1);
+  assert.deepEqual(assessCheckIn(lowered, 1).exceptions, []);
+  assert.equal(statusAfter(lowered, 4), 'checked_in');
+  assert.ok(assessCheckIn(lowered, 2).exceptions.includes('over_allowed'));
 });
 
 test('QR payloads → party code', () => {
@@ -203,4 +216,32 @@ test('gallery order: presets that suit the occasion come first, nothing is lost 
     assert.ok(suited.every((p) => p.occasionTags.includes(t.id)));
     assert.ok(suited.length >= 1, `${t.id} has at least one suited preset`);
   }
+});
+
+test('avatar initial: the family name, not «عائلة»/«آل»/«أم» or the article', () => {
+  assert.equal(initialOf('عائلة الشهري'), 'ش');
+  assert.equal(initialOf('العائلة الكريمة'), 'ك');
+  assert.equal(initialOf('آل سعود'), 'س');
+  assert.equal(initialOf('أم عبدالعزيز الشهراني'), 'ع');
+  assert.equal(initialOf('أبو سعد'), 'س');
+  assert.equal(initialOf('العتيبي'), 'ع');
+  assert.equal(initialOf('خالد السديري'), 'خ');
+  assert.equal(initialOf('  '), '؟');
+});
+
+test('import: the «الطاولة» column maps to existing tables; missing ones only on request', () => {
+  const t = toRawTable(parseDelimited('الاسم,رقم الطاولة,العدد\nسارة,4,2\nأحمد,طاولة 1,1\nليلى,الشرفة,2\nمنى,9,1'));
+  assert.deepEqual(guessMapping(t), ['name', 'table', 'size'], '«رقم الطاولة» is a table, not a phone');
+  const rows = reviewImport({ table: t, mapping: guessMapping(t), edits: {}, decisions: {}, existing: [], defaultSize: 2 });
+  const tables = [{ id: 't1', name: 'طاولة 1 — كبار العائلة' }, { id: 't4', name: 'طاولة 4' }];
+  assert.equal(matchTable('٤', tables), 't4', 'Arabic-Indic digits match');
+  assert.equal(matchTable('طاولة 1', tables), 't1');
+  assert.equal(matchTable('الشرفة', tables), undefined);
+  const plan = importTables(rows, tables);
+  assert.deepEqual({ withTable: plan.withTable, matched: plan.matched, missing: plan.missing }, { withTable: 4, matched: 2, missing: ['الشرفة', 'طاولة 9'] });
+  const named = (cell: string) => tables.find((x) => x.id === matchTable(cell, tables))?.name;
+  const inputs = rowsToPartyInputs(rows, named);
+  assert.equal(inputs.find((i) => i.primaryGuestName === 'سارة')?.tableName, 'طاولة 4');
+  assert.equal(inputs.find((i) => i.primaryGuestName === 'ليلى')?.tableName, undefined, 'a missing table is not invented unless asked');
+  assert.equal(newTableName('9'), 'طاولة 9');
 });

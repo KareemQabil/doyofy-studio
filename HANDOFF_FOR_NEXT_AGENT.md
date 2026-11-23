@@ -1,5 +1,11 @@
 # Handoff for the next agent
 
+> **Current handoff (22 November 2026):** read [README.md](README.md) and [the workflow audit and plan](docs/audit/README.md) first.
+> The historical notes below describe earlier iterations and contain superseded 3D, theme, wizard and test details.
+> The active prototype has flat scenes, a two-step creation flow, modern/Egyptian/Saudi copy, local account audio,
+> scoped guest tools, role-specific catering, manual WhatsApp/SMS sharing, portable demo RSVP with QR/Wallet preview,
+> and simulated capacity checkout. Follow current service contracts and verification scripts rather than old counts.
+
 > **Doyofy prototype (October 2026):** the repo is now the Doyofy UX prototype built around the Invitation Studio.
 > Read `DOYOFY_UX_PROTOTYPE_MASTER_SPEC.md`, then `docs/PROTOTYPE_STATUS.md`.
 >

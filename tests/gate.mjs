@@ -43,7 +43,7 @@ const ROUTES = [
   const app = fs.readFileSync(path.join(ROOT, 'dist', distEntries().app), 'utf8');
   for (const [name, mark] of [['GSAP', 'GreenSock'], ['three.js', 'WebGLRenderer'], ['Lottie', 'bodymovin']]) if (app.includes(mark)) { console.log(`FAIL  bundle: ${name} is inside dist/app.js`); process.exitCode = 1; }
 }
-const server = await startServer(5411);
+const server = await startServer(Number(process.env.GATE_PORT) || 5411); // GATE_PORT: parallel worktrees
 const BASE = `http://localhost:${server.address().port}`;
 const browser = await chromium.launch({ executablePath: chromiumPath(), args: ['--enable-unsafe-swiftshader'] });
 const failures = [];
@@ -184,7 +184,7 @@ for (const appearance of APPEARANCES) {
   }
 }
 
-// Q1 — a shared link opens on another device (empty storage) from the copy it carries, and its reply never claims to be sent
+// Q1 — portable personal links complete RSVP → QR (on screen, no scrolling) → Wallet preview on an empty device; replies remain local.
 {
   const org = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await org.newPage();
@@ -193,27 +193,50 @@ for (const appearance of APPEARANCES) {
   await page.goto(`${BASE}/app/events/evt_wedding/guests`); await page.waitForTimeout(900);
   await page.locator('.g2-name').first().click(); await page.waitForTimeout(600);
   const link = await page.evaluate(() => [...document.querySelectorAll('input, a')].map((e) => e.value || e.href || '').find((v) => /\/i\/[^/]+\/[A-Z0-9]+\?d=/.test(v)));
-  await org.close();
+  const organizerBefore = await page.evaluate(async () => JSON.stringify(await window.__doyofy.services.parties.list('evt_wedding')));
   const fresh = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const guest = await fresh.newPage();
   let issue = '';
   if (!link) issue = 'no self-contained link in the guest drawer';
-  else if (link.length > 2600) issue = `link is ${link.length} chars`;
+  else if (link.length > 12000) issue = `portable snapshot exceeds the link budget: ${link.length} chars`;
   else {
-    await guest.goto(link.replace(/^https?:\/\/[^/]+/, BASE));
-    const ok = await guest.waitForFunction(() => window.__studio, null, { timeout: 15000 }).then(() => true).catch(() => false);
-    if (!ok || !guest.url().includes('?i=')) issue = 'did not open the carried copy';
-    else {
-      await guest.waitForFunction(() => window.__studio.sm.state === 'card', null, { timeout: 15000 }).catch(() => {});
-      await guest.evaluate(() => window.__studio.sm.send('open'));
-      await guest.waitForFunction(() => window.__studio.sm.state === 'pages', null, { timeout: 15000 }).catch(() => {});
-      const receipt = await guest.evaluate(async () => { const s = window.__studio; s.rsvp.name = 'ضيف'; s.rsvp.attending = 'yes'; await s.submit(); return s.rsvp.receipt; });
-      if (!receipt?.demo) issue = 'reply from a carried copy was not marked as a demo';
-    }
+    try {
+      await guest.goto(link.replace(/^https?:\/\/[^/]+/, BASE));
+      await guest.getByRole('button', { name: 'الموعد وتأكيد الحضور مباشرة', exact: true }).click();
+      await guest.getByText('سنحضر بكل سرور', { exact: true }).click();
+      await guest.getByRole('button', { name: 'إرسال الرد', exact: true }).click();
+      await guest.locator('.hub-qr svg.qr').waitFor();
+      await guest.waitForTimeout(300);
+      // the success state: the QR is on screen without scrolling, and the page did not land mid-way down
+      const qr = await guest.evaluate(() => { const r = document.querySelector('.hub-qr svg.qr').getBoundingClientRect(); return { bottom: r.bottom, vh: innerHeight, y: scrollY }; });
+      if (!guest.url().includes('?d=')) issue = 'portable invitation left the guest route';
+      else if (qr.y > 0 || qr.bottom > qr.vh) issue = `personal QR not visible after the reply (bottom ${Math.round(qr.bottom)} of ${qr.vh}, scrolled ${qr.y})`;
+      else if (!(await guest.locator('.guest-demo').textContent()).includes('لا يصل إلى صاحب المناسبة')) issue = 'demo reply claims delivery';
+      // privacy: the guest's device never receives the organizer's demo database (guest list, phone numbers)
+      else if ((await guest.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('doyofy:db')))).length) issue = 'guest link seeded the organizer store on the guest device';
+      await guest.getByRole('button', { name: 'أضف إلى Google Wallet', exact: true }).click();
+      await guest.locator('dialog[open] .wpass').waitFor();
+      if (!(await guest.locator('dialog[open]').innerText()).includes('لم تُضف أي بطاقة')) issue = 'Wallet preview claims a real save';
+      await guest.getByRole('button', { name: 'العودة إلى رمز الدخول', exact: true }).click();
+      await guest.reload();
+      await guest.locator('.hub-qr').waitFor();
+      // the cinematic path: one tap on the card while the intro still plays opens the invitation (no swallowed first tap)
+      const cine = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+      await cine.goto(link.replace(/^https?:\/\/[^/]+/, BASE));
+      await cine.getByRole('button', { name: /افتحوا الدعوة/ }).first().click();
+      await cine.locator('.st-cardbtn').waitFor({ state: 'attached' }); await cine.waitForTimeout(1200);
+      await cine.locator('.st-cardbtn').click({ force: true }); await cine.waitForTimeout(1500);
+      const state = await cine.evaluate(() => window.__studio?.sm.state);
+      if (!issue && state !== 'pages') issue = `first tap on the card during the intro did not open it (state ${state})`;
+      await cine.context().close();
+      const organizerAfter = await page.evaluate(async () => JSON.stringify(await window.__doyofy.services.parties.list('evt_wedding')));
+      if (organizerAfter !== organizerBefore) issue = 'portable demo mutated organizer data';
+    } catch (e) { issue = e.message.split('\n')[0]; }
   }
   checked++;
   if (issue) { failures.push(['Q1 shared link', [issue]]); console.log(`FAIL  Q1 shared link — ${issue}`); } else console.log(`ok    Q1 shared link (${link.length} chars) opens on a fresh device; reply is a demo`);
   await fresh.close();
+  await org.close();
 }
 
 await browser.close();

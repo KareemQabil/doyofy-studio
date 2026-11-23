@@ -7,24 +7,26 @@ import { Link } from '../../app/router';
 import { useNow } from '../../app/data';
 import { paths } from '../../app/paths';
 import { useParties } from '../shared/queries';
+import { useCopy } from '../../ui/copy';
 
 export function MorePage({ event }: { event: Event }) {
   const now = useNow();
+  const { t, n } = useCopy();
   const parties = useParties(event.id);
   const phase = eventPhase(event, now);
   const c = parties.data ? countParties(parties.data) : null;
   const items: Array<{ to: string; icon: IconName; label: string; hint: string }> = [
-    { to: paths.seating(event.id), icon: 'table', label: 'الطاولات', hint: 'أماكن ضيوفك وتوزيع المقاعد' },
-    { to: paths.rsvp(event.id), icon: 'envelope', label: 'الردود', hint: c ? `${c.pendingParties} بانتظار الرد · ${c.confirmedPeople} مؤكدون` : 'متابعة الردود' },
-    { to: paths.checkin(event.id), icon: 'door', label: 'الاستقبال', hint: phase === 'event_day' ? 'اليوم يوم المناسبة' : 'تجهيز الاستقبال يوم المناسبة' },
-    { to: paths.gate(event.id), icon: 'scan', label: 'افتح شاشة الاستقبال', hint: 'شاشة مبسطة لفريق البوابة' },
-    { to: paths.settings(event.id), icon: 'settings', label: 'تفاصيل المناسبة', hint: 'البيانات، الموعد، المكان، الردود' },
-    ...(phase === 'completed' || phase === 'archived' ? [{ to: paths.summary(event.id), icon: 'flag' as IconName, label: 'ملخص المناسبة', hint: 'الحضور النهائي' }] : []),
-    { to: paths.events, icon: 'list', label: 'كل المناسبات', hint: 'التبديل إلى مناسبة أخرى' },
+    { to: paths.seating(event.id), icon: 'table', label: t('wsTables'), hint: t('moreTablesHint') },
+    { to: paths.rsvp(event.id), icon: 'envelope', label: t('moreReplies'), hint: c ? `${c.pendingParties} ${t('pendingReply')} · ${t('moreConfirmed', { people: n(c.confirmedPeople, 'person') })}` : t('moreRepliesHint') },
+    { to: paths.checkin(event.id), icon: 'door', label: t('wsCheckin'), hint: t(phase === 'event_day' ? 'moreCheckinToday' : 'moreCheckinHint') },
+    { to: paths.gate(event.id), icon: 'scan', label: t('moreGate'), hint: t('moreGateHint') },
+    { to: paths.settings(event.id), icon: 'settings', label: t('wsSettings'), hint: t('moreSettingsHint') },
+    ...(phase === 'completed' || phase === 'archived' ? [{ to: paths.summary(event.id), icon: 'flag' as IconName, label: t('wsSummary'), hint: t('moreSummaryHint') }] : []),
+    { to: paths.events, icon: 'list', label: t('wsAllEvents'), hint: t('moreAllEventsHint') },
   ];
   return (
     <>
-      <PageHeader title="المزيد" />
+      <PageHeader title={t('wsMore')} />
       <ul className="more-list">
         {items.map((it) => (
           <li key={it.to}>

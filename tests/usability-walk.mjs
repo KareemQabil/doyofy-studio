@@ -120,7 +120,7 @@ await session(async (page) => {
   await snap(page, 'u4-date');
   await tap(page, page.getByRole('button', { name: 'احفظ بيانات المناسبة' }), 'احفظ بيانات المناسبة', 'u4-date-save');
   await page.locator('.ed-saved').waitFor({ timeout: 15000 });
-  await tap(page, page.getByRole('tab', { name: /الشكل/ }), 'tab التصميم', 'u4-design');
+  await tap(page, page.getByRole('tab', { name: /التصميم/ }), 'tab التصميم', 'u4-design');
   await tap(page, page.getByRole('radio', { name: /ألوان مائية وردية/ }), 'card «ألوان مائية وردية»', 'u4-card');
   await page.getByText('تم الحفظ').first().waitFor({ timeout: 15000 });
   if (vp === 'phone') {
@@ -141,7 +141,7 @@ await session(async (page) => {
   // ---------------------------------------------------------------- U5 change template without losing data
   note(page, 'TASK', 'U5 «ارجع وغير القالب من غير ما تضيع بيانات المناسبة.»');
   if (vp === 'phone') await page.locator('.ed-dock').getByRole('button', { name: /تعديل/ }).click();
-  await tap(page, page.getByRole('tab', { name: /الشكل/ }), 'tab التصميم', 'u5-design');
+  await tap(page, page.getByRole('tab', { name: /التصميم/ }), 'tab التصميم', 'u5-design');
   await tap(page, page.getByRole('button', { name: 'تغيير القالب' }), 'تغيير القالب', 'u5-change');
   await page.waitForURL(/invitation\/templates/);
   note(page, 'LOOK', `gallery says: ${(await page.locator('.tg-sub').textContent()).trim()}`);

@@ -4,13 +4,13 @@
  * DecompressionStream('deflate-raw') and parsed with DOMParser. Old binary .xls is not supported.
  */
 import { parseDelimited } from '../../domain/import';
-import { AppError } from '../errors';
+import { AppError, copyError } from '../errors';
 
 export async function readSpreadsheet(file: File): Promise<string[][]> {
   const name = file.name.toLowerCase();
-  if (file.size === 0) throw new AppError('validation', 'الملف فارغ. تأكد من حفظ القائمة ثم ارفعها مرة أخرى.');
-  if (file.size > 5 * 1024 * 1024) throw new AppError('validation', 'الملف كبير جدًا (أكثر من 5 ميجابايت). قسّم القائمة إلى ملفات أصغر.');
-  if (name.endsWith('.xls')) throw new AppError('validation', 'صيغة Excel القديمة (.xls) غير مدعومة. احفظ الملف بصيغة .xlsx أو CSV ثم ارفعه.');
+  if (file.size === 0) throw copyError('validation', 'erFileEmpty');
+  if (file.size > 5 * 1024 * 1024) throw copyError('validation', 'erFileBig');
+  if (name.endsWith('.xls')) throw copyError('validation', 'erFileXls');
   if (name.endsWith('.xlsx')) return readXlsx(await file.arrayBuffer());
   if (name.endsWith('.csv') || name.endsWith('.tsv') || name.endsWith('.txt') || file.type.startsWith('text/')) {
     const buf = await file.arrayBuffer();
@@ -21,7 +21,7 @@ export async function readSpreadsheet(file: File): Promise<string[][]> {
     if (bad > 3) text = new TextDecoder('windows-1256').decode(buf);
     return parseDelimited(text);
   }
-  throw new AppError('validation', 'نوع الملف غير مدعوم. ارفع ملف Excel ‏(.xlsx) أو CSV.');
+  throw copyError('validation', 'erFileType');
 }
 
 // ------------------------------------------------------------------ minimal zip + xlsx
@@ -31,7 +31,7 @@ function zipEntries(buf: ArrayBuffer): ZipEntry[] {
   const v = new DataView(buf);
   let eocd = -1;
   for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 65557); i--) if (v.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
-  if (eocd < 0) throw new AppError('validation', 'تعذر قراءة ملف Excel. افتحه واحفظه من جديد، أو صدّره بصيغة CSV.');
+  if (eocd < 0) throw copyError('validation', 'erFileRead');
   const count = v.getUint16(eocd + 10, true);
   let p = v.getUint32(eocd + 16, true);
   const out: ZipEntry[] = [];
@@ -52,7 +52,7 @@ async function entryText(buf: ArrayBuffer, e: ZipEntry): Promise<string> {
   const start = e.offset + 30 + v.getUint16(e.offset + 26, true) + v.getUint16(e.offset + 28, true);
   const data = new Uint8Array(buf, start, e.compSize);
   if (e.method === 0) return new TextDecoder().decode(data);
-  if (e.method !== 8 || typeof DecompressionStream === 'undefined') throw new AppError('validation', 'متصفحك لا يستطيع فتح ملفات Excel. صدّر القائمة بصيغة CSV ثم ارفعها.');
+  if (e.method !== 8 || typeof DecompressionStream === 'undefined') throw copyError('validation', 'erFileBrowser');
   const stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
   return new Response(stream).text();
 }
@@ -63,7 +63,7 @@ async function readXlsx(buf: ArrayBuffer): Promise<string[][]> {
   const entries = zipEntries(buf);
   const find = (n: string) => entries.find((e) => e.name === n);
   const sheetEntry = find('xl/worksheets/sheet1.xml') ?? entries.filter((e) => /^xl\/worksheets\/sheet\d+\.xml$/.test(e.name)).sort((a, b) => a.name.localeCompare(b.name))[0];
-  if (!sheetEntry) throw new AppError('validation', 'لم نجد ورقة بيانات في الملف.');
+  if (!sheetEntry) throw copyError('validation', 'erFileNoSheet');
   const parser = new DOMParser();
   const shared: string[] = [];
   const ss = find('xl/sharedStrings.xml');

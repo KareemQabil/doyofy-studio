@@ -14,7 +14,7 @@ const { chromium } = need('playwright');
 const which = process.argv[2] ?? 'all';
 const OUT = `${ROOT}/review/screenshots-or-captures/journey`;
 fs.mkdirSync(OUT, { recursive: true });
-const server = await startServer(5381);
+const server = await startServer(Number(process.env.JOURNEY_PORT) || 5381); // JOURNEY_PORT: parallel worktrees
 const BASE = `http://localhost:${server.address().port}`;
 const browser = await chromium.launch({ executablePath: chromiumPath(), args: ['--ignore-gpu-blocklist', '--enable-unsafe-swiftshader'] });
 const VPS = { phone: { width: 390, height: 844 }, tab: { width: 768, height: 1024 }, desk: { width: 1440, height: 900 } };
@@ -68,14 +68,29 @@ async function run(vp) {
     return 'swipe right → 02';
   });
 
-  await step(vp, '04 graduation details + live card preview', async () => {
+  await step(vp, '04 design feed (step 2): one design per screen, chosen explicitly', async () => {
     await go('/app/events/new?type=graduation');
+    const feed = page.locator('.tf-scroll'); await feed.waitFor();
+    const card = await page.locator('.tf-slide.is-active .card-thumb').boundingBox();
+    const min = size.width <= 320 ? 220 : 240;
+    if (!card || card.width < min) throw new Error(`design card too small: ${card?.width}`);
+    if (card.y + card.height > size.height) throw new Error('design card runs under the footer');
+    const first = await page.locator('.tf-slide.is-active .tf-info h3').innerText();
+    await feed.focus(); await page.keyboard.press('ArrowDown');
+    await page.waitForFunction(t => document.querySelector('.tf-slide.is-active .tf-info h3')?.textContent !== t, first);
+    const chosen = await page.locator('.tf-slide.is-active .tf-info h3').innerText();
+    await page.getByRole('button', { name: 'اختر هذا التصميم' }).click();
+    await page.locator('#create-event').waitFor();
+    return `card ${Math.round(card.width)}px; ${first} → ${chosen}; ` + await noScroll();
+  });
+
+  await step(vp, '04b graduation details + live card preview', async () => {
     await page.getByLabel(/اسم الخريج/).fill('جود العتيبي');
     await page.getByLabel('التاريخ').fill('2027-06-20');
     await page.getByLabel('اسم القاعة أو المكان').fill('قاعة الريحان');
     await page.getByLabel('المدينة').fill('الرياض');
     await page.waitForTimeout(500);
-    const preview = await page.locator('.sig-create-aside').innerText();
+    const preview = await page.locator('.wz-live, .sig-create-aside').first().innerText();
     if (!preview.includes('جود')) throw new Error('preview missing the name');
     await shot('04-graduation-details');
     const body = await page.locator('main, .create-shell, body').first().innerText();
@@ -99,9 +114,9 @@ async function run(vp) {
     const st = async () => page.locator('.ed').getAttribute('class');
     await page.keyboard.press('ArrowUp'); await page.waitForTimeout(400); const up = await st();
     await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown'); await page.waitForTimeout(400); const down = await st();
-    if (!/sheet-peek/.test(down)) throw new Error(`no peek after ArrowDown: ${down}`);
+    if (!/at-peek/.test(down)) throw new Error(`no peek after ArrowDown: ${down}`);
     await shot('05b-editor-peek'); await page.keyboard.press('ArrowUp');
-    return `up: ${/sheet-full/.test(up) ? 'full' : 'half'} · down: peek`;
+    return `up: ${/at-full/.test(up) ? 'full' : 'half'} · down: peek`;
   });
 
   await step(vp, '06 publish → seal stamp', async () => {
@@ -122,7 +137,7 @@ async function run(vp) {
   let code = '';
   await step(vp, '08 add a guest', async () => {
     await go(`/app/events/${eventId}/guests`);
-    await page.getByRole('button', { name: 'أضف ضيفًا' }).first().click();
+    await page.getByRole('button', { name: /^(إضافة ضيف|أضف ضيفًا)$/ }).first().click(); // the empty list's one «add»
     await page.getByLabel('اسم الضيف أو العائلة').fill('عائلة الحربي');
     const hint = await page.locator('dialog[open]').innerText();
     if (/العروس|العريس/.test(hint)) throw new Error('wedding copy in the guest form');
@@ -187,7 +202,7 @@ async function run(vp) {
 
   // couple (seeded)
   const W = '/app/events/evt_wedding';
-  for (const [n, path, sel] of [['20-couple-overview', `${W}/overview`, '.sig-moment'], ['21-couple-invitation', `${W}/invitation`, 'h1'], ['22-couple-guests', `${W}/guests`, 'h1'], ['23-couple-replies', `${W}/rsvp`, 'h1'], ['24-couple-reception', `${W}/check-in`, 'h1'], ['25-couple-summary', `${W}/summary`, '.summary-closure'], ['26-couple-seating', `${W}/seating`, 'h1'], ['27-couple-templates', `${W}/invitation/templates`, '.sig-library']]) {
+  for (const [n, path, sel] of [['20-couple-overview', `${W}/overview`, '.sig-moment'], ['21-couple-invitation', `${W}/invitation`, 'h1'], ['22-couple-guests', `${W}/guests`, 'h1'], ['23-couple-replies', `${W}/rsvp`, 'h1'], ['24-couple-reception', `${W}/check-in`, 'h1'], ['25-couple-summary', `${W}/summary`, '.summary-closure'], ['26-couple-seating', `${W}/seating`, 'h1'], ['27-couple-templates', `${W}/invitation/templates`, '.tf-scroll']]) {
     await step(vp, `${n.slice(3)} renders`, async () => { await go(path); await page.locator(sel).first().waitFor(); await page.waitForTimeout(400); await shot(n); return noScroll(); });
   }
   const drag = async (sel, dx, dy = 0) => {
@@ -232,7 +247,7 @@ async function run(vp) {
 
   await step(vp, 'couple guest cover → open → invitation plays', async () => {
     await go('/i/noura-faisal'); await page.locator('.sig-cover').waitFor(); await shot('28-couple-cover');
-    await page.getByRole('button', { name: 'افتح الدعوة', exact: true }).click(); await page.waitForTimeout(1600); await shot('29-couple-opened');
+    await page.getByRole('button', { name: 'افتحوا الدعوة', exact: true }).click(); await page.waitForTimeout(1600); await shot('29-couple-opened');
     return 'opened';
   });
 
@@ -241,7 +256,7 @@ async function run(vp) {
     await rm.route(/fonts\.(googleapis|gstatic)/, (r) => r.abort());
     const p = await rm.newPage();
     await p.goto(`${BASE}/i/noura-faisal?${T}`); await p.locator('.sig-cover').waitFor();
-    await p.getByRole('button', { name: 'افتح الدعوة', exact: true }).click(); await p.waitForTimeout(800);
+    await p.getByRole('button', { name: 'افتحوا الدعوة', exact: true }).click(); await p.waitForTimeout(800);
     await p.screenshot({ path: `${OUT}/${vp}-30-reduced-motion.png` }); await rm.close();
     return 'ok';
   });

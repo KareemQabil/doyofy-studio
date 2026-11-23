@@ -12,10 +12,10 @@ export { Studio } from '../../studio/Studio.js';
 export { playCardMotion } from '../../cards/card-motion.js';
 import { FALLBACK_CARD } from '../../cards/index.js';
 
-/** static card face markup (300×420) with the given invitation content */
+/** static card face markup (300×420) with the given invitation content, in the face's own number system */
 export function cardFaceHtml(cardId: string, invitation: unknown): string {
   const card = CardRegistry.has(cardId) ? CardRegistry.get(cardId) : CardRegistry.get(FALLBACK_CARD);
-  return card.render(deriveContent(invitation).c);
+  return card.render(deriveContent(invitation, { digits: card.digits }).c);
 }
 
 export function cardIds(): string[] { return CardRegistry.list().map((c) => c.id); }

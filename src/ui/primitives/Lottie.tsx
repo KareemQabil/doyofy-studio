@@ -6,6 +6,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { LogoMark } from '../brand';
+import { useCopy } from '../copy';
 
 export type LottieName = 'loader' | 'success' | 'envelope';
 
@@ -54,11 +55,12 @@ export function Lottie({ name, size = 72, loop = name !== 'success', label, clas
 }
 
 /** a centred loading state for a page or panel: the logomark drawing itself and one quiet line */
-export function PageLoader({ label = 'جارٍ التحميل', name = 'loader', size = 72 }: { label?: string; name?: LottieName; size?: number }) {
+export function PageLoader({ label, name = 'loader', size = 72 }: { label?: string; name?: LottieName; size?: number }) {
+  const { t } = useCopy();
   return (
     <div className="page-loader" role="status" aria-live="polite">
       <Lottie name={name} size={size} />
-      <p className="page-loader-text">{label}</p>
+      <p className="page-loader-text">{label ?? t('uiLoading')}</p>
     </div>
   );
 }

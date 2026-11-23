@@ -9,7 +9,17 @@
  *   pointer/keyboard interaction and resumes the AudioContext.
  * - Music (the canonical bell arpeggio) runs only while the invitation pages are open.
  * - Scene ambience (optional, per scene) loops quietly under the card/pages and ducks for the finale.
+ * - The organizer's own sounds (domain/audio-library.ts): an uploaded track replaces the built-in music, starting at
+ *   its chosen point with a short fade-in and looping back to it; a voice welcome plays ONCE at the opening and ducks
+ *   the music while it speaks. Bytes come from the AudioStore; when they are not on this device (a guest elsewhere)
+ *   the built-in sound plays and the voice stays silent — nothing is said to the guest.
  */
+import { loadAudioTrackBlob, playbackPlan, readAudioLibrary } from '../domain/audio-library';
+
+const MUSIC_GAIN = 0.2;     // uploaded music under the cues
+const VOICE_GAIN = 0.95;    // a voice welcome is the one thing meant to be heard clearly
+const DUCK_TO = 0.25;       // music level while the voice speaks
+
 export class AudioEngine {
   constructor({ base = 'assets/' } = {}) {
     this.base = base;
@@ -20,6 +30,63 @@ export class AudioEngine {
     this.pack = null;
     this.music = null; this.amb = null;
     this.stats = { played: [], fallbacks: [] };
+    this.preference = { mode: 'default' };
+    this.customTrack = null;
+    this.customMusic = null;
+    this.customGeneration = 0;
+    this.missingUpload = false;
+    this.musicBus = null;         // music (built-in or uploaded) → bus → master, so the voice can duck it
+    this.uploads = new Map();     // track id → Promise<Blob | null>
+    this.voiceTrack = null; this.voiceNode = null; this.voiceReady = false; this.voicePlayed = false;
+    this.voiceGeneration = 0; this.prefGeneration = 0;
+    this.onChange = null;         // Studio refreshes its controls when availability/playing state changes
+  }
+
+  setPreference(selection) {
+    if (JSON.stringify(selection || { mode: 'default' }) === JSON.stringify(this.preference)) return;
+    this.stopMusic(); this.stopVoice();
+    this.preference = selection || { mode: 'default' };
+    const tracks = readAudioLibrary().tracks;
+    this.customTrack = this.preference.mode === 'library' ? tracks.find(t => t.id === this.preference.trackId && t.kind === 'music') || null : null;
+    this.missingUpload = this.preference.mode === 'library' && !this.customTrack;
+    this.voiceTrack = this.preference.voiceId ? tracks.find(t => t.id === this.preference.voiceId && t.kind === 'voice') || null : null;
+    this.voiceReady = false; this.voicePlayed = false;
+    if (this.preference.mode === 'off' || this.customTrack) this.setAmbience(null);
+    void this._checkBytes();
+  }
+
+  /** metadata says the track exists; confirm its bytes are on this device before offering it */
+  async _checkBytes() {
+    const generation = ++this.prefGeneration;
+    const [music, voice] = await Promise.all([this.customTrack && this._uploadBlob(this.customTrack), this.voiceTrack && this._uploadBlob(this.voiceTrack)]);
+    if (generation !== this.prefGeneration) return;
+    if (this.customTrack && !music) { this.customTrack = null; this.missingUpload = true; }
+    if (this.voiceTrack && !voice) this.voiceTrack = null;
+    this.voiceReady = !!this.voiceTrack;
+    this.onChange?.();
+  }
+  _uploadBlob(track) {
+    if (!this.uploads.has(track.id)) this.uploads.set(track.id, loadAudioTrackBlob(track.id).catch(() => null));
+    return this.uploads.get(track.id);
+  }
+  async _uploadBuffer(track) {
+    const key = `upload:${track.id}`;
+    if (this.buffers.has(key)) return this.buffers.get(key);
+    try {
+      const blob = await this._uploadBlob(track);
+      if (!blob) throw new Error('not on this device');
+      const buf = await this.ac.decodeAudioData((await blob.arrayBuffer()).slice(0));
+      this.buffers.set(key, buf);
+      return buf;
+    } catch (e) {
+      console.warn('[audio] uploaded audio unavailable, using built-in sound:', e?.message || e);
+      this.buffers.set(key, 'failed');
+      return 'failed';
+    }
+  }
+  _bus() {
+    if (!this.musicBus) { this.musicBus = this.ac.createGain(); this.musicBus.gain.value = this.voiceNode ? DUCK_TO : 1; this.musicBus.connect(this.master); }
+    return this.musicBus;
   }
 
   usePack(pack) {
@@ -67,11 +134,11 @@ export class AudioEngine {
   setEnabled(on) {
     this.enabled = on;
     if (this.master) this.master.gain.setTargetAtTime(on ? 1 : 0, this.ac.currentTime, 0.05);
-    if (!on) this.stopMusic();
+    if (!on) { this.stopMusic(); this.stopVoice(); }
   }
 
   async emit(event) {
-    if (!this.pack || !this.ac || !this.enabled) return;
+    if (!this.pack || !this.ac || !this.enabled || this.preference.mode === 'off') return;
     const cue = this.pack.cues[event];
     if (!cue) return;
     this.stats.played.push(event);
@@ -94,13 +161,13 @@ export class AudioEngine {
   }
 
   // ---------------------------------------------------------------- canonical synth voices (Studio.dc.html)
-  _bell(t, midi, vol) {
+  _bell(t, midi, vol, out = this.master) {
     const ac = this.ac, f = 440 * Math.pow(2, (midi - 69) / 12);
     [[1, vol, 1.7], [2, vol * 0.18, 0.7], [4.01, vol * 0.1, 0.5]].forEach(([m, v, d]) => {
       const o = ac.createOscillator(), g = ac.createGain();
       o.type = 'sine'; o.frequency.value = f * m;
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-      o.connect(g); g.connect(this.master); o.start(t); o.stop(t + d + 0.05);
+      o.connect(g); g.connect(out); o.start(t); o.stop(t + d + 0.05);
     });
   }
   _noise(t, dur, f0, f1, vol) {
@@ -137,7 +204,9 @@ export class AudioEngine {
 
   /** canonical background music: bell arpeggio over four chords, 340 ms steps */
   startMusic() {
-    if (this.music || !this.enabled || !this.ac || !this.pack?.music) return;
+    if (this.music || this.customMusic || !this.enabled || !this.ac || this.preference.mode === 'off') return;
+    if (this.customTrack) { void this._startCustomMusic(); return; }
+    if (!this.pack?.music) return;
     const chords = [[50, 54, 57], [47, 50, 54], [43, 47, 50], [45, 49, 52]];
     let step = 0;
     this.music = setInterval(() => {
@@ -145,18 +214,65 @@ export class AudioEngine {
       const i = step++, ch = chords[Math.floor(i / 8) % 4];
       const pat = [ch[0] + 12, ch[2] + 12, ch[1] + 24, ch[2] + 12, ch[0] + 24, ch[2] + 12, ch[1] + 24, ch[2] + 24];
       const t = this.ac.currentTime + 0.03;
-      this._bell(t, pat[i % 8], 0.04 * 0.22);
-      if (i % 8 === 0) this._bell(t, ch[0], 0.028 * 0.22);
+      this._bell(t, pat[i % 8], 0.04 * 0.22, this._bus());
+      if (i % 8 === 0) this._bell(t, ch[0], 0.028 * 0.22, this._bus());
     }, 340);
   }
-  stopMusic() { if (this.music) { clearInterval(this.music); this.music = null; } }
+  async _startCustomMusic() {
+    const generation = ++this.customGeneration;
+    const track = this.customTrack;
+    if (!track) return;
+    const buf = await this._uploadBuffer(track);
+    if (generation !== this.customGeneration || !this.enabled || !this.ac) return;
+    if (buf === 'failed') { this.customTrack = null; this.missingUpload = true; this.onChange?.(); this.startMusic(); return; }
+    const plan = playbackPlan(track, buf.duration);
+    const src = this.ac.createBufferSource(); src.buffer = buf;
+    src.loop = plan.loop; src.loopStart = plan.loopStart; src.loopEnd = plan.loopEnd;
+    const gain = this.ac.createGain(), now = this.ac.currentTime;
+    if (plan.fadeInSec > 0 && gain.gain.linearRampToValueAtTime) { gain.gain.setValueAtTime(0.0001, now); gain.gain.linearRampToValueAtTime(MUSIC_GAIN, now + plan.fadeInSec); }
+    else gain.gain.value = MUSIC_GAIN;
+    src.connect(gain); gain.connect(this._bus()); src.start(now, plan.offset); this.customMusic = src;
+  }
+  stopMusic() { this.customGeneration++; if (this.music) { clearInterval(this.music); this.music = null; } if (this.customMusic) { try { this.customMusic.stop(); } catch {} this.customMusic = null; } }
+
+  /** the voice welcome: once, from the start, over ducked music. Resolves true when it started. */
+  async playVoice() {
+    if (!this.voiceTrack || !this.ac || !this.enabled) return false;
+    this.stopVoice();
+    const generation = ++this.voiceGeneration, track = this.voiceTrack;
+    const buf = await this._uploadBuffer(track);
+    if (generation !== this.voiceGeneration || !this.ac || !this.enabled) return false;
+    if (buf === 'failed') { this.voiceTrack = null; this.voiceReady = false; this.onChange?.(); return false; }
+    const src = this.ac.createBufferSource(); src.buffer = buf;
+    const g = this.ac.createGain(); g.gain.value = VOICE_GAIN;
+    src.connect(g); g.connect(this.master);
+    src.onended = () => { if (this.voiceNode?.src === src) { this.voiceNode = null; this._duck(false); this.onChange?.(); } };
+    this.voiceNode = { src, g }; this.voicePlayed = true;
+    this._duck(true);
+    src.start(this.ac.currentTime + 0.05);
+    this.onChange?.();
+    return true;
+  }
+  stopVoice() {
+    this.voiceGeneration++;
+    if (!this.voiceNode) return;
+    const { src } = this.voiceNode; this.voiceNode = null;
+    try { src.onended = null; src.stop(); } catch {}
+    this._duck(false); this.onChange?.();
+  }
+  get voicePlaying() { return !!this.voiceNode; }
+  _duck(on) {
+    if (!this.ac) return;
+    if (this.musicBus) this.musicBus.gain.setTargetAtTime(on ? DUCK_TO : 1, this.ac.currentTime, on ? 0.15 : 0.6);
+    this.duckAmbience(on ? 0.3 : 1);
+  }
 
   /** scene ambience loop (optional) */
   async setAmbience(spec) {
     if (this.amb) { const a = this.amb; this.amb = null; try { a.g.gain.setTargetAtTime(0, this.ac.currentTime, 0.4); setTimeout(() => a.src.stop(), 1500); } catch {} }
-    if (!spec || !this.ac) return;
+    if (!spec || !this.ac || this.preference.mode === 'off' || this.customTrack) return;
     const buf = await this._buffer(spec.file);
-    if (buf === 'failed') return;
+    if (buf === 'failed' || !this.ac || this.preference.mode === 'off' || this.customTrack) return;
     const src = this.ac.createBufferSource(); src.buffer = buf; src.loop = true;
     const g = this.ac.createGain(); g.gain.value = 0;
     src.connect(g); g.connect(this.master); src.start();
@@ -165,5 +281,5 @@ export class AudioEngine {
   }
   duckAmbience(to = 0.25) { if (this.amb) this.amb.g.gain.setTargetAtTime((this.amb.spec.gain ?? 0.08) * to, this.ac.currentTime, 0.4); }
 
-  destroy() { this.stopMusic(); this.setAmbience(null); try { this.ac?.close(); } catch {} this.ac = null; }
+  destroy() { this.stopMusic(); this.stopVoice(); this.onChange = null; this.setAmbience(null); try { this.ac?.close(); } catch {} this.ac = null; }
 }

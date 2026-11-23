@@ -10,6 +10,8 @@ import type {
   InvitationParty, MealAllocation, PartyInput, RSVPResponse, RsvpInput, Table, UpdateEventInput, User,
 } from '../domain/types';
 import type { ExperienceDraft } from '../domain/guest-experience';
+import type { Dialect } from '../domain/copy';
+import type { AutoSeatApply, AutoSeatUndo } from '../domain/auto-seating';
 
 export interface EventRepository {
   list(): Promise<Event[]>;
@@ -39,12 +41,16 @@ export interface PartyRepository {
   create(eventId: string, input: PartyInput): Promise<InvitationParty>;
   update(id: string, input: Partial<PartyInput>): Promise<InvitationParty>;
   remove(id: string): Promise<void>;
-  importMany(eventId: string, inputs: PartyInput[], meta: { skipped: number; source: string }): Promise<InvitationParty[]>;
+  /** `newTables`: names of tables to create in the same write (the file's «الطاولة» column); inputs refer to tables by `tableName` */
+  importMany(eventId: string, inputs: PartyInput[], meta: { skipped: number; source: string; newTables?: string[] }): Promise<InvitationParty[]>;
+  /** Fresh invitations in the destination; attendance/delivery/table state never carries between events. Atomic, duplicate-safe. */
+  transfer(input: { ids: string[]; targetEventId: string; mode: 'copy' | 'move' }): Promise<InvitationParty[]>;
   /** organizer shared the link themselves (copy / share sheet / "contacted manually") */
   markShared(ids: string[], how: ShareHow): Promise<void>;
   /** prototype stand-in for WhatsApp sending: numbers that are missing/invalid fail (simulated) */
   simulateSend(ids: string[]): Promise<{ sent: string[]; failed: string[] }>;
-  sendReminder(ids: string[]): Promise<number>;
+  /** the organizer confirmed they sent a reply reminder themselves (WhatsApp / SMS / their own way); only pending invitations count */
+  markReminded(ids: string[]): Promise<number>;
 }
 
 export interface RsvpRepository {
@@ -61,9 +67,16 @@ export interface SeatingRepository {
   listTables(eventId: string): Promise<Table[]>;
   createTables(eventId: string, tables: Array<{ name: string; capacity: number }>): Promise<Table[]>;
   updateTable(id: string, patch: { name?: string; capacity?: number }): Promise<Table>;
+  /** Complete ordered ID list. Reject stale/foreign/duplicate IDs without partial writes. */
+  reorderTables(eventId: string, ids: string[]): Promise<Table[]>;
   /** parties at the table become unassigned */
   deleteTable(id: string): Promise<void>;
   assign(partyId: string, tableId: string | null): Promise<InvitationParty>;
+  /** A reviewed automatic-seating plan, all or nothing: proposed tables are created and every move applied in one write.
+   *  Rejects with 'conflict' (nothing written) when a party, reply or table changed since the preview, or a table would go over capacity. */
+  applyAutoSeating(eventId: string, plan: AutoSeatApply): Promise<{ parties: InvitationParty[]; tables: Table[]; undo: AutoSeatUndo }>;
+  /** Puts back exactly what applyAutoSeating changed; refused with 'conflict' if seating changed since. */
+  undoAutoSeating(eventId: string, undo: AutoSeatUndo): Promise<void>;
 }
 
 export interface CheckInContext {
@@ -78,6 +91,8 @@ export interface CheckInRepository {
   findByCode(eventId: string, code: string): Promise<InvitationParty | null>;
   checkIn(partyId: string, count: number, ctx: CheckInContext): Promise<{ party: InvitationParty; record: CheckInRecord }>;
   undo(recordId: string): Promise<InvitationParty>;
+  /** someone at the door who is not on the list: no invitation is created; the staff note goes to the organizer's activity log */
+  recordWalkIn(eventId: string, input: { name: string; count: number; note?: string }): Promise<void>;
 }
 
 export interface ActivityRepository {
@@ -108,8 +123,29 @@ export interface GuestView {
   phase: 'before' | 'event_day' | 'after';
   /** the questions and wishlist this guest sees (archived entries removed); absent = none */
   experience?: GuestExperience;
+  /** the organizer's voice (modern · Egyptian · Saudi), stored with the invitation: the guest pages speak it whatever
+   *  this device prefers. Absent (older links) = modern. Names and the organizer's own texts are never changed. */
+  dialect?: Dialect;
+  /** general link only: the reply this device already sent (and may still correct), so the page shows it again after a
+   *  reload instead of an empty form. Absent = none from this device. */
+  reply?: GuestGeneralReply;
 }
-export interface GuestRsvpInput extends RsvpInput { name?: string }
+/** a general-link reply as its guest sees it again: `id` is the responseId a correction replaces */
+export interface GuestGeneralReply {
+  id: string;
+  name: string;
+  attending: boolean;
+  count: number;
+  companionNames?: string[];
+  meals?: MealAllocation[];
+  dietary?: DietaryAnswer;
+}
+export interface GuestRsvpInput extends RsvpInput {
+  name?: string;
+  /** general link: the earlier reply (responseId) this one corrects, while the organizer has not handled it yet —
+   *  the organizer then sees one up-to-date reply, not two */
+  replaces?: string;
+}
 
 export interface GuestApi {
   /** records "opened" for personal links (not for organizer previews) */

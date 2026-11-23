@@ -1,7 +1,9 @@
 /** Data display primitives: panels, stats, filter chips, progress, key/value lists, overflow menu. */
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { Tone } from '../../domain/types';
+import { initialOf } from '../../domain/format';
 import { Icon, type IconName } from '../icons';
+import { useCopy } from '../copy';
 
 export function Panel({ title, subtitle, actions, children, padded = true, as: As = 'section', id, className = '' }: { title?: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode; padded?: boolean; as?: 'section' | 'div' | 'article'; id?: string; className?: string }) {
   const hid = useId();
@@ -45,8 +47,9 @@ export function FilterChips<T extends string>({ label, value, options, onChange 
 
 export function ProgressBar({ value, max, label, tone = 'primary' }: { value: number; max: number; label?: string; tone?: 'primary' | 'success' | 'warning' | 'danger' }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+  const { t } = useCopy();
   return (
-    <div className={`progress progress-${tone}`} role="progressbar" aria-valuemin={0} aria-valuemax={Math.max(1,max)} aria-valuenow={Math.max(0,Math.min(value,Math.max(1,max)))} aria-valuetext={`${value} من ${max}`} aria-label={label}>
+    <div className={`progress progress-${tone}`} role="progressbar" aria-valuemin={0} aria-valuemax={Math.max(1,max)} aria-valuenow={Math.max(0,Math.min(value,Math.max(1,max)))} aria-valuetext={t('uiOf', { n: value, count: max })} aria-label={label}>
       <span className="progress-fill" style={{ width: `${pct}%` }} />
     </div>
   );
@@ -66,7 +69,7 @@ export function KeyValue({ items }: { items: Array<{ k: ReactNode; v: ReactNode;
 }
 
 /** overflow menu: button + list of actions; keyboard (arrows, Escape) and click-outside */
-export function Menu({ label, items, icon = 'more', triggerLabel }: { label: string; icon?: IconName; triggerLabel?: ReactNode; items: Array<{ label: string; icon?: IconName; onSelect: () => void; danger?: boolean; disabled?: boolean } | null> }) {
+export function Menu({ label, items, icon = 'more', triggerLabel }: { label: string; icon?: IconName; triggerLabel?: ReactNode; items: Array<{ label: string; icon?: IconName; onSelect: () => void; danger?: boolean; disabled?: boolean; hint?: string } | null> }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const id = useId();
@@ -94,8 +97,9 @@ export function Menu({ label, items, icon = 'more', triggerLabel }: { label: str
       {open && (
         <div className="menu-list" role="menu" id={id} aria-label={label}>
           {list.map((it) => (
-            <button key={it.label} type="button" role="menuitem" disabled={it.disabled} className={`menu-item${it.danger ? ' is-danger' : ''}`} onClick={() => { setOpen(false); it.onSelect(); }}>
-              {it.icon && <Icon name={it.icon} size="sm" />}{it.label}
+            // an unavailable item that explains itself stays focusable (aria-disabled) so the reason is read out too
+            <button key={it.label} type="button" role="menuitem" disabled={it.disabled && !it.hint} aria-disabled={it.disabled && it.hint ? true : undefined} className={`menu-item${it.danger ? ' is-danger' : ''}${it.hint ? ' has-hint' : ''}`} onClick={() => { if (it.disabled) return; setOpen(false); it.onSelect(); }}>
+              {it.icon && <Icon name={it.icon} size="sm" />}{it.hint ? <span className="menu-item-text">{it.label}<small className="menu-hint">{it.hint}</small></span> : it.label}
             </button>
           ))}
         </div>
@@ -105,6 +109,6 @@ export function Menu({ label, items, icon = 'more', triggerLabel }: { label: str
 }
 
 export function Avatar({ name, tone = 'neutral' }: { name: string; tone?: Tone }) {
-  const letter = [...name.replace(/^(عائلة|أم|أبو|ال)\s*/, '').trim()][0] ?? '؟';
+  const letter = initialOf(name);
   return <span className={`avatar tone-${tone}`} aria-hidden="true">{letter}</span>;
 }

@@ -1,78 +1,153 @@
 /**
- * Sequential manual sharing (feedback F044/F045, decision D12/D13).
- * One invitation at a time: open WhatsApp with the prepared message, then the organizer says whether they
- * sent it. Opening WhatsApp is never recorded as delivered; «أرسلتها» records a MANUAL share.
- * The queue can be paused and resumed (position kept for this browser tab only), and invitations without
- * a phone number are skipped visibly, not silently.
+ * One selected audience, every channel in one sheet (WhatsApp, SMS, copy links, device share), honest delivery.
+ *   · WhatsApp/SMS open one composer at a time; the organizer confirms «أرسلت» — opening a composer never counts as sent.
+ *   · confirming can open the next guest's message in the same tap («أرسلتها، افتح التالي»), so 10 guests ≈ 11 taps
+ *   · progress n/N is visible and resumable (sessionStorage) — «أوقف مؤقتًا وأكمل لاحقًا»
+ *   · guests without a valid number get a way out at the end: copy their links together, or add a number
+ *   · mode «remind»: the same queue with the reply-reminder text; a guest counts as reminded only after «أرسلتها»
+ *     (there is no simulated reminder anywhere — opening WhatsApp proves nothing)
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Event, InvitationParty } from '../../domain/types';
-import { formatPhone, plural, P } from '../../domain/format';
+import type { Services } from '../../services/contracts';
+import { formatPhone } from '../../domain/format';
+import { normalisePhone } from '../../domain/phone';
 import { Button, Dialog, Icon, ProgressBar } from '../../ui';
 import { useMutation } from '../../app/data';
 import { errorMessage } from '../../services/errors';
 import { haptic } from '../../ui/motion/motion';
+import { useCopy } from '../../ui/copy';
+import { copyText } from '../shared/CopyField';
+import { inviteMessage, reminderMessage, smsUrl, whatsappUrl } from './share';
 
-type Step = 'ready' | 'opened';
-interface Saved { ids: string[]; index: number; sent: string[]; skipped: string[] }
-const key = (eventId: string) => `doyofy:share-queue:${eventId}`;
-const load = (eventId: string, ids: string[]): Saved | null => {
-  try { const s = JSON.parse(sessionStorage.getItem(key(eventId)) ?? 'null') as Saved | null; return s && s.ids.join() === ids.join() ? s : null; } catch { return null; }
+type Channel = 'whatsapp' | 'sms';
+interface Saved { ids: string[]; index: number; sent: string[]; skipped: string[]; channel?: Channel }
+type Mode = 'invite' | 'remind';
+const key = (eventId: string, mode: Mode = 'invite') => mode === 'remind' ? `doyofy:remind-queue:${eventId}` : `doyofy:share-queue:${eventId}`;
+const load = (eventId: string, ids: string[], mode: Mode): Saved | null => {
+  try { const s = JSON.parse(sessionStorage.getItem(key(eventId, mode)) ?? 'null') as Saved | null; return s && s.ids.join() === ids.join() && Number.isInteger(s.index) && s.index >= 0 && s.index <= ids.length && Array.isArray(s.sent) && Array.isArray(s.skipped) ? s : null; } catch { return null; }
 };
-const save = (eventId: string, s: Saved | null) => { try { if (s) sessionStorage.setItem(key(eventId), JSON.stringify(s)); else sessionStorage.removeItem(key(eventId)); } catch { /* storage unavailable: the queue simply restarts */ } };
+const save = (eventId: string, mode: Mode, s: Saved | null) => { try { if (s) sessionStorage.setItem(key(eventId, mode), JSON.stringify(s)); else sessionStorage.removeItem(key(eventId, mode)); } catch { /* current queue remains usable */ } };
 
-export function ShareQueue({ event, parties, urlFor, onClose }: { event: Event; parties: InvitationParty[]; urlFor: (p: InvitationParty) => string | undefined; onClose: (finished: boolean) => void }) {
-  const ready = useMemo(() => parties.filter((p) => urlFor(p)), [parties, urlFor]);
-  const missing = parties.length - ready.length;
-  const ids = ready.map((p) => p.id);
-  const resumed = useMemo(() => load(event.id, ids), []); // eslint-disable-line react-hooks/exhaustive-deps
+export function ShareQueue({ event, parties, urlFor, linkFor, onClose, onAddPhone, mode = 'invite' }: {
+  event: Event; parties: InvitationParty[]; urlFor: (p: InvitationParty) => string | undefined; linkFor?: (p: InvitationParty) => string;
+  onClose: (finished: boolean) => void; onAddPhone?: (id: string) => void; mode?: Mode;
+}) {
+  const { t, n, dialect } = useCopy();
+  const remind = mode === 'remind';
+  const ready = useMemo(() => parties.filter(p => normalisePhone(p.phone).ok && (linkFor || urlFor(p))), [parties, linkFor, urlFor]);
+  const noPhone = useMemo(() => parties.filter(p => !ready.includes(p)), [parties, ready]);
+  const ids = ready.map(p => p.id);
+  const resumed = useMemo(() => load(event.id, ids, mode), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [channel, setChannel] = useState<Channel | null>(null);
   const [index, setIndex] = useState(resumed?.index ?? 0);
   const [sent, setSent] = useState<string[]>(resumed?.sent ?? []);
   const [skipped, setSkipped] = useState<string[]>(resumed?.skipped ?? []);
-  const [step, setStep] = useState<Step>('ready');
+  const [opened, setOpened] = useState(false);
+  const [message, setMessage] = useState('');
+  const [manualCopy, setManualCopy] = useState<string | null>(null);
+  const [noPhoneCopied, setNoPhoneCopied] = useState(false);
   const done = index >= ready.length;
   const current = ready[index];
-  useEffect(() => { save(event.id, done ? null : { ids, index, sent, skipped }); }, [index, sent, skipped]); // eslint-disable-line react-hooks/exhaustive-deps
+  const following = ready[index + 1];
+  const focusRef = useRef<HTMLElement | null>(null);
+  useEffect(() => { if (channel) save(event.id, mode, done ? null : { ids, index, sent, skipped, channel }); }, [index, sent, skipped, channel]); // eslint-disable-line react-hooks/exhaustive-deps
+  // the next guest arrives ready: its one action (open, or «did you send?» when it was opened in the same tap) takes focus
+  useEffect(() => { if (channel) focusRef.current?.focus({ preventScroll: true }); }, [channel, index, opened]);
 
-  const mark = useMutation(async (s, id: string) => { await s.parties.markShared([id], 'manual'); return id; }, {
-    onSuccess: (id) => { haptic('success'); setSent((v) => [...v, id]); setStep('ready'); setIndex((i) => i + 1); },
+  // the one write per guest, only after the organizer says they sent it
+  const record = (s: Services, list: string[]): Promise<void> => remind ? s.parties.markReminded(list).then(() => undefined) : s.parties.markShared(list, 'manual');
+  const mark = useMutation(async (s, id: string, chained: boolean) => { await record(s, [id]); return { id, chained }; }, {
+    onSuccess: ({ id, chained }) => { haptic('success'); setSent(v => [...v, id]); setOpened(chained); setIndex(i => i + 1); },
   });
-  const skip = () => { if (!current) return; haptic('tick'); setSkipped((v) => [...v, current.id]); setStep('ready'); setIndex((i) => i + 1); };
-  const url = current ? urlFor(current) : undefined;
+  const markNoPhone = useMutation((s, list: string[]) => record(s, list), {
+    onSuccess: () => { haptic('success'); setNoPhoneCopied(false); setMessage(t(remind ? 'sqRecordedReminders' : 'sqRecordedShared', { n: n(noPhone.length, 'invitation') })); },
+  });
+  const skip = () => { if (!current) return; setSkipped(v => [...v, current.id]); setOpened(false); setIndex(i => i + 1); };
+  const textFor = (p: InvitationParty) => {
+    if (!linkFor) { try { return new URL(urlFor(p) ?? '').searchParams.get('text') ?? ''; } catch { return ''; } }
+    return remind || p.rsvpStatus === 'pending' && ['shared', 'opened'].includes(p.delivery.status) ? reminderMessage(event, p, linkFor(p), dialect) : inviteMessage(event, p, linkFor(p), dialect);
+  };
+  const composer = (p?: InvitationParty) => !p ? undefined : channel === 'sms' ? smsUrl(p.phone, textFor(p)) : whatsappUrl(p.phone, textFor(p));
+  // a reminder copies the whole reminder text (with each guest's link); an invitation copies names + links
+  const linksOf = (list: InvitationParty[]) => linkFor && !remind ? list.map(p => `${p.primaryGuestName}\n${linkFor(p)}`).join('\n\n') : list.map(textFor).join('\n\n');
+  const copyLinks = async (list: InvitationParty[], done: string) => {
+    if (await copyText(linksOf(list))) { setManualCopy(null); setMessage(done); return true; }
+    setManualCopy(linksOf(list)); setMessage(t('sqCopyManually')); return false;
+  };
+  const nativeShare = async () => {
+    try { await navigator.share({ title: event.title, text: linksOf(parties) }); setMessage(t('sqDeviceDone')); }
+    catch (e) { if (!(e instanceof DOMException && e.name === 'AbortError')) setMessage(t('sqDeviceFailed')); }
+  };
+  const target = channel === 'whatsapp' ? '_blank' : undefined;
+  const status = <>
+    {message && <p role="status" className="field-hint">{message}</p>}
+    {manualCopy && <textarea className="input" rows={6} readOnly value={manualCopy} aria-label={t('sqLinksLabel')} onFocus={e => e.currentTarget.select()} />}
+  </>;
+  // guests whose invitation cannot go by WhatsApp/SMS: copy their links together, or add a number — never a dead end
+  const withoutPhone = noPhone.length > 0 && <section className="sq-missing" aria-labelledby="sq-missing-h">
+    <h3 id="sq-missing-h"><Icon name="info" size="sm" />{t('sqWithoutPhone', { n: n(noPhone.length, 'invitation') })}</h3>
+    <p className="faint t-sm">{t('sqWithoutPhoneHint')}</p>
+    <div className="row gap-2 wrap">
+      <Button icon="copy" onClick={async () => setNoPhoneCopied(await copyLinks(noPhone, t(remind ? 'sqCopiedNoPhoneReminders' : 'sqCopiedNoPhoneLinks', { n: n(noPhone.length, 'invitation') })))}>{t('copyTheirLinks')}</Button>
+      {noPhoneCopied && <Button variant="ghost" icon="check" loading={markNoPhone.pending} onClick={() => void markNoPhone.run(noPhone.map(p => p.id))}>{t(remind ? 'sqSentRecordReminder' : 'sqSentRecordShared')}</Button>}
+    </div>
+    {markNoPhone.error ? <p className="text-danger t-sm" role="alert">{errorMessage(markNoPhone.error)}</p> : null}
+    {onAddPhone && <ul className="sq-missing-list">{noPhone.map(p => <li key={p.id}><span>{p.primaryGuestName}</span><Button size="sm" variant="ghost" icon="plus" onClick={() => onAddPhone(p.id)} aria-label={`${t('addPhone')} — ${p.primaryGuestName}`}>{t('addPhone')}</Button></li>)}</ul>}
+  </section>;
 
-  return (
-    <Dialog open variant="drawer" onClose={() => onClose(done)} className="share-queue"
-      title={done ? 'انتهت قائمة المشاركة' : 'مشاركة بالتتابع'}
-      description={done ? undefined : `${index + 1} من ${ready.length}${resumed && index > 0 ? ' · أكملنا من حيث توقفت' : ''}`}>
-      <ProgressBar value={Math.min(index, ready.length)} max={Math.max(1, ready.length)} tone="success" label="تقدم المشاركة" />
-      {missing > 0 && <p className="sq-note"><Icon name="info" size="sm" />{plural(missing, P.invitation)} بلا رقم جوال أو قبل النشر — لن تظهر هنا.</p>}
-      {done || !current ? (
-        <div className="sq-done">
-          <span className="sq-done-seal" aria-hidden="true"><Icon name="check" /></span>
-          <p><b>{plural(sent.length, P.invitation)}</b> سجّلتها مُرسلة يدويًا{skipped.length ? ` · تخطيت ${skipped.length}` : ''}.</p>
-          <p className="faint t-sm">هذه حالة سجّلتها أنت؛ لا نعرف ما حدث داخل واتساب. حالة «فتح الدعوة» تظهر عندما يفتح الضيف رابطه.</p>
-          <Button variant="primary" block onClick={() => { save(event.id, null); onClose(true); }}>تم</Button>
+  return <Dialog open variant="drawer" onClose={() => onClose(channel ? done : false)} className="share-queue"
+    title={remind ? t(channel ? done ? 'sqRemindDone' : channel === 'sms' ? 'sqRemindSms' : 'sqRemindWhatsapp' : 'sqRemindTitle')
+      : channel ? t(done ? 'sqShareDone' : channel === 'sms' ? 'sqShareSms' : 'sqShareWhatsapp') : t('shareOptions')}
+    description={channel ? undefined : t(remind ? 'sqWaiting' : 'sqSelected', { n: n(parties.length, 'invitation') })}>
+    {!channel ? <div className="stack gap-4">
+      <p className="muted">{t(remind ? 'sqRemindIntro' : 'sqShareIntro')}</p>
+      <div className="action-grid">
+        <Button variant="primary" icon="chat" disabled={!ready.length} onClick={() => setChannel('whatsapp')}>{t('sendWhatsapp')} · {ready.length}</Button>
+        <Button icon="phone" disabled={!ready.length} onClick={() => setChannel('sms')}>{t('sendSms')} · {ready.length}</Button>
+        {/* with nobody reachable by number, the «without a number» box below already offers the copy — no second button */}
+        {ready.length > 0 && <Button icon="copy" onClick={() => void copyLinks(parties, t(remind ? 'sqCopiedReminders' : 'sqCopiedLinks'))}>{t(remind ? 'sqCopyReminders' : 'sqCopyLinks')}</Button>}
+        {typeof navigator.share === 'function' && <Button icon="share" onClick={() => void nativeShare()}>{t('pdDeviceShare')}</Button>}
+      </div>
+      {noPhone.length > 0 && (ready.length ? <p className="sq-note"><Icon name="info" size="sm" />{t('sqNoPhoneNote', { n: n(noPhone.length, 'invitation') })}</p> : withoutPhone)}
+      {resumed && index > 0 && index < ready.length && <p className="faint t-sm">{t('sqResume', { i: index, n: ready.length })}</p>}
+      <p className="faint t-sm">{t('sqHowItWorks')}</p>
+      {status}
+    </div> : <>
+      <ProgressBar value={Math.min(index, ready.length)} max={Math.max(1, ready.length)} tone="success" label={t('sqProgress')} />
+      {done || !current ? <div className="sq-done">
+        <span className="sq-done-seal" aria-hidden="true"><Icon name="check" /></span>
+        <p>{t(remind ? 'sqReminded' : 'sqMarked', { n: n(sent.length, 'invitation') })}{skipped.length ? t('sqSkipped', { n: skipped.length }) : ''}.</p>
+        <p className="faint t-sm">{t('sqHonest')}</p>
+        {withoutPhone}
+        {status}
+        <Button variant="primary" block onClick={() => { save(event.id, mode, null); onClose(true); }}>{t('done')}</Button>
+      </div> : <div className="sq-card" key={current.id}>
+        <p className="sq-count num" aria-live="polite">{index + 1} / {ready.length}</p>
+        <p className="sq-name">{current.primaryGuestName}</p><bdi className="sq-phone num" dir="ltr">{formatPhone(current.phone!)}</bdi>
+        {!opened ? <div className="sq-actions">
+          <a ref={el => { focusRef.current = el; }} className="btn btn-primary btn-lg btn-block sq-open" href={composer(current)} target={target} rel="noopener noreferrer" onClick={() => { haptic('snap'); setOpened(true); }}>
+            <Icon name={channel === 'sms' ? 'phone' : 'chat'} />{t('openMessage')}</a>
+          <Button variant="ghost" onClick={skip}>{t('sqSkip')}</Button>
+        </div> : <div className="sq-actions" role="group" aria-label={t('glDidSend')}>
+          <p className="sq-ask">{t(remind ? 'sqAskRemind' : 'sqAskSend', { name: current.primaryGuestName })}</p>
+          {/* one tap: record this one as sent (explicit) and open the next guest's composer */}
+          {following ? <a ref={el => { focusRef.current = el; }} className={`btn btn-primary btn-lg btn-block sq-confirm${mark.pending ? ' is-loading' : ''}`} href={composer(following)} target={target} rel="noopener noreferrer" aria-disabled={mark.pending || undefined}
+            onClick={(e) => { if (mark.pending) { e.preventDefault(); return; } haptic('snap'); void mark.run(current.id, true); }}>
+            <Icon name="check" />{t('sentOpenNext')}<span className="sq-next-name">{following.primaryGuestName}</span></a>
+            : <Button ref={el => { focusRef.current = el; }} variant="primary" size="lg" block icon="check" loading={mark.pending} onClick={() => void mark.run(current.id, false)}>{remind ? t('remindSent') : t('manualSent')}</Button>}
+          <div className="row gap-2 wrap">
+            {following && <Button loading={mark.pending} onClick={() => void mark.run(current.id, false)}>{t('sqSentOnly')}</Button>}
+            <Button onClick={() => setOpened(false)}>{t('sqOpenAgain')}</Button>
+            <Button variant="ghost" onClick={skip}>{t('sqNotSent')}</Button>
+          </div>
+        </div>}
+        {mark.error ? <p className="text-danger t-sm" role="alert">{errorMessage(mark.error)}{t('sqNothingSaved')}</p> : null}
+        <div className="sq-foot">
+          <Button variant="ghost" size="sm" onClick={() => { setChannel(null); setOpened(false); }}>{t('sqChangeWay')}</Button>
+          <button type="button" className="sq-pause" onClick={() => onClose(false)}><Icon name="clock" size="sm" />{t('sqPause')}</button>
         </div>
-      ) : (
-        <div className="sq-card" key={current.id}>
-          <p className="sq-name">{current.primaryGuestName}</p>
-          {current.phone && <bdi className="sq-phone num" dir="ltr">{formatPhone(current.phone)}</bdi>}
-          {step === 'ready' ? (
-            <div className="sq-actions">
-              <a className="btn btn-primary btn-lg btn-block sq-open" href={url} target="_blank" rel="noopener noreferrer" onClick={() => { haptic('snap'); setStep('opened'); }}><Icon name="chat" />افتح واتساب برسالة جاهزة</a>
-              <Button variant="ghost" onClick={skip}>تخطَّ هذه الدعوة</Button>
-            </div>
-          ) : (
-            <div className="sq-actions" role="group" aria-label="هل أرسلت الرسالة؟">
-              <p className="sq-ask">هل أرسلت الرسالة من واتساب؟</p>
-              <Button variant="primary" size="lg" block icon="check" loading={mark.pending} onClick={() => void mark.run(current.id)}>نعم، أرسلتها — التالي</Button>
-              <div className="row gap-2"><Button variant="secondary" onClick={() => setStep('ready')}>افتحها مرة أخرى</Button><Button variant="ghost" onClick={skip}>لم أرسلها، تخطَّ</Button></div>
-            </div>
-          )}
-          {mark.error ? <p className="text-danger t-sm" role="alert">{errorMessage(mark.error)} — لم نسجّل شيئًا، حاول مجددًا.</p> : null}
-          <button type="button" className="sq-pause" onClick={() => onClose(false)}><Icon name="clock" size="sm" />أوقف مؤقتًا وأكمل لاحقًا</button>
-        </div>
-      )}
-    </Dialog>
-  );
+      </div>}
+    </>}
+  </Dialog>;
 }

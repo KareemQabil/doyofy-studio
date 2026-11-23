@@ -3,6 +3,7 @@
  * phone numbers, counts and tables stay easy to compare and type. Plurals follow Arabic CLDR rules.
  */
 import type { ISODateTime, LocalDate, LocalTime } from './types';
+import { SPOKEN_TIME, TIME } from './copy/time';
 
 const LOCALE = 'ar-u-ca-gregory-nu-latn';
 
@@ -74,34 +75,78 @@ export function localDateOf(at: Date, timeZone: string): LocalDate {
   return f.format(at);
 }
 
-/** "الثلاثاء 13 أكتوبر 2026" */
-export function formatEventDate(date: LocalDate, opts: { weekday?: boolean; year?: boolean } = {}): string {
+/**
+ * "الثلاثاء 13 أكتوبر 2026". `digits: 'arab'` writes ١٢٣ — only for an invitation's own date and time,
+ * whose face chose that system (domain/templates faceDigits); the platform itself keeps Western digits.
+ */
+export function formatEventDate(date: LocalDate, opts: { weekday?: boolean; year?: boolean; digits?: 'arab' | 'latn' } = {}): string {
   const d = new Date(`${date}T12:00:00Z`);
-  const f = new Intl.DateTimeFormat(LOCALE, { timeZone: 'UTC', day: 'numeric', month: 'long', ...(opts.year === false ? {} : { year: 'numeric' }), ...(opts.weekday === false ? {} : { weekday: 'long' }) });
+  const f = new Intl.DateTimeFormat(opts.digits === 'arab' ? 'ar-u-ca-gregory-nu-arab' : LOCALE, { timeZone: 'UTC', day: 'numeric', month: 'long', ...(opts.year === false ? {} : { year: 'numeric' }), ...(opts.weekday === false ? {} : { weekday: 'long' }) });
   return f.format(d).replace('،', '');
 }
 
-/** "8:30 مساءً" */
-export function formatTime(time: LocalTime): string {
+/** "8:30 مساءً" (or "٨:٣٠ مساءً" with `digits: 'arab'`, see formatEventDate): صباحًا before noon, ظهرًا to 3pm, عصرًا 3–5pm, مساءً after */
+export function formatTime(time: LocalTime, digits: 'arab' | 'latn' = 'latn'): string {
   const [hs, ms] = time.split(':');
   const h = Number(hs), m = Number(ms);
   if (Number.isNaN(h) || Number.isNaN(m)) return time;
   const h12 = ((h + 11) % 12) + 1;
-  const period = h < 12 ? 'صباحًا' : h < 17 ? 'ظهرًا' : 'مساءً';
-  return `${h12}:${String(m).padStart(2, '0')} ${h === 12 && m === 0 ? 'ظهرًا' : period}`;
+  const period = h < 12 ? 'صباحًا' : h < 15 ? 'ظهرًا' : h < 17 ? 'عصرًا' : 'مساءً';
+  return inDigits(`${h12}:${String(m).padStart(2, '0')} ${h === 12 && m === 0 ? 'ظهرًا' : period}`, digits);
 }
 
-/** "الآن" / "قبل 5 دقائق" / "قبل ساعتين" / "أمس 9:15 م" / date */
-export function relativeTime(at: ISODateTime | Date, now: Date): string {
+/** writes a formatted text's digits as ١٢٣ for `digits: 'arab'` (an invitation's own dates, see formatEventDate) */
+export function inDigits(text: string, digits: 'arab' | 'latn' = 'latn'): string {
+  return digits === 'arab' ? text.replace(/[0-9]/g, (n) => String.fromCharCode(0x0660 + Number(n))) : text;
+}
+
+/**
+ * The separator between the parts of one Arabic date line («الثلاثاء، ١ ديسمبر»). A middle dot beside Arabic-Indic
+ * digits reads as a zero («· ١» → «١٠»), so an invitation that writes ١٢٣ joins its parts with the Arabic comma;
+ * Western digits keep the light middle dot. data/derive.js uses the same rule for the card faces (a unit test keeps them equal).
+ */
+export const dateSeparator = (digits: 'arab' | 'latn' = 'latn'): string => digits === 'arab' ? '، ' : ' · ';
+export const joinDateParts = (digits: 'arab' | 'latn', ...parts: Array<string | undefined | false>): string =>
+  parts.filter((p): p is string => !!p).join(dateSeparator(digits));
+
+/**
+ * Every number one invitation shows its guests, in its face's number system (١٢٣ or 123): the date, the time, the
+ * headcounts and counters on the guest pages follow the card, so one guest journey never mixes the two systems.
+ */
+export function invitationNumbers(digits: 'arab' | 'latn') {
+  return {
+    digits,
+    num: (n: number | string) => inDigits(String(n), digits),
+    text: (s: string) => inDigits(s, digits),
+    people: (n: number) => inDigits(people(n), digits),
+    peopleOf: (n: number) => inDigits(peopleOf(n), digits),
+    date: (date: LocalDate, opts: { weekday?: boolean; year?: boolean } = {}) => formatEventDate(date, { ...opts, digits }),
+    time: (time: LocalTime) => formatTime(time, digits),
+    /** «الثلاثاء، ١ ديسمبر ٢٠٢٦، ٨:٠٠ مساءً» — see dateSeparator */
+    join: (...parts: Array<string | undefined | false>) => joinDateParts(digits, ...parts),
+  };
+}
+export type InvitationNumbers = ReturnType<typeof invitationNumbers>;
+
+/** the time words of one voice (copy/time.ts); format sits below copy.ts, so it reads the group itself */
+type Voice = 'ar' | 'ar-EG' | 'ar-SA';
+const timeWords = (dialect: Voice) => (dialect === 'ar' ? TIME.modern : { ...TIME.modern, ...TIME[dialect] });
+const timeForms = (dialect: Voice, unit: 'minute' | 'hour' | 'day', ago: boolean): PluralForms =>
+  dialect === 'ar' ? (unit === 'day' ? (ago ? P.dayAgo : P.day) : P[unit]) : SPOKEN_TIME[dialect][unit];
+const slot = (template: string, value: string) => template.replace('{t}', value);
+
+/** "الآن" / "قبل 5 دقائق" / "قبل ساعتين" / "أمس" / date — «من ساعتين»، «امبارح» in Egyptian, «الحين» in Saudi */
+export function relativeTime(at: ISODateTime | Date, now: Date, dialect: Voice = 'ar'): string {
   const t = typeof at === 'string' ? new Date(at) : at;
+  const w = timeWords(dialect);
   const s = Math.round((now.getTime() - t.getTime()) / 1000);
-  if (s < 45) return 'الآن';
+  if (s < 45) return w.tmNow;
   const m = Math.round(s / 60);
-  if (m < 60) return `قبل ${plural(m, P.minute)}`;
+  if (m < 60) return slot(w.tmAgo, plural(m, timeForms(dialect, 'minute', true)));
   const h = Math.round(m / 60);
-  if (h < 24) return `قبل ${plural(h, P.hour)}`;
+  if (h < 24) return slot(w.tmAgo, plural(h, timeForms(dialect, 'hour', true)));
   const d = Math.round(h / 24);
-  if (d < 7) return d === 1 ? 'أمس' : `قبل ${plural(d, P.dayAgo)}`;
+  if (d < 7) return d === 1 ? w.tmYesterday : slot(w.tmAgo, plural(d, timeForms(dialect, 'day', true)));
   return new Intl.DateTimeFormat(LOCALE, { day: 'numeric', month: 'long' }).format(t);
 }
 
@@ -115,14 +160,15 @@ export function daysBetween(a: LocalDate, b: LocalDate): number {
   return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 864e5);
 }
 
-/** "بعد 9 أيام" / "غدًا" / "اليوم" / "منذ 3 أيام" */
-export function countdownLabel(eventDate: LocalDate, today: LocalDate): string {
+/** "بعد 9 أيام" / "غدًا" / "اليوم" / "منذ 3 أيام" — «بكرة»، «النهارده» in Egyptian */
+export function countdownLabel(eventDate: LocalDate, today: LocalDate, dialect: Voice = 'ar'): string {
   const d = daysBetween(today, eventDate);
-  if (d === 0) return 'اليوم';
-  if (d === 1) return 'غدًا';
-  if (d === -1) return 'أمس';
-  if (d > 1) return `بعد ${pluralOf(d, P.day)}`;
-  return `منذ ${plural(-d, P.dayAgo)}`;
+  const w = timeWords(dialect);
+  if (d === 0) return w.tmToday;
+  if (d === 1) return w.tmTomorrow;
+  if (d === -1) return w.tmYesterday;
+  if (d > 1) return slot(w.tmIn, plural(d, timeForms(dialect, 'day', false), { oblique: true }));
+  return slot(w.tmSince, plural(-d, timeForms(dialect, 'day', true)));
 }
 
 export function addDays(date: LocalDate, n: number): LocalDate {
@@ -138,4 +184,16 @@ export function formatPhone(e164?: string): string {
   const [, cc, rest = ''] = m;
   const groups = cc === '20' ? [rest.slice(0, 3), rest.slice(3, 6), rest.slice(6)] : [rest.slice(0, 2), rest.slice(2, 5), rest.slice(5)];
   return `+${cc} ${groups.filter(Boolean).join(' ')}`;
+}
+
+/**
+ * The letter on a guest's avatar: the family name, not the word «عائلة» — «عائلة الشهري» → «ش», «آل سعود» → «س»,
+ * «أم خالد» → «خ», «العتيبي» → «ع». Falls back to the first letter, or «؟» for an empty name.
+ */
+export function initialOf(name: string): string {
+  const clean = name.replace(/\s+/g, ' ').trim();
+  const rest = clean.replace(/^(?:ال)?(?:عائلة|أسرة|آل|أم|أبو|أبا|بيت)\s+/, '');
+  const word = rest.split(' ')[0] ?? '';
+  const core = word.startsWith('ال') && word.length > 3 ? word.slice(2) : word;
+  return [...(core || clean)][0] ?? '؟';
 }

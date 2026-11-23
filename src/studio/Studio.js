@@ -14,8 +14,8 @@ import { playCardMotion } from '../cards/card-motion.js';
 import { StateMachine } from '../engine/StateMachine.js';
 import { AudioEngine } from '../engine/AudioEngine.js';
 import { detectQuality } from '../engine/Quality.js';
-import { deriveContent, countdown } from '../data/derive.js';
-import { STRINGS as T } from '../data/strings.js';
+import { deriveContent, countdown, localDigits, dateSep } from '../data/derive.js';
+import { LIVE_STRINGS as T, currentStrings, setStringsVoice } from '../data/strings.js';
 import { PAGE_ORDER } from '../pages/index.js';
 import { SCENE_AMBIENCE } from '../audio/index.js';
 import { LocalRSVPAdapter } from '../engine/rsvp.js';
@@ -23,6 +23,11 @@ import { studioMarkup, ICON } from './markup.js';
 import { renderSwitcher } from './switcher.js';
 
 const STAGE_W = 390, STAGE_H = 844;
+/** «شخص واحد · شخصان · ٣ أشخاص · ١١ شخصًا» (Western digits here; the caller writes them in the face's system) */
+const peopleAr = (n) => n === 1 ? 'شخص واحد' : n === 2 ? 'شخصان' : n % 100 >= 3 && n % 100 <= 10 ? `${n} أشخاص` : n % 100 >= 11 ? `${n} شخصًا` : `${n} شخص`;
+/** seconds into the intro when the face's own entrance starts: the card is opaque and still flying in, so its frame
+ *  draws and its art settles as it lands (styles/studio.css: the card flies in 1.6–3.7 s) */
+const INTRO_FACE_AT = 2.1;
 const e = (v) => String(v ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 const mix = (hex, amt) => {
   const n = parseInt(hex.replace('#', ''), 16);
@@ -45,11 +50,17 @@ export class Studio {
    *   muted       start with sound off (wizard preview)
    *   guest       (platform) the invitation party from a personal link: { name, nameLocked, maxGuests, attending, guests }
    *               — prefills the RSVP and bounds the guest count by the party's allowance
-   *   doneAction  (platform) an extra button on the thank-you screen: { ar, en, onClick }
+   *   doneAction  (platform) an extra button on the thank-you screen: { ar, en, onClick, autoAfter? } — with autoAfter (ms)
+   *               the thank-you screen moves on by itself, so the guest lands on the same page as every other path
+   *   authorNotes (platform) organizer-only hints on controls (e.g. an upload that is missing on this device); never for guests
+   *   voice       (platform) the organizer's voice ('ar' | 'ar-EG' | 'ar-SA') carried with a guest link; the engine's own
+   *               words follow it instead of this device's preference
    */
-  constructor(host, { invitation, card = 'kit-rose-garden', scene = 'silk', start = 'intro', assetBase = 'assets/', rsvp, experience = null, embedded = false, showSwitcher = true, muted = false, params = new URLSearchParams(location.search), guest = null, doneAction = null } = {}) {
+  constructor(host, { invitation, card = 'kit-rose-garden', scene = 'silk', start = 'intro', assetBase = 'assets/', rsvp, experience = null, embedded = false, showSwitcher = true, muted = false, params = new URLSearchParams(location.search), guest = null, doneAction = null, authorNotes = false, voice = null } = {}) {
     this.host = host;
     this.params = params;
+    this.voice = voice;
+    if (voice) setStringsVoice(voice);
     this.quality = detectQuality(params);
     // settings are flat (no 3D): `dimension` is kept in the data for old links and always reads 2d
     this.experience = { dimension: '2d', motion: experience?.motion ?? (this.quality.reducedMotion ? 'static' : 'animated') };
@@ -59,15 +70,19 @@ export class Studio {
     this.embedded = embedded; this.showSwitcher = showSwitcher; this.startMuted = muted;
     this.guest = guest;
     this.doneAction = doneAction;
-    this.data = this._derive(invitation);
+    this.authorNotes = authorNotes;
     this.assetBase = assetBase;
     this.cardId = CardRegistry.has(params.get('card')) ? params.get('card') : card;
+    this.invitation = invitation;
+    this.data = this._derive(invitation); // after cardId: the face sets the invitation's digits
     this.sceneId = SceneRegistry.has(params.get('scene')) ? params.get('scene') : scene;
     this.startAt = params.get('start') || start;
     this.reveal = RevealRegistry.get('depth-arrival');
     this.finale = FinaleRegistry.get('envelope');
     this.audio = new AudioEngine({ base: assetBase });
     this.audio.usePack(AudioRegistry.get('studio'));
+    this.audio.onChange = () => this.el && this._syncAudioPreference();
+    this.audio.setPreference(invitation?.audio);
     this.rsvpAdapter = rsvp || new LocalRSVPAdapter();
     this.cleanups = [];
     this.debug = { sceneRenderer: null, sceneErrors: [], states: [] };
@@ -75,8 +90,9 @@ export class Studio {
   }
 
   _derive(invitation) {
-    const d = deriveContent(invitation);
-    if (this.guest?.maxGuests) d.rsvp = { ...d.rsvp, maxGuests: this.guest.maxGuests, defaultGuests: Math.min(d.rsvp.defaultGuests ?? 2, this.guest.maxGuests) };
+    const d = deriveContent(invitation, { digits: CardRegistry.has(this.cardId) ? CardRegistry.get(this.cardId).digits : undefined });
+    // a guest's first answer starts at their whole allowance (who is invited usually comes), still editable
+    if (this.guest?.maxGuests) d.rsvp = { ...d.rsvp, maxGuests: this.guest.maxGuests, defaultGuests: this.guest.maxGuests };
     return d;
   }
 
@@ -96,7 +112,7 @@ export class Studio {
       tilt: $('.st-tilt'), face: $('.st-face-slot'), back: $('.st-back'), cardBtn: $('.st-cardbtn'),
       edges: [...host.querySelectorAll('.st-edge')], sheet: $('.st-sheet'), page: $('.st-page'), dots: $('.st-dots'),
       mono: $('.st-sheet-mono'), env: $('.st-env'), credit: $('.st-credit'), done: $('.st-done'),
-      ctrls: $('.st-ctrls'), swSlot: $('.st-switch-slot'), soundBtn: $('[data-act="sound"]'), swBtn: $('[data-act="switcher"]'),
+      ctrls: $('.st-ctrls'), swSlot: $('.st-switch-slot'), soundBtn: $('[data-act="sound"]'), voiceBtn: $('[data-act="voice"]'), swBtn: $('[data-act="switcher"]'),
     };
     const c = this.data.c;
     $('.bar-date').textContent = c.dateNum;
@@ -113,12 +129,13 @@ export class Studio {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'st-cta st-dl st-e5'; b.dataset.act = 'done-action';
       b.style.cssText = 'margin-top: 32px; background: #F4EAE0; color: #2A1418; border-color: #F4EAE0';
-      b.innerHTML = `<span class="ar" style="font-size: 15px">${e(this.doneAction.ar)}</span>${this.doneAction.en ? `<span dir="ltr" style="font-size: 14px; font-style: italic">${e(this.doneAction.en)}</span>` : ''}`;
+      this._labelDoneAction(b, this.doneAction);
       const replayBtn = this.el.done.querySelector('[data-act="replay"]');
       this.el.done.insertBefore(b, replayBtn);
       replayBtn.style.marginTop = '12px';
     }
     if (this.startMuted) this.toggleSound();
+    this._syncAudioPreference();
     this._wireInput();
     this._applyCard();
     this._mountScene();
@@ -163,7 +180,7 @@ export class Studio {
 
   _renderCredit() {
     const c = this.data.c, couple = !!c.arB;
-    const ar = couple ? `${e(c.arA)} و ${e(c.arB)}` : e(c.arA);
+    const ar = couple ? `${e(c.arA)} و${e(c.arB)}` : e(c.arA);
     const en = couple ? [c.enAU, c.enBU].filter(Boolean).map(e).join(' &amp; ') : e(c.enAU);
     this.el.credit.innerHTML = `<span class="fx-foil" style="font-family: ${this.theme.fAr}; font-size: ${couple ? 58 : Math.min(58, Math.max(30, Math.round(420 / Math.max(1, [...c.arA].length))))}px; line-height: 1.45; text-align: center">${ar}</span>
       ${en ? `<span dir="ltr" style="font-size: 12px; letter-spacing: 0.42em; color: #E3C58C; margin-top: 4px">${en}</span>` : ''}
@@ -177,14 +194,23 @@ export class Studio {
       el.className = el.className.replace(/\bs-[a-z]+\b/g, '').trim() + ' ' + cls;
     }
     this.host.dataset.state = state;
+    // the card (its face's words and its button) is for screen readers only while it is the thing on stage
+    this.el.st.querySelector('.st-rig')?.setAttribute('aria-hidden', String(state !== 'card' && state !== 'intro'));
     if (state === 'intro') this.introT0 = performance.now();
     this.scene?.setStage?.(state, from);
-    clearInterval(this.clock); clearTimeout(this.sealTimer);
+    clearInterval(this.clock); clearTimeout(this.sealTimer); clearTimeout(this._doneTimer);
     if (state !== 'card' && state !== 'intro') this._setPointer(0, 0);
     switch (state) {
+      case 'intro':
+        // the card is already a button while it flies in: the first tap fast-forwards and opens (see openCard)
+        this.el.cardBtn.disabled = false;
+        this._playFace(INTRO_FACE_AT);
+        this.el.sheet.inert = true;
+        break;
       case 'card':
         this.el.cardBtn.disabled = false;
-        if (from !== 'pages') this._playFace();   // the face's entrance plays when the card is revealed, not on the way back
+        // the face's entrance plays when the card is revealed (already under way when the intro brought it), not on the way back
+        if (from !== 'pages' && from !== 'intro') this._playFace();
         this.el.sheet.inert = true;
         if (from === 'pages') { this.audio.stopMusic(); requestAnimationFrame(() => this.el.cardBtn.focus({ preventScroll: true })); }
         break;
@@ -198,9 +224,15 @@ export class Studio {
         this.el.sheet.inert = false;
         this._renderPage(false);
         this.audio.startMusic();
+        // the organizer's voice welcome speaks once, as the invitation opens (the guest can replay or stop it)
+        if (from === 'opening' && !this.audio.voicePlayed) void this.audio.playVoice();
         requestAnimationFrame(() => this.el.sheet.focus({ preventScroll: true }));
         break;
       case 'pack':
+        // the reply is sent: the thank-you is known now, so keyboard and screen-reader focus lands on it at once
+        // instead of dropping to the page while the envelope seals and flies (the visible screen follows)
+        this._renderDone();
+        this.host.querySelector('.st-done-said')?.focus({ preventScroll: true });
         this.el.sheet.inert = true;
         this.audio.stopMusic(); this.audio.duckAmbience(0.3);
         this.audio.emit('pack');
@@ -212,7 +244,9 @@ export class Studio {
       case 'done':
         this._renderDone();
         this.audio.emit('done');
-        setTimeout(() => this.host.querySelector('.st-done [data-act="replay"]')?.focus({ preventScroll: true }), 1950);
+        // a done screen reached without a send (start='done') still gives focus a place: the thank-you
+        { const a = document.activeElement; if (!a || a === document.body || !a.isConnected || this.el.sheet.contains(a)) this.host.querySelector('.st-done-said')?.focus({ preventScroll: true }); }
+        if (this.doneAction?.autoAfter != null) this._doneTimer = setTimeout(() => this.sm.state === 'done' && this.doneAction?.onClick(), this.doneAction.autoAfter);
         break;
       default:
         this.el.cardBtn.disabled = true;
@@ -224,9 +258,9 @@ export class Studio {
   get theme() { return CardRegistry.get(this.cardId).theme; }
 
   /** the face's own entrance (src/cards/card-motion.js); static experiences and reduced motion show it at rest */
-  _playFace() {
+  _playFace(delay = 0) {
     this.faceMotion?.revert();
-    this.faceMotion = playCardMotion(this.el.face, { reduced: this.quality.reducedMotion || this.quality.static });
+    this.faceMotion = playCardMotion(this.el.face, { reduced: this.quality.reducedMotion || this.quality.static, delay });
   }
 
   _applyCard() {
@@ -252,7 +286,7 @@ export class Studio {
     for (const [k, v] of Object.entries({ paper: t.paper, ink: t.ink, muted: t.muted, accent: t.accent, atext: t.aText, env: t.env, far: t.fAr, envmid: mix(t.env, -0.12), envdark: mix(t.env, -0.4), envlight: mix(t.env, 0.14) })) s.setProperty('--' + k, v);
     this.el.mono.textContent = c.arB ? `${c.monoA} · ${c.monoB}` : `${c.monoA}`;
     const mLatin = c.arB ? [c.enA, c.enB].filter(Boolean).map(e).join(' &amp; ') : e(c.enA);
-    this.host.querySelector('.st-mcard').innerHTML = `<span style="font-family: ${t.fAr}; font-size: 28px; line-height: 1.35; text-align: center">${c.arB ? `${e(c.arA)} و ${e(c.arB)}` : e(c.arA)}</span>
+    this.host.querySelector('.st-mcard').innerHTML = `<span style="font-family: ${t.fAr}; font-size: 28px; line-height: 1.35; text-align: center">${c.arB ? `${e(c.arA)} و${e(c.arB)}` : e(c.arA)}</span>
       ${mLatin ? `<span dir="ltr" style="font-size: 14px; font-style: italic; color: ${t.muted}">${mLatin}</span>` : ''}
       <span dir="ltr" style="font-size: 10px; letter-spacing: 0.3em; color: ${t.aText}; margin-top: 6px">${e(c.dateNum)}</span>`;
     this.host.dataset.card = this.cardId;
@@ -262,7 +296,11 @@ export class Studio {
 
   /** live content update (wizard details step): re-derive and refresh every surface that shows content */
   setContent(invitation) {
+    this.invitation = invitation;
     this.data = this._derive(invitation);
+    this.audio.setPreference(invitation?.audio);
+    this._syncAudioPreference();
+    if (this.sm?.state === 'pages') this.audio.startMusic();
     const c = this.data.c, $ = (q) => this.host.querySelector(q);
     $('.bar-date').textContent = c.dateNum;
     $('.bar-city').textContent = c.cityEnU;
@@ -275,8 +313,13 @@ export class Studio {
   setCard(id) {
     if (!CardRegistry.has(id) || id === this.cardId) return;
     this.cardId = id;
+    // another face may use the other number system: every date and time is derived again
+    if (CardRegistry.get(id).digits !== this.data.digits) {
+      this.data = this._derive(this.invitation);
+      this.host.querySelector('.bar-date').textContent = this.data.c.dateNum;
+    }
     this._applyCard();
-    if (this.sm?.state === 'card') this._playFace();
+    if (this.sm?.state === 'card' || this.sm?.state === 'intro') this._playFace();
     this._syncSwitcher();
     this.scene?.setCard?.(CardRegistry.get(id));
   }
@@ -322,7 +365,7 @@ export class Studio {
     this.el.page.innerHTML = PageRegistry.get(id).render(v);
     this.el.page.classList.toggle('instant', instant);
     this.el.page.dataset.page = id;
-    this.el.dots.innerHTML = PAGE_ORDER.map((p, i) => `<button type="button" class="st-dotbtn ${i === this.page ? 'on' : ''}" data-go="${i}" aria-label="Go to ${T.pageLabels[i]}" aria-current="${i === this.page ? 'page' : 'false'}"><span class="st-dot"></span></button>`).join('');
+    this.el.dots.innerHTML = PAGE_ORDER.map((p, i) => `<button type="button" class="st-dotbtn ${i === this.page ? 'on' : ''}" data-go="${i}" aria-label="${T.page(T.pageLabels[i])}" aria-current="${i === this.page ? 'page' : 'false'}"><span class="st-dot"></span></button>`).join('');
     this.host.querySelector('[data-act="prev"]').disabled = this.page === 0;
     this.host.querySelector('[data-act="next"]').disabled = this.page === 4;
     if (id === 'date') this._tickCountdown();
@@ -332,15 +375,19 @@ export class Studio {
   _tickCountdown() {
     const paint = () => {
       const cd = countdown(this.data.start);
-      for (const k of ['days', 'h', 'm', 's']) { const el = this.el.page.querySelector(`[data-cd="${k}"]`); if (el) el.textContent = cd[k]; }
+      for (const k of ['days', 'h', 'm', 's']) { const el = this.el.page.querySelector(`[data-cd="${k}"]`); if (el) el.textContent = localDigits(cd[k], this.data.digits); }
     };
     paint();
     clearInterval(this.clock);
     this.clock = setInterval(() => { if (this.sm.state === 'pages' && PAGE_ORDER[this.page] === 'date') paint(); else clearInterval(this.clock); }, 1000);
   }
 
-  go(n) {
+  /** `from`: the control that asked (a page dot, prev or next). Keyboard focus never falls back to the page body:
+   *  prev/next keep it while they can still act; a dot, or a button that has just been disabled at either end,
+   *  hands it to the sheet, so the next Tab reaches the new page's content (the reply form) before anything else. */
+  go(n, from = null) {
     if (this.sm.state !== 'pages' || n < 0 || n > 4 || n === this.page || this.leaving) return;
+    this._focusAfter = from && from === document.activeElement ? from : null;
     this.audio.emit('page');
     this.leaving = true;
     this.el.page.classList.add('leaving');
@@ -350,6 +397,10 @@ export class Studio {
       this.el.page.classList.remove('leaving');
       delete this.el.page.dataset.exit;
       this._renderPage();
+      // the page's name is the one thing announced (the live line), so turning a page never re-reads a whole page
+      const said = this.host.querySelector('.st-page-said'); if (said) said.textContent = T.pageLabels[n];
+      const from = this._focusAfter; this._focusAfter = null;
+      if (from && (from.dataset.go || from.disabled || !from.isConnected)) this.el.sheet.focus({ preventScroll: true });
     }, this.sm.timing.pageLeave);
   }
 
@@ -363,19 +414,32 @@ export class Studio {
       b.style.color = on ? t.paper : t.ink;
     });
     // FX-13: a decline asks no headcount — the counter folds away and returns with its last value on «سأحضر»
-    const row = root.querySelector('.rsvp-guests-row'); if (row) row.hidden = r.attending === 'no';
-    const out = root.querySelector('.rsvp-guests'); if (out) out.textContent = r.guests;
+    root.querySelectorAll('.rsvp-guests-row').forEach(row => { row.hidden = r.attending === 'no'; });
+    const out = root.querySelector('.rsvp-guests'); if (out) out.textContent = localDigits(r.guests, this.data.digits);
     const [dn, up] = root.querySelectorAll('[data-guests]');
     if (dn) dn.disabled = r.guests <= this.data.rsvp.minGuests;
     if (up) up.disabled = r.guests >= this.data.rsvp.maxGuests;
-    const need = root.querySelector('.rsvp-need');
-    if (need) need.classList.toggle('is-on', r.tried && (!r.name.trim() || !r.attending));
+    // the error names exactly what is missing: the name, the reply, or both
+    const need = root.querySelector('.rsvp-need'), noName = !r.name.trim(), noReply = !r.attending;
+    if (need) {
+      need.classList.toggle('is-on', r.tried && (noName || noReply));
+      const msg = noName && noReply ? T.need : noName ? T.needName : T.needReply;
+      const ar = need.querySelector('.rsvp-need-ar'), en = need.querySelector('.rsvp-need-en');
+      if (ar && ar.textContent !== msg.ar) ar.textContent = msg.ar;
+      if (en && en.textContent !== msg.en) en.textContent = msg.en;
+    }
     const input = root.querySelector('#st-name');
-    if (input) input.setAttribute('aria-invalid', String(r.tried && !r.name.trim()));
+    if (input) input.setAttribute('aria-invalid', String(r.tried && noName));
     const submit = root.querySelector('.rsvp-submit');
     if (submit) submit.disabled = r.submitting;
     const error = root.querySelector('.rsvp-save-error');
-    if (error) { error.hidden = !r.error; error.textContent = r.error; }
+    if (error) {
+      error.hidden = !r.error; error.textContent = r.error;
+      // a reply the guest chose not to finish yet is a calm note, not an alert (receipt.notice)
+      error.setAttribute('role', r.notice ? 'status' : 'alert');
+      error.style.color = r.notice ? t.muted : '#9b2729';
+      error.classList.toggle('is-notice', !!r.notice);
+    }
   }
 
   async submit() {
@@ -383,27 +447,50 @@ export class Studio {
     const r = this.rsvp;
     if (!r.name.trim() || !r.attending) { r.tried = true; this._syncRsvp(); return; }
     r.submitting = true;
-    r.error = '';
+    r.error = ''; r.notice = false;
     this._syncRsvp();
     try {
       const receipt = await this.rsvpAdapter.submit({ name: r.name.trim(), attending: r.attending === 'yes', guests: r.attending === 'yes' ? r.guests : 0 });
       if (this.rsvp !== r || this.sm.state !== 'pages') return;
       if (receipt?.ok === true) { r.receipt = receipt; r.sent = true; this.sm.send('submit'); return; }
-      r.error = receipt?.error || 'تعذر حفظ الرد. أعد المحاولة.';
-    } catch (err) { r.error = err instanceof Error ? err.message : 'تعذر حفظ الرد. أعد المحاولة.'; }
+      r.error = receipt?.error || 'تعذر حفظ الرد. أعيدوا المحاولة.';
+      r.notice = !!receipt?.notice;
+    } catch (err) { r.error = err instanceof Error ? err.message : 'تعذر حفظ الرد. أعيدوا المحاولة.'; }
     if (this.rsvp === r && this.sm.state === 'pages') { r.submitting = false; this._syncRsvp(); }
   }
 
   _renderDone() {
     const r = this.rsvp, c = this.data.c, declined = r.attending === 'no';
-    const th = declined ? T.thanks.no : T.thanks.yes;
+    const S = currentStrings(this.voice ?? undefined);
+    const th = declined ? S.thanks.no : S.thanks.yes;
     const q = (s) => this.el.done.querySelector(s);
     q('.done-ar').textContent = th.ar; q('.done-ar').style.fontFamily = this.theme.fAr;
-    const demo = !!r.receipt?.demo;   // never claim a reply reached the organizer when it did not
-    q('.done-en').textContent = demo ? 'A demo copy — your reply was not sent to the host.' : th.en;
+    // never claim a reply reached the organizer when it did not: a demo reply says so once, in Arabic, under the thanks
+    // (the English line would only repeat it); a real one keeps the English thank-you under the Arabic
+    const demo = !!r.receipt?.demo;
+    q('.done-en').textContent = demo ? '' : th.en;
+    q('.done-en').hidden = demo;
     q('.done-demo').hidden = !demo;
-    const name = r.name.trim().toUpperCase();
-    q('.done-who').textContent = name ? (declined ? name : `${name} · ${r.guests} ${r.guests === 1 ? 'GUEST' : 'GUESTS'}`) : `${[c.enAU, c.arB ? c.enBU : ''].filter(Boolean).join(' & ') || c.arA} · ${c.dateShort}`;
+    q('.done-demo').textContent = demo ? S.demoOnly : '';
+    // what focus lands on (st-done-said): the thanks, and for a demo the honest line with it
+    const said = this.host.querySelector('.st-done-said');
+    if (said) said.textContent = demo ? `${th.ar}. ${S.demoOnly}` : th.ar;
+    const act = this.el.done.querySelector('[data-act="done-action"]');
+    if (act && this.doneAction) this._labelDoneAction(act, declined && this.doneAction.declined ? this.doneAction.declined : this.doneAction);
+    // who replied: Arabic in the invitation's own number system («أم نورة — خالة العروس، ٣ أشخاص»), its own direction
+    // and no letter-spacing (spacing breaks Arabic joining); a reply without a name keeps the Latin monogram line
+    const who = q('.done-who'), name = r.name.trim();
+    if (name) {
+      who.dir = 'rtl'; who.lang = 'ar'; who.classList.add('is-ar');
+      who.innerHTML = `<bdi>${e(name)}</bdi>${declined ? '' : `${dateSep(this.data.digits)}${e(localDigits(peopleAr(r.guests), this.data.digits))}`}`;
+    } else {
+      who.dir = 'ltr'; who.lang = 'en'; who.classList.remove('is-ar');
+      who.textContent = `${[c.enAU, c.arB ? c.enBU : ''].filter(Boolean).join(' & ') || c.arA} · ${c.dateShort}`;
+    }
+  }
+
+  _labelDoneAction(b, l) {
+    b.innerHTML = `<span class="ar" style="font-size: 15px">${e(l.ar)}</span>${l.en ? `<span dir="ltr" style="font-size: 14px; font-style: italic">${e(l.en)}</span>` : ''}`;
   }
 
   // ---------------------------------------------------------------- input
@@ -430,18 +517,21 @@ export class Studio {
     on(host, 'pointerleave', () => this._setPointer(0, 0));
 
     on(host, 'click', (ev) => {
+      // during the intro any tap on the stage (not on its controls) counts: skip ahead and open the card
+      if (this.sm.state === 'intro' && !ev.target.closest('.st-ctrls, .st-switch-slot')) return this.openCard();
       const t = ev.target.closest('button, a');
       if (!t || !host.contains(t)) return;
       if (t === this.el.cardBtn) return this.openCard();
       const act = t.dataset.act;
       if (act === 'close') { this.audio.emit('click'); return this.sm.state === 'pages' && this.sm.send('close'); }
-      if (act === 'next') return this.go(this.page + 1);
-      if (act === 'prev') return this.go(this.page - 1);
+      if (act === 'next') return this.go(this.page + 1, t);
+      if (act === 'prev') return this.go(this.page - 1, t);
       if (act === 'replay') { this.audio.emit('click'); return this.replay(); }
       if (act === 'done-action') { this.audio.emit('click'); return this.doneAction?.onClick(); }
       if (act === 'sound') return this.toggleSound();
+      if (act === 'voice') return this.toggleVoice();
       if (act === 'switcher') { this.audio.emit('click'); return this.swOpen ? this._closeSwitcher() : this._openSwitcher(); }
-      if (t.dataset.go) return this.go(Number(t.dataset.go));
+      if (t.dataset.go) return this.go(Number(t.dataset.go), t);
       if (t.dataset.attend) { this.audio.emit('choose'); this.rsvp.attending = t.dataset.attend; return this._syncRsvp(); }
       if (t.dataset.guests) { this.audio.emit('click'); const r = this.rsvp, d = this.data.rsvp; r.guests = Math.max(d.minGuests, Math.min(d.maxGuests, r.guests + Number(t.dataset.guests))); return this._syncRsvp(); }
       if (t.dataset.pickCard) { this.audio.emit('choose'); return this.setCard(t.dataset.pickCard); }
@@ -499,6 +589,9 @@ export class Studio {
 
     // keyboard
     on(window, 'keydown', (ev) => {
+      // a key another layer already handled is not ours: an open dialog above the invitation (the follow-up sheet)
+      // closes itself on Escape and must leave the invitation, and the reply page, where they were
+      if (ev.defaultPrevented || document.querySelector('dialog[open], [role="dialog"][aria-modal="true"]')) return;
       if (ev.target.closest?.('input, textarea, select')) return;
       if (this.embedded && !host.contains(document.activeElement)) return; // inside the wizard: only when the preview has focus
       if (ev.key === 'Escape') {
@@ -518,7 +611,17 @@ export class Studio {
     this.scene?.setPointer?.(r1(nx), r1(ny));
   }
 
+  /** jump the intro to its last frame (the card at rest) without waiting for its timer */
+  skipIntro() {
+    if (this.sm.state !== 'intro') return false;
+    this.el.st.classList.add('no-intro'); this.host.classList.add('no-intro');
+    this.faceMotion?.finish();   // the card is complete before it opens
+    this.sm.jump('card');
+    return true;
+  }
+
   openCard() {
+    this.skipIntro();
     if (this.sm.state !== 'card') return;
     this.audio.unlock();
     this.audio.emit('open');
@@ -531,15 +634,36 @@ export class Studio {
     if (on && this.sm.state === 'pages') this.audio.startMusic();
     const b = this.el.soundBtn;
     b.innerHTML = on ? ICON.soundOn : ICON.soundOff;
+    // one pattern: a stable name and its pressed state («موسيقى الدعوة، مضغوط» = playing), never a label that flips too
     b.setAttribute('aria-pressed', String(on));
-    b.setAttribute('aria-label', on ? 'Mute music' : 'Play music');
+    b.setAttribute('aria-label', T.sound);
+  }
+
+  /** the voice welcome's own control: replay it, or stop it while it speaks (an explicit tap also unmutes) */
+  toggleVoice() {
+    this.audio.unlock();
+    if (this.audio.voicePlaying) { this.audio.stopVoice(); return; }
+    if (!this.audio.enabled) this.toggleSound();
+    void this.audio.playVoice();
+  }
+
+  _syncAudioPreference() {
+    const voice = this.el.voiceBtn, playing = this.audio.voicePlaying;
+    voice.hidden = !(this.audio.voiceTrack && this.audio.voiceReady);
+    voice.innerHTML = playing ? ICON.voiceStop : ICON.voice;
+    voice.setAttribute('aria-pressed', String(playing));
+    const button = this.el.soundBtn;
+    button.hidden = this.audio.preference.mode === 'off';
+    if (this.audio.missingUpload && this.authorNotes) button.title = 'المقطع المرفوع غير متاح على هذا الجهاز؛ يعمل الصوت الأساسي.';
+    else button.removeAttribute('title');
   }
 
   replay() {
-    clearTimeout(this._leaveTimer); clearTimeout(this.sealTimer); clearInterval(this.clock);
+    clearTimeout(this._leaveTimer); clearTimeout(this.sealTimer); clearTimeout(this._doneTimer); clearInterval(this.clock);
     this.leaving = false;
     this.el.page.classList.remove('leaving');
     this.audio.stopMusic();
+    this.audio.stopVoice(); this.audio.voicePlayed = false;   // watching again opens with the welcome again
     this._closeSwitcher();
     // canonical: unmount for 40 ms, then restart at intro (CSS animations restart from frame 0)
     this.el.st.style.visibility = 'hidden';
@@ -579,9 +703,10 @@ export class Studio {
   destroy() {
     this.faceMotion?.revert();
     this.sm?.destroy(); this.scene?.destroy(); this.audio.destroy();
-    clearTimeout(this._leaveTimer); clearTimeout(this.sealTimer); clearTimeout(this._replayTimer); clearInterval(this.clock);
+    clearTimeout(this._leaveTimer); clearTimeout(this.sealTimer); clearTimeout(this._replayTimer); clearTimeout(this._doneTimer); clearInterval(this.clock);
     this.cleanups.forEach((f) => f());
     this.host.innerHTML = '';
+    if (this.voice) setStringsVoice(null);
   }
 }
 

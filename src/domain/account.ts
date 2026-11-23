@@ -11,6 +11,11 @@ export function safeAccountReturn(value: string | null | undefined) {
   return value;
 }
 
+/** «ارجع للتصميم» from the account's sounds: only an event's invitation editor, never an outside address */
+export function safeDesignReturn(value: string | null | undefined): string | null {
+  return value && /^\/app\/events\/[^/?#\\]+\/invitation\/design(?:\?section=(?:motion|content|design|event))?$/.test(value) ? value : null;
+}
+
 export const DEMO_ACCOUNT_KEY = 'doyofy:demo-account:v1';
 export function demoProfileName(): string | undefined {
   try { return typeof window === 'undefined' ? undefined : parseAccount(window.localStorage.getItem(DEMO_ACCOUNT_KEY)).name; } catch { return undefined; }

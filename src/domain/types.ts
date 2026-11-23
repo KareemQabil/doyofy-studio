@@ -10,7 +10,7 @@ export type LocalDate = string;   // 2026-10-13 (in the event's time zone)
 export type LocalTime = string;   // 20:30
 
 // ------------------------------------------------------------------ users / session (mock auth)
-export type Role = 'organizer' | 'coordinator';
+export type Role = 'organizer' | 'coordinator' | 'caterer';
 export interface User {
   id: string;
   name: string;
@@ -120,6 +120,8 @@ export interface ProgramItem { time: LocalTime; ar: string; en: string }
 
 /** Everything about the invitation that is NOT event data. Event data (date, venue…) is merged in at render time. */
 export interface InvitationDesignContent {
+  /** sound choice (none / built-in / my music) + optional voice welcome; see domain/audio-library.ts */
+  audio?: { mode: 'default' | 'builtin' | 'library' | 'off'; trackId?: string; trackName?: string; voiceId?: string; voiceName?: string };
   experience: { dimension: Dimension; motion: Motion };
   cardId: string;
   sceneId: string;
@@ -194,6 +196,8 @@ export interface PartyInput {
   companionNames?: string[];
   notes?: string;
   side?: string;
+  /** import only: the guest file's planned table, by name (an existing table, or one created with the import) */
+  tableName?: string;
 }
 
 // ------------------------------------------------------------------ RSVP
@@ -267,11 +271,11 @@ export interface CheckInRecord {
 export type ActivityKind =
   | 'event_created' | 'event_updated'
   | 'invitation_saved' | 'invitation_published'
-  | 'party_added' | 'parties_imported' | 'party_updated' | 'party_removed'
+  | 'party_added' | 'parties_imported' | 'party_updated' | 'party_removed' | 'parties_transferred'
   | 'invitation_shared' | 'invitation_opened' | 'invitation_failed' | 'reminder_sent'
   | 'rsvp_confirmed' | 'rsvp_declined' | 'rsvp_edited' | 'rsvp_unmatched' | 'rsvp_matched'
-  | 'table_created' | 'party_seated' | 'party_moved' | 'party_unseated'
-  | 'checked_in' | 'checked_in_partial' | 'check_in_exception' | 'check_in_undone'
+  | 'table_created' | 'party_seated' | 'party_moved' | 'party_unseated' | 'seating_auto_applied' | 'seating_auto_undone'
+  | 'checked_in' | 'checked_in_partial' | 'check_in_exception' | 'check_in_undone' | 'check_in_walk_in'
   | 'event_archived';
 
 export interface EventActivity {
@@ -279,7 +283,8 @@ export interface EventActivity {
   eventId: string;
   kind: ActivityKind;
   at: ISODateTime;
-  actor: 'organizer' | 'guest' | 'gate' | 'system';
+  /** who did it: the owner, a team member by role, the guest, the reception gate, or the system */
+  actor: 'organizer' | 'coordinator' | 'caterer' | 'guest' | 'gate' | 'system';
   partyId?: string;
   data: Record<string, string | number | boolean | undefined>;
 }
