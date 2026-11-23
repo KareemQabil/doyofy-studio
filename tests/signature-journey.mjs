@@ -1,9 +1,10 @@
 // «توقيع» journey in a real browser (Chromium via Playwright), at 390 / 768 / 1440.
 //   node tests/signature-journey.mjs [phone|tab|desk|all]
-// Graduation (single person), created from scratch: occasion deck (keyboard) → details → prepared invitation →
-// always live (no publish step): tap to edit, «أرسل للضيوف» → add a guest → guest link works at once: envelope cover → RSVP →
+// Graduation (single person), created from scratch in two steps: occasion deck (keyboard) → names + date (no design
+// step) → the invitation opens in its editor, always live (no publish step): tap to edit, «أرسل للضيوف» → add a guest →
+// guest link works at once: envelope cover → RSVP → a «ثابتة» invitation opens straight on its pages, Arabic only →
 // reception gate check-in → summary.
-// Couple (seeded wedding): overview → invitation → guests → replies → reception → summary → guest cover.
+// Couple (seeded wedding): overview → invitation (the editor) → guests → replies → reception → summary → guest cover.
 // Also checks: no horizontal page scroll, no wedding copy on the graduation surfaces, reduced-motion cover,
 // sheet keyboard steps on phone, no page errors. Writes review/screenshots-or-captures/journey/<vp>-*.png
 // and review/screenshots-or-captures/journey/results.json.
@@ -69,20 +70,13 @@ async function run(vp) {
     return 'swipe right → 02';
   });
 
-  await step(vp, '04 design feed (step 2): one design per screen, chosen explicitly', async () => {
+  await step(vp, '04 two steps: the occasion known, the wizard opens on the names and the date (no design step)', async () => {
     await go('/app/events/new?type=graduation');
-    const feed = page.locator('.tf-scroll'); await feed.waitFor();
-    const card = await page.locator('.tf-slide.is-active .card-thumb').boundingBox();
-    const min = size.width <= 320 ? 220 : 240;
-    if (!card || card.width < min) throw new Error(`design card too small: ${card?.width}`);
-    if (card.y + card.height > size.height) throw new Error('design card runs under the footer');
-    const first = await page.locator('.tf-slide.is-active .tf-info h3').innerText();
-    await feed.focus(); await page.keyboard.press('ArrowDown');
-    await page.waitForFunction(t => document.querySelector('.tf-slide.is-active .tf-info h3')?.textContent !== t, first);
-    const chosen = await page.locator('.tf-slide.is-active .tf-info h3').innerText();
-    await page.getByRole('button', { name: 'اختر هذا التصميم' }).click();
     await page.locator('#create-event').waitFor();
-    return `card ${Math.round(card.width)}px; ${first} → ${chosen}; ` + await noScroll();
+    const steps = await page.locator('.wz-steps li').count();
+    if (steps !== 2) throw new Error(`${steps} steps`);
+    if (await page.locator('.tf-scroll').count()) throw new Error('a design feed in creation');
+    return `${steps} steps; ` + await noScroll();
   });
 
   await step(vp, '04b graduation details + live card preview', async () => {
@@ -146,14 +140,17 @@ async function run(vp) {
     return page.url().replace(BASE, '');
   });
 
-  await step(vp, '07 graduation invitation summary: always live, one forward action, no wedding copy', async () => {
+  await step(vp, '07 the invitation is its editor: always live, one forward action, no wedding copy', async () => {
     await go(`/app/events/${eventId}/invitation`);
-    await page.locator('h1').first().waitFor();
-    const t = await page.locator('main').innerText();
+    await page.waitForURL(/invitation\/design/, { timeout: 8000 });
+    await page.locator('.ed-workbench').first().waitFor();
+    const t = await page.locator('.ed').innerText();
     const bad = t.match(/العروس|العريس|العروسين/); if (bad) throw new Error(`found «${bad[0]}»`);
     // no publish concept: the invitation is what guests get, and the next step is the guests
     const pub = t.match(/انشر|نشر|منشورة|مسودة/); if (pub) throw new Error(`publish word «${pub[0]}»`);
-    if (!(await page.getByRole('link', { name: /أضف الضيوف|أرسل للضيوف/ }).count())) throw new Error('no «أرسل للضيوف» action');
+    if (!(await page.locator('.ed-send:visible').count())) throw new Error('no «أرسل للضيوف» action');
+    // nothing the organizer did not write: a new invitation has no programme page
+    if ((await page.locator('.ed-dot').count()) !== 2) throw new Error(`${await page.locator('.ed-dot').count()} pages dotted`);
     await shot('07-invitation'); return noScroll();
   });
 
@@ -198,6 +195,22 @@ async function run(vp) {
     return 'confirmed';
   });
 
+  await step(vp, '10b «ثابتة»: a fresh link opens straight on the invitation\'s pages, Arabic only', async () => {
+    await go(`/app/events/${eventId}/invitation/design?section=design`);
+    await page.getByRole('radio', { name: /^ثابتة/ }).click();
+    await page.locator('.save-state.is-saved').waitFor({ timeout: 8000 });
+    const fresh = await page.evaluate(async (id) => (await window.__doyofy.services.parties.create(id, { primaryGuestName: 'عائلة الثابتة', maxPartySize: 2 })).code, eventId);
+    await go(`/i/${slug}/${fresh}`);
+    await page.waitForFunction(() => window.__studio?.sm?.state === 'pages', null, { timeout: 8000 });
+    if (await page.locator('.sig-cover').count()) throw new Error('an envelope to open');
+    const text = await page.locator('.guest-studio').innerText();
+    const latin = text.match(/[A-Za-z]{3,}/g); if (latin) throw new Error(`English the organizer did not write: ${latin.slice(0, 4).join(' ')}`);
+    const pages = await page.evaluate(() => window.__studio._pages().join(','));
+    if (pages.includes('program')) throw new Error(`a programme page: ${pages}`);
+    await shot('10b-guest-static');
+    return `pages ${pages}`;
+  });
+
   await step(vp, '11 organizer sees the reply', async () => {
     await go(`/app/events/${eventId}/rsvp`);
     await page.locator('h1').first().waitFor();
@@ -228,7 +241,7 @@ async function run(vp) {
 
   // couple (seeded)
   const W = '/app/events/evt_wedding';
-  for (const [n, path, sel] of [['20-couple-overview', `${W}/overview`, '.sig-moment'], ['21-couple-invitation', `${W}/invitation`, 'h1'], ['22-couple-guests', `${W}/guests`, 'h1'], ['23-couple-replies', `${W}/rsvp`, 'h1'], ['24-couple-reception', `${W}/check-in`, 'h1'], ['25-couple-summary', `${W}/summary`, '.summary-closure'], ['26-couple-seating', `${W}/seating`, 'h1'], ['27-couple-templates', `${W}/invitation/templates`, '.tf-scroll']]) {
+  for (const [n, path, sel] of [['20-couple-overview', `${W}/overview`, '.sig-moment'], ['21-couple-invitation', `${W}/invitation`, '.ed-workbench'], ['22-couple-guests', `${W}/guests`, 'h1'], ['23-couple-replies', `${W}/rsvp`, 'h1'], ['24-couple-reception', `${W}/check-in`, 'h1'], ['25-couple-summary', `${W}/summary`, '.summary-closure'], ['26-couple-seating', `${W}/seating`, 'h1'], ['27-couple-templates', `${W}/invitation/templates`, '.ed-cards']]) {
     await step(vp, `${n.slice(3)} renders`, async () => { await go(path); await page.locator(sel).first().waitFor(); await page.waitForTimeout(400); await shot(n); return noScroll(); });
   }
   const drag = async (sel, dx, dy = 0) => {
@@ -238,15 +251,16 @@ async function run(vp) {
     for (let i = 1; i <= 8; i++) { await page.mouse.move(x + (dx * i) / 8, y + (dy * i) / 8); await page.waitForTimeout(16); }
     await page.mouse.up(); await page.waitForTimeout(900);
   };
-  if (phone) await step(vp, 'section swipe: right on the overview opens the next tab (invitation)', async () => {
+  if (phone) await step(vp, 'section swipe: right on the overview opens the next tab (the invitation editor), left on the guests too', async () => {
     await go(`${W}/overview`); await page.locator('.sig-moment').first().waitFor();
     await drag('.sig-content', 140);
     const path = await page.evaluate(() => location.pathname);
-    if (!/\/invitation$/.test(path)) throw new Error(`after swipe ${path}`);
+    if (!/\/invitation\/design$/.test(path)) throw new Error(`after swipe ${path}`);
+    await go(`${W}/guests`); await page.locator('.sig-content').first().waitFor();
     await drag('.sig-content', -140);
     const back = await page.evaluate(() => location.pathname);
-    if (!/\/overview$/.test(back)) throw new Error(`after swipe back ${back}`);
-    return 'overview → invitation → overview';
+    if (!/\/invitation\/design$/.test(back)) throw new Error(`after swipe back ${back}`);
+    return 'overview → invitation · guests → invitation';
   });
   await step(vp, 'appearance toggle in the header flips light ↔ dark', async () => {
     await go(`${W}/overview`);

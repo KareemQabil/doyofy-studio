@@ -1,6 +1,7 @@
 /**
  * Guest link /i/<slug>[/<code>] — no account, ever (spec §14, §18).
- *  - not replied yet → the cinematic invitation; its RSVP goes to the organizer's data (GuestApi)
+ *  - not replied yet → the cinematic invitation; its RSVP goes to the organizer's data (GuestApi). A «ثابتة» (static)
+ *    invitation has no envelope to open: the guest lands straight on its pages (the engine starts there too)
  *  - replied → the event hub (status, QR, edit reply, date, directions, program, table)
  *  - general link (no code) → invitation with a name field; replies wait for the organizer to match them
  */
@@ -54,6 +55,7 @@ export function GuestInvite({ slug, code }: { slug: string; code?: string }) {
       const play = loc.search.get('play') != null;
       if (v.phase === 'after') setMode('hub');
       else if (play) setMode('invitation');
+      else if (v.design.experience.motion === 'static' && !((v.party && v.party.rsvpStatus !== 'pending') || (!v.party && v.reply))) setMode('invitation');
       // a guest who has replied (personal, or this device's general-link reply) comes back to their reply, not the cover
       else setMode((v.party && v.party.rsvpStatus !== 'pending') || (!v.party && v.reply) ? 'hub' : 'cover');
     } catch (e) { setError(e); }

@@ -34,8 +34,10 @@ function TrackSample({ track }: { track: AudioTrack }) {
 /**
  * `focus`: arrived from the editor (/app/account?section=audio) — scroll here and put focus on «ارفع موسيقى».
  * `back`: the editor tab to return to; «ارجع للتصميم» sits at the top and again under the saved notice.
+ * `embedded`: inside the editor's own sheet (its «الصوت» tab) — no panel frame and no account introduction; the sheet
+ * carries the title and the editor picks up what is added.
  */
-export function AudioLibrary({ focus = false, back }: { focus?: boolean; back?: string | null }) {
+export function AudioLibrary({ focus = false, back, embedded = false }: { focus?: boolean; back?: string | null; embedded?: boolean }) {
   const { t } = useCopy();
   // with the backend on, uploads also go to its storage and play on guests' devices: the device-only line would be untrue
   const cloudOn = useCloud().status() === true;
@@ -108,9 +110,9 @@ export function AudioLibrary({ focus = false, back }: { focus?: boolean; back?: 
   </div>;
 
   const backLink = back ? <LinkButton to={back} variant="secondary" size="sm" icon="back">{t('audioBackToDesign')}</LinkButton> : null;
-  return <Panel title={t('audioTitle')} id="audio" className="audio-library-panel">
+  const body = <>
     {backLink && <div className="audio-back row wrap gap-3">{backLink}<span className="field-hint">{t('audioBackHint')}</span></div>}
-    <p className="muted">{t('audioIntro')}</p>
+    {!embedded && <p className="muted">{t('audioIntro')}</p>}
     <p className="field-hint">{t('audioLimits')}</p>
     {!cloudOn && <p className="audio-device-note" data-audio-device-note>{t('audioDeviceOnly')}</p>}
     <div className="audio-library-upload stack gap-3">
@@ -140,6 +142,9 @@ export function AudioLibrary({ focus = false, back }: { focus?: boolean; back?: 
       </div>}
     </li>)}</ul>}
     {library.defaultTrackId && <Button size="sm" variant="ghost" onClick={() => change(() => saveAudioLibrary({ ...readAudioLibrary(), defaultTrackId: undefined }), t('audioBuiltinDefaultSaved'))}>{t('audioUseBuiltinDefault')}</Button>}
-    <VoiceRecorder disabled={full} onSaved={say} />
-  </Panel>;
+    {!embedded && <VoiceRecorder disabled={full} onSaved={say} />}
+  </>;
+  return embedded
+    ? <div id="audio" className="audio-library-panel is-embedded stack gap-4">{body}</div>
+    : <Panel title={t('audioTitle')} id="audio" className="audio-library-panel">{body}</Panel>;
 }

@@ -1,20 +1,23 @@
 /**
  * The editor's three tabs. «النص»: the event's names, date and place (the EVENT itself — one source for everywhere),
- * the invitation message, the programme (optional, collapsed) and English (optional, collapsed). «الشكل»: design,
- * background and motion. «الصوت»: the sound choice and the voice welcome (r4-audio).
+ * the invitation message, the programme (optional, empty, collapsed) and English (optional, collapsed). «الشكل»: one
+ * grid of designs, one row of backgrounds and the motion. «الصوت»: the sound choice and the voice welcome (r4-audio),
+ * uploaded and recorded in place.
  * Every field a tap on the card can reach carries `data-edit-field` (names · date · venue · message · program).
  */
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Event, EventDetails, InvitationDesignContent, UpdateEventInput } from '../../domain/types';
 import { eventTypeInfo, isCoupleEvent, suggestTitle } from '../../domain/event';
 import { CARD_NAMES, SCENE_NAMES } from '../../domain/invitation';
-import { presetOf, presetsFor, TEMPLATE_PRESETS } from '../../domain/templates';
+import { CARD_CATALOGUE, presetsFor } from '../../domain/templates';
 import { daysBetween, localDateOf } from '../../domain/format';
-import { Button, Field, Icon, IconButton, Input, Select, Switch, Textarea } from '../../ui';
+import { Button, Dialog, Field, Icon, IconButton, Input, Select, Switch, Textarea } from '../../ui';
 import { CardThumb } from '../invitation/CardThumb';
 import { TemplateThumb } from '../templates/TemplateThumb';
 import { useAudioLibrary } from '../account/audio-state';
-import { Link } from '../../app/router';
+import { AudioLibrary } from '../account/AudioLibrary';
+import { VoiceRecorder } from '../account/VoiceRecorder';
+import { MAX_AUDIO_TRACKS } from '../../domain/audio-library';
 import { copyFor, fill, type Copy } from '../../domain/copy';
 import { currentDialect, useCopy } from '../../ui/copy';
 import type { AudioSelection } from '../../domain/audio-library';
@@ -140,7 +143,7 @@ export function TextSection({ event, draft, onDraft, errors, content, update }: 
       </section>
 
       <details className="ed-group ed-program-disclosure" data-page-for="program">
-        <summary data-edit-field="program">{t('esProgramme')} <span>{t('esProgrammeMeta', { n: prog.length })}</span><Icon name="chevron-down" size="sm"/></summary>
+        <summary data-edit-field="program">{t('esProgramme')} <span>{prog.length ? t('esProgrammeMeta', { n: prog.length }) : t('esOptional')}</span><Icon name="chevron-down" size="sm"/></summary>
         <p className="ed-sec-hint">{t('esProgrammeHint')}</p>
         <ol className="ed-program">
           {prog.map((p, i) => (
@@ -179,50 +182,41 @@ function Option({ on, title, text, onClick, art, disabled }: { on: boolean; titl
   );
 }
 
-export function DesignSection({ event, content, invitation, update, onChangeTemplate }: { event: Event; content: InvitationDesignContent; invitation: unknown; update: Update; onChangeTemplate: () => void }) {
+/**
+ * «الشكل»: one grid of designs — the occasion's own first, «المزيد» for every design — one row of backgrounds (the
+ * design's own three settings first) and the motion. Changing either keeps every text the organizer wrote.
+ */
+export function DesignSection({ event, content, invitation, update }: { event: Event; content: InvitationDesignContent; invitation: unknown; update: Update }) {
   const { t } = useCopy();
-  const preset = presetOf(content);
-  const scenes = Object.keys(SCENE_NAMES);
-  const cards = [...new Set([content.cardId, ...presetsFor(event.type).suited.map(p => p.cardId)])].slice(0,6);
-  const recommendedScenes = [...new Set([content.sceneId, ...TEMPLATE_PRESETS.filter(p=>p.cardId===content.cardId).map(p=>p.sceneId)])].slice(0,3);
+  const uniq = (ids: string[]) => [...new Set(ids)];
+  const forOccasion = uniq(presetsFor(event.type).suited.map((p) => p.cardId));
+  const everyCard = uniq([...forOccasion, ...Object.keys(CARD_NAMES)]);
+  // the current design always shows (an old or linked one from another occasion joins the end of the grid)
+  const [more, setMore] = useState(false);
+  const cards = more ? everyCard : uniq([...forOccasion, content.cardId]);
+  const own = CARD_CATALOGUE.find((c) => c.card === content.cardId)?.scenes ?? [];
+  const scenes = uniq([...own, ...Object.keys(SCENE_NAMES)]);
   const x = content.experience;
   const setX = (patch: Partial<InvitationDesignContent['experience']>) => update({ experience: { ...x, ...patch, dimension: '2d' } });
   return (
     <div className="ed-sec">
-      <section className="ed-group ed-template">
-        <TemplateThumb className="ed-template-thumb" preset={{ id: 'current', name: '', line: '', styles: [], occasionTags: [], cardId: content.cardId, sceneId: content.sceneId, experience: content.experience }} invitation={invitation} />
-        <div className="stack gap-2">
-          <p className="ed-sec-hint">{t('esDesign')}</p>
-          <p className="ed-template-name">{preset?.name ?? t('esCustom')}</p>
-          <Button variant="secondary" size="sm" icon="grid" onClick={onChangeTemplate}>{t('esChangeDesign')}</Button>
-        </div>
-      </section>
-
-      <section className="ed-group"><SecHead title={t('esForYou')} hint={t('esForYouHint')} /><div className="ed-picks ed-cards" role="radiogroup" aria-label={t('esCardsLabel')}>{cards.map(id => <button key={id} type="button" role="radio" aria-label={CARD_NAMES[id]} aria-checked={content.cardId===id} className={`ed-pick${content.cardId===id?' is-on':''}`} onClick={()=>update({cardId:id})}><CardThumb event={event} content={{...content,cardId:id}} width={84} /><span className="ed-pick-name">{CARD_NAMES[id]}</span></button>)}</div></section>
-      <section className="ed-group ed-scene-selection"><SecHead title={t('esScene')} hint={t('esSceneHint')} /><div className="ed-picks ed-scenes" role="radiogroup" aria-label={t('esScenesLabel')}>{recommendedScenes.map(id => <button key={id} type="button" role="radio" aria-label={SCENE_NAMES[id]} aria-checked={content.sceneId===id} className={`ed-pick${content.sceneId===id?' is-on':''}`} onClick={()=>update({sceneId:id})}><TemplateThumb preset={{id,name:'',line:'',styles:[],occasionTags:[],cardId:content.cardId,sceneId:id,experience:content.experience}} invitation={invitation} /><span className="ed-pick-name">{SCENE_NAMES[id]}</span></button>)}</div></section>
-      <section className="ed-group ed-motion">
-        <SecHead title={t('esMotion')} />
-        <div className="ed-options is-text" role="radiogroup" aria-label={t('esMotion')}>
-          <Option on={x.motion === 'animated'} title={t('ivAnimated')} text={t('esAnimatedD')} onClick={() => setX({ motion: 'animated' })} />
-          <Option on={x.motion === 'static'} title={t('ivStatic')} text={t('esStaticD')} onClick={() => setX({ motion: 'static' })} />
-        </div>
-      </section>
-      <details className="ed-advanced"><summary>{t('esAll')} <span>{t('esOptional')}</span><Icon name="chevron-down" size="sm"/></summary>
-      <section className="ed-group">
-        <SecHead title={t('esCard')} />
-        <div className="ed-picks ed-cards" role="radiogroup" aria-label={t('esCard')}>
-          {Object.keys(CARD_NAMES).map((id) => (
+      <section className="ed-group ed-design-cards">
+        <SecHead title={t('esDesign')} hint={t('esForYouHint')} />
+        <div className="ed-picks ed-cards" role="radiogroup" aria-label={t('esDesign')}>
+          {cards.map((id) => (
             <button key={id} type="button" role="radio" aria-label={CARD_NAMES[id]} aria-checked={content.cardId === id} className={`ed-pick${content.cardId === id ? ' is-on' : ''}`} onClick={() => update({ cardId: id })}>
               <CardThumb event={event} content={{ ...content, cardId: id }} width={84} />
               <span className="ed-pick-name">{CARD_NAMES[id]}</span>
             </button>
           ))}
         </div>
+        {!more && everyCard.length > cards.length && <Button variant="ghost" size="sm" icon="grid" className="ed-more" onClick={() => setMore(true)}>{t('esMore', { n: everyCard.length - cards.length })}</Button>}
       </section>
 
-      <section className="ed-group">
-        <SecHead title={t('esScene')} />
-        <div className="ed-picks ed-scenes" role="radiogroup" aria-label={t('esScene')}>
+      <section className="ed-group ed-scene-selection">
+        <SecHead title={t('esScene')} hint={t('esSceneHint')} />
+        {/* one row, scrolled sideways: the design's own settings lead */}
+        <div className="ed-picks ed-scenes ed-scene-row" role="radiogroup" aria-label={t('esScene')} data-scroll-x="">
           {scenes.map((id) => (
             <button key={id} type="button" role="radio" aria-label={SCENE_NAMES[id]} aria-checked={content.sceneId === id} className={`ed-pick${content.sceneId === id ? ' is-on' : ''}`} onClick={() => update({ sceneId: id })}>
               <TemplateThumb preset={{ id, name: '', line: '', styles: [], occasionTags: [], cardId: content.cardId, sceneId: id, experience: content.experience }} invitation={invitation} />
@@ -231,31 +225,36 @@ export function DesignSection({ event, content, invitation, update, onChangeTemp
           ))}
         </div>
       </section>
-      </details>
+
+      <section className="ed-group ed-motion">
+        <SecHead title={t('esMotion')} />
+        <div className="ed-options is-text" role="radiogroup" aria-label={t('esMotion')}>
+          <Option on={x.motion === 'animated'} title={t('ivAnimated')} text={t('esAnimatedD')} onClick={() => setX({ motion: 'animated' })} />
+          <Option on={x.motion === 'static'} title={t('ivStatic')} text={t('esStaticD')} onClick={() => setX({ motion: 'static' })} />
+        </div>
+      </section>
     </div>
   );
 }
 
 // ------------------------------------------------------------------ الصوت
-/** the way to the account's sound library: `href` for the link, `go` saves the draft first and leaves */
-export interface AccountLink { href: string; go: () => void }
-const AccountAnchor = ({ to, children }: { to?: AccountLink; children: ReactNode }) =>
-  <Link to={to?.href ?? '/app/account'} className="ed-account-link" onClick={(e) => { if (to) { e.preventDefault(); to.go(); } }}>{children}</Link>;
-
-export function SoundSection({ content, update, toAccount }: { content: InvitationDesignContent; update: Update; toAccount?: AccountLink }) {
-  return <div className="ed-sec"><SoundGroup content={content} update={update} toAccount={toAccount} /></div>;
+export function SoundSection({ content, update }: { content: InvitationDesignContent; update: Update }) {
+  return <div className="ed-sec"><SoundGroup content={content} update={update} /></div>;
 }
 
 /**
  * One sound choice — none / built-in / my music (pick a track) — plus an optional voice welcome (r4-audio).
  * `default` (nothing chosen yet) shows as the account default: its track when there is one, built-in otherwise.
- * The device-only line is organizer UI (gone once the backend uploads the sounds); guests elsewhere just hear the
- * built-in sound. «معاينة كضيف» plays it.
+ * Uploading music and recording the voice welcome happen right here, in a sheet over the editor (the account's own
+ * audio components): nothing leaves the editor, and what was just added is chosen at once — the music becomes the
+ * invitation's sound, a new recording turns the voice welcome on. The device-only line is organizer UI (gone once the
+ * backend uploads the sounds); guests elsewhere just hear the built-in sound. «معاينة كضيف» plays it.
  */
-function SoundGroup({ content, update, toAccount }: { content: InvitationDesignContent; update: Update; toAccount?: AccountLink }) {
+function SoundGroup({ content, update }: { content: InvitationDesignContent; update: Update }) {
   const { t } = useCopy();
   const library = useAudioLibrary();
   const cloudOn = useCloud().status() === true;
+  const [sheet, setSheet] = useState<'music' | 'voice' | null>(null);
   const audio: AudioSelection = content.audio ?? { mode: 'default' };
   const music = library.tracks.filter(tr => tr.kind === 'music'), voices = library.tracks.filter(tr => tr.kind === 'voice');
   const shown = audio.mode === 'default' ? (library.defaultTrackId ? 'library' : 'builtin') : audio.mode;
@@ -268,6 +267,23 @@ function SoundGroup({ content, update, toAccount }: { content: InvitationDesignC
     const tr = voices.find(v => v.id === id);
     update({ audio: { ...rest, ...(tr ? { voiceId: tr.id, voiceName: tr.name } : {}) } });
   };
+  // a track added in the sheet is chosen at once (the latest one, if several)
+  const known = useRef<Set<string> | null>(null);
+  useEffect(() => { if (sheet) known.current = new Set(library.tracks.map(tr => tr.id)); }, [sheet]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const seen = known.current;
+    if (!seen) return;
+    const added = library.tracks.filter(tr => !seen.has(tr.id));
+    if (!added.length) return;
+    added.forEach(tr => seen.add(tr.id));
+    const newMusic = added.filter(tr => tr.kind === 'music').at(-1), newVoice = added.filter(tr => tr.kind === 'voice').at(-1);
+    const base: AudioSelection = newMusic ? { mode: 'library', trackId: newMusic.id, trackName: newMusic.name } : (() => { const { voiceId: _v, voiceName: _n, ...rest } = audio; return rest; })();
+    const withVoice = newVoice ? { voiceId: newVoice.id, voiceName: newVoice.name } : voice;
+    update({ audio: { ...base, ...withVoice } });
+  }, [library.tracks]); // eslint-disable-line react-hooks/exhaustive-deps
+  // the snapshot outlives the sheet: a recording saved as the sheet closes is still picked up
+  const close = () => setSheet(null);
+
   const trackMissing = shown === 'library' && !!trackId && !music.some(m => m.id === trackId);
   const voiceMissing = !!audio.voiceId && !voices.some(v => v.id === audio.voiceId);
   const uploaded = shown === 'library' || !!audio.voiceId;
@@ -279,19 +295,25 @@ function SoundGroup({ content, update, toAccount }: { content: InvitationDesignC
         <Option on={shown === 'builtin'} title={t('audioChoiceBuiltin')} text={t('audioChoiceBuiltinD')} onClick={() => choose('builtin')} />
         <Option on={shown === 'library'} disabled={!music.length && !trackMissing} title={t('audioChoiceMine')} text={music.length ? t('audioChoiceMineD') : t('audioChoiceMineEmpty')} onClick={() => choose('library')} />
       </div>
-      {/* an empty library is not a dead end: the upload lives in the account, which links straight back here */}
-      {!music.length && !trackMissing && <p className="ed-sec-hint ed-audio-empty"><AccountAnchor to={toAccount}><Icon name="upload" size="sm" />{t('audioUploadInAccount')}</AccountAnchor></p>}
       {shown === 'library' && (music.length > 0 || trackMissing) && <Field label={t('audioPickTrack')}><Select data-audio-track value={trackId ?? ''} onChange={e => pickTrack(e.target.value)}>
         {music.map(tr => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
         {trackMissing && <option value={trackId}>{t('audioTrackMissing')}</option>}
       </Select></Field>}
+      <div><Button variant="secondary" size="sm" icon="upload" data-audio-sheet="music" onClick={() => setSheet('music')}>{music.length ? t('esUploadMore') : t('esUploadMusic')}</Button></div>
       <Switch label={t('audioVoiceToggle')} hint={t('audioVoiceToggleHint')} checked={!!audio.voiceId} disabled={!voices.length && !audio.voiceId} onChange={on => setVoice(on ? (voices.find(v => v.id === audio.voiceId) ?? voices[0])?.id : undefined)} />
       {audio.voiceId && (voices.length > 1 || voiceMissing) && <Field label={t('audioVoicePick')}><Select data-audio-voice value={audio.voiceId} onChange={e => setVoice(e.target.value)}>
         {voices.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
         {voiceMissing && <option value={audio.voiceId}>{t('audioVoiceMissing')}</option>}
       </Select></Field>}
+      <div><Button variant="secondary" size="sm" icon="volume" data-audio-sheet="voice" onClick={() => setSheet('voice')}>{voices.length ? t('esRecordAgain') : t('esRecordVoice')}</Button></div>
       {uploaded && !cloudOn && <p className="ed-sec-hint" data-audio-device-note>{t('audioDeviceOnly')}</p>}
-      <p className="ed-sec-hint"><AccountAnchor to={toAccount}>{voices.length ? t('audioManage') : t('audioRecordInAccount')}</AccountAnchor></p>
+      <Dialog open={sheet === 'music'} onClose={close} variant="drawer" size="lg" title={t('esUploadMusic')} className="ed-audio-sheet">
+        <AudioLibrary embedded focus />
+      </Dialog>
+      <Dialog open={sheet === 'voice'} onClose={close} variant="drawer" title={t('esRecordVoice')} className="ed-audio-sheet"
+        footer={<Button variant="secondary" onClick={close}>{t('done')}</Button>}>
+        <VoiceRecorder disabled={library.tracks.length >= MAX_AUDIO_TRACKS} onSaved={() => close()} />
+      </Dialog>
     </section>
   );
 }

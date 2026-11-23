@@ -11,10 +11,10 @@ const BASE = `http://localhost:${server.address().port}`;
 const browser = await chromium.launch({ executablePath: chromiumPath(), args: ['--enable-unsafe-swiftshader'] });
 const ROUTES = [
   '/app/events', '/app/events/new?chooser=coverflow', '/app/events/new?chooser=rail', '/prototype/design-review',
-  '/app/events/evt_engagement/invitation/templates?first=1', '/app/events/evt_wedding/invitation/templates',
+  '/app/events/evt_engagement/invitation/design?section=design',
   '/app/events/evt_wedding/invitation/design', '/app/events/evt_wedding/invitation/design?section=design',
   '/app/events/evt_wedding/invitation/design?section=motion', '/app/events/evt_wedding/invitation/design?section=event',
-  '/app/events/evt_wedding/overview', '/app/events/evt_wedding/invitation',
+  '/app/events/evt_wedding/overview',
   '/app/events/evt_wedding/guests', '/app/events/evt_wedding/guests?party=pty_w29', '/app/events/evt_wedding/guests/import',
   '/app/events/evt_wedding/rsvp', '/app/events/evt_wedding/rsvp?tab=unmatched', '/app/events/evt_wedding/seating',
   '/app/events/evt_wedding/check-in', '/app/events/evt_wedding/settings', '/app/events/evt_katb/summary', '/app/events/evt_wedding/more',

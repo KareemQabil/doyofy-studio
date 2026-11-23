@@ -1,6 +1,6 @@
 /**
  * "What guests will see" preview of the latest draft, from the guest's first screen (the sealed envelope) to the
- * invitation itself. Phones: full-bleed under one slim bar. Desktop: a device frame standing on the invitation's
+ * invitation itself — a «ثابتة» invitation has no envelope: it opens on its pages, as it does for guests. Phones: full-bleed under one slim bar. Desktop: a device frame standing on the invitation's
  * own setting. Replies are not recorded.
  */
 import { useEffect, useRef, useState } from 'react';
@@ -28,9 +28,10 @@ export function GuestPreview({ eventId }: { eventId: string }) {
   const event = ev.data;
   // always live: the preview is exactly what guests get
   const content = event && !design.loading ? liveDesign(design.data, event) : null;
+  const at = content?.experience.motion === 'static' ? 'invitation' : phase.at;
 
   useEffect(() => {
-    if (phase.at !== 'invitation' || !event || !content || !host.current) return;
+    if (at !== 'invitation' || !event || !content || !host.current) return;
     let studio: { destroy(): void } | null = null;
     let alive = true;
     loadEngine().then((eng) => {
@@ -45,7 +46,7 @@ export function GuestPreview({ eventId }: { eventId: string }) {
       (window as unknown as { __studio?: unknown }).__studio = studio;
     }).catch(setErr);
     return () => { alive = false; studio?.destroy(); };
-  }, [event?.id, design.data?.draftSavedAt, phase]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [event?.id, design.data?.draftSavedAt, phase, at]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (ev.error || design.error || err) return <ErrorState error={ev.error || design.error || err} onRetry={() => location.reload()} />;
   const view: GuestView | null = event && content ? { event, design: content, party: null, canEdit: true, maxGuests: event.settings.defaultPartySize, phase: 'before' } : null;
@@ -54,14 +55,14 @@ export function GuestPreview({ eventId }: { eventId: string }) {
       <div className="preview-bar" role="note">
         <span className="preview-bar-text"><Icon name="eye" size="sm" /><span><span className="preview-bar-long">{t('shPreviewLive')}. {t('shNoReply')}.</span><span className="preview-bar-short">{t('shPreviewShort')} · {t('shNoReply')}</span></span></span>
         <span className="preview-bar-actions">
-          {phase.at === 'invitation' && <button type="button" className="preview-restart" aria-label={t('previewRestart')} onClick={() => setPhase((p) => ({ at: 'cover', start: 'intro', run: p.run + 1 }))}><Icon name="refresh" size="sm" /><span className="preview-bar-long">{t('previewRestart')}</span></button>}
+          {at === 'invitation' && <button type="button" className="preview-restart" aria-label={t('previewRestart')} onClick={() => setPhase((p) => ({ at: 'cover', start: 'intro', run: p.run + 1 }))}><Icon name="refresh" size="sm" /><span className="preview-bar-long">{t('previewRestart')}</span></button>}
           <Link to={back} className="preview-close" aria-label={t('shClosePreview')}><Icon name="close" size="sm" /><span className="preview-bar-long">{t('shClosePreview')}</span><span className="preview-bar-short">{t('close')}</span></Link>
         </span>
       </div>
       {content && <SceneBackdrop sceneId={content.sceneId} className="preview-backdrop" />}
       {!view ? <div className="preview-loading"><PageLoader name="envelope" label={t('shPreparing')} /></div>
         : <div className="preview-device">
-          {phase.at === 'cover'
+          {at === 'cover'
             ? <SealCover key={phase.run} view={view} onOpen={() => setPhase((p) => ({ ...p, at: 'invitation', start: 'intro' }))} onDetails={() => setPhase((p) => ({ ...p, at: 'invitation', start: 'card' }))} />
             : <div key={phase.run} ref={host} className="preview-host" />}
         </div>}

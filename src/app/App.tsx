@@ -8,10 +8,8 @@ import { EventWorkspace } from '../features/workspace/EventWorkspace';
 import { EventsHome } from '../features/events/EventsHome';
 import { CreateEvent } from '../features/events/CreateEvent';
 import { Overview } from '../features/overview/Overview';
-import { InvitationSummary } from '../features/invitation/InvitationSummary';
 import { InvitationEditor } from '../features/editor/InvitationEditor';
 import { GuestPreview } from '../features/invitation/GuestPreview';
-import { TemplateGallery } from '../features/templates/TemplateGallery';
 import { GuestsPage } from '../features/guests/GuestsPage';
 import { ImportFlow } from '../features/guests/import/ImportFlow';
 import { RsvpPage } from '../features/rsvp/RsvpPage';
@@ -48,8 +46,9 @@ const routes: RouteDef[] = [
   { path: '/app/events/new', render: () => <CreateEvent /> },
   { path: '/app/events/:eventId', render: (p) => <Redirect to={paths.overview(p.eventId!)} /> },
   { path: '/app/events/:eventId/overview', render: ws('overview', (e) => <Overview event={e} />) },
-  { path: '/app/events/:eventId/invitation', render: ws('invitation', (e) => <InvitationSummary event={e} />) },
-  { path: '/app/events/:eventId/invitation/templates', render: (p) => <TemplateGallery eventId={p.eventId!} /> },
+  // one place for the invitation: its editor. Old links to the summary and the design gallery land there
+  { path: '/app/events/:eventId/invitation', render: (p) => <Redirect to={paths.invitation(p.eventId!)} /> },
+  { path: '/app/events/:eventId/invitation/templates', render: (p) => <Redirect to={paths.design(p.eventId!, 'design')} /> },
   { path: '/app/events/:eventId/invitation/design', render: (p) => <InvitationEditor eventId={p.eventId!} /> },
   { path: '/app/events/:eventId/invitation/preview', render: (p) => <GuestPreview eventId={p.eventId!} /> },
   { path: '/app/events/:eventId/guests', render: ws('guests', (e) => <GuestsPage event={e} />) },

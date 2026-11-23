@@ -28,19 +28,37 @@ test('every occasion has two distinct dedicated looks and a relevant recommended
     assert.equal(preset.primaryOccasion, type.id);
     const design = defaultDesign(event(type.id));
     assert.equal(presetOf(design)?.id, preset.id);
-    assert.equal(design.message.ar, starter.message.ar);
-    assert.ok(design.program.length >= 2);
-    if (type.id !== 'wedding') assert.ok(design.program.every(p => p.ar !== 'الزفّة'), type.id);
+    assert.equal(design.message.ar, starter.message);
+    // nothing the organizer did not write reaches guests: no English line, no programme
+    assert.equal(design.message.en, '', `${type.id}: no English line written for the organizer`);
+    assert.deepEqual(design.program, [], `${type.id}: the programme starts empty`);
   }
 });
 
-test('new-event starter content is not shared between drafts; midnight and wraparound times work', () => {
+test('new-event starter content is not shared between drafts', () => {
   const a = defaultDesign(event('conference')), b = defaultDesign(event('conference'));
-  a.message.ar = 'تعديل'; a.program[0]!.ar = 'تعديل'; a.experience.motion = 'static';
-  assert.notEqual(a.message.ar, b.message.ar); assert.notEqual(a.program[0]!.ar, b.program[0]!.ar);
+  a.message.ar = 'تعديل'; a.program.push({ time: '20:00', ar: 'تعديل', en: '' }); a.experience.motion = 'static';
+  assert.notEqual(a.message.ar, b.message.ar); assert.deepEqual(b.program, []);
   assert.equal(b.experience.motion, 'animated');
-  assert.equal(defaultDesign({ ...event('wedding'), time: '00:00' }).program[0]!.time, '00:00');
-  assert.deepEqual(defaultDesign({ ...event('wedding'), time: '23:30' }).program.map(p => p.time), ['23:30', '00:30', '01:30']);
+});
+
+test('an invitation without English is Arabic only: no Latin names, date, label or engine words', async () => {
+  const { currentStrings } = await import('../../src/data/strings.js');
+  const plain: Event = { ...event('graduation'), names: { a: 'جود' }, venue: { name: 'قاعة اللقاء', city: 'الرياض' } };
+  const inv = toInvitationData(plain, defaultDesign(plain));
+  assert.equal(inv.locale.secondary, null);
+  const { c, english, program, mapHref } = deriveContent(inv);
+  assert.equal(english, false);
+  for (const k of ['enA', 'dayEnU', 'dateEn', 'monthEnU', 'timeEn', 'venueEn', 'cityEnU', 'labelEnU'] as const) assert.equal(c[k], '', k);
+  assert.equal(program.length, 0);
+  assert.ok(mapHref, 'the map still finds the place from its Arabic name');
+  for (const face of ['kit-cap-diamond', 'ty-vertical', 'kit-forum-stars']) assert.doesNotMatch(CardRegistry.get(face).render(deriveContent(inv, { digits: CardRegistry.get(face).digits }).c), /GRADUATION|lang="en"/, face);
+  const ar = currentStrings('ar', false);
+  assert.equal(ar.tapToOpen.en, ''); assert.equal(ar.sealSend.en, ''); assert.equal(ar.namePlaceholder.includes('Type'), false);
+  // English written by the organizer turns the bilingual lines on
+  const withEn = toInvitationData({ ...plain, names: { a: 'جود', aEn: 'Joud' } }, defaultDesign(plain));
+  assert.equal(withEn.locale.secondary, 'en'); assert.equal(deriveContent(withEn).c.enA, 'Joud');
+  assert.equal(currentStrings('ar', true).tapToOpen.en, 'Tap the card to open');
 });
 
 test('catalogue uses unique engine recommendations, without fake card/scene combinations', () => {

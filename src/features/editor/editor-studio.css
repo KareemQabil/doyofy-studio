@@ -11,7 +11,7 @@
 
 /* ------------------------------------------------------------------ shared */
 :root[data-theme] .ed-v3 { --bar-h: 64px; min-height: 100dvh; display: flex; flex-direction: column; background: var(--c-canvas); }
-:root[data-theme] .ed-v3 .ed-preview-icon { display: none; }
+:root[data-theme] .ed-v3 .ed-preview-short { display: none; }
 
 /* header: back · title + status · preview · the one forward action */
 :root[data-theme] .ed-v3 .ed-bar { display: flex; align-items: center; gap: 16px; }
@@ -146,8 +146,10 @@
   :root[data-theme] .ed-v3 .ed-live { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; max-width: 100%; }
   :root[data-theme] .ed-v3 .ed-live::before { content: none; }
   :root[data-theme] .ed-v3 .ed-actions { gap: 6px; }
-  :root[data-theme] .ed-v3 .ed-preview-btn { display: none; }
-  :root[data-theme] .ed-v3 .ed-preview-icon { display: inline-flex; width: 44px; min-height: 44px; }
+  /* «معاينة كضيف» keeps a word on a phone: the short «معاينة» beside its eye */
+  :root[data-theme] .ed-v3 .ed-preview-btn { min-height: 44px; padding-inline: 10px; gap: 4px; font-size: 13px; white-space: nowrap; }
+  :root[data-theme] .ed-v3 .ed-preview-long { display: none; }
+  :root[data-theme] .ed-v3 .ed-preview-short { display: inline; }
   :root[data-theme] .ed-v3 .ed-send { min-height: 44px; padding-inline: 12px; font-size: 13px; white-space: nowrap; }
   :root[data-theme] .ed-v3 .ed-send .icon { display: none; }
 

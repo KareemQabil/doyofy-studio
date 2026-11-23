@@ -10,7 +10,7 @@
 .wz-steps li { display: flex; align-items: center; flex: 1; min-width: 0; color: var(--c-text-3); }
 .wz-steps li + li::before { content: ''; flex: 1; height: 1px; margin-inline-end: 6px; background: var(--c-hairline-strong); max-width: 48px; }
 .wz-steps li.is-done + li::before { background: var(--c-text-2); }
-.wz-steps :is(button, span[aria-label]) { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; border: 0; background: none; color: inherit; font: 500 13px/1.2 var(--font-display); white-space: nowrap; cursor: default; }
+.wz-steps :is(button, li > span) { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; border: 0; background: none; color: inherit; font: 500 13px/1.2 var(--font-display); white-space: nowrap; cursor: default; }
 .wz-steps button { cursor: pointer; color: var(--c-text-2); border-radius: var(--r-pill); }
 .wz-steps button:hover .wz-step-label { text-decoration: underline; text-underline-offset: 4px; }
 .wz-step-n { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid currentColor; font-size: 12px; }
@@ -158,7 +158,7 @@
   :root[data-theme] .wz-deck { --wz-chrome: 404px; }
   .wz-steps ol { gap: 2px; padding: 0 8px; }
   .wz-steps li + li::before { margin-inline-end: 4px; }
-  .wz-steps :is(button, span[aria-label]) { font-size: 12.5px; gap: 5px; }
+  .wz-steps :is(button, li > span) { font-size: 12.5px; gap: 5px; }
   .wz-pair { grid-template-columns: minmax(0, 1fr); }
   .wz-head h2 { font-size: 26px; }
   .wz-head p { font-size: 13.5px; }

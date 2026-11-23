@@ -88,8 +88,9 @@ export async function run() {
     await click(radios[2]);
     assert.deepEqual(last.audio, { mode: 'library', trackId: track!.id, trackName: track!.name });
     const voiceSwitch = [...document.querySelectorAll('[role=switch]')].find(s => s.getAttribute('aria-labelledby') && document.getElementById(s.getAttribute('aria-labelledby')!)?.textContent === k.audioVoiceToggle) as HTMLButtonElement;
-    assert.ok(voiceSwitch.disabled, 'no recording yet: the voice toggle waits, with a link to record one');
-    assert.ok(text().includes(k.audioRecordInAccount));
+    assert.ok(voiceSwitch.disabled, 'no recording yet: the voice toggle waits, with a way to record one right here');
+    assert.ok(button(k.esRecordVoice), 'record in the editor, not in the account');
+    assert.equal(document.querySelector('a[href*="/app/account"]'), null, 'nothing leaves the editor');
     // a chosen upload shows the honest device-only line
     await render(<SoundSection content={{ ...content, audio: last.audio } as InvitationDesignContent} update={p => { last = p; }} />);
     assert.ok(text().includes(k.audioDeviceOnly));
@@ -142,5 +143,37 @@ export async function run() {
     assert.equal(voiceSwitch.disabled, false);
     await click(voiceSwitch);
     assert.deepEqual(last.audio, { mode: 'off', voiceId: voice.id, voiceName: voice.name }, 'a voice welcome works even with no music');
+  });
+
+  await check('the editor\'s «الصوت»: a voice recorded in its own sheet is switched on at once, without leaving the editor', async () => {
+    audioMedia.canRecord = () => true;
+    audioMedia.microphone = async () => ({ getTracks: () => [{ stop() {} }] }) as unknown as MediaStream;
+    audioMedia.level = () => ({ read: () => 0.5, close() {} });
+    audioMedia.recorder = () => {
+      const r = { state: 'inactive', mimeType: 'audio/webm;codecs=opus', ondataavailable: null as null | ((e: { data: Blob }) => void), onstop: null as null | (() => void),
+        start() { r.state = 'recording'; }, stop() { r.state = 'inactive'; r.ondataavailable?.({ data: new Blob([new Uint8Array(900)], { type: 'audio/webm;codecs=opus' }) }); r.onstop?.(); } };
+      return r as unknown as MediaRecorder;
+    };
+    const before = new Set(readAudioLibrary().tracks.map(t => t.id));
+    let content = { audio: { mode: 'builtin' }, experience: { dimension: '2d', motion: 'animated' } } as unknown as InvitationDesignContent;
+    let last: Partial<InvitationDesignContent> = {};
+    const show = () => render(<SoundSection content={content} update={p => { last = p; content = { ...content, ...p }; }} />);
+    await show();
+    await click(document.querySelector('[data-audio-sheet="voice"]'));
+    assert.ok(document.querySelector('dialog[open] .audio-voice, dialog[open]'), 'the recorder opens in a sheet over the editor');
+    const href = location.href;
+    await click(button(k.audioRecord));
+    await until('recording', () => !!document.querySelector('[data-recording]'));
+    await click(button(k.audioRecordStop));
+    await until('review', () => !!button(k.audioSaveVoice));
+    await click(button(k.audioSaveVoice));
+    await until('voice chosen', () => !!last.audio?.voiceId && !before.has(last.audio.voiceId));
+    const added = readAudioLibrary().tracks.find(t => !before.has(t.id) && t.kind === 'voice')!;
+    assert.equal(last.audio?.voiceId, added.id, 'the new recording is the invitation\'s voice welcome');
+    assert.equal(last.audio?.mode, 'builtin', 'the music choice is kept');
+    assert.equal(location.href, href, 'still in the editor');
+    await show();
+    const voiceSwitch = [...document.querySelectorAll('[role=switch]')].find(s => document.getElementById(s.getAttribute('aria-labelledby') ?? '')?.textContent === k.audioVoiceToggle) as HTMLButtonElement;
+    assert.equal(voiceSwitch.getAttribute('aria-checked'), 'true');
   });
 }

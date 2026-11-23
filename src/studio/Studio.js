@@ -15,7 +15,7 @@ import { StateMachine } from '../engine/StateMachine.js';
 import { AudioEngine } from '../engine/AudioEngine.js';
 import { detectQuality } from '../engine/Quality.js';
 import { deriveContent, countdown, localDigits, dateSep } from '../data/derive.js';
-import { LIVE_STRINGS as T, currentStrings, setStringsVoice } from '../data/strings.js';
+import { LIVE_STRINGS as T, currentStrings, setStringsEnglish, setStringsVoice } from '../data/strings.js';
 import { PAGE_ORDER } from '../pages/index.js';
 import { SCENE_AMBIENCE } from '../audio/index.js';
 import { LocalRSVPAdapter } from '../engine/rsvp.js';
@@ -44,7 +44,8 @@ export class Studio {
    *   card, scene ids; start = intro|card|pages|rsvp|done
    *   experience  { dimension: '2d', motion: 'animated' | 'static' } — the organizer's motion choice (dimension is legacy).
    *               3d = best renderer per scene (Three.js where a scene has one), 2d = canonical illustrated renderers;
-   *               static = no intro, no idle motion, frozen WebGL frame, fades instead of travel.
+   *               static = no intro, no idle motion, frozen WebGL frame, fades instead of travel — and it opens
+   *               straight on the invitation's pages (no card to tap open first), for every guest.
    *   embedded    render inside a sized container (wizard preview) instead of the full viewport
    *   showSwitcher  the authoring card/scene chooser (off for guests and inside the wizard)
    *   muted       start with sound off (wizard preview)
@@ -75,8 +76,12 @@ export class Studio {
     this.cardId = CardRegistry.has(params.get('card')) ? params.get('card') : card;
     this.invitation = invitation;
     this.data = this._derive(invitation); // after cardId: the face sets the invitation's digits
+    // the engine's own words are bilingual only when the organizer wrote English (data/derive.js `english`)
+    setStringsEnglish(this.data.english);
     this.sceneId = SceneRegistry.has(params.get('scene')) ? params.get('scene') : scene;
     this.startAt = params.get('start') || start;
+    // «ثابتة»: the guest lands on the invitation itself — no card to tap open, no «المسوا البطاقة» hint
+    if (this.quality.static && (this.startAt === 'intro' || this.startAt === 'card')) this.startAt = 'pages';
     this.reveal = RevealRegistry.get('depth-arrival');
     this.finale = FinaleRegistry.get('envelope');
     this.audio = new AudioEngine({ base: assetBase });
@@ -89,10 +94,11 @@ export class Studio {
     this._build();
   }
 
-  /** the pages this invitation has: «المكان» only when there is a place (the venue is optional at creation) */
+  /** the pages this invitation has: «البرنامج» only when the organizer wrote one, «المكان» only when there is a place
+   *  (both are optional) */
   _pages() {
-    const { c, mapHref } = this.data;
-    return PAGE_ORDER.filter((id) => id !== 'venue' || !!(c.venueAr || c.cityAr || mapHref));
+    const { c, mapHref, program } = this.data;
+    return PAGE_ORDER.filter((id) => (id !== 'venue' || !!(c.venueAr || c.cityAr || mapHref)) && (id !== 'program' || program.length > 0));
   }
   _last() { return this._pages().length - 1; }
 
@@ -192,7 +198,7 @@ export class Studio {
     const en = [c.enA !== c.arA && c.enAU, couple && c.enB !== c.arB && c.enBU].filter(Boolean).map(e).join(' &amp; ');
     this.el.credit.innerHTML = `<span class="fx-foil" style="font-family: ${this.theme.fAr}; font-size: ${couple ? 58 : Math.min(58, Math.max(30, Math.round(420 / Math.max(1, [...c.arA].length))))}px; line-height: 1.45; text-align: center">${ar}</span>
       ${en ? `<span dir="ltr" style="font-size: 12px; letter-spacing: 0.42em; color: #E3C58C; margin-top: 4px">${en}</span>` : ''}
-      <span dir="ltr" style="font-size: 11px; letter-spacing: 0.34em; color: rgba(243,217,160,.7); margin-top: 18px">${couple ? T.honour : T.honourSingle}</span>`;
+      ${(couple ? T.honour : T.honourSingle) ? `<span dir="ltr" style="font-size: 11px; letter-spacing: 0.34em; color: rgba(243,217,160,.7); margin-top: 18px">${couple ? T.honour : T.honourSingle}</span>` : ''}`;
   }
 
   _onState(state, from, via) {
@@ -479,7 +485,7 @@ export class Studio {
     // (the English line would only repeat it); a real one keeps the English thank-you under the Arabic
     const demo = !!r.receipt?.demo;
     q('.done-en').textContent = demo ? '' : th.en;
-    q('.done-en').hidden = demo;
+    q('.done-en').hidden = demo || !th.en;
     q('.done-demo').hidden = !demo;
     q('.done-demo').textContent = demo ? S.demoOnly : '';
     // what focus lands on (st-done-said): the thanks, and for a demo the honest line with it
@@ -509,7 +515,8 @@ export class Studio {
     const host = this.host;
 
     // first meaningful gesture unlocks audio (never audible before)
-    const unlock = () => { if (this.audio.unlock()) { this.audio.setAmbience(SCENE_AMBIENCE[this.sceneId] || null); if (this.sm.state === 'pages') this.audio.startMusic(); } };
+    // an invitation that opened straight on its pages («ثابتة») gets its voice welcome with the first touch instead
+    const unlock = () => { if (this.audio.unlock()) { this.audio.setAmbience(SCENE_AMBIENCE[this.sceneId] || null); if (this.sm.state === 'pages') { this.audio.startMusic(); if (!this.audio.voicePlayed) void this.audio.playVoice(); } } };
     on(host, 'pointerdown', unlock, { capture: true });
     on(host, 'keydown', unlock, { capture: true });
 

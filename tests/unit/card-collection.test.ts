@@ -117,7 +117,8 @@ test('each face declares its number system and the invitation, its pages and the
   assert.deepEqual(used, new Set(['arab', 'latn']), 'both systems are in use');
   const ev = event('wedding', 'نورة', 'فيصل');
   for (const [cardId, digits] of [['kit-rose-garden', 'arab'], ['ty-blue', 'latn']] as const) {
-    const inv = toInvitationData(ev, { ...defaultDesign(ev), cardId });
+    // the programme starts empty: one written here, so its times are checked too
+    const inv = toInvitationData(ev, { ...defaultDesign(ev), cardId, program: [{ time: '21:00', ar: 'العشاء', en: '' }] });
     assert.equal(inv.display.digits, digits, `${cardId}: carried by the invitation data`);
     const { c, program } = deriveContent(inv);
     const own = digits === 'arab' ? ARABIC : LATIN, other = digits === 'arab' ? LATIN : ARABIC;

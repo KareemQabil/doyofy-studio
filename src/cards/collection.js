@@ -70,7 +70,8 @@ const bigDay = (c) => `<div class="kc-day"><span class="kc-day-side">${e(c.dayAr
 const stack = (c) => `<div class="kc-stack"><div>${icon('calendar')}<span>${e(c.dayAr)}${sep(c)}${e(c.dateAr)}</span></div><div>${icon('clock')}<span>${e(c.timeAr)}</span></div>${place(c) ? `<div>${icon('pin')}<span>${e(c.venueAr || c.cityAr)}${c.venueAr && c.cityAr ? `<small>${e(c.cityAr)}</small>` : ''}</span></div>` : ''}</div>`;
 /** one compact line under the names: weekday، date، time, then venue، city */
 const when = (c) => `<div class="kc-lines"><div class="kc-date">${e(c.dayAr)}${sep(c)}${e(c.dateAr)}${sep(c)}${e(c.timeAr)}</div>${place(c) ? `<div class="kc-place">${place(c)}</div>` : ''}</div>`;
-const latin = (c) => `<div class="kc-latin" lang="en" dir="ltr">${e(c.eventLabelEnU)}</div>`;
+/** the occasion's English label: only on an invitation the organizer gave English (data/derive.js labelEnU) */
+const latin = (c) => (c.labelEnU ? `<div class="kc-latin" lang="en" dir="ltr">${e(c.labelEnU)}</div>` : '');
 
 const KC_STYLE = `<style>
 .kc .oc-inner{gap:6px}
@@ -417,7 +418,7 @@ const DESIGNS = [
   {
     id: 'ty-vertical', digits: 'latn', fit: [70, 182, 0.4], cls: 'tv', name: 'عنوان عمودي', type: 'conference', style: 'modern', swatch: '#4B2A8C', tone: 'light', scenes: ['marble', 'sea', 'palace'],
     theme: { paper: '#FFFFFF', ink: '#2A1F45', muted: '#564C6E', accent: '#7A5AC8', aText: '#4B2A8C', env: '#2A1F45', fAr: RX },
-    back: (c) => `<div class="kc-vlabel" aria-hidden="true">${e(c.eventLabelEnU)}</div><div class="kc-vrule"></div>`,
+    back: (c) => `${c.labelEnU ? `<div class="kc-vlabel" aria-hidden="true">${e(c.labelEnU)}</div>` : ''}<div class="kc-vrule"></div>`,
     body: (c, n) => `${head(c)}${n}${stack(c)}`,
   },
   {

@@ -17,6 +17,9 @@ globalThis.matchMedia = () => ({ matches: true, addEventListener() {}, removeEve
 globalThis.ResizeObserver = class { observe() {} disconnect() {} };
 globalThis.requestAnimationFrame = fn => setTimeout(fn, 16);
 globalThis.cancelAnimationFrame = clearTimeout;
+// the editor's upload/record sheets are native <dialog>s
+dom.window.HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
+dom.window.HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
 try {
   await build({ entryPoints: ['tests/dom/audio.tsx'], outfile: output, bundle: true, platform: 'node', format: 'esm', jsx: 'automatic', packages: 'external', logLevel: 'warning' });
   const { run } = await import(pathToFileURL(output).href); await run();

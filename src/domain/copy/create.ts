@@ -54,7 +54,7 @@ export const CREATE = voiced({
 
 /** accessible names in the wizard and the feed */
 export const CREATE_MORE = partly({
-  wzStepsLabel: 'خطوات إنشاء المناسبة', wzStepOf: 'الخطوة {n} من 3: ', wzStepCurrent: ' (الخطوة الحالية)', wzStepBack: 'الخطوة {n} من 3: {label} — رجوع إليها',
+  wzStepsLabel: 'خطوات إنشاء المناسبة', wzStepOf: 'الخطوة {n} من 2: ', wzStepCurrent: ' (الخطوة الحالية)', wzStepBack: 'الخطوة {n} من 2: {label} — رجوع إليها',
   wzDeckLabel: 'اختر نوع المناسبة — اسحب يمينًا للتالي', wzResults: 'نتائج البحث', wzFeedTitle: 'اختر تصميم دعوة {type}', wzChangeZone: 'تغيير المنطقة الزمنية', wzPreviewAside: 'معاينة الدعوة', wzLivePreview: 'معاينة حية لدعوة {type}',
   tfRole: 'معرض عمودي', tfOf: '{name} — {i} من {n}', tfToolbar: 'خيارات التصميم', tfPrev: 'التصميم السابق', tfNext: 'التصميم التالي', tfCountWord: 'التصميم ', tfCountOf: ' من ', tfCopyLabel: 'رابط التصميم — انسخه للمشاركة',
 }, {

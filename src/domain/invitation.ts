@@ -24,24 +24,30 @@ export function resolveDesign<T extends Pick<InvitationDesignContent, 'cardId' |
   return { ...c, cardId: preset.cardId, sceneId: preset.sceneId };
 }
 
-/** A new invitation starts in its occasion's visual language, with editable relevant copy. */
+/**
+ * A new invitation starts in its occasion's own (featured) design with one editable Arabic line. The English line
+ * and the programme start empty: guests see only what the organizer wrote (an empty programme has no page).
+ */
 export function defaultDesign(ev: Event): InvitationDesignContent {
   const starter = OCCASION_STARTERS[ev.type];
   const preset = presetById(starter.presetId)!;
-  const [hours, minutes] = ev.time.split(':').map(Number);
-  const start = Number.isFinite(hours) && Number.isFinite(minutes) ? hours! * 60 + minutes! : 19 * 60;
-  const timeAfter = (after: number) => {
-    const total = (start + after) % (24 * 60);
-    return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
-  };
   return {
     experience: { ...preset.experience },
     cardId: preset.cardId,
     sceneId: preset.sceneId,
     displayNames: {},
-    message: { ...starter.message },
-    program: starter.program.map(({ after, ar, en }) => ({ time: timeAfter(after), ar, en })),
+    message: { ar: starter.message, en: '' },
+    program: [],
   };
+}
+
+/**
+ * Whether the organizer gave this invitation any English (names, place, the message or a programme line). Without
+ * it the invitation is Arabic only: the engine prints no Latin names, dates or labels and its own words are Arabic.
+ */
+export function hasEnglish(ev: Pick<Event, 'names' | 'venue'>, c: Pick<InvitationDesignContent, 'displayNames' | 'message' | 'program'>): boolean {
+  const any = (...v: Array<string | undefined>) => v.some((x) => !!x?.trim());
+  return any(ev.names.aEn, ev.names.bEn, ev.venue.nameEn, ev.venue.cityEn, c.displayNames.aEn, c.displayNames.bEn, c.message.en) || c.program.some((p) => any(p.en));
 }
 
 /**
@@ -84,7 +90,8 @@ export function toInvitationData(ev: InvitationEvent, c: InvitationDesignContent
   return {
     id: `${ev.slug}`,
     audio: resolveAudioSelection(c.audio),
-    locale: { primary: 'ar', secondary: 'en' },
+    // no English written → Arabic only (data/derive.js reads `secondary: null`)
+    locale: { primary: 'ar', secondary: hasEnglish(ev, c) ? 'en' : null },
     couple: {
       a: { ar: n.a, en: n.aEn, monogram: first(n.a), initial: first(n.aEn).toUpperCase() },
       b: { ar: couple ? n.b : '', en: couple ? n.bEn : '', monogram: couple ? first(n.b) : '', initial: couple ? first(n.bEn).toUpperCase() : '' },

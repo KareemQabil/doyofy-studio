@@ -1,16 +1,19 @@
 /**
  * Invitation editor — one surface, the card is the hero (decision 2). A controlled, template-based studio, not a free canvas.
  *
- *   header — back · title with a calm save status («تم الحفظ» · «التعديلات تصل لضيوفك تلقائيًا») · «معاينة كضيف» ·
+ *   header — back (to the event's overview: the editor IS the invitation, there is no summary page behind it) · title
+ *            with a calm save status («تم الحفظ» · «التعديلات تصل لضيوفك تلقائيًا») · «معاينة كضيف» («معاينة» on a phone) ·
  *            the one forward action «أرسل للضيوف» (the guests' send flow). There is no publish step and no publish word.
  *   stage  — the live card on the invitation's own setting. Its pages (البطاقة · الكلمة · البرنامج) are swiped on the card
  *            (RTL: a swipe to the right shows the next page) and dotted under it, beside replay and «بحجم أكبر».
  *            Every text on the card (names, date, place, message) is a button that opens «النص» at its field.
- *   tools  — three tabs: النص · الشكل · الصوت.
+ *   tools  — three tabs: النص · الشكل (one grid of designs, one row of backgrounds, motion) · الصوت (upload and record
+ *            in place).
  * Desktop: the tools are an RTL side panel beside the stage.
- * Phone: the tools are a bottom sheet whose tab row is the only toolbar (peek). A tab opens it (half / full); the stage
- *   above always keeps the card in view and shrinks smoothly — while typing it becomes a live mini card. Leaving a field
- *   restores the previous height; «إخفاء» returns to the full card.
+ * Phone: the tools are a bottom sheet whose tab row is the only toolbar (peek). A tab opens it (half / full) and only
+ *   switches tabs once open — it never folds the sheet away; the handle and «إخفاء» do that. The stage above always
+ *   keeps the card in view and shrinks smoothly — while typing it becomes a live mini card, and the focused field's
+ *   label stays in view under the tab row. Leaving a field restores the previous height.
  *
  * Rules:
  * - every invitation change autosaves (debounced) and the header always says so, calmly
@@ -18,7 +21,7 @@
  *   the card, shown on the card as they are typed, and saved to the event once valid (debounced, like the design)
  * - names on the card ARE the event's names: an old design's separate card names still load, but the editor no longer
  *   offers them and its first save drops them
- * - "غيّر التصميم" saves first, then opens the gallery; a template never erases texts
+ * - a design or background never erases texts; a shared design link (?template=) is applied once, to a new invitation
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Event, InvitationDesign, InvitationDesignContent } from '../../domain/types';
@@ -247,7 +250,8 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
       const details = el.closest('details');
       if (details && !details.open) details.open = true;
       el.focus({ preventScroll: true });
-      el.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+      // the whole field, its label included, comes into view (not just the input)
+      (el.closest('.field') ?? el).scrollIntoView?.({ block: 'center', behavior: 'smooth' });
       return true;
     };
     // already in view: focus in the same tap, so a phone raises its keyboard
@@ -273,13 +277,9 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   const shown = useMemo(() => previewEvent(event, evDraft), [event, evDraft]);
   const invitation = useMemo(() => toInvitationData(shown, content, event.settings.defaultPartySize), [shown, content, event.settings.defaultPartySize]);
   const guestPreview = () => leave(`${paths.preview(event.id)}?from=design&section=${section}`);
-  const changeTemplate = () => leave(paths.templates(event.id));
-  const close = () => leave(paths.invitation(event.id));
+  const close = () => leave(paths.overview(event.id));
   // «أرسل للضيوف»: the guests' send flow (it opens the share sheet for those not sent yet)
   const send = () => leave(paths.guests(event.id, { share: 'unsent' }));
-  // the account's sound library, with a way straight back to this tab («ارجع للتصميم»)
-  const accountPath = paths.account({ section: 'audio', back: paths.design(event.id, 'motion') });
-  const toAccount = { href: accountPath, go: () => leave(accountPath) };
 
   // phone sheet: three stops (peek = the tab row only · half · full, which still keeps a mini card above).
   // The handle follows the finger, snaps by position and velocity, a tap toggles, arrow keys step between stops.
@@ -303,14 +303,27 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
     e.preventDefault();
     setSheet((s) => STOPS[Math.max(0, Math.min(2, STOPS.indexOf(s) + (e.key === 'ArrowUp' ? 1 : -1)))]!);
   };
-  // phones: the tab row is the toolbar — a tab opens the sheet; the open tab hides it again
+  // phones: the tab row is the toolbar — a tab opens the sheet from its peek. Once open a tab only switches tabs
+  // (tapping the open one again never folds the sheet away under the finger): the handle and «إخفاء» close it.
   const onTabs = (e: React.MouseEvent) => {
-    if (!phone) return;
+    if (!phone || sheet !== 'peek') return;
     const tab = (e.target as HTMLElement).closest('[role="tab"]');
     if (!tab) return;
-    const value = tab.id.replace('ed-tab-', '') as EditorSection;
-    if (sheet === 'peek') setSheet(value === 'design' ? 'full' : 'half');
-    else if (value === section) setSheet('peek');
+    setSheet(tab.id === 'ed-tab-design' ? 'full' : 'half');
+  };
+  // the focused field's label never hides under the sheet's tab row: the field (label included) is scrolled into the
+  // panel's view, again once the keyboard has resized it
+  const keepLabel = (target: HTMLElement) => {
+    const field = target.closest<HTMLElement>('.field, .ed-program li, .ed-group');
+    if (!field || !body.current) return;
+    const fit = () => {
+      const box = body.current;
+      if (!box || !field.isConnected) return;
+      const above = field.getBoundingClientRect().top - box.getBoundingClientRect().top;
+      if (above < 8) box.scrollTop += above - 8;
+    };
+    requestAnimationFrame(fit);
+    window.setTimeout(fit, 360);
   };
 
   // one status for the design and the event: pending and in-flight read the same, so it does not flicker while typing
@@ -336,8 +349,8 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
           </p>
         </div>
         <div className="ed-actions">
-          <Button variant="secondary" icon="eye" className="ed-preview-btn" onClick={guestPreview}>{t('editorPreview')}</Button>
-          <IconButton variant="secondary" icon="eye" className="ed-preview-icon" label={t('editorPreview')} onClick={guestPreview} />
+          {/* one button; a phone shows its short word («معاينة»), the full name stays its accessible name */}
+          <Button variant="secondary" icon="eye" className="ed-preview-btn" aria-label={t('editorPreview')} onClick={guestPreview}><span className="ed-preview-long">{t('editorPreview')}</span><span className="ed-preview-short" aria-hidden="true">{t('edPreviewShort')}</span></Button>
           <Button variant="primary" icon="send" className="ed-send" onClick={send}>{t('edSend')}</Button>
         </div>
       </header>
@@ -356,11 +369,11 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
             <Segmented label={t('edTabsLabel')} panels="ed" value={section} onChange={(v: EditorSection) => setSection(v)} options={SECTIONS.map((s) => ({ ...s, label: t(s.label) }))} className="ed-tabs" />
           </div>
           <div ref={body} className="ed-panel-body" role="tabpanel" id={`ed-${section}`} aria-labelledby={`ed-tab-${section}`}
-            onFocusCapture={(e) => { const p = (e.target as HTMLElement).closest('[data-page-for]')?.getAttribute('data-page-for') as WorkbenchPage | null; if (p && pages.includes(p)) setPage(p); }}>
+            onFocusCapture={(e) => { const el = e.target as HTMLElement; const p = el.closest('[data-page-for]')?.getAttribute('data-page-for') as WorkbenchPage | null; if (p && pages.includes(p)) setPage(p); if (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) keepLabel(el); }}>
             <span id="editor-controls" tabIndex={-1} />
             {section === 'content' && <TextSection event={event} draft={evDraft} onDraft={editEvent} errors={evErrors} content={content} update={update} />}
-            {section === 'design' && <DesignSection event={shown} content={content} invitation={invitation} update={update} onChangeTemplate={changeTemplate} />}
-            {section === 'motion' && <SoundSection content={content} update={update} toAccount={toAccount} />}
+            {section === 'design' && <DesignSection event={shown} content={content} invitation={invitation} update={update} />}
+            {section === 'motion' && <SoundSection content={content} update={update} />}
           </div>
         </aside>
 

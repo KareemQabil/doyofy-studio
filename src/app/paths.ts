@@ -13,9 +13,10 @@ export const paths = {
   newEvent: '/app/events/new',
   event: ev,
   overview: (id: string) => `${ev(id)}/overview`,
-  invitation: (id: string) => `${ev(id)}/invitation`,
+  /** the invitation IS its editor: the «الدعوة» tab and every link to the invitation open it (the old /invitation
+   *  summary and /invitation/templates gallery redirect there for links already shared) */
+  invitation: (id: string) => `${ev(id)}/invitation/design`,
   design: (id: string, section?: string) => `${ev(id)}/invitation/design${q({ section })}`,
-  templates: (id: string, opts: { first?: boolean } = {}) => `${ev(id)}/invitation/templates${q({ first: opts.first ? '1' : undefined })}`,
   preview: (id: string) => `${ev(id)}/invitation/preview`,
   guests: (id: string, opts: { filter?: string; party?: string; q?: string; share?: string } = {}) => `${ev(id)}/guests${q(opts)}`,
   importGuests: (id: string) => `${ev(id)}/guests/import`,

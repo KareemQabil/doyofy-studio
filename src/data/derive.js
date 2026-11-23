@@ -39,6 +39,8 @@ function fmtTime12(hhmm, digits) {
 /** `opts.digits` (the face being drawn) wins over the invitation's own `display.digits` */
 export function deriveContent(inv, opts = {}) {
   const digits = digitsOf(opts.digits ?? inv.display?.digits);
+  // `locale.secondary: null` = Arabic only (the platform sets it when the organizer wrote no English); older data has 'en'
+  const english = inv.locale?.secondary !== null;
   const d = new Date(inv.event.start);
   const tz = inv.event.timeZone;
   const en = parts(d, tz, 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
@@ -88,7 +90,18 @@ export function deriveContent(inv, opts = {}) {
     delay: (0.25 + i * 0.22).toFixed(2), tailOpacity: i === a.length - 1 ? 0 : 1,
   }));
 
-  return { c, calHref, mapHref, program, start, digits, copy: inv.copy, rsvp: inv.rsvp };
+  // English is the organizer's own choice (names, a line or a programme item written in English): without it the
+  // invitation is Arabic only — no Latin date, time, place, names or occasion label reaches the guest. The links
+  // above (calendar, map) keep their fallbacks; `eventLabelEnU` stays for the faces' occasion lookup (typeOf) and
+  // `labelEnU` is the one to print.
+  c.english = english;
+  c.labelEnU = english ? c.eventLabelEnU : '';
+  if (!english) {
+    for (const k of ['greetingEnU', 'cardFooterEnU', 'enA', 'enB', 'enAU', 'enBU', 'initA', 'initB', 'dayEn', 'dayEnU', 'dateEn', 'dateEnU', 'monthEn', 'monthEnU', 'timeEn', 'venueEn', 'venueEnU', 'cityEn', 'cityEnU']) c[k] = '';
+    for (const row of program) row.en = '';
+  }
+
+  return { c, calHref, mapHref, program, start, digits, copy: english ? inv.copy : { ...inv.copy, invitation: { ...inv.copy?.invitation, en: '' } }, rsvp: inv.rsvp, english };
 }
 
 /** live countdown parts, as the canonical Date page shows them */

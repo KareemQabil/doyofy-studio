@@ -36,16 +36,36 @@ export const STRINGS = {
 /** the voice the invitation engine speaks: set by a guest page to the organizer's (carried with the invitation) */
 let voice = null;
 export function setStringsVoice(dialect) { voice = dialect === 'ar-EG' || dialect === 'ar-SA' || dialect === 'ar' ? dialect : null; }
+/**
+ * Whether the invitation being shown has English (the organizer wrote some). The Studio sets it from its invitation;
+ * without it the engine's own words are Arabic only — no «Tap the card to open», «SAVE THE DATE» or «Send reply».
+ */
+let english = true;
+export function setStringsEnglish(on) { english = on !== false; }
+
+/** every `{ ar, en }` pair with its English emptied, and the English-only lines gone */
+function arabicOnly(strings) {
+  const out = {};
+  for (const [k, v] of Object.entries(strings)) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && typeof v.ar === 'string' && 'en' in v) out[k] = { ...v, en: '' };
+    else out[k] = v;
+  }
+  out.units = Object.fromEntries(Object.entries(strings.units).map(([k, [a]]) => [k, [a, '']]));
+  out.thanks = { yes: { ...strings.thanks.yes, en: '' }, no: { ...strings.thanks.no, en: '' } };
+  out.honour = ''; out.honourSingle = '';
+  out.namePlaceholder = String(strings.namePlaceholder).split(' · ')[0];
+  return out;
+}
 
 /**
  * Guest controls speak the organizer's voice on a guest link (setStringsVoice), otherwise this device's preference.
  * Authored invitation copy is never changed. The reply words are the platform dictionary's (domain/copy.ts), so the
  * cinematic invitation and the direct form say the same thing in every voice.
  */
-export function currentStrings(dialect = voice ?? currentDialect()) {
+export function currentStrings(dialect = voice ?? currentDialect(), withEnglish = english) {
   const k = copyFor(dialect);
   const ar = (pair, text) => ({ ...pair, ar: text });
-  return {
+  const all = {
     ...STRINGS,
     saveTheDate: ar(STRINGS.saveTheDate, k.engSaveTheDate), countingDown: ar(STRINGS.countingDown, k.engCountingDown), countingDownSingle: ar(STRINGS.countingDownSingle, k.engCountingDownSingle),
     addToCalendar: ar(STRINGS.addToCalendar, k.engAddToCalendar), theEvening: ar(STRINGS.theEvening, k.engProgramme), theVenue: ar(STRINGS.theVenue, k.engVenue),
@@ -61,7 +81,9 @@ export function currentStrings(dialect = voice ?? currentDialect()) {
     replyGroup: k.engReplyGroup, fewer: k.engFewer, more: k.engMore, replayAll: k.engReplayAll,
     thanks: { yes: ar(STRINGS.thanks.yes, k.engThanksYes), no: ar(STRINGS.thanks.no, k.engThanksNo) },
   };
+  return withEnglish ? all : arabicOnly(all);
 }
 
-/** the engine's pages read their words when they render, so a page drawn for a guest link speaks that link's voice */
+/** the engine's pages read their words when they render, so a page drawn for a guest link speaks that link's voice
+ *  (and is Arabic only when its invitation is) */
 export const LIVE_STRINGS = new Proxy(STRINGS, { get: (_, key) => currentStrings()[key] });

@@ -1,15 +1,16 @@
 /**
- * Create event — a three-step wizard with as few choices per step as possible:
- *   1. the occasion (the tactile occasion deck, with search as a fallback)
- *   2. the design: a full-screen vertical feed of the designs suited to that occasion (one per screen)
- *   3. the details: only what the invitation needs — the name(s) the occasion asks for and the date. The time is a
+ * Create event — two steps, as few decisions as possible:
+ *   1. the occasion (the tactile occasion deck, with search as a fallback); tapping the card in front moves on
+ *   2. the details: only what the invitation needs — the name(s) the occasion asks for and the date. The time is a
  *      chip on 8:00 مساءً (tap to change), the place is optional behind «أضف المكان (اختياري)», the time zone is
- *      the device's own (changed only from a small link next to the time). The chosen invitation takes shape live.
- *   → the invitation opens in the editor for fine edits; it is live from the start (no publish step).
- * The step indicator stays at the top of every step. The unfinished draft (fields, step and chosen design) is saved
- * per local account and resumed. A shared catalogue link (?type=…&template=…&preview=1) opens step 2 on that design.
+ *      the device's own (changed only from a small link next to the time). The invitation takes shape live.
+ *   → the invitation opens in the editor; it is live from the start (no publish step).
+ * There is no design step: a new invitation wears its occasion's own (featured) design, and the design is changed
+ * only in the editor's «الشكل». A shared design link (?type=…&template=…) still works: it preselects that design
+ * silently and opens on the details. The step indicator stays at the top; the unfinished draft (fields, step and a
+ * linked design) is saved per local account and resumed.
  */
-import { forwardRef, useEffect, useMemo, useRef, useState, type FormEvent, type InputHTMLAttributes } from 'react';
+import { forwardRef, useEffect, useRef, useState, type FormEvent, type InputHTMLAttributes } from 'react';
 import type { CreateEventInput, EventType } from '../../domain/types';
 import { DEFAULT_EVENT_TIME, eventTypeInfo, isCoupleEvent, validateEssentials, type EssentialsErrors } from '../../domain/event';
 import { formatEventDate, formatTime, localDateOf } from '../../domain/format';
@@ -21,13 +22,9 @@ import { useBlocker, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
 import { errorMessage } from '../../services/errors';
 import { SignatureOccasions } from '../signature/SignatureOccasions';
-import { SignatureCreatePreview, draftPreviewEvent } from '../signature/SignatureCreatePreview';
+import { SignatureCreatePreview } from '../signature/SignatureCreatePreview';
 import { presetById, type TemplatePreset } from '../../domain/templates';
-import { defaultDesign } from '../../domain/invitation';
 import { useCopy } from '../../ui/copy';
-import { TemplateFeed } from '../templates/TemplateFeed';
-import { useDesignFeed } from '../templates/design-feed';
-import { sampleEvent } from '../signature/sample-event';
 import { useMedia } from '../signature/useMedia';
 
 export const TIME_ZONES: Array<[string, string]> = [
@@ -36,7 +33,7 @@ export const TIME_ZONES: Array<[string, string]> = [
   ['Asia/Baghdad', 'بغداد'], ['Africa/Casablanca', 'الدار البيضاء'], ['Africa/Tunis', 'تونس'], ['Europe/London', 'لندن'],
 ];
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2;
 type Draft = { type: EventType | null; a: string; b: string; title: string; date: string; time: string; venue: string; city: string; timeZone: string };
 const EMPTY: Draft = { type: null, a: '', b: '', title: '', date: '', time: DEFAULT_EVENT_TIME, venue: '', city: '', timeZone: 'Asia/Riyadh' };
 
@@ -69,14 +66,15 @@ function readDraft(key: string, requested: EventType | null): { draft: Draft; te
     if (!d.type || eventTypeInfo(d.type).id !== d.type || (requested && requested !== d.type)) return null;
     if (Object.keys(EMPTY).some(k => k !== 'type' && typeof d[k] !== 'string')) return null;
     if (!TIME_ZONES.some(([zone]) => zone === d.timeZone)) return null;
-    return { draft: d as Draft, templateId: typeof saved.templateId === 'string' ? saved.templateId : undefined, step: [1, 2, 3].includes(saved.step) ? saved.step : undefined };
+    // drafts saved by the older three-step wizard (occasion · design · details) resume on the details
+    return { draft: d as Draft, templateId: typeof saved.templateId === 'string' ? saved.templateId : undefined, step: saved.step === 1 ? 1 : [2, 3].includes(saved.step) ? 2 : undefined };
   } catch { return null; }
 }
 
 /** The step indicator: always visible; finished steps can be revisited. */
 function WizardSteps({ step, onGo, disabled }: { step: Step; onGo: (s: Step) => void; disabled?: boolean }) {
   const { t } = useCopy();
-  const labels = [t('wizardOccasion'), t('wizardDesign'), t('wizardDetails')];
+  const labels = [t('wizardOccasion'), t('wizardDetails')];
   return <nav className="wz-steps" aria-label={t('wzStepsLabel')}><ol>
     {labels.map((label, i) => {
       const n = (i + 1) as Step, done = n < step, on = n === step;
@@ -127,11 +125,11 @@ function CreateEventWizard() {
   const preset = queryType && eventTypeInfo(queryType).id === queryType ? queryType : requestedTemplate?.primaryOccasion ?? null;
   const draftKey = `doyofy:create-draft:v1:${services.session.currentUser().id}`;
   const [cached] = useState(() => readDraft(draftKey, preset));
-  const fromLink = loc.search.get('preview') === '1' && !!requestedTemplate;
-  const [step, setStep] = useState<Step>(() => fromLink ? 2 : cached?.step ?? (cached?.draft.a || cached?.draft.date ? 3 : requestedTemplate ? 3 : preset ? 2 : 1));
+  // an occasion already known (from a link, or a design link) opens on the details
+  const [step, setStep] = useState<Step>(() => cached?.step ?? (cached?.draft.a || cached?.draft.date || preset ? 2 : 1));
   const [d, setD] = useState<Draft>(cached?.draft ?? { ...EMPTY, type: preset, timeZone: deviceZone() });
+  // only a shared design link chooses a design here; otherwise the occasion's own design is the invitation's
   const [selectedTemplate, setSelectedTemplate] = useState<TemplatePreset | undefined>(() => requestedTemplate ?? presetById(cached?.templateId ?? ''));
-  const [browsed, setBrowsed] = useState<TemplatePreset | null>(() => requestedTemplate ?? presetById(cached?.templateId ?? '') ?? null);
   const [resumed, setResumed] = useState(!!cached && hasTyped(cached.draft));
   const [errors, setErrors] = useState<EssentialsErrors>({});
   const [showTz, setShowTz] = useState(false);
@@ -142,7 +140,6 @@ function CreateEventWizard() {
   const typed = d.a || d.b || d.title || d.date || d.venue || d.city;
   const create = useMutation((s, input: CreateEventInput) => s.events.create(input));
   const [created, setCreated] = useState(false);
-  const feed = useDesignFeed(d.type, browsed?.id ?? selectedTemplate?.id);
   useEffect(() => {
     try {
       if (created) window.localStorage.removeItem(draftKey);
@@ -159,7 +156,6 @@ function CreateEventWizard() {
   const chooseType = (type: EventType) => {
     setD((x) => ({ ...x, type }));
     if (selectedTemplate && !selectedTemplate.occasionTags.includes(type)) setSelectedTemplate(undefined);
-    if (browsed && !browsed.occasionTags.includes(type)) setBrowsed(null);
   };
 
   const input = (): CreateEventInput => ({
@@ -175,13 +171,11 @@ function CreateEventWizard() {
     setStep(next);
     requestAnimationFrame(() => {
       window.scrollTo({ top: 0 });
-      if (next === 3 && desktop) formRef.current?.querySelector<HTMLInputElement>('input')?.focus();
-      // step 3 on a phone: focus starts on the step's own heading (what it asks), not on the whole page
-      else document.querySelector<HTMLElement>(next === 2 ? '.tf-scroll' : '.wz-details-title')?.focus({ preventScroll: true });
+      if (next === 2 && desktop) formRef.current?.querySelector<HTMLInputElement>('input')?.focus();
+      // the details on a phone: focus starts on the step's own heading (what it asks), not on the whole page
+      else if (next === 2) document.querySelector<HTMLElement>('.wz-details-title')?.focus({ preventScroll: true });
     });
   };
-  const shown = feed.list.find(p => p.cardId === browsed?.cardId) ?? feed.list.find(p => p.cardId === selectedTemplate?.cardId) ?? feed.list[0] ?? null;
-  const chooseDesign = () => { if (shown) { setSelectedTemplate(shown); setBrowsed(shown); } go(3); };
 
   const submit = async (ev: FormEvent) => {
     ev.preventDefault();
@@ -200,8 +194,6 @@ function CreateEventWizard() {
     }
   };
 
-  // step 2 shows the designs with the names typed so far, or a labelled example couple/person before that
-  const feedEvent = useMemo(() => d.type ? (d.a.trim() ? draftPreviewEvent({ ...d, type: d.type }, today) : sampleEvent(d.type)) : null, [d, today]);
   const fields = d.type ? { ...d, type: d.type } : null;
 
   return (
@@ -210,27 +202,18 @@ function CreateEventWizard() {
       title={t('createEvent')}
       back={{ to: paths.events, label: t('cancel') }}
       footer={step === 1
-        ? <><span className="create-picked" aria-live="polite">{info ? <>{t('wzPicked')} <strong>{info.label}</strong></> : t('wzPickType')}</span><Button key="next" variant="primary" size="lg" iconEnd="forward" disabled={!d.type} onClick={() => go(2)}>{t('wizardToDesign')}</Button></>
-        : step === 2
-          ? <><Button key="back" variant="ghost" icon="back" onClick={() => go(1)}>{t('back')}</Button><Button key="choose" variant="primary" size="lg" iconEnd="forward" disabled={!shown} onClick={chooseDesign}>{t('chooseDesign')}</Button></>
-          : <><Button key="back" variant="ghost" icon="back" disabled={create.pending} onClick={() => go(2)}>{t('back')}</Button><Button key="create" variant="primary" size="lg" type="submit" form="create-event" loading={create.pending}>{t('prepareInvitation')}</Button></>}
+        ? <><span className="create-picked" aria-live="polite">{info ? <>{t('wzPicked')} <strong>{info.label}</strong></> : t('wzPickType')}</span><Button key="next" variant="primary" size="lg" iconEnd="forward" disabled={!d.type} onClick={() => go(2)}>{t('wizardToDetails')}</Button></>
+        : <><Button key="back" variant="ghost" icon="back" disabled={create.pending} onClick={() => go(1)}>{t('back')}</Button><Button key="create" variant="primary" size="lg" type="submit" form="create-event" loading={create.pending}>{t('prepareInvitation')}</Button></>}
     >
       <div className={`wz wz-step-${step}`}>
         <WizardSteps step={step} onGo={go} disabled={create.pending} />
         {/* one slim line, only when something typed was restored */}
-        {resumed && step !== 2 && <p className="wz-resume" role="status"><Icon name="info" size="sm" /><span>{t('wzResumed')}</span>
-          <button type="button" className="link-btn" onClick={() => { setD({ ...EMPTY, type: preset ?? d.type, timeZone: deviceZone() }); setErrors({}); setResumed(false); setTimeOpen(false); setPlaceOpen(false); setShowTz(false); setSelectedTemplate(requestedTemplate); setBrowsed(requestedTemplate ?? null); }}>{t('wzStartOver')}</button></p>}
+        {resumed && <p className="wz-resume" role="status"><Icon name="info" size="sm" /><span>{t('wzResumed')}</span>
+          <button type="button" className="link-btn" onClick={() => { setD({ ...EMPTY, type: preset ?? d.type, timeZone: deviceZone() }); setErrors({}); setResumed(false); setTimeOpen(false); setPlaceOpen(false); setShowTz(false); setSelectedTemplate(requestedTemplate); }}>{t('wzStartOver')}</button></p>}
         {step === 1 && <SignatureOccasions value={d.type} onChange={chooseType} onConfirm={(type) => { chooseType(type); go(2); }} />}
-        {step === 2 && feedEvent && d.type && (
-          <div className="wz-feed-page">
-            <h2 className="sr-only">{t('wzFeedTitle', { type: info?.label ?? '' })}</h2>
-            <TemplateFeed presets={feed.list} preset={shown} event={feedEvent} base={defaultDesign(feedEvent)} current={selectedTemplate?.id} currentLabel={t(fromLink && selectedTemplate?.id === requestedTemplate?.id ? 'wzSentToYou' : 'wzYourChoice')} pending={false} onNavigate={setBrowsed}
-              filters={feed.filters} filter={feed.filter} onFilter={feed.setFilter} emptyAction={() => feed.setFilter('for-you')} />
-          </div>
-        )}
-        {step === 3 && fields && (
+        {step === 2 && fields && (
           <div className="wz-details">
-            {!desktop && <SignatureCreatePreview compact fields={fields} today={today} template={selectedTemplate} onChangeDesign={() => go(2)} />}
+            {!desktop && <SignatureCreatePreview compact fields={fields} today={today} template={selectedTemplate} />}
             <form id="create-event" ref={formRef} className="wz-form" onSubmit={submit} noValidate>
               <header className="wz-head wz-head-start">
                 <h2 className="wz-details-title" tabIndex={-1}>{t('wzEssentials', { type: info?.label ?? '' })}</h2>
@@ -284,7 +267,7 @@ function CreateEventWizard() {
                 </fieldset>
               )}
             </form>
-            {desktop && <aside className="wz-aside sig-create-aside" aria-label={t('wzPreviewAside')}><SignatureCreatePreview fields={fields} today={today} template={selectedTemplate} onChangeDesign={() => go(2)} /></aside>}
+            {desktop && <aside className="wz-aside sig-create-aside" aria-label={t('wzPreviewAside')}><SignatureCreatePreview fields={fields} today={today} template={selectedTemplate} /></aside>}
           </div>
         )}
       </div>

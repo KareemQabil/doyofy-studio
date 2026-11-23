@@ -48,6 +48,10 @@
 .ed-picks { display: grid; gap: var(--s-4) var(--s-3); }
 .ed-cards { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); justify-items: center; }
 .ed-scenes { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+/* «الشكل»: the backgrounds are one row scrolled sideways (the design's own settings first) */
+.ed-scene-selection .ed-scenes.ed-scene-row { display: flex; gap: var(--s-3); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding-block: 6px; margin-inline: -4px; padding-inline: 4px; scrollbar-width: thin; }
+.ed-scene-selection .ed-scene-row > .ed-pick { flex: 0 0 92px; scroll-snap-align: start; }
+.ed-more { margin-top: var(--s-3); }
 .ed-pick { appearance: none; display: flex; flex-direction: column; align-items: center; gap: var(--s-2); padding: 0; border: 0; background: none; color: var(--c-text-2); font: inherit; cursor: pointer; border-radius: var(--r-md); }
 .ed-pick .card-thumb { border-radius: 8px; box-shadow: none; transition: box-shadow var(--dur-fast) var(--ease-in-out), transform var(--dur-instant) var(--ease-out); }
 .ed-pick .tpl-thumb { width: 100%; border-radius: var(--r-md); }
