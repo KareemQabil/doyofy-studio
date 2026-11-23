@@ -78,16 +78,20 @@ export const canRemind = (p: InvitationParty, now: Date): boolean =>
  * One primary action per guest, aware of state and time. «details» adds nothing to the card: the name opens them.
  * «unseat»: the guest declined but still holds a table. «wait»: a reminder would be due but the guest was just
  * invited or reminded (see remindHold) — the card says when instead of offering the reminder again.
+ * The phone is optional for real: a guest without a valid number is never stuck on «add a number» — their
+ * invitation goes as a link («link»: share it from the device or WhatsApp without a number, or copy it), and a
+ * reminder can go the same way.
  */
-export type GuestNextAction = 'phone' | 'share' | 'remind' | 'wait' | 'seat' | 'unseat' | 'arrival' | 'details';
+export type GuestNextAction = 'link' | 'share' | 'remind' | 'wait' | 'seat' | 'unseat' | 'arrival' | 'details';
 export function guestNextAction(p: InvitationParty, seatingEnabled: boolean, arrivalTime = false, now?: Date): GuestNextAction {
   if (p.checkInStatus === 'checked_in') return 'details';
   if (p.rsvpStatus === 'declined') return p.tableId ? 'unseat' : 'details';
   if (p.rsvpStatus === 'confirmed') return seatingEnabled && !p.tableId ? 'seat' : arrivalTime ? 'arrival' : 'details';
-  if (!normalisePhone(p.phone).ok) return 'phone';
-  if (!['shared', 'opened'].includes(invitationStatus(p))) return 'share';
+  if (!['shared', 'opened'].includes(invitationStatus(p))) return hasPhone(p) ? 'share' : 'link';
   return now && remindHold(p, now) ? 'wait' : 'remind';
 }
+/** a number WhatsApp/SMS can open a chat with */
+export const hasPhone = (p: Pick<InvitationParty, 'phone'>) => normalisePhone(p.phone).ok;
 
 export function duplicateDestinationNames(incoming: readonly InvitationParty[], target: readonly InvitationParty[]): string[] {
   const phones = new Set(target.map((p) => p.phone).filter(Boolean));

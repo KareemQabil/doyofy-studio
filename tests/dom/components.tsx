@@ -593,25 +593,46 @@ export async function run(){
   await click(Array.from(dialog.querySelectorAll('button')).find(b=>b.textContent?.trim()==='إضافة')!);await settle();
   const added=(await made.services.parties.list(ev.id)).find(p=>p.primaryGuestName==='عائلة الاسم فقط')!;
   assert.ok(added,'added with just a name');assert.equal(added.maxPartySize,ev.settings.defaultPartySize);assert.equal(added.phone,undefined);
+  // adding is a run: the sheet stays open, says who was added, and the name field is empty and focused for the next
+  const open=document.querySelector('dialog[open]')!;assert.ok(open.querySelector('#party-form'),'the sheet stays open after adding');
+  assert.equal(open.querySelector('.pf-added')?.textContent,'تمت إضافة عائلة الاسم فقط · أضف آخر');
+  const nameInput=open.querySelector<HTMLInputElement>('#party-form input')!;assert.equal(nameInput.value,'');assert.equal(document.activeElement,nameInput);
+  // Enter (the form's submit) adds the next one
+  await fill(nameInput,'عائلة الضيف الثاني');
+  await act(async()=>{open.querySelector('#party-form')!.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));});await settle();
+  assert.ok((await made.services.parties.list(ev.id)).some(p=>p.primaryGuestName==='عائلة الضيف الثاني'),'Enter adds the next guest');
+  assert.equal(document.querySelector('dialog[open] .pf-added')?.textContent,'تمت إضافة عائلة الضيف الثاني · أضف آخر');
   // changing the allowance is one tap away
-  await click(Array.from(document.querySelectorAll('button')).find(b=>/^(إضافة ضيف|أضف ضيفًا)$/.test(b.textContent?.trim()??''))!);await settle();
   await click(document.querySelector('dialog[open] .pf-chip')!);assert.ok(document.querySelector('dialog[open] .stepper'));
+  // closing is explicit: «تم»
+  await click(Array.from(document.querySelectorAll('dialog[open] button')).find(b=>b.textContent?.trim()==='تم')!);await settle();
+  assert.equal(document.querySelector('dialog[open] #party-form'),null,'«تم» closes the sheet');
+  // a guest without a number: «شارك الرابط» (WhatsApp without a number / device share) + «انسخ الرابط», no «أضف رقمًا»
+  const row=Array.from(document.querySelectorAll('.g2-row')).find(el=>el.textContent?.includes('عائلة الاسم فقط'))!;
+  const act1=row.querySelector<HTMLAnchorElement>('a.g2-act')!;assert.ok(act1,'a share action');assert.ok(act1.textContent?.includes('شارك الرابط'));
+  assert.ok(act1.href.startsWith('https://wa.me/?text='),'WhatsApp opens without a number');
+  assert.ok(row.querySelector('button.g2-copy[aria-label^="انسخ الرابط"]'),'the link can be copied');
+  assert.ok(!row.textContent?.includes('أضف رقم'),'no «add a number» chore');
+  assert.ok(!row.querySelector('.g2-flag'),'no «بلا رقم جوال» flag');
+  assert.ok(!Array.from(document.querySelectorAll('.g2-chip')).some(c=>c.textContent?.includes('تحتاج')),'no «تحتاج انتباهًا» lens for missing numbers');
   await render(null);history.replaceState(null,'','/');
  });
- await check('settings show the essentials first; advanced options are folded and the place is optional',async()=>{
+ await check('settings never repeat the event details: one row opens the invitation\'s «النص»; the options save on their own',async()=>{
   const ev=await made.services.events.create({type:'wedding',names:{a:'سارة',b:'أحمد'},date:event.date});
   await render(wrap(<SettingsPage event={ev}/>));await settle();
-  const adv=document.querySelector<HTMLDetailsElement>('details.settings-advanced')!;assert.ok(adv&&!adv.open,'advanced options start folded');
-  assert.equal(adv.querySelector('input, select, button'),null,'folded options are not in the tab order');
-  await act(async()=>{adv.open=true;adv.dispatchEvent(new Event('toggle'));});await settle();
-  for(const label of ['نوع المناسبة','المنطقة الزمنية','بالإنجليزية','العدد المسموح الافتراضي'])assert.ok(adv.textContent!.includes(label),`${label} is advanced`);
-  const essentials=document.querySelector('.settings .panel')!;assert.ok(essentials.querySelector('input[type=date]')&&essentials.querySelector('input[type=time]'));
-  assert.equal(document.querySelectorAll('.settings input[type=date]').length,1,'the date is asked once');
-  // with no place the form still saves: rename one name and save
-  await fill(essentials.querySelector<HTMLInputElement>('input')!,'سارة م.');
-  const save=button('حفظ التغييرات') as HTMLButtonElement;assert.ok(!save.disabled,'no venue/city needed to save');
-  await click(save);await settle();
-  const after=await made.services.events.get(ev.id);assert.equal(after.names.a,'سارة م.');assert.deepEqual([after.venue.name,after.venue.city],['','']);
+  const row=document.querySelector<HTMLAnchorElement>('a.settings-details')!;assert.ok(row,'a details row');
+  assert.ok(row.textContent?.includes('تفاصيل المناسبة')&&row.textContent.includes('عدّلها من الدعوة'));
+  assert.ok(row.textContent.includes('سارة وأحمد'),'the row summarises the details');
+  assert.ok(new URL(row.href).pathname.endsWith(`/events/${ev.id}/invitation/design`)&&new URL(row.href).searchParams.get('section')==='content','opens the editor\'s «النص»');
+  for(const sel of ['input[type=date]','input[type=time]','input[type=url]'])assert.equal(document.querySelector(`.settings ${sel}`),null,`no ${sel}: edited in the invitation only`);
+  assert.equal(document.querySelector('details.settings-advanced'),null,'nothing left to fold');
+  const text=document.querySelector('.settings')!.textContent!;
+  for(const label of ['نوع المناسبة','المنطقة الزمنية','العدد المسموح الافتراضي','رابط عام'])assert.ok(text.includes(label),`${label} is here`);
+  for(const label of ['بالإنجليزية','القاعة أو المكان','المدينة'])assert.ok(!text.includes(label),`${label} is not repeated here`);
+  // an option saves without touching the details
+  await fill(document.querySelector<HTMLInputElement>('.settings input:not([type])')!,'زفاف سارة');
+  await click(button('حفظ التغييرات'));await settle();
+  const after=await made.services.events.get(ev.id);assert.equal(after.title,'زفاف سارة');assert.equal(after.names.a,'سارة');assert.equal(after.date,ev.date);
   await render(null);
  });
  await check('organizer guest list and settings hide food while preserving wishlist controls',async()=>{
@@ -627,8 +648,8 @@ export async function run(){
  await check('import reviews and blocks ambiguous sample rows before explicit batch approval',async()=>{
   const before=(await made.services.parties.list(event.id)).length;await render(wrap(<ImportFlow eventId={event.id}/>));await settle();await click(button('استخدم الملف النموذجي'));await settle();assert.ok(document.getElementById('root')!.textContent?.includes('راجع قبل الإضافة'));assert.equal((await made.services.parties.list(event.id)).length,before);const add=Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(b=>b.textContent?.startsWith('أضف ')&&!b.textContent.includes('على أي حال'));assert.ok(add?.disabled);
  });
- await check('invalid map link blocks settings save and archive cancellation keeps the event',async()=>{
-  await render(wrap(<SettingsPage event={event}/>));await fill(document.querySelector<HTMLInputElement>('input[type=url]')!,'javascript:alert(1)');assert.ok((button('حفظ التغييرات') as HTMLButtonElement).disabled);await fill(document.querySelector<HTMLInputElement>('input[type=url]')!,'https://maps.example.test/location');assert.ok(!(button('حفظ التغييرات') as HTMLButtonElement).disabled);await click(button('أرشفة'));assert.ok(document.querySelector('dialog[open]'));await click(button('تراجع'));assert.equal((await made.services.events.get(event.id)).archivedAt,undefined);
+ await check('archive cancellation keeps the event',async()=>{
+  await render(wrap(<SettingsPage event={event}/>));await click(button('أرشفة'));assert.ok(document.querySelector('dialog[open]'));await click(button('تراجع'));assert.equal((await made.services.events.get(event.id)).archivedAt,undefined);
  });
  await act(async()=>{made.prototype.update({theme:'warm'});});
  assert.equal(matchPath('/i/:slug','/i/%ZZ'),null);

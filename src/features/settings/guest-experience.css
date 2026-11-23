@@ -38,14 +38,12 @@
 @media (max-width: 1039px) { .gxs-preview { position: static; } }
 @media (prefers-reduced-motion: reduce) { .gxs-sub { animation: none; } }
 
-/* event settings: essentials first; «خيارات متقدمة» is one folded row with the same panel rhythm inside (SettingsPage.tsx) */
-.settings-advanced { border-bottom: 1px solid var(--c-line); }
-.settings-advanced > summary { list-style: none; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 16px 0; cursor: pointer; }
-.settings-advanced > summary::-webkit-details-marker { display: none; }
-.settings-advanced > summary:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; border-radius: var(--r-sm, 6px); }
-.settings-advanced-title { display: block; font-weight: var(--fw-bold, 700); font-size: 16px; color: var(--c-text); }
-.settings-advanced-hint { display: block; margin-top: 2px; font-size: 13px; line-height: 1.6; color: var(--c-text-2); }
-.settings-advanced > summary > .icon { flex: none; color: var(--c-text-2); transition: transform 180ms var(--ease-out); }
-.settings-advanced[open] > summary > .icon { transform: rotate(180deg); }
-.settings-advanced > .panel:last-child { border-bottom: 0; }
-@media (prefers-reduced-motion: reduce) { .settings-advanced > summary > .icon { transition: none; } }
+/* Polish 3: the event's details are a summary row that opens the editor's «النص» (edited in one place only) */
+.settings-details { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 14px 18px; border: 1px solid var(--c-hairline, var(--c-line)); border-radius: var(--r-lg, 12px); background: var(--c-surface); color: var(--c-text); text-decoration: none; }
+.settings-details:hover { background: var(--c-surface-subtle); }
+.settings-details:focus-visible { outline: 2.5px solid var(--c-focus, currentColor); outline-offset: 3px; }
+.settings-details-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--c-surface-subtle); color: var(--c-text-2); flex: none; }
+.settings-details .grow { display: grid; gap: 2px; min-width: 0; }
+.settings-details-title { font: 600 15px/1.5 var(--font-display); }
+.settings-details-where { font-weight: 500; color: var(--c-text-2); }
+.settings-details-line { color: var(--c-text-2); font-size: var(--fs-sm); overflow-wrap: anywhere; }

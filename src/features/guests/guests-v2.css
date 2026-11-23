@@ -255,3 +255,9 @@
 .pf-chip .icon { color: var(--c-text-2); flex: none; }
 .pf-chip:hover { background: var(--c-surface-subtle); }
 .pf-chip:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+/* Polish 3: a guest without a number — «شارك الرابط» plus a compact copy; the add sheet's running confirmation */
+.g2-copy { position: relative; z-index: 1; min-width: 44px; min-height: 44px; margin-inline-start: -6px; }
+.g2-row.is-selecting .g2-copy { display: none; }
+.pf-added { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--c-success-soft); color: var(--c-success); font: 600 14px/1.5 var(--font-body); }
+.pf-added[hidden] { display: none; }
+.pf-added .icon { flex: none; }

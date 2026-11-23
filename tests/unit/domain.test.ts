@@ -39,6 +39,7 @@ test('headcount is derived from confirmed party sizes, not invitations', () => {
   assert.equal(c.confirmedParties, 2);
   assert.equal(c.confirmedPeople, 5);
   assert.equal(c.pendingParties, 1);
+  assert.equal(c.awaitingReply, 0, 'an unsent invitation is not waiting for a reply');
   assert.equal(c.maxSeats, 14);
 });
 

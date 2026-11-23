@@ -45,6 +45,8 @@ export interface PartyCounts {
   confirmedPeople: number;      // headcount — NOT the number of invitations
   declinedParties: number;
   pendingParties: number;
+  /** waiting for a reply to an invitation that actually went out (shared or opened) — an unsent one cannot be answered */
+  awaitingReply: number;
   openedNoReply: number;
   notShared: number;
   failed: number;
@@ -68,10 +70,13 @@ export function duplicatePhoneIds(parties: readonly InvitationParty[]): Set<stri
   return dup;
 }
 
+/** the invitation reached them (shared or opened) and they have not answered yet */
+export const isAwaitingReply = (p: InvitationParty) => p.rsvpStatus === 'pending' && (p.delivery.status === 'shared' || p.delivery.status === 'opened');
+
 export function countParties(parties: readonly InvitationParty[]): PartyCounts {
   const dup = duplicatePhoneIds(parties);
   const c: PartyCounts = {
-    parties: parties.length, maxSeats: 0, confirmedParties: 0, confirmedPeople: 0, declinedParties: 0, pendingParties: 0,
+    parties: parties.length, maxSeats: 0, confirmedParties: 0, confirmedPeople: 0, declinedParties: 0, pendingParties: 0, awaitingReply: 0,
     openedNoReply: 0, notShared: 0, failed: 0, unassignedConfirmed: 0, declinedAssigned: 0, overAllowed: 0,
     missingPhone: 0, duplicatePhones: dup.size, checkedInPeople: 0, arrivedParties: 0, partialParties: 0,
   };
@@ -87,6 +92,7 @@ export function countParties(parties: readonly InvitationParty[]): PartyCounts {
       if (p.tableId) c.declinedAssigned++;
     } else {
       c.pendingParties++;
+      if (isAwaitingReply(p)) c.awaitingReply++;
       if (p.delivery.status === 'opened') c.openedNoReply++;
     }
     if (p.delivery.status === 'not_shared') c.notShared++;
@@ -115,7 +121,7 @@ export const PARTY_FILTERS: Array<{ id: PartyFilter; label: string }> = [
 
 export function partyNeedsAttention(p: InvitationParty, dupIds: ReadonlySet<string>): string[] {
   const why: string[] = [];
-  if (!p.phone) why.push('بلا رقم جوال');
+  // no phone is not a problem to fix: the invitation goes as a link (see guestNextAction «link»)
   if (dupIds.has(p.id)) why.push('رقم مكرر');
   if (p.delivery.status === 'failed') why.push('تعذر الإرسال');
   if (p.rsvpStatus === 'pending' && p.delivery.status === 'opened') why.push('فتح الدعوة ولم يرد');
@@ -127,7 +133,8 @@ export function partyNeedsAttention(p: InvitationParty, dupIds: ReadonlySet<stri
 export function matchesFilter(p: InvitationParty, f: PartyFilter, dupIds: ReadonlySet<string>): boolean {
   switch (f) {
     case 'all': return true;
-    case 'pending': return p.rsvpStatus === 'pending';
+    // «لم يردوا» counts only invitations that went out; an unsent one sits under «لم تُرسل»
+    case 'pending': return isAwaitingReply(p);
     case 'confirmed': return p.rsvpStatus === 'confirmed';
     case 'declined': return p.rsvpStatus === 'declined';
     case 'not_shared': return p.delivery.status === 'not_shared' || p.delivery.status === 'failed';

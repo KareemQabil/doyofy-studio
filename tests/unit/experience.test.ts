@@ -59,6 +59,23 @@ test('ONE next action at a time: design → add guests → send → follow repli
   for (const i of [fresh,{...fresh,parties:unsent}]) assert.ok(!needsAttention(i).some(x=>/publish/.test(x.id)));
 });
 
+test('the phone is optional: no nag about missing numbers; «بانتظار الرد» counts only invitations that went out',()=>{
+  const now=new Date('2026-10-01T12:00:00Z');
+  const pending=(id:string,status:'not_shared'|'shared'|'opened')=>party({id,phone:undefined,rsvpStatus:'pending',confirmedPartySize:undefined,delivery:{status},checkedInCount:0,checkInStatus:'not_arrived'});
+  const i=input({now,parties:[pending('a','not_shared'),pending('b','shared'),pending('c','opened'),party({id:'d',phone:undefined,checkedInCount:0,checkInStatus:'not_arrived'})]});
+  assert.ok(!needsAttention(i).some(x=>x.id==='missing_phone'),'no «بلا رقم جوال» line');
+  assert.equal(needsAttention(i).find(x=>x.id==='pending')?.count,2,'the unsent one is not «waiting for a reply»');
+  const facts=overviewFacts(i);
+  assert.equal(facts[1]?.value,2);assert.equal(facts[1]?.spelled,'دعوتان','two is a word of its own, never «2 دعوة»');
+  // Arabic counting: 3 → «دعوات», 11 → «دعوة», 1 → «دعوة واحدة», 0 → the bare number
+  const many=(n:number)=>Array.from({length:n},(_,k)=>pending(`x${k}`,'shared'));
+  assert.equal(overviewFacts(input({now,parties:many(3)}))[1]?.unit,'دعوات');
+  assert.equal(overviewFacts(input({now,parties:many(11)}))[1]?.unit,'دعوة');
+  assert.equal(overviewFacts(input({now,parties:many(1)}))[1]?.spelled,'دعوة واحدة');
+  const zero=overviewFacts(input({now,parties:[]}))[1]!;assert.equal(zero.value,0);assert.equal(zero.unit,'');assert.equal(zero.spelled,undefined);
+  assert.equal(overviewFacts({...input({now,parties:many(3)}),dialect:'ar-EG'})[1]?.unit,'دعوات');
+});
+
 test('the reception closes the journey; tables never block an event that has not opted into seating',()=>{
   const now=new Date('2026-10-18T12:00:00Z');
   const ready=input({now,parties:[party({checkedInCount:0,checkInStatus:'not_arrived'})]});

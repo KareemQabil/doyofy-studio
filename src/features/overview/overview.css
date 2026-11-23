@@ -53,3 +53,14 @@
 .overview-grid { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:24px; }
 @media(max-width:1100px) { .event-moment { grid-template-columns:90px minmax(0,1fr); gap:24px; } .moment-flourish { display:none; } .overview-columns { grid-template-columns:minmax(0,1fr); } .recent-section { border-inline-start:0; padding-inline-start:0; border-top:1px solid var(--c-line); padding-top:24px; } }
 @media(max-width:640px) { .overview { gap:24px; } .event-overview-head { align-items:flex-start; } .event-overview-head>.btn { display:none; } .event-moment { padding:24px 20px; grid-template-columns:minmax(0,1fr); gap:12px; } .moment-calendar { flex-direction:row; align-items:baseline; gap:6px; border:0; padding:0; } .moment-day { font-size:26px; } .moment-time { margin:0; } .moment-copy h2 { font-size:var(--fs-xl); } .moment-copy>.btn { width:100%; margin-top:16px; } .journey li:not(:last-child)::after { inset-inline-start:calc(50% + 21px); inset-inline-end:calc(-50% + 21px); } .journey a { font-size:12px; } .event-facts>div { padding-inline:14px; } .event-facts strong { font-size:28px; } .event-facts dt,.event-facts dd>span { font-size:var(--fs-xs); } .event-facts dd { gap:4px; } .attention-list li { gap:8px; } .attention-icon { display:none; } .overview-grid { grid-template-columns:minmax(0,1fr); } }
+/* Polish 3: one next action + a compact status. The activity folds under «النشاط». */
+.event-facts .fact-spelled { font-size:var(--fs-lg); font-weight:600; }
+.ov-activity { border-top:1px solid var(--c-line); }
+.ov-activity>summary { display:flex; align-items:center; gap:10px; min-height:48px; cursor:pointer; list-style:none; font:600 var(--fs-md)/1.4 var(--font-display); }
+.ov-activity>summary::-webkit-details-marker { display:none; }
+.ov-activity>summary .icon { transition:transform 200ms var(--ease-out, ease); }
+.ov-activity[open]>summary .icon { transform:rotate(180deg); }
+.ov-activity-body { display:flex; flex-direction:column; gap:16px; padding-block:8px 4px; }
+/* phones: the app bar already names the event — the heading stays for screen readers and the hero leads */
+@media(max-width:640px) { .event-overview-head { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; } .overview .sig-moment { margin-block-start:4px; } }
+@media(prefers-reduced-motion:reduce) { .ov-activity>summary .icon { transition:none; } }

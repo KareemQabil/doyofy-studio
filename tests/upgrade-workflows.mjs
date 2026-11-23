@@ -241,7 +241,10 @@ try {
     await page.getByText('أصبح حدّ مناسبتك 250 شخصًا').waitFor();
     await page.getByText('تمت إضافة شخصين', { exact: false }).waitFor(); // the default invitation allows 2
     await page.waitForFunction(id => JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}').parties?.filter(p => p.eventId === id).length === 6, id);
-    await page.getByRole('button', { name: 'تم', exact: true }).click();
+    await page.locator('dialog.capacity-dialog').getByRole('button', { name: 'تم', exact: true }).click();
+    // the add sheet stays open for the next guest and says who was added (polish 3); «تم» closes it
+    await page.locator('dialog[open] .pf-added').filter({ hasText: 'ضيف بعد الترقية' }).waitFor();
+    await page.locator('dialog[open]').getByRole('button', { name: 'تم', exact: true }).click();
     const added = await page.evaluate(async id => (await window.__doyofy.services.parties.list(id)).filter(p => p.primaryGuestName === 'ضيف بعد الترقية').length, id);
     assert.equal(added, 1); await page.reload({ waitUntil: 'domcontentloaded' });
     assert.equal(await page.evaluate(async id => (await window.__doyofy.services.parties.list(id)).length, id), 6);
