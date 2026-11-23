@@ -16,6 +16,8 @@ import { defaultDesign, publishState } from '../../domain/invitation';
 import { applyPreset, presetsFor } from '../../domain/templates';
 import { swipeStep } from '../../domain/gestures';
 import { useNow } from '../../app/data';
+import { useRole } from '../shared/OwnerOnly';
+import { can } from '../../domain/roles';
 import { Link, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
 import { ErrorState, Icon, LinkButton, Skeleton, Status, PageLoader } from '../../ui';
@@ -258,6 +260,8 @@ export function SignatureHome() {
   const events = useEvents();
   const now = useNow(60000);
   const [memories, setMemories] = useState(false);
+  // a coordinator works on the owner's events; creating one of their own would be a dead end (they cannot publish)
+  const mayCreate = can(useRole(), 'event.create');
   const all = events.data ?? [];
   const { active, past } = useMemo(() => ({
     active: all.filter((e) => !['completed', 'archived'].includes(eventPhase(e, now))).sort((a, b) => a.date.localeCompare(b.date)),
@@ -277,7 +281,7 @@ export function SignatureHome() {
             {events.loading ? <PageLoader /> : events.error ? <ErrorState error={events.error} onRetry={events.refetch} /> : (
               <div className="sig-tickets">
                 {list.map((e) => <EventTicket key={e.id} event={e} />)}
-                {!memories && <Link to={paths.newEvent} className="sig-new-ticket"><span className="sig-new-plus" aria-hidden="true"><Icon name="plus" /></span><span><strong>{t('homeNewEvent')}</strong><small>{t('homeNewEventHint')}</small></span><Icon name="forward" size="sm" /></Link>}
+                {!memories && mayCreate && <Link to={paths.newEvent} className="sig-new-ticket"><span className="sig-new-plus" aria-hidden="true"><Icon name="plus" /></span><span><strong>{t('homeNewEvent')}</strong><small>{t('homeNewEventHint')}</small></span><Icon name="forward" size="sm" /></Link>}
                 {memories && !past.length && <p className="sig-empty-line">{t('homeNoPast')}</p>}
               </div>
             )}
@@ -289,7 +293,7 @@ export function SignatureHome() {
         <Stage tone="charcoal" size="lg" className="sig-closing" pattern="bloom" as="section" aria-label={t('homeStartRegion')}>
           <p className="sig-closing-kicker">ضيوفي</p>
           <p className="sig-closing-line">{t('homeClosingA')}<br /><em>{t('homeClosingB')}</em></p>
-          <div className="sig-closing-actions"><LinkButton to={paths.newEvent} variant="primary" size="lg" icon="plus">{t('homeNewEvent')}</LinkButton><Link to="/app/help" className="sig-text-link">{t('homeHowLink')}</Link></div>
+          <div className="sig-closing-actions">{mayCreate && <LinkButton to={paths.newEvent} variant="primary" size="lg" icon="plus">{t('homeNewEvent')}</LinkButton>}<Link to="/app/help" className="sig-text-link">{t('homeHowLink')}</Link></div>
         </Stage>
       </main>
     </SignatureShell>

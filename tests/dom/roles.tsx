@@ -11,6 +11,8 @@ import { EventWorkspace } from '../../src/features/workspace/EventWorkspace';
 import { SettingsPage } from '../../src/features/settings/SettingsPage';
 import { InvitationSummary } from '../../src/features/invitation/InvitationSummary';
 import { GateMode } from '../../src/features/check-in/GateMode';
+import { CreateEvent } from '../../src/features/events/CreateEvent';
+import { SignatureShell } from '../../src/features/signature/SignatureShell';
 
 export async function run() {
   let root: Root;
@@ -55,7 +57,11 @@ export async function run() {
     assert.ok(document.getElementById('gxs-diet'), 'caterer can configure dietary question');
     assert.ok(!document.getElementById('gxs-gifts'), 'food-only settings exclude wishlist');
     assert.ok(!document.querySelector('[data-general-settings]'), 'general event settings never mount for caterer');
+    // only the owner creates events (the service refuses a team member): set one up as the owner, then back to catering
+    await assert.rejects(made.services.events.create({ type: 'birthday', names: { a: 'قائمة جديدة' }, date: event.date, time: '20:00', venue: { name: 'قاعة', city: 'الرياض' } }), /صاحب المناسبة/);
+    await act(async () => made.prototype.update({ role: 'organizer' }));
     const fresh = await made.services.events.create({ type: 'birthday', names: { a: 'قائمة جديدة' }, date: event.date, time: '20:00', venue: { name: 'قاعة', city: 'الرياض' } });
+    await act(async () => made.prototype.update({ role: 'caterer' }));
     history.replaceState(null, '', `/app/events/${fresh.id}/settings`);
     await render(wrap(<EventWorkspace key={fresh.id} eventId={fresh.id} section="settings">{() => <span data-general-settings>general settings</span>}</EventWorkspace>)); await settle();
     await act(async () => { document.querySelector<HTMLButtonElement>('[aria-labelledby="gxs-meals"] [role="switch"]')!.click(); });
@@ -196,10 +202,18 @@ export async function run() {
     await act(async () => [...document.querySelectorAll<HTMLButtonElement>('.gate-result')].find((b) => b.textContent?.includes(confirmed.primaryGuestName))!.click()); await settle();
     await act(async () => document.querySelector<HTMLButtonElement>('.gate-actions.is-dock .btn-primary')!.click()); await settle();
     assert.ok(document.querySelector('.gate-done'));
+    // undo is a quiet second step: the first tap only asks, with the family's name
     await act(async () => [...document.querySelectorAll<HTMLButtonElement>('.gate-done button')].find((b) => b.textContent?.includes('تراجع'))!.click()); await settle();
+    assert.ok(document.querySelector('.gate-done'), 'still on the done card');
+    assert.match(document.querySelector('.gate-undo-ask')?.textContent ?? '', new RegExp(`إلغاء تسجيل دخول ${confirmed.primaryGuestName}؟`));
+    assert.equal(document.activeElement?.textContent, 'نعم، ألغِ الدخول', 'the question takes the focus');
+    assert.ok((await made.services.parties.get(confirmed.id)).checkedInCount > 0, 'nothing undone yet');
+    await act(async () => [...document.querySelectorAll<HTMLButtonElement>('.gate-undo-ask button')].find((b) => b.textContent === 'نعم، ألغِ الدخول')!.click()); await settle();
     assert.match(document.querySelector('.gate-notice')?.textContent ?? '', new RegExp(`تم التراجع عن دخول ${confirmed.primaryGuestName}`));
     assert.equal((await made.services.parties.get(confirmed.id)).checkedInCount, 0);
 
+    const counted = () => Number(document.querySelector('.gate-counter .num')?.textContent);
+    const before = counted();
     await type('شخص غير مدعو');
     await act(async () => [...document.querySelectorAll<HTMLButtonElement>('.gate-empty button')].find((b) => b.textContent?.includes('من خارج القائمة'))!.click()); await settle();
     const save = document.querySelector<HTMLButtonElement>('.gate-actions.is-dock button')!;
@@ -209,7 +223,21 @@ export async function run() {
     assert.match(document.querySelector('.gate-notice')?.textContent ?? '', /شخص غير مدعو/);
     const [last] = await made.services.activity.list('evt_wedding', 1);
     assert.equal(last!.kind, 'check_in_walk_in');
+    // a walk-in counts as an arrival, like a let-in declined guest, and the counter says how many came in by exception
+    assert.equal(counted(), before + 1);
+    assert.match(document.querySelector('.gate-counter-special')?.textContent ?? '', /منهم .* بإذن خاص/);
     await act(async () => made.prototype.update({ role: 'organizer' }));
   });
-  console.log('9/9 role DOM tests passed');
+  await check('coordinator cannot create an event: no «مناسبة جديدة», the route explains, the service refuses', async () => {
+    await act(async () => made.prototype.update({ role: 'coordinator' }));
+    history.replaceState(null, '', '/app/events/new');
+    await render(wrap(<><SignatureShell><span /></SignatureShell><CreateEvent /></>)); await settle();
+    assert.ok(!document.querySelector('.sig-header-new'), 'no create link in the header');
+    assert.match(document.body.textContent ?? '', /إنشاء المناسبات لصاحب المناسبة/);
+    assert.ok(!document.querySelector('form#create-event'), 'no wizard to fill in');
+    await assert.rejects(made.services.events.create({ type: 'birthday', names: { a: 'منسق' }, date: '2027-06-20', time: '20:00', venue: { name: 'قاعة', city: 'الرياض' } }), /صاحب المناسبة/);
+    await act(async () => made.prototype.update({ role: 'organizer' })); await settle();
+    assert.ok(document.querySelector('.sig-header-new'), 'the owner keeps it');
+  });
+  console.log('10/10 role DOM tests passed');
 }

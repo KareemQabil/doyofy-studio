@@ -18,6 +18,7 @@ import { errorMessage } from '../../../services/errors';
 import { useEvent, useParties, useTables } from '../../shared/queries';
 import { allocatedGuests, guestLimit, GuestLimitError } from '../../../domain/billing';
 import { useCapacityVersion } from '../../billing/CapacityMeter';
+import { useCan } from '../../shared/OwnerOnly';
 
 type Step = 'source' | 'map' | 'review' | 'done';
 
@@ -196,6 +197,8 @@ function ReviewStep({ rows, sum, error, capacity, tables, createTables, onCreate
   onEdit: (i: number, e: RowEdit) => void; onDecide: (i: number, d: RowDecision) => void; onSkipBlocked: () => void;
 }) {
   const { t, n } = useCopy();
+  // a coordinator cannot raise the capacity: say so first, not «we will offer you an upgrade» (ops review)
+  const mayUpgrade = useCan('billing');
   const [f, setF] = useState<ReviewFilter>(sum.blocked ? 'blocked' : 'all');
   const list = rows.filter((r) => f === 'all' || r.state === f);
   useCapacityVersion();
@@ -212,7 +215,7 @@ function ReviewStep({ rows, sum, error, capacity, tables, createTables, onCreate
       </Banner> : error ? <Banner tone="danger" title={t('imFailedTitle')} reveal={error}>{errorMessage(error)} {t('imNoneAdded')}</Banner> : null}
       {/* before the wall, not after — and with the same numbers the upgrade will show (the whole list after adding) */}
       {!error && sum.people > left && <Banner tone="warning" compact title={t('imOverTitle')}>
-        {t('imOverBody', { total: n(capacity.used + sum.people, 'person'), limit: n(capacity.limit, 'person') })}
+        {t(mayUpgrade ? 'imOverBody' : 'imOverTeam', { total: n(capacity.used + sum.people, 'person'), limit: n(capacity.limit, 'person') })}
       </Banner>}
       {tables && tables.withTable > 0 && <div className="import-tables" role="group" aria-label={t('imTableCol')}>
         <p><Icon name="table" size="sm" />{tables.matched ? t('imTablesMatched', { invitations: n(tables.matched, 'invitation') }) : t('imTablesNone')}

@@ -118,3 +118,31 @@ test('copy: slots fill, spoken counted nouns differ by voice, afternoon reads «
   assert.equal(formatTime('16:45'), '4:45 عصرًا');
   assert.equal(formatTime('17:00'), '5:00 مساءً');
 });
+
+test('copy (ops review): a party is spoken of in the plural or neutrally, and the gate/seating lines read naturally', () => {
+  const ar = copyFor('ar'), eg = copyFor('ar-EG'), sa = copyFor('ar-SA');
+  // guest-card statuses are about a family
+  assert.deepEqual([ar.stConfirmed, ar.stDeclined, ar.stPending], ['أكدوا الحضور', 'اعتذروا', 'لم يردوا بعد']);
+  for (const c of [ar, eg, sa]) for (const k of ['stConfirmed', 'stDeclined', 'stPending', 'stNotArrived', 'stArrived'] as const) assert.match(c[k], /وا|وش/, `${k}: «${c[k]}»`);
+  // seating toasts and activity lines never gender a family («اتوزّع / اتشال / اتنقل»)
+  const a = (kind: EventActivity['kind'], data: EventActivity['data']) => ({ id: 'a', eventId: 'e', kind, data, at: new Date().toISOString(), actor: 'organizer' }) as EventActivity;
+  assert.equal(activityText(a('party_moved', { name: 'منى القحطاني', table: 'طاولة 5' }), 'ar-EG'), 'نقلنا منى القحطاني لـطاولة 5');
+  assert.equal(activityText(a('party_moved', { name: 'منى القحطاني', table: 'طاولة 5' }), 'ar-SA'), 'نقلنا منى القحطاني لـطاولة 5');
+  assert.equal(activityText(a('party_unseated', { name: 'عائلة الفيفي', table: 'طاولة 2' }), 'ar-SA'), 'شلنا عائلة الفيفي من طاولة 2');
+  assert.equal(activityText(a('check_in_undone', { name: 'عائلة الحربي' }), 'ar-EG'), 'لغينا دخول عائلة الحربي');
+  assert.equal(fill(eg.seatSeated, { name: 'عائلة الفيفي', table: 'ترابيزة 2' }), 'وزّعنا عائلة الفيفي على ترابيزة 2');
+  assert.equal(eg.seatUndo, 'رجّعهم');
+  for (const c of [ar, eg, sa]) for (const v of Object.values(c)) assert.doesNotMatch(v, /مأكد/, 'Egyptian writes «مؤكد», not «مأكد»');
+  assert.equal(eg.gtUndo, 'الغي الدخول');
+  // the gate's «let in by exception» line, in words
+  assert.equal(fill(ar.gtDoneSpecial, { people: countOf('ar', 1, 'person') }), 'دخل شخص واحد بإذن خاص');
+  assert.equal(fill(eg.gtDoneSpecial, { people: countOf('ar-EG', 1, 'person') }), 'دخل شخص واحد بإذن');
+  // owner-only note follows the voice; spoken counts (no «11 شخصًا» in the dialects)
+  assert.deepEqual([ar.ownerOnlyNote, eg.ownerOnlyNote, sa.ownerOnlyNote], ['متاح لصاحب المناسبة', 'لصاحب الفرح بس', 'لصاحب المناسبة بس']);
+  assert.equal(countOf('ar-SA', 11, 'person'), '11 شخص');
+  assert.equal(sa.glUpTo, 'حتى {n}');
+  // the pool hint names the real button in every voice
+  for (const d of ['ar', 'ar-EG', 'ar-SA'] as const) { const c = copyFor(d); assert.ok(fill(c.seatTapHint, { label: c.assignTable }).includes(`«${c.assignTable}»`)); }
+  // modern Arabic: no «لو» in the overview's seating lines
+  assert.doesNotMatch(ar.ovAddSeating, /(?:^|\s)لو(?:\s|$)/); assert.doesNotMatch(ar.ovSeatHint, /(?:^|\s)لو(?:\s|$)/);
+});

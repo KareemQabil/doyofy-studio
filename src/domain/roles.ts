@@ -6,7 +6,7 @@ import { copyFor, type Dialect } from './copy';
  *   صاحب المناسبة (organizer)  everything.
  *   المنسق (coordinator)        add, edit, share/send, remind, seat (auto-seating and table order too), check-in —
  *                               never delete guests, transfer them between events, export files, pay/upgrade,
- *                               publish the invitation or archive the event.
+ *                               create or archive events, or publish the invitation (a coordinator cannot publish, so creating one would be a dead end).
  *   مزود الضيافة (caterer)      the food report, the menu settings and a read-only view of guests and tables.
  * The UI hides or explains what a role cannot do; the mock services refuse it too (services/mock/repositories.ts).
  * A production API must enforce the same table.
@@ -15,10 +15,10 @@ export type Permission =
   | 'guests.add' | 'guests.edit' | 'guests.share' | 'guests.remind'
   | 'guests.delete' | 'guests.transfer' | 'guests.export'
   | 'seating' | 'checkin' | 'food'
-  | 'billing' | 'invitation.publish' | 'event.archive';
+  | 'billing' | 'invitation.publish' | 'event.create' | 'event.archive';
 
 /** the actions the owner keeps for themselves */
-const OWNER_ONLY: ReadonlySet<Permission> = new Set(['guests.delete', 'guests.transfer', 'guests.export', 'billing', 'invitation.publish', 'event.archive']);
+const OWNER_ONLY: ReadonlySet<Permission> = new Set(['guests.delete', 'guests.transfer', 'guests.export', 'billing', 'invitation.publish', 'event.create', 'event.archive']);
 
 export function can(role: Role, action: Permission): boolean {
   if (action === 'food') return role === 'caterer';
@@ -27,7 +27,7 @@ export function can(role: Role, action: Permission): boolean {
   return false; // caterer: food only
 }
 
-/** short reason shown next to a visible but unavailable action */
+/** short reason shown next to a visible but unavailable action — the modern wording; screens use t('ownerOnlyNote') in the voice */
 export const OWNER_ONLY_NOTE = 'متاح لصاحب المناسبة';
 
 /** the service-side refusal, one sentence per blocked action */
@@ -44,6 +44,7 @@ export const FORBIDDEN_TEXT: Record<Permission, string> = {
   food: 'تقارير الطعام متاحة لمزود الضيافة.',
   billing: 'الدفع وترقية الباقة متاحان لصاحب المناسبة فقط.',
   'invitation.publish': 'نشر الدعوة متاح لصاحب المناسبة فقط.',
+  'event.create': 'إنشاء مناسبة جديدة متاح لصاحب المناسبة فقط.',
   'event.archive': 'أرشفة المناسبة متاحة لصاحب المناسبة فقط.',
 };
 

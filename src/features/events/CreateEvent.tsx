@@ -11,7 +11,9 @@ import { forwardRef, useEffect, useMemo, useRef, useState, type FormEvent, type 
 import type { CreateEventInput, EventType } from '../../domain/types';
 import { eventTypeInfo, isCoupleEvent, validateEssentials, type EssentialsErrors } from '../../domain/event';
 import { formatEventDate, formatTime, localDateOf } from '../../domain/format';
-import { Banner, Button, Field, FocusLayout, Icon, Input, Select } from '../../ui';
+import { Banner, Button, EmptyState, Field, FocusLayout, Icon, Input, LinkButton, Select } from '../../ui';
+import { useRole } from '../shared/OwnerOnly';
+import { can } from '../../domain/roles';
 import { useMutation, useServices } from '../../app/data';
 import { useBlocker, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
@@ -92,7 +94,19 @@ const ArabicDateTime = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInpu
   </span>;
 });
 
+/** only the owner creates events (domain/roles «event.create»): a coordinator arriving here from a link gets the reason, not a form they could never publish */
 export function CreateEvent() {
+  const role = useRole();
+  const { t } = useCopy();
+  if (can(role, 'event.create')) return <CreateEventWizard />;
+  return (
+    <FocusLayout width="narrow" title={t('createEvent')} back={{ to: paths.events, label: t('back') }}>
+      <EmptyState icon="users" title={t('createOwnerTitle')} action={<LinkButton to={paths.events} variant="primary">{t('createOwnerBack')}</LinkButton>}>{t('createOwnerText')}</EmptyState>
+    </FocusLayout>
+  );
+}
+
+function CreateEventWizard() {
   const services = useServices();
   const navigate = useNavigate();
   const loc = useLocation();

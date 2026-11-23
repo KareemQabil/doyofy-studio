@@ -69,6 +69,9 @@ export interface AutoSeatApply {
   moves: PlanMove[];
   newTables: Array<{ name: string; capacity: number }>;
   tables: Array<{ id: string; capacity: number }>;
+  /** invitations the suggestion seats, as its summary said («سنوزّع 22 دعوة»): in «إعادة توزيع الجميع» some stay where they were, so
+   *  this can be more than the moves; the activity log keeps this number so it matches what the organizer approved */
+  seated?: number;
 }
 /** the exact inverse of an applied plan */
 export interface AutoSeatUndo {
@@ -99,10 +102,10 @@ export function defaultTableCapacity(tables: readonly Pick<Table, 'capacity'>[])
 }
 
 /** names for `count` new tables that continue the event's numbering */
-export function newTableNames(tables: readonly Pick<Table, 'name'>[], count: number): string[] {
+export function newTableNames(tables: readonly Pick<Table, 'name'>[], count: number, template?: string): string[] {
   const names: Array<Pick<Table, 'name'>> = [...tables];
   const out: string[] = [];
-  for (let i = 0; i < count; i++) { const name = nextTableName(names as Table[]); out.push(name); names.push({ name }); }
+  for (let i = 0; i < count; i++) { const name = nextTableName(names as Table[], template); out.push(name); names.push({ name }); }
   return out;
 }
 
@@ -217,6 +220,7 @@ export function applyInput(plan: AutoSeatPlan, tables: readonly Table[]): AutoSe
     moves: plan.moves.map((m) => ({ ...m })),
     newTables: plan.tables.filter((t) => t.isNew).map((t) => ({ name: t.name, capacity: t.capacity })),
     tables: tables.map((t) => ({ id: t.id, capacity: t.capacity })),
+    seated: Object.keys(plan.placement).filter((id) => plan.placement[id] && !plan.kept.includes(id)).length,
   };
 }
 

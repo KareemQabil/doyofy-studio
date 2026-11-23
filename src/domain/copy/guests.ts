@@ -10,8 +10,8 @@ export const GUESTS = voiced({
   // the messages a guest receives (WhatsApp / SMS): {name} {title} {when} {place} {date} {link}
   msgInvite: 'السلام عليكم {name}،\nيسعدنا دعوتكم إلى {title}\n{when}\n{place}\n\nافتحوا دعوتكم وأكدوا حضوركم من هنا:\n{link}',
   msgReminder: 'السلام عليكم {name}،\nتذكير لطيف بدعوة {title} يوم {date}.\nيسعدنا معرفة ردّكم من هنا:\n{link}',
-  // statuses, as the organizer reads them about one invitation
-  stPending: 'لم يرد بعد', stConfirmed: 'أكد الحضور', stDeclined: 'اعتذر', stNotArrived: 'لم يصل', stPartial: 'وصل بعضهم', stArrived: 'وصل', stUnsent: 'لم تُرسل',
+  // statuses, as the organizer reads them about one invitation — a family, so always in the plural (ops review)
+  stPending: 'لم يردوا بعد', stConfirmed: 'أكدوا الحضور', stDeclined: 'اعتذروا', stNotArrived: 'لم يصلوا', stPartial: 'وصل بعضهم', stArrived: 'وصلوا', stUnsent: 'لم تُرسل',
   invDraft: 'غير منشورة', invReady: 'جاهزة للمشاركة', invShared: 'أُرسلت', invOpened: 'فتح الدعوة', invFailed: 'تعذّر الإرسال', invManual: 'أرسلتها بنفسك',
   srcPlatform: 'سجّلته المنصة', srcManual: 'حدّدته بنفسك', srcSimulated: 'تجريبي', demoBadge: 'تجريبي',
   fAll: 'الكل', fPending: 'لم يردوا', fConfirmed: 'أكدوا', fDeclined: 'اعتذروا', fNotShared: 'لم تُرسل', fUnassigned: 'بلا طاولة', fCheckedIn: 'وصلوا', fAttention: 'تحتاج انتباهًا',
@@ -61,7 +61,7 @@ export const GUESTS = voiced({
 }, {
   msgInvite: 'أهلًا {name}،\nمستنيينكم في {title}\n{when}\n{place}\n\nافتحوا الدعوة وأكدوا حضوركم من هنا:\n{link}',
   msgReminder: 'أهلًا {name}،\nبنفكّركم بدعوة {title} يوم {date}.\nقولولنا ردكم من هنا:\n{link}',
-  stPending: 'لسه ما ردّش', stConfirmed: 'أكّد حضوره', stDeclined: 'اعتذر', stNotArrived: 'لسه موصلش', stPartial: 'وصل جزء منهم', stArrived: 'وصل', stUnsent: 'لسه متبعتتش',
+  stPending: 'لسه ما ردّوش', stConfirmed: 'أكدوا الحضور', stDeclined: 'اعتذروا', stNotArrived: 'لسه ما وصلوش', stPartial: 'وصل جزء منهم', stArrived: 'وصلوا', stUnsent: 'لسه متبعتتش',
   invDraft: 'مش منشورة', invReady: 'جاهزة تتبعت', invShared: 'اتبعتت', invOpened: 'فتح الدعوة', invFailed: 'الإرسال فشل', invManual: 'بعتّها بنفسك',
   srcPlatform: 'المنصة سجّلته', srcManual: 'إنت حدّدته', srcSimulated: 'تجريبي', demoBadge: 'تجريبي',
   fAll: 'الكل', fPending: 'لسه ما ردّوش', fConfirmed: 'أكدوا', fDeclined: 'اعتذروا', fNotShared: 'متبعتتش', fUnassigned: 'من غير ترابيزة', fCheckedIn: 'وصلوا', fAttention: 'محتاجة متابعة',
@@ -108,7 +108,7 @@ export const GUESTS = voiced({
 }, {
   msgInvite: 'حيّاكم الله {name}،\nنتشرّف بحضوركم في {title}\n{when}\n{place}\n\nافتحوا الدعوة وأكّدوا حضوركم من هنا:\n{link}',
   msgReminder: 'حيّاكم الله {name}،\nنذكّركم بدعوة {title} يوم {date}.\nيسعدنا نعرف ردّكم من هنا:\n{link}',
-  stPending: 'ما ردّ للحين', stConfirmed: 'أكّد حضوره', stDeclined: 'اعتذر', stNotArrived: 'ما وصل', stPartial: 'وصل بعضهم', stArrived: 'وصل', stUnsent: 'ما انرسلت',
+  stPending: 'ما ردّوا للحين', stConfirmed: 'أكدوا الحضور', stDeclined: 'اعتذروا', stNotArrived: 'ما وصلوا', stPartial: 'وصل بعضهم', stArrived: 'وصلوا', stUnsent: 'ما انرسلت',
   invDraft: 'مو منشورة', invReady: 'جاهزة للإرسال', invShared: 'انرسلت', invOpened: 'فتح الدعوة', invFailed: 'تعذّر الإرسال', invManual: 'أرسلتها بنفسك',
   srcPlatform: 'سجّلته المنصة', srcManual: 'حدّدته بنفسك', srcSimulated: 'تجريبي', demoBadge: 'تجريبي',
   fAll: 'الكل', fPending: 'ما ردّوا', fConfirmed: 'أكدوا', fDeclined: 'اعتذروا', fNotShared: 'ما انرسلت', fUnassigned: 'بدون طاولة', fCheckedIn: 'وصلوا', fAttention: 'تحتاج متابعة',
@@ -122,7 +122,7 @@ export const GUESTS = voiced({
   glPromptText: 'واتساب يجهّز الرسالة بس. سجّلها بعد ما ترسلها بنفسك.',
   glNoResults: 'ما فيه نتائج', glShowAll: 'اعرض كل الضيوف', glNoMatch: 'ما فيه ضيف اسمه «{q}»', glNoneHere: 'ما فيه ضيوف هنا.', glTable: 'الطاولة',
   glShowing: 'ظاهر {n} من {all}', glDemoLinks: ' · روابط الدعوة فيها نسخة المعاينة، والردود من جهاز ثاني تجريبية.', glGone: 'هالضيف ما عاد موجود في القائمة.',
-  glConfirmedPeople: '{people} أكدوا', glNoConfirmations: 'ما أكد أحد للحين', glNoTable: 'بدون طاولة', glUpTo: 'لين {n}', glCompanions: '+{n} معه',
+  glConfirmedPeople: '{people} أكدوا', glNoConfirmations: 'ما أكد أحد للحين', glNoTable: 'بدون طاولة', glUpTo: 'حتى {n}', glCompanions: '+{n} معه',
   glAfterPublish: 'بعد النشر', glDetails: 'التفاصيل', glDeselect: 'إلغاء', glSelect: 'حدّد',
   glAdded: 'أضفنا {name}', glOpen: 'افتح', glSimulated: 'إرسال تجريبي: {sent}', glSimFailed: ' · {n} ما انرسلت لأن ما فيه رقم', glMarkedManual: 'حدّدناها مرسلة بنفسك',
   glReminded: 'سجّلنا التذكير', glContacted: 'سجّلنا إنك تواصلت', glUnseated: 'شلنا دعوة {name} من الطاولة', glAddGuestTitle: 'أضف ضيف',

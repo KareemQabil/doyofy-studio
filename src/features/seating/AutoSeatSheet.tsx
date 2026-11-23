@@ -13,7 +13,7 @@ import {
   type AutoSeatMode, type AutoSeatUndo, type PlanTable,
 } from '../../domain/auto-seating';
 import { seatsFor } from '../../domain/parties';
-import { P, people, plural, pluralOf, type PluralForms } from '../../domain/format';
+import type { PluralForms } from '../../domain/format';
 import { nounForms, type Dialect } from '../../domain/copy';
 import { Badge, Banner, Button, Dialog, Icon, Segmented } from '../../ui';
 import { useMutation } from '../../app/data';
@@ -24,22 +24,22 @@ import { errorMessage } from '../../services/errors';
 export const tableForms = (dialect: Dialect): PluralForms => nounForms(dialect, 'table');
 const WILL: Record<Dialect, string> = { ar: 'سنوزّع', 'ar-EG': 'هنوزّع', 'ar-SA': 'بنوزّع' };
 const SHORT: Record<Dialect, string> = { ar: 'ينقص', 'ar-EG': 'ناقص', 'ar-SA': 'ناقص' };
-const OFF: Record<Dialect, string> = { ar: 'سنُزيل من الطاولات من لم يؤكد', 'ar-EG': 'هنشيل من الترابيزات اللي مأكدش', 'ar-SA': 'بنشيل من الطاولات اللي ما أكد' };
+const OFF: Record<Dialect, string> = { ar: 'سنُزيل من الطاولات من لم يؤكد', 'ar-EG': 'هنشيل من الترابيزات اللي ما أكدوش', 'ar-SA': 'بنشيل من الطاولات اللي ما أكدوا' };
 
 export interface AutoSeatResult { undo: AutoSeatUndo; seated: number; created: number }
 
 export function AutoSeatSheet({ event, tables, parties, onClose, onApplied }: {
   event: Event; tables: Table[]; parties: InvitationParty[]; onClose: () => void; onApplied: (r: AutoSeatResult) => void;
 }) {
-  const { t, dialect } = useCopy();
-  const tableWord = tableForms(dialect);
+  const { t, n, dialect } = useCopy();
   const [mode, setMode] = useState<AutoSeatMode>('keep');
   const [excluded, setExcluded] = useState<Set<string>>(() => new Set());
   const [pinned, setPinned] = useState<Map<string, string>>(() => new Map());
   const [extra, setExtra] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const capacity = defaultTableCapacity(tables);
-  const newTables = useMemo(() => newTableNames(tables, extra).map((name) => ({ name, capacity })), [tables, extra, capacity]);
+  const nameTemplate = t('seatDefaultName');
+  const newTables = useMemo(() => newTableNames(tables, extra, nameTemplate).map((name) => ({ name, capacity })), [tables, extra, capacity, nameTemplate]);
   const plan = useMemo(() => planAutoSeating(tables, parties, { mode, excluded, pinned, newTables }), [tables, parties, mode, excluded, pinned, newTables]);
   const byId = useMemo(() => new Map(parties.map((p) => [p.id, p])), [parties]);
   const order = useMemo(() => groupOrder(parties), [parties]);
@@ -61,13 +61,13 @@ export function AutoSeatSheet({ event, tables, parties, onClose, onApplied }: {
   const switchMode = (m: AutoSeatMode) => { setMode(m); setPinned(new Map()); setExcluded(new Set()); setSelected(null); };
 
   const apply = useMutation((s) => s.seating.applyAutoSeating(event.id, applyInput(plan, tables)), {
-    // the toast repeats the number the summary promised («سنوزّع 21 دعوة»), not only the parties whose table changed
+    // the toast and the activity log repeat the number the summary promised («سنوزّع 21 دعوة»), not only the parties whose table changed
     onSuccess: (r) => onApplied({ undo: r.undo, seated: placed.size, created: r.tables.length }),
   });
 
   const footer = party && placed.has(party.id) ? (
     <div className="as-adjust" role="group" aria-label={t('shEditParty', { name: party.primaryGuestName })}>
-      <p className="as-adjust-who"><span className={`as-dot grp-${tone(groupOf(party))}`} aria-hidden="true" /><b>{party.primaryGuestName}</b><span className="faint"> · {people(seatsFor(party))}</span></p>
+      <p className="as-adjust-who"><span className={`as-dot grp-${tone(groupOf(party))}`} aria-hidden="true" /><b>{party.primaryGuestName}</b><span className="faint"> · {n(seatsFor(party), 'person')}</span></p>
       <label className="as-adjust-field">
         <span className="t-sm">{t('autoSeatMoveTo')}</span>
         <select className="select" value={plan.placement[party.id] ?? ''} onChange={(e) => moveTo(party.id, e.target.value)}>
@@ -101,19 +101,19 @@ export function AutoSeatSheet({ event, tables, parties, onClose, onApplied }: {
           <p className="as-empty"><Icon name="check-circle" />{t('autoSeatNothing')}</p>
         ) : (
           <p className="as-summary" aria-live="polite">
-            {placed.size > 0 && <>{WILL[dialect]} <b className="num">{pluralOf(placed.size, P.invitation)}</b> ({people(plan.placedSeats)}) على <b className="num">{pluralOf(usedTables, tableWord)}</b>.</>}
-            {takenOff.length > 0 && <> {OFF[dialect]} ({pluralOf(takenOff.length, P.invitation)}).</>}
+            {placed.size > 0 && <>{WILL[dialect]} <b className="num">{n(placed.size, 'invitation', true)}</b> ({n(plan.placedSeats, 'person')}) على <b className="num">{n(usedTables, 'table', true)}</b>.</>}
+            {takenOff.length > 0 && <> {OFF[dialect]} ({n(takenOff.length, 'invitation', true)}).</>}
           </p>
         )}
 
         {plan.shortfall && plan.shortfall.tables > 0 && (
-          <Banner tone="warning" compact title={`${SHORT[dialect]} ${plural(plan.shortfall.seats, P.seat)}`}
+          <Banner tone="warning" compact title={`${SHORT[dialect]} ${n(plan.shortfall.seats, 'seat')}`}
             action={<Button size="sm" icon="plus" onClick={() => setExtra((n) => n + plan.shortfall!.tables)}>{t('autoSeatAddTables')} ({plan.shortfall.tables})</Button>}>
-            {t('autoSeatSuggest').replace('{tables}', pluralOf(plan.shortfall.tables, tableWord)).replace('{seats}', plural(plan.shortfall.capacity, P.seat))} {t('autoSeatNewOnApply')}
+            {t('autoSeatSuggest').replace('{tables}', n(plan.shortfall.tables, 'table', true)).replace('{seats}', n(plan.shortfall.capacity, 'seat'))} {t('autoSeatNewOnApply')}
           </Banner>
         )}
         {extra > 0 && (
-          <p className="as-note t-sm"><Icon name="info" size="sm" />+{plural(extra, tableWord)} ({plural(capacity, P.seat)}). {t('autoSeatNewOnApply')}
+          <p className="as-note t-sm"><Icon name="info" size="sm" />{n(extra, 'table')} ({n(capacity, 'seat')}). {t('autoSeatNewOnApply')}
             <button type="button" className="as-link" onClick={() => setExtra(0)}>{t('cancel')}</button></p>
         )}
 
@@ -132,7 +132,7 @@ export function AutoSeatSheet({ event, tables, parties, onClose, onApplied }: {
             <h3 id="as-unplaced" className="as-h">{t('autoSeatUnplaced')} <span className="num faint">({plan.unplaced.length})</span></h3>
             <ul className="as-list">
               {plan.unplaced.map((u) => { const p = byId.get(u.partyId)!; return (
-                <li key={u.partyId}><span className={`as-dot grp-${tone(groupOf(p))}`} aria-hidden="true" /><span className="grow"><b>{p.primaryGuestName}</b> <span className="faint">· {people(u.seats)}</span><br /><span className="t-sm as-reason">{u.reason === 'too_big' ? t('autoSeatTooBig') : t('autoSeatNoRoom')}</span></span></li>
+                <li key={u.partyId}><span className={`as-dot grp-${tone(groupOf(p))}`} aria-hidden="true" /><span className="grow"><b>{p.primaryGuestName}</b> <span className="faint">· {n(u.seats, 'person')}</span><br /><span className="t-sm as-reason">{u.reason === 'too_big' ? t('autoSeatTooBig') : t('autoSeatNoRoom')}</span></span></li>
               ); })}
             </ul>
           </section>
@@ -142,7 +142,7 @@ export function AutoSeatSheet({ event, tables, parties, onClose, onApplied }: {
             <h3 id="as-excluded" className="as-h">{t('autoSeatExcluded')} <span className="num faint">({plan.excluded.length})</span></h3>
             <ul className="as-list">
               {plan.excluded.map((id) => { const p = byId.get(id)!; return (
-                <li key={id}><span className={`as-dot grp-${tone(groupOf(p))}`} aria-hidden="true" /><span className="grow"><b>{p.primaryGuestName}</b> <span className="faint">· {people(seatsFor(p))}</span></span>
+                <li key={id}><span className={`as-dot grp-${tone(groupOf(p))}`} aria-hidden="true" /><span className="grow"><b>{p.primaryGuestName}</b> <span className="faint">· {n(seatsFor(p), 'person')}</span></span>
                   <Button size="sm" variant="ghost" icon="undo" onClick={() => include(id)}>{t('autoSeatInclude')}</Button></li>
               ); })}
             </ul>
@@ -157,7 +157,7 @@ function PlanTableCard({ x, byId, placed, moved, tone, selected, onSelect, newLa
   x: PlanTable; byId: Map<string, InvitationParty>; placed: Set<string>; moved: Set<string>; tone: (g: string) => number; selected: string | null;
   onSelect: (id: string) => void; newLabel: string; keptLabel: string;
 }) {
-  const { t } = useCopy();
+  const { t, n } = useCopy();
   const fresh = x.partyIds.filter((id) => placed.has(id));
   // who already sat here (declined parties still on a table hold no seat, the page warns about them separately)
   const before = x.partyIds.filter((id) => !placed.has(id) && seatsFor(byId.get(id)!) > 0);
@@ -169,7 +169,7 @@ function PlanTableCard({ x, byId, placed, moved, tone, selected, onSelect, newLa
     <li className={`as-table${fresh.length ? '' : ' is-quiet'}${x.isNew ? ' is-new' : ''}${over ? ' is-over' : ''}`}>
       <header className="as-table-head">
         <h3 className="as-table-name">{x.name}{x.isNew && <Badge tone="info">{newLabel}</Badge>}{over && <Badge tone="danger">{t('shOverCapB')}</Badge>}</h3>
-        <span className="as-table-count num">{x.used}/{x.capacity}{added > 0 && <span className="as-plus"> +{added}</span>}</span>
+        <span className="as-table-count num">{x.used}/{x.capacity}{added > 0 && <span className="as-plus"> <bdi dir="ltr">+{added}</bdi></span>}</span>
       </header>
       <div className="as-bar" role="img" aria-label={`${t('shTableUse', { name: x.name, used: x.used, cap: x.capacity })}${added ? t('shSuggestedOf', { n: added }) : ''}${over ? t('shOverByB', { n: x.used - x.capacity }) : ''}`}>
         <span className="as-bar-kept" style={{ width: pct(x.used - added) }} />
@@ -181,7 +181,7 @@ function PlanTableCard({ x, byId, placed, moved, tone, selected, onSelect, newLa
           {fresh.map((id) => { const p = byId.get(id)!; const g = groupOf(p); return (
             <li key={id}>
               <button type="button" className={`as-chip grp-${tone(g)}`} aria-pressed={selected === id} onClick={() => onSelect(id)}
-                aria-label={`${p.primaryGuestName}، ${people(seatsFor(p))}${g ? `، ${g}` : ''}`}>
+                aria-label={`${p.primaryGuestName}، ${n(seatsFor(p), 'person')}${g ? `، ${g}` : ''}`}>
                 <span className="as-chip-name">{p.primaryGuestName}</span><span className="as-chip-n num">{seatsFor(p)}</span>
               </button>
             </li>

@@ -269,6 +269,7 @@ body.dy.dy-guest { background: var(--c-stage); }
 .gate-counter { display: flex; align-items: baseline; gap: 6px; padding: var(--s-2) var(--s-3); border-radius: var(--r-md); background: var(--c-surface); }
 .gate-counter .num { font-size: var(--fs-xl); font-weight: var(--fw-bold); color: var(--c-primary-text); }
 .gate-counter-of { font-size: var(--fs-xs); color: var(--c-text-2); }
+.gate-counter { flex-wrap: wrap; row-gap: 0; } .gate-counter-special { flex-basis: 100%; font-size: 11.5px; line-height: 1.25; white-space: nowrap; color: var(--c-text-2); } /* walk-ins and let-in exceptions, said in words; one short line so the bar keeps its height */
 .gate-note { padding: var(--s-2) var(--s-4); background: var(--c-warning-soft); color: var(--c-warning); font-size: var(--fs-sm); text-align: center; }
 .gate-main { flex: 1; width: 100%; max-width: 640px; margin: 0 auto; padding: var(--s-5) var(--s-4) var(--s-12); }
 .gate-home { display: flex; flex-direction: column; gap: var(--s-5); }
@@ -321,6 +322,9 @@ body.dy.dy-guest { background: var(--c-stage); }
 .gate :is(.input, .textarea)::placeholder { color: var(--c-text-3); }
 .gate-decision { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-4); border-radius: var(--r-md); border: 1px dashed var(--c-warning); }
 .gate-actions { display: flex; flex-direction: column; gap: var(--s-2); }
+.gate-undo-area { margin-top: var(--s-4); padding-top: var(--s-3); border-top: 1px solid var(--c-hairline); display: grid; justify-items: center; } /* undo: a quiet second step, away from the primary (ops review) */
+.gate-undo-ask { display: grid; gap: var(--s-2); justify-items: center; text-align: center; }
+.gate-undo-row { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-2); }
 /* the decision stays on screen while a long card (warnings, note) scrolls under it */
 .gate-actions.is-dock { position: sticky; bottom: 0; z-index: 2; margin: 0 calc(-1 * var(--s-5)) calc(-1 * var(--s-5)); padding: var(--s-3) var(--s-5) calc(var(--s-4) + env(safe-area-inset-bottom)); background: var(--c-surface); border-top: 1px solid var(--c-line); border-radius: 0 0 var(--r-xl) var(--r-xl); }
 /* the decision is read in full (e.g. «سجّل دخول شخص واحد رغم ذلك» at 320px): wrap, never an ellipsis */

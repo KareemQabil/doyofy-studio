@@ -51,7 +51,8 @@ export function Overview({ event }: { event: Event }) {
       <Link to={paths.invitation(event.id)} className="sig-moment-card" aria-label={t('ovCardLabel')}><CardThumb event={event} content={design.data?.draft ?? defaultDesign(event)} width={150} /></Link>
     </Stage>
     <nav className="journey" aria-label={t('ovJourneyLabel')}><ol>{journey.map((s,n)=><li key={s.to} className={n<index?'is-done':n===index?'is-current':''}><Link to={s.to} aria-current={n===index?'step':undefined}><span className="journey-number">{n<index?<Icon name="check" size="sm"/>:n+1}</span><span>{s.label}</span></Link></li>)}</ol></nav>
-    <p className="optional-journey-note"><Icon name="table" size="sm"/>{t('ovTablesOptional')}<Link to={paths.seating(event.id)}>{t('ovAddSeating')}</Link></p>
+    {/* only while the event has no tables: once seating exists the line would contradict the hall (ops review) */}
+    {tables.data!.length === 0 && <p className="optional-journey-note"><Icon name="table" size="sm"/>{t('ovTablesOptional')}{' '}<Link to={paths.seating(event.id)}>{t('ovAddSeating')}</Link></p>}
     {/* each count opens exactly the list it counts (F037) */}
     <dl className="event-facts is-linked">{facts.map(f=><div key={f.filter+f.label}><dt>{f.label}</dt><dd className={`tone-text-${f.tone}`}><Link to={`${paths.guests(event.id)}${f.filter==='all'?'':`?filter=${f.filter}`}`} className="fact-link" aria-label={t('ovFactAria',{label:f.label,value:f.value,unit:f.unit})}><strong className="num">{f.value}</strong><span>{f.unit}</span><Icon name="forward" size="sm" /></Link></dd></div>)}</dl>
     {parties.data!.length > 0 && <CapacityMeter eventId={event.id} parties={parties.data!} />}

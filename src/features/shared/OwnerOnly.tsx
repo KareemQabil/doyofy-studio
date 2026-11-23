@@ -4,7 +4,8 @@
  */
 import { useEffect, useState, type ReactNode } from 'react';
 import type { Role } from '../../domain/types';
-import { can, OWNER_ONLY_NOTE, type Permission } from '../../domain/roles';
+import { can, type Permission } from '../../domain/roles';
+import { useCopy } from '../../ui/copy';
 import { useServices } from '../../app/data';
 
 export function useRole(): Role {
@@ -18,5 +19,6 @@ export const useCan = (action: Permission): boolean => can(useRole(), action);
 
 /** wraps a disabled action; the note sits right under it so sighted and screen-reader users get the same reason */
 export function OwnerOnly({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={`owner-only${className ? ` ${className}` : ''}`}>{children}<small className="owner-only-note">{OWNER_ONLY_NOTE}</small></span>;
+  const { t } = useCopy();
+  return <span className={`owner-only${className ? ` ${className}` : ''}`}>{children}<small className="owner-only-note">{t('ownerOnlyNote')}</small></span>;
 }

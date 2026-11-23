@@ -31,6 +31,8 @@ export const SHARED = voiced({
   shHallLabel: 'خريطة الطاولات وتصفية القائمة', shTableUse: '{name}: {used} من {cap}', shOverBy: '، زيادة {n}', shHasAllergy: '، عليها حساسية طعام', shOrder: '، الترتيب {n}',
   shPickTableFor: 'اختر طاولة لـ{name}', shCancelMove: 'إلغاء النقل', shCurrentTable: 'الطاولة الحالية', shBecomes: 'تصبح {after} من {cap}', shOverCap: '، فوق السعة',
   shEditParty: 'تعديل {name}', shScope: 'نطاق التوزيع', shSides: 'الجهات', shNoSide: 'بلا جهة', shOverCapB: 'فوق السعة', shSuggestedOf: '، منها {n} مقترحة', shOverByB: '، فوق السعة بـ{n}',
+  // roles: what a team member sees where an owner-only action would be (domain/roles)
+  ownerOnlyNote: 'متاح لصاحب المناسبة', createOwnerTitle: 'إنشاء المناسبات لصاحب المناسبة', createOwnerText: 'حسابك يعمل كمنسّق: تدير الضيوف والطاولات والاستقبال لمناسبات أصحابها. ينشئ صاحب المناسبة مناسبته وينشر دعوتها، ثم تظهر لك هنا.', createOwnerBack: 'العودة إلى مناسباتي',
 }, {
   shOpening: 'بنفتح الدعوة', shLinkBroken: 'اللينك ناقص', shAskAgain: 'اطلبوا لينك الدعوة تاني من صاحب المناسبة.', shNotYet: 'الدعوة لسه مش متاحة', shNotFound: 'ملقيناش الدعوة دي',
   shRetryGuests: 'جرّبوا تاني', shPlayFailed: 'الدعوة ما اشتغلتش', shPrivateTo: 'دعوة خاصة باسم', shForYou: 'دعوة ليكم',
@@ -52,6 +54,7 @@ export const SHARED = voiced({
   shHallLabel: 'خريطة الترابيزات وتصفية القايمة', shTableUse: '{name}: {used} من {cap}', shOverBy: '، زيادة {n}', shHasAllergy: '، عليها حساسية أكل', shOrder: '، الترتيب {n}',
   shPickTableFor: 'اختار ترابيزة لـ{name}', shCancelMove: 'الغي النقل', shCurrentTable: 'الترابيزة الحالية', shBecomes: 'هتبقى {after} من {cap}', shOverCap: '، فوق السعة',
   shEditParty: 'عدّل {name}', shScope: 'نطاق التوزيع', shSides: 'الجهات', shNoSide: 'من غير جهة', shOverCapB: 'فوق السعة', shSuggestedOf: '، منهم {n} مقترحين', shOverByB: '، فوق السعة بـ{n}',
+  ownerOnlyNote: 'لصاحب الفرح بس', createOwnerTitle: 'المناسبات الجديدة بيعملها صاحبها', createOwnerText: 'حسابك شغّال كمنسّق: بتدير الضيوف والترابيزات والاستقبال لمناسبات أصحابها. صاحب المناسبة هو اللي بيعملها وينشر دعوتها، وبعدين هتظهر لك هنا.', createOwnerBack: 'ارجع لمناسباتي',
 }, {
   shOpening: 'نفتح الدعوة', shLinkBroken: 'الرابط ناقص', shAskAgain: 'اطلبوا رابط الدعوة مرة ثانية من صاحب المناسبة.', shNotYet: 'الدعوة مو متاحة للحين', shNotFound: 'ما لقينا هالدعوة',
   shRetryGuests: 'جرّبوا مرة ثانية', shPlayFailed: 'ما اشتغلت الدعوة', shPrivateTo: 'دعوة خاصة باسم', shForYou: 'دعوة لكم',
@@ -73,4 +76,5 @@ export const SHARED = voiced({
   shHallLabel: 'خريطة الطاولات وتصفية القائمة', shTableUse: '{name}: {used} من {cap}', shOverBy: '، زيادة {n}', shHasAllergy: '، عليها حساسية أكل', shOrder: '، الترتيب {n}',
   shPickTableFor: 'اختر طاولة لـ{name}', shCancelMove: 'ألغِ النقل', shCurrentTable: 'الطاولة الحالية', shBecomes: 'بتصير {after} من {cap}', shOverCap: '، فوق السعة',
   shEditParty: 'عدّل {name}', shScope: 'نطاق التوزيع', shSides: 'الجهات', shNoSide: 'بدون جهة', shOverCapB: 'فوق السعة', shSuggestedOf: '، منها {n} مقترحة', shOverByB: '، فوق السعة بـ{n}',
+  ownerOnlyNote: 'لصاحب المناسبة بس', createOwnerTitle: 'إنشاء المناسبات لصاحبها', createOwnerText: 'حسابك يشتغل كمنسّق: تدير الضيوف والطاولات والاستقبال لمناسبات أصحابها. صاحب المناسبة هو اللي ينشئها وينشر دعوتها، وبعدها تطلع لك هنا.', createOwnerBack: 'ارجع لمناسباتي',
 });

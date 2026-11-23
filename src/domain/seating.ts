@@ -61,9 +61,10 @@ export function totalCapacity(tables: readonly Table[]): number {
   return tables.reduce((n, t) => n + t.capacity, 0);
 }
 
-export function nextTableName(tables: readonly Table[]): string {
+/** the next free number, written with the template of the voice (copy «seatDefaultName»: «طاولة {n}» / «ترابيزة {n}») */
+export function nextTableName(tables: readonly Table[], template = 'طاولة {n}'): string {
   const nums = tables.map((t) => Number((t.name.match(/\d+/) || ['0'])[0])).filter((n) => !Number.isNaN(n));
-  return `طاولة ${Math.max(0, ...nums) + 1}`;
+  return template.replace('{n}', String(Math.max(0, ...nums) + 1));
 }
 
 export function validateTable(input: { name: string; capacity: number }): Partial<Record<'name' | 'capacity', string>> {

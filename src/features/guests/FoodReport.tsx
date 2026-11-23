@@ -99,7 +99,10 @@ export function FoodReport({ event, parties, responses, tables, onOpen, now }: {
                 <li key={b.need} className={`food-need${DIETARY[b.need].group === 'allergy' ? ' is-allergy' : ''}`}>
                   {DIETARY[b.need].group === 'allergy' && <Icon name="alert" size="sm" />}
                   <span>{dietName(b.need, dialect)}</span>
-                  <b className="num">{b.people || ''}{b.unknownPeople ? `${b.people ? '+' : ''}؟` : ''}</b>
+                  {/* invitations that named the need but not how many: said in words, never a bare «؟» */}
+                  {b.people > 0 && <b className="num" aria-hidden="true">{b.people}</b>}
+                  {b.people > 0 && <span className="sr-only">{count(b.people, 'person')}</span>}
+                  {b.unknownPeople > 0 && <small className="food-need-unknown">{b.people > 0 ? '+ ' : ''}{t('fdNeedUnknown', { invitations: count(b.unknownPeople, 'invitation') })}</small>}
                 </li>
               ))}
             </ul>

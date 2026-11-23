@@ -14,7 +14,8 @@ import type { InvitationParty } from '../../domain/types';
 import { checkAssign, type TableOccupancy } from '../../domain/seating';
 import { seatsFor } from '../../domain/parties';
 import { useCopy } from '../../ui/copy';
-import { people } from '../../domain/format';
+/** the lifted family's card height (seating-v2.css .lift-ghost), to place it above the finger or the dock */
+const GHOST_H = 58;
 import { Icon } from '../../ui';
 import { haptic } from '../../ui/motion/motion';
 
@@ -103,9 +104,7 @@ export function SeatDock({ party, tables, hover, onPick, onCancel, onList }: {
 }) {
   const need = seatsFor(party);
   const { t, n } = useCopy();
-  const strip = useRef<HTMLDivElement>(null);
-  // keep the hovered destination in view while dragging along the strip
-  useEffect(() => { if (hover) strip.current?.querySelector(`[data-table="${CSS.escape(hover)}"]`)?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' }); }, [hover]);
+  // the strip scrolls only from its edge zones while a family is dragged (useLiftDrag), never by itself under a still finger
   return (
     <div className="seat-dock" onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onCancel(); } }} role="dialog" aria-label={t('shPickTableFor', { name: party.primaryGuestName })}>
       <div className="seat-dock-head">
@@ -114,7 +113,7 @@ export function SeatDock({ party, tables, hover, onPick, onCancel, onList }: {
         <button type="button" className="seat-dock-list" onClick={onList}>{t('dockList')}</button>
         <button type="button" className="seat-dock-cancel" onClick={onCancel} aria-label={t('shCancelMove')}><Icon name="close" size="sm" /></button>
       </div>
-      <div className="seat-dock-strip" ref={strip}>
+      <div className="seat-dock-strip">
         {tables.map((o) => {
           const current = party.tableId === o.table.id;
           const check = checkAssign(party, o);
@@ -142,6 +141,7 @@ export function SeatDock({ party, tables, hover, onPick, onCancel, onList }: {
 export function useLiftDrag({ onLift, onHover, onDrop, onCancel }: {
   onLift: (party: InvitationParty) => void; onHover: (tableId: string | null) => void; onDrop: (tableId: string | null) => void; onCancel: () => void;
 }) {
+  const { n } = useCopy();
   const [ghost, setGhost] = useState<{ party: InvitationParty; x: number; y: number } | null>(null);
   const live = useRef<{ id: number; party: InvitationParty } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -150,20 +150,48 @@ export function useLiftDrag({ onLift, onHover, onDrop, onCancel }: {
 
   useEffect(() => {
     if (!ghost) return;
-    const target = (x: number, y: number) => (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>('[data-table]:not(:disabled)')?.dataset.table ?? null;
+    // only the dock's tables are destinations: the hall map behind the dock carries data-table too, and a release over
+    // it must never seat a family on a table that did not light up (ops review: «seated on table 8, nothing highlighted»)
+    const DEST = '.seat-dock [data-table]:not(:disabled)';
+    const tableAt = (x: number, y: number) => (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>(DEST) ?? null;
     const finger = { x: ghost.x, y: ghost.y };
+    const SLACK = 8;
     const hover = () => {
-      const t = target(finger.x, finger.y);
+      let t = tableAt(finger.x, finger.y)?.dataset.table ?? null;
+      // hysteresis: the lit table stays lit until the finger is 8px past its edge, so the highlight never flickers
+      // on a border between two tables or while the strip slides under the finger
+      if (t !== hovered.current && hovered.current) {
+        const r = document.querySelector<HTMLElement>(`.seat-dock [data-table="${CSS.escape(hovered.current)}"]`)?.getBoundingClientRect();
+        if (r && finger.x >= r.left - SLACK && finger.x <= r.right + SLACK && finger.y >= r.top - SLACK && finger.y <= r.bottom + SLACK) t = hovered.current;
+      }
       if (t !== hovered.current) { hovered.current = t; if (t) haptic('tick'); onHover(t); }
     };
+    // edge zones: within 40px of either end of the strip it scrolls toward that end, faster the closer the finger is
+    const strip = document.querySelector<HTMLElement>('.seat-dock-strip');
+    const snap = strip?.style.scrollSnapType ?? '';
+    if (strip) strip.style.scrollSnapType = 'none'; // snapping would pull the strip back against the finger
+    const EDGE = 40, SPEED = 12;
+    let raf = 0;
+    const tick = () => {
+      raf = requestAnimationFrame(tick);
+      if (!strip || !live.current) return;
+      const r = strip.getBoundingClientRect();
+      if (finger.y < r.top - 24 || finger.y > r.bottom + 24) return;
+      const left = finger.x - r.left, right = r.right - finger.x;
+      const v = left < EDGE ? -Math.ceil(((EDGE - Math.max(0, left)) / EDGE) * SPEED) : right < EDGE ? Math.ceil(((EDGE - Math.max(0, right)) / EDGE) * SPEED) : 0;
+      if (!v) return;
+      const before = strip.scrollLeft;
+      strip.scrollLeft += v;
+      if (strip.scrollLeft !== before) hover();
+    };
+    raf = requestAnimationFrame(tick);
     const move = (e: PointerEvent) => {
       if (live.current?.id !== e.pointerId) return;
       finger.x = e.clientX; finger.y = e.clientY;
       setGhost((g) => g && { ...g, x: e.clientX, y: e.clientY });
       hover();
     };
-    // the dock strip scrolls itself to keep the hovered table in view: when the content slides under a still finger,
-    // the table under it changes, so the highlight follows the scroll too…
+    // when content slides under a still finger the table under it changes, so the highlight follows the scroll too…
     const scrolled = () => { if (live.current) hover(); };
     // …and the drop commits to the table that is highlighted, never to one the user did not see light up
     const up = (e: PointerEvent) => { if (live.current?.id !== e.pointerId) return; const t = hovered.current; end(); onDrop(t); };
@@ -175,7 +203,10 @@ export function useLiftDrag({ onLift, onHover, onDrop, onCancel }: {
     window.addEventListener('pointercancel', cancel);
     window.addEventListener('touchmove', block, { passive: false });
     window.addEventListener('scroll', scrolled, { capture: true, passive: true });
-    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel); window.removeEventListener('touchmove', block); window.removeEventListener('scroll', scrolled, { capture: true }); };
+    return () => {
+      cancelAnimationFrame(raf); if (strip) strip.style.scrollSnapType = snap;
+      window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel); window.removeEventListener('touchmove', block); window.removeEventListener('scroll', scrolled, { capture: true });
+    };
   }, [ghost != null]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const end = () => { live.current = null; hovered.current = null; setGhost(null); onHover(null); };
@@ -199,6 +230,9 @@ export function useLiftDrag({ onLift, onHover, onDrop, onCancel }: {
     onContextMenu: (e: React.MouseEvent) => { if (timer.current || live.current) e.preventDefault(); },
   });
 
-  const ghostEl = ghost ? <div className="lift-ghost" style={{ transform: `translate3d(${ghost.x}px, ${ghost.y}px, 0)` }} aria-hidden="true"><b>{ghost.party.primaryGuestName}</b><span>{people(seatsFor(ghost.party))}</span></div> : null;
+  // the ghost rides above the finger; over the dock it waits just above the strip, so it never hides the lit table's count
+  const dockTop = ghost ? document.querySelector('.seat-dock')?.getBoundingClientRect().top : undefined;
+  const ghostTop = ghost ? Math.max(8, dockTop != null && ghost.y > dockTop - 16 ? dockTop - GHOST_H - 10 : ghost.y - GHOST_H - 28) : 0;
+  const ghostEl = ghost ? <div className="lift-ghost" style={{ transform: `translate3d(${Math.min(Math.max(ghost.x, 78), window.innerWidth - 78)}px, ${ghostTop}px, 0)` }} aria-hidden="true"><b>{ghost.party.primaryGuestName}</b><span>{n(seatsFor(ghost.party), 'person')}</span></div> : null;
   return { bind, ghost: ghostEl, lifting: !!ghost };
 }

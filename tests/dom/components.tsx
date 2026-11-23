@@ -361,7 +361,9 @@ export async function run(){
   const ev=await made.services.events.create({type:'graduation',names:{a:'تجربة الاستقبال'},date:event.date,time:'19:00',venue:{name:'قاعة',city:'الرياض'}}),p=await made.services.parties.create(ev.id,{primaryGuestName:'عائلة الوصول التجريبي',maxPartySize:3});await made.services.rsvp.setByOrganizer(p.id,{attending:true,count:3});
   await render(wrap(<GateMode eventId={ev.id}/>));await settle();await fill(document.querySelector<HTMLInputElement>('#gate-q')!,'عائلة الوصول');await click(button('عائلة الوصول'));assert.ok(!document.getElementById('root')!.textContent?.includes('بلا طاولة'));
   await click(document.querySelector('[aria-label="إنقاص كم شخصًا يدخل الآن؟"]')!);await click(button('دخول جزئي'));await settle();assert.equal((await made.services.parties.get(p.id)).checkedInCount,2);assert.ok(!document.getElementById('root')!.textContent?.includes('وجّههم'));
-  await click(button('تراجع عن التسجيل'));await settle();assert.equal((await made.services.parties.get(p.id)).checkedInCount,0);
+  // undo asks first: one tap never cancels an arrival
+  await click(button('تراجع عن التسجيل'));await settle();assert.equal((await made.services.parties.get(p.id)).checkedInCount,2,'nothing undone before the confirmation');
+  await click(button('نعم، ألغِ الدخول'));await settle();assert.equal((await made.services.parties.get(p.id)).checkedInCount,0);
  });
  await check('Signature table overview filters the detailed list and updates from a real transfer',async()=>{
   const ev=await made.services.events.create({type:'graduation',names:{a:'خريطة الطاولات'},date:event.date,time:'19:00',venue:{name:'قاعة',city:'الرياض'}});

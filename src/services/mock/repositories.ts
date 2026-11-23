@@ -62,6 +62,7 @@ export function mockEvents({ store, now }: Ctx): EventRepository {
     list: () => store.request(() => clone(store.read().events).sort((a, b) => a.date.localeCompare(b.date))),
     get: (id) => store.request(() => clone(findEvent(store.read(), id))),
     create: (input) => store.request(() => {
+      guard(store, 'event.create');
       const t = now();
       const timeZone = input.timeZone || 'Asia/Riyadh';
       const errors = validateEssentials(input, todayFor({ timeZone }, t));
@@ -487,7 +488,10 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       // valid: write
       db.tables.push(...made);
       for (const s of steps) { if (s.to) s.p.tableId = s.to.id; else delete s.p.tableId; touch(s.p, now()); }
-      log(db, now(), eventId, 'seating_auto_applied', { count: steps.filter((s) => s.to).length, tables: made.length });
+      // the count the organizer approved in the sheet (some may stay where they were), never fewer than the moves themselves
+      const movedIn = steps.filter((s) => s.to).length;
+      const confirmed = db.parties.filter((p) => p.eventId === eventId && p.rsvpStatus === 'confirmed').length;
+      log(db, now(), eventId, 'seating_auto_applied', { count: Math.max(movedIn, Math.min(plan.seated ?? 0, confirmed)), tables: made.length });
       return {
         parties: clone(steps.map((s) => s.p)), tables: clone(made),
         undo: { moves: plan.moves.map((m, i) => ({ partyId: m.partyId, from: steps[i]!.to?.id ?? null, to: m.from })), deleteTableIds: made.map((t) => t.id) },

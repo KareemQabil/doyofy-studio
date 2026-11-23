@@ -42,8 +42,8 @@ export const EVENT_PAGES = voiced({
   // the event workspace's navigation groups and the caterer's view of it
   wsGroupPrep: 'تجهيز المناسبة', wsGroupMore: 'خيارات إضافية', wsCatFooter: 'عرض لفريق الضيافة', wsCatText: 'تابع الوجبات والاحتياجات والطاولات. إدارة الدعوات والضيوف متاحة لفريق التنظيم.',
 }, {
-  csLive: 'تابع الوصول أول بأول', csSoon: 'المناسبة {when} — جهّز فريق الاستقبال', csOfConfirmed: 'من {people} أكدوا', csRate: 'نسبة اللي وصلوا', csPartiesIn: 'دعوات وصلت', csOfConfirmedParties: 'من {n} مأكدة',
-  csPartial: 'وصل جزء منهم', csOthersWaiting: 'مستنيين الباقي', csNotYet: 'لسه ما وصلتش', csConfirmedInv: 'دعوات مأكدة',
+  csLive: 'تابع الوصول أول بأول', csSoon: 'المناسبة {when} — جهّز فريق الاستقبال', csOfConfirmed: 'من {people} أكدوا', csRate: 'نسبة اللي وصلوا', csPartiesIn: 'دعوات وصلت', csOfConfirmedParties: 'من {n} مؤكدة',
+  csPartial: 'وصل جزء منهم', csOthersWaiting: 'مستنيين الباقي', csNotYet: 'لسه ما وصلتش', csConfirmedInv: 'دعوات مؤكدة',
   csPrepTitle: 'جهّز الفريق، وبعدين افتح الاستقبال', csPrepSub: 'خطوة واحدة: ابعت اللينك لفريقك وجرّبه مرة.',
   csStep1: 'دوّر على الضيف أو اكتب كود دعوته', csStep2: 'اتأكد من العدد، والترابيزة لو ضفتها', csStep3: 'سجّل الوصول، وتقدر ترجع فيه',
   csExplain: 'شاشة الاستقبال شاشة بسيطة لفريق الاستقبال: يمسحوا كود QR من دعوة الضيف، أو يدوّروا بالاسم، وبعدين يسجّلوا الوصول كله أو جزء منه. الفريق مش محتاج صفحة المنظم.',

@@ -6,7 +6,7 @@ import { JourneyArtwork } from '../../ui/primitives/JourneyArtwork';
 import type { Event } from '../../domain/types';
 import { countParties } from '../../domain/parties';
 import { eventPhase, todayFor } from '../../domain/event';
-import { expectedArrivals } from '../../domain/checkin';
+import { arrivalTotals, expectedArrivals } from '../../domain/checkin';
 import { clockTime, countdownLabel, relativeTime } from '../../domain/format';
 import { EXCEPTION_KEY } from '../../domain/copy/event-pages';
 import { useCopy } from '../../ui/copy';
@@ -37,6 +37,8 @@ export function CheckInSetup({ event }: { event: Event }) {
   // people let in who were not on the list (gate «ضيف من خارج القائمة»): no invitation, only the staff note
   const walkIns = (activity.data ?? []).filter((a) => a.kind === 'check_in_walk_in');
   const name = (id: string) => all.find((p) => p.id === id)?.primaryGuestName ?? '—';
+  // the same total as the gate's counter: walk-ins and let-in exceptions count as arrivals, and are said so
+  const arrived = arrivalTotals(all, activity.data ?? []);
 
   return (
     <>
@@ -45,9 +47,9 @@ export function CheckInSetup({ event }: { event: Event }) {
         actions={<LinkButton to={paths.gate(event.id)} variant="primary" icon="scan" onClick={() => void prepare.run()}>{t('stepGate')}</LinkButton>} />
 
       <div className="stack gap-6">
-        {(phase === 'event_day' || phase === 'completed' || c.checkedInPeople > 0) && <div className="counts">
+        {(phase === 'event_day' || phase === 'completed' || arrived.people > 0) && <div className="counts">
           <div className="counts-checkin">
-            <Stat label={t('ovArrived')} value={c.checkedInPeople} sub={t('csOfConfirmed', { people: n(c.confirmedPeople, 'person', true) })} tone="accent" emphasis />
+            <Stat label={t('ovArrived')} value={arrived.people} sub={`${t('csOfConfirmed', { people: n(c.confirmedPeople, 'person', true) })}${arrived.special ? ` · ${t('gtWithSpecial', { n: arrived.special })}` : ''}`} tone="accent" emphasis />
             <ProgressBar value={c.checkedInPeople} max={Math.max(1, c.confirmedPeople)} tone="success" label={t('csRate')} />
           </div>
           <Stat label={t('csPartiesIn')} value={c.arrivedParties} sub={t('csOfConfirmedParties', { n: c.confirmedParties })} />
@@ -57,7 +59,7 @@ export function CheckInSetup({ event }: { event: Event }) {
 
         {phase !== 'event_day' && phase !== 'completed' && (
           <Panel title={t('csPrepTitle')} subtitle={t('csPrepSub')} className="reception-prep">
-            <JourneyArtwork kind="reception" className="reception-art"/><div className="stack gap-4"><ol className="reception-steps"><li><strong>١</strong><span>{t('csStep1')}</span></li><li><strong>٢</strong><span>{t('csStep2')}</span></li><li><strong>٣</strong><span>{t('csStep3')}</span></li></ol>
+            <JourneyArtwork kind="reception" className="reception-art"/><div className="stack gap-4"><ol className="reception-steps"><li><strong>1</strong><span>{t('csStep1')}</span></li><li><strong>2</strong><span>{t('csStep2')}</span></li><li><strong>3</strong><span>{t('csStep3')}</span></li></ol>
               <p className="muted">{t('csExplain')}</p>
               <CopyField label={t('csLinkLabel')} value={absolute(paths.gate(event.id))} hint={t('csLinkHint')} onCopied={() => void prepare.run()} />
               {event.checkInPreparedAt ? <Banner tone="success" compact>{t('csReady')}</Banner> : <p className="faint t-sm">{t('csTryOnce')}</p>}

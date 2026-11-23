@@ -17,12 +17,13 @@ import { paths } from '../../app/paths';
 import { Logo } from '../../ui/brand';
 import { Icon } from '../../ui/icons';
 import type { NavItem } from '../../ui/layouts/Layouts';
-import { useServices } from '../../app/data';
-import { canManageGuests } from '../../domain/roles';
+import { can } from '../../domain/roles';
+import { useRole } from '../shared/OwnerOnly';
 import { useCopy } from '../../ui/copy';
 
 export function SignatureShell({ children, right, mobileContext }: { children: ReactNode; right?: ReactNode; mobileContext?: ReactNode }) {
-  const manage = canManageGuests(useServices().session.currentUser().role);
+  // only the owner creates events: a coordinator could never publish one (domain/roles «event.create»)
+  const mayCreate = can(useRole(), 'event.create');
   const { t } = useCopy();
   const scrolled = useScrolled(8);
   const hidden = useScrollHide(56) && !!mobileContext;
@@ -36,7 +37,7 @@ export function SignatureShell({ children, right, mobileContext }: { children: R
         <span className="sig-edition" aria-hidden="true">توقيع</span>
         <nav className="sig-header-nav" aria-label={t('shellMainNav')}>
           <Link to={paths.events}>{t('shellMyEvents')}</Link>
-          {manage && <Link to={paths.newEvent} className="sig-header-new"><Icon name="plus" size="sm" />{t('homeNewEvent')}</Link>}
+          {mayCreate && <Link to={paths.newEvent} className="sig-header-new"><Icon name="plus" size="sm" />{t('homeNewEvent')}</Link>}
         </nav>
         <span className="sig-header-tools"><AppearanceToggle />{right ?? <AccountMenu />}</span>
       </header>

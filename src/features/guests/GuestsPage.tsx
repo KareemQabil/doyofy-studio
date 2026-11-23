@@ -36,7 +36,7 @@ import { ShareQueue } from './ShareQueue';
 import { inviteMessage, reminderMessage, whatsappUrl } from './share';
 import { arrivalOpen, guestNextAction, isUnsent, type GuestNextAction } from '../../domain/guest-tools';
 import { normalisePhone } from '../../domain/phone';
-import { can, canManageGuests, canViewFood, OWNER_ONLY_NOTE } from '../../domain/roles';
+import { can, canManageGuests, canViewFood } from '../../domain/roles';
 import { ExportGuestsDialog, TransferGuestsDialog } from './GuestToolsDialog';
 import { OwnerOnly } from '../shared/OwnerOnly';
 import { useCopy } from '../../ui/copy';
@@ -243,7 +243,7 @@ export function GuestsPage({ event }: { event: Event }) {
                   { label: `${t('remindSelected')}${selRemindable.length ? ` (${selRemindable.length})` : ''}`, icon: 'bell', disabled: !published || !selRemindable.length, onSelect: () => setQueue({ ids: selRemindable, mode: 'remind' }) },
                   { label: t('glManualDone'), icon: 'check', disabled: !published || !sel.length || bulkManual.pending, onSelect: () => void bulkManual.run(sel) },
                   // owner-only (domain/roles): export says why it is unavailable, moving between events is not offered
-                  { label: t('exportSelected'), icon: 'download', disabled: !sel.length || !can(role, 'guests.export'), hint: can(role, 'guests.export') ? undefined : OWNER_ONLY_NOTE, onSelect: () => setExporting(true) },
+                  { label: t('exportSelected'), icon: 'download', disabled: !sel.length || !can(role, 'guests.export'), hint: can(role, 'guests.export') ? undefined : t('ownerOnlyNote'), onSelect: () => setExporting(true) },
                   can(role, 'guests.transfer') ? { label: t('moveGuests'), icon: 'move', disabled: !sel.length, onSelect: () => setTransferring(true) } : null,
                   { label: t('glSimulateSend'), icon: 'send', disabled: !published || !sel.length, onSelect: () => void bulkSend.run(sel) },
                 ]} />

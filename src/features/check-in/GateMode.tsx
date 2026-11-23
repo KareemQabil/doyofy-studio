@@ -4,9 +4,9 @@
  * (declined, not replied, more than confirmed/allowed, already used, no table) are shown and need
  * an explicit staff decision; nothing is silently fixed. Every check-in can be undone.
  */
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CheckInRecord, Event, InvitationParty } from '../../domain/types';
-import { assessCheckIn, BLOCKING, codeFromScan, expectedArrivals } from '../../domain/checkin';
+import { arrivalTotals, assessCheckIn, BLOCKING, codeFromScan, expectedArrivals } from '../../domain/checkin';
 import { countParties, searchParties } from '../../domain/parties';
 import { eventPhase, todayFor } from '../../domain/event';
 import { countdownLabel } from '../../domain/format';
@@ -17,7 +17,7 @@ import { useMutation, useNow, useServices } from '../../app/data';
 import { Link, useRouter } from '../../app/router';
 import { paths } from '../../app/paths';
 import { errorMessage } from '../../services/errors';
-import { useEvent, useParties, useTables } from '../shared/queries';
+import { useActivity, useEvent, useParties, useTables } from '../shared/queries';
 
 type View = { kind: 'search' } | { kind: 'walk-in'; name: string } | { kind: 'party'; id: string; method: 'qr' | 'search' } | { kind: 'done'; record: CheckInRecord; party: InvitationParty } | { kind: 'notfound'; input: string } | { kind: 'lookup-error'; input: string; message: string };
 
@@ -41,6 +41,8 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
   const [notice, setNotice] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const c = countParties(parties);
+  const activity = useActivity(event.id, 200);
+  const arrived = arrivalTotals(parties, activity.data ?? []);
   const phase = eventPhase(event, now);
   const results = useMemo(() => (q.trim().length >= 2 ? searchParties(parties, q).slice(0, 12) : []), [parties, q]);
   const back = (message?: string) => { setNotice(message ?? null); setView({ kind: 'search' }); setQ(''); setTimeout(() => searchRef.current?.focus(), 50); };
@@ -65,7 +67,9 @@ function Gate({ event, parties, tableName, seatingEnabled }: { seatingEnabled: b
           <h1 className="gate-title truncate">{event.title}</h1>
           <p className="gate-sub">{t('gtSub')}</p>
         </div>
-        <div className="gate-counter" aria-live="polite"><span className="num">{c.checkedInPeople}</span><span className="gate-counter-of">{t('gtArrived', { n: c.confirmedPeople })}</span></div>
+        {/* every person let in counts as an arrival — walk-ins and let-in exceptions too — and the special part is said */}
+        <div className="gate-counter" aria-live="polite"><span className="num">{arrived.people}</span><span className="gate-counter-of">{t('gtArrived', { n: c.confirmedPeople })}</span>
+          {arrived.special > 0 && <span className="gate-counter-special">{t('gtWithSpecial', { n: arrived.special })}</span>}</div>
       </header>
 
       {phase !== 'event_day' && (
@@ -210,19 +214,35 @@ function DoneCard({ record, party, table, onNext, onUndone, seatingEnabled }: { 
   const { t, n } = useCopy();
   const expected = expectedArrivals(party);
   const partial = party.checkedInCount < expected;
+  // undoing an arrival is a second, deliberate step: a quiet link away from «الضيف التالي», then a confirmation
+  const [asking, setAsking] = useState(false);
+  const undoArea = useRef<HTMLDivElement>(null);
+  const opened = useRef(false);
+  // the question takes the focus (its «yes» button), and «no» gives it back to the quiet link
+  useEffect(() => { if (asking) { opened.current = true; undoArea.current?.querySelector<HTMLButtonElement>('button')?.focus(); } else if (opened.current) undoArea.current?.querySelector<HTMLButtonElement>('button')?.focus(); }, [asking]);
   return (
     <div className={`gate-card gate-done${record.exceptions.some((e) => BLOCKING.has(e)) ? ' is-exception' : ''}`} role="status">
       {record.exceptions.some((e) => BLOCKING.has(e))
         ? <span className="gate-done-mark" aria-hidden="true"><Icon name="check" size="lg" /></span>
         : <Lottie name="success" size={96} className="gate-done-seal" />}
       <h2 className="gate-h">{partial ? t('gtEntered', { people: n(record.count, 'person') }) : t('gtWelcome')}</h2>
-      <p className="gate-done-line">{party.primaryGuestName} · {expected > 0 ? <>{t('gtDoneArrived')} <strong className="num">{party.checkedInCount}</strong> {t('gtDoneOf')} <span className="num">{expected}</span>{partial ? t('gtDoneLater') : ''}</> : <>{t('gtDoneIn')} <strong className="num">{party.checkedInCount}</strong> {t('gtDoneExcept')}</>}</p>
+      <p className="gate-done-line">{party.primaryGuestName} · {expected > 0 ? <>{t('gtDoneArrived')} <strong className="num">{party.checkedInCount}</strong> {t('gtDoneOf')} <span className="num">{expected}</span>{partial ? t('gtDoneLater') : ''}</> : t('gtDoneSpecial', { people: n(party.checkedInCount, 'person') })}</p>
       {table && <p className="gate-table"><Icon name="table" />{table}</p>}
       {seatingEnabled && !table && party.rsvpStatus === 'confirmed' && <p className="gate-hint">{t('gtNoTable')}</p>}
       {undo.error ? <p className="gate-error">{errorMessage(undo.error)}</p> : null}
       <div className="gate-actions">
         <Button variant="primary" size="lg" block icon="scan" onClick={onNext}>{t('gtNextGuest')}</Button>
-        <Button size="lg" block icon="undo" loading={undo.pending} onClick={() => void undo.run()}>{t('gtUndo')}</Button>
+      </div>
+      <div className="gate-undo-area" ref={undoArea}>
+        {asking ? (
+          <div className="gate-undo-ask" role="group" aria-labelledby="gate-undo-q">
+            <p id="gate-undo-q" className="t-bold">{t('gtUndoAsk', { name: party.primaryGuestName })}</p>
+            <div className="gate-undo-row">
+              <Button variant="danger" icon="undo" loading={undo.pending} onClick={() => void undo.run()}>{t('gtUndoYes')}</Button>
+              <Button variant="ghost" disabled={undo.pending} onClick={() => setAsking(false)}>{t('gtUndoKeep')}</Button>
+            </div>
+          </div>
+        ) : <Button variant="ghost" className="gate-undo" icon="undo" onClick={() => setAsking(true)}>{t('gtUndo')}</Button>}
       </div>
     </div>
   );

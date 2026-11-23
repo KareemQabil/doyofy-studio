@@ -10,7 +10,7 @@ import { checkAssign, nextTableName, occupancy, seatingWarnings, totalCapacity, 
 import { countParties, searchParties, seatsFor } from '../../domain/parties';
 import { Badge, Banner, Button, ConfirmDialog, Dialog, EmptyState, ErrorState, Field, Icon, Input, Menu, PageHeader, Panel, ProgressBar, SearchInput, Stepper, PageLoader } from '../../ui';
 import { useMutation, useServices } from '../../app/data';
-import { can, canViewFood, OWNER_ONLY_NOTE } from '../../domain/roles';
+import { can, canViewFood } from '../../domain/roles';
 import { ExportGuestsDialog } from '../guests/GuestToolsDialog';
 import { useCopy } from '../../ui/copy';
 import { Link } from '../../app/router';
@@ -40,6 +40,9 @@ export function SeatingPage({ event }: { event: Event }) {
   const [q, setQ] = useState('');
   const [assigning, setAssigning] = useState<InvitationParty | null>(null);
   const [editing, setEditing] = useState<TableOccupancy | 'new' | null>(null);
+  // «زِد السعة» on an over-capacity warning opens the dialog at the capacity that table needs, not at its current one
+  const [capHint, setCapHint] = useState<number | null>(null);
+  const edit = (o: TableOccupancy | 'new', need: number | null = null) => { setCapHint(need); setEditing(o); };
   const [deleting, setDeleting] = useState<TableOccupancy | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragTarget, setDragTarget] = useState<string | null>(null);
@@ -60,7 +63,7 @@ export function SeatingPage({ event }: { event: Event }) {
     onSuccess: ({ party: p, from }) => toast({
       tone: 'success',
       text: p.tableId ? t('seatSeated', { name: p.primaryGuestName, table: tables.data?.find((x) => x.id === p.tableId)?.name ?? t('seatTheTable') }) : t('seatRemoved', { name: p.primaryGuestName }),
-      action: { label: t('undo'), run: () => {
+      action: { label: t('seatUndo'), run: () => {
         services.seating.assign(p.id, from).then(() => toast({ tone: 'neutral', text: from ? t('seatBackTo', { name: p.primaryGuestName, table: tables.data?.find((x) => x.id === from)?.name ?? t('seatTheirTable') }) : t('seatBackToWaiting', { name: p.primaryGuestName }) }), (e) => toast({ tone: 'danger', text: errorMessage(e) }));
       } },
     }),
@@ -68,8 +71,11 @@ export function SeatingPage({ event }: { event: Event }) {
   });
   const remove = useMutation((s, id: string) => s.seating.deleteTable(id), { onSuccess: () => { setDeleting(null); toast({ tone: 'neutral', text: t('seatDeleted') }); } });
 
-  const reorder = useMutation((s, ids: string[]) => s.seating.reorderTables(event.id, ids), {
-    onSuccess: () => toast({ tone: 'success', text: t('seatOrderSaved') }),
+  // a new order can be put back from its toast, like every seat change (the order before the move is kept with the call)
+  const reorder = useMutation(async (s, ids: string[], before: string[]) => { await s.seating.reorderTables(event.id, ids); return before; }, {
+    onSuccess: (before) => toast({ tone: 'success', text: t('seatOrderSaved'), action: { label: t('seatOrderUndo'), run: () => {
+      services.seating.reorderTables(event.id, before).then(() => toast({ tone: 'neutral', text: t('seatOrderUndone') }), (e) => toast({ tone: 'danger', text: errorMessage(e) }));
+    } } }),
     onError: (e) => toast({ tone: 'danger', text: errorMessage(e) }),
   });
   const all = parties.data ?? [];
@@ -108,12 +114,14 @@ export function SeatingPage({ event }: { event: Event }) {
     if (!manage || reorder.pending || source === target) return;
     const ids = occ.map((o) => o.table.id), from = ids.indexOf(source), to = ids.indexOf(target);
     if (from < 0 || to < 0) return;
-    ids.splice(from, 1); ids.splice(to, 0, source); void reorder.run(ids);
+    const before = [...ids];
+    ids.splice(from, 1); ids.splice(to, 0, source); void reorder.run(ids, before);
   };
   // the suggestion is applied in one write; the toast offers to put back exactly what it changed
   const autoApplied = ({ undo, seated, created }: AutoSeatResult) => {
     setAutoSeat(false);
-    toast({ tone: 'success', text: `${t('autoSeatApplied')}: ${n(seated, 'invitation')}${created ? ` · +${n(created, 'table')}` : ''}`, action: { label: t('autoSeatUndo'), run: () => {
+    // the count the sheet promised («سنوزّع 4 دعوات»), which the activity log keeps too (AutoSeatApply.seated)
+    toast({ tone: 'success', text: `${t('autoSeatApplied')}: ${n(seated, 'invitation')}${created ? t('acAutoTables', { tables: n(created, 'table', true) }) : ''}`, action: { label: t('autoSeatUndo'), run: () => {
       services.seating.undoAutoSeating(event.id, undo).then(() => toast({ tone: 'neutral', text: t('autoSeatUndone') }), (e) => toast({ tone: 'danger', text: errorMessage(e) }));
     } } });
   };
@@ -131,9 +139,9 @@ export function SeatingPage({ event }: { event: Event }) {
           {/* one primary action; the rest wait in a menu so the hall map stays near the top on small phones */}
           <Button variant="primary" icon="sparkle" className="as-entry" onClick={() => setAutoSeat(true)}>{t('autoSeat')}</Button>
           <Menu label={t('seatActions')} triggerLabel={t('wsMore')} items={[
-            { label: t('seatAdd'), icon: 'plus', onSelect: () => setEditing('new') },
+            { label: t('seatAdd'), icon: 'plus', onSelect: () => edit('new') },
             { label: t(orderMode ? 'seatOrderDone' : 'seatOrder'), icon: 'move', onSelect: () => setOrderMode((v) => !v) },
-            { label: t('exportFile'), icon: 'download', disabled: !mayExport, hint: mayExport ? undefined : OWNER_ONLY_NOTE, onSelect: () => setExportTable('all') },
+            { label: t('exportFile'), icon: 'download', disabled: !mayExport, hint: mayExport ? undefined : t('ownerOnlyNote'), onSelect: () => setExportTable('all') },
           ]} />
         </div> : undefined} />
 
@@ -144,13 +152,13 @@ export function SeatingPage({ event }: { event: Event }) {
           {(warn.overCapacity.length > 0 || warn.declinedAssigned.length > 0 || cap < c.confirmedPeople) && (
             <div className="stack gap-2 seat-warnings">
               {warn.overCapacity.map((o) => <Banner key={o.table.id} tone="danger" compact title={t('seatOver', { table: o.table.name })}
-                action={manage ? <div className="row gap-2 wrap"><Button size="sm" icon="table" onClick={() => showTable(o.table.id)}>{t('seatShowTable')}</Button><Button size="sm" variant="ghost" icon="edit" onClick={() => setEditing(o)}>{t('seatMoreCap')}</Button></div> : undefined}>
+                action={manage ? <div className="row gap-2 wrap"><Button size="sm" icon="table" onClick={() => showTable(o.table.id)}>{t('seatShowTable')}</Button><Button size="sm" variant="ghost" icon="edit" onClick={() => edit(o, o.used)}>{t('seatMoreCap')}</Button></div> : undefined}>
                 {t('seatOverText', { people: people(o.used), cap: o.table.capacity })} {t(manage ? 'seatOverManage' : 'seatOverTeam')}</Banner>)}
               {warn.declinedAssigned.map((p) => (
                 <Banner key={p.id} tone="warning" compact title={t('seatDeclinedOn', { name: p.primaryGuestName, table: occ.find((o) => o.table.id === p.tableId)?.table.name ?? '' })}
                   action={manage ? <Button size="sm" onClick={() => void assign.run(p.id, null)}>{t('seatRemoveFrom')}</Button> : undefined}>{t(manage ? 'seatYourCall' : 'seatTeamReviews')}</Banner>
               ))}
-              {cap < c.confirmedPeople && <Banner tone="warning" compact title={t('seatFewSeats')} action={manage ? <Button size="sm" icon="plus" onClick={() => setEditing('new')}>{t('seatAdd')}</Button> : undefined}>{t('seatFewSeatsText', { people: people(c.confirmedPeople), seats: n(cap, 'seat') })}</Banner>}
+              {cap < c.confirmedPeople && <Banner tone="warning" compact title={t('seatFewSeats')} action={manage ? <Button size="sm" icon="plus" onClick={() => edit('new')}>{t('seatAdd')}</Button> : undefined}>{t('seatFewSeatsText', { people: people(c.confirmedPeople), seats: n(cap, 'seat') })}</Banner>}
             </div>
           )}
 
@@ -170,7 +178,7 @@ export function SeatingPage({ event }: { event: Event }) {
                     ))}
                   </ul>
                 )}
-                <p className="faint t-xs seat-pool-note">{t('seatPendingNote')} <span className="seating-drag-hint">{t('seatDragHint')}</span><span className="seating-tap-hint">{t('seatTapHint')}</span></p>
+                <p className="faint t-xs seat-pool-note">{t('seatPendingNote')} <span className="seating-drag-hint">{t('seatDragHint', { label: t('assignTable') })}</span><span className="seating-tap-hint">{t('seatTapHint', { label: t('assignTable') })}</span></p>
               </div>
             </Panel>
 
@@ -188,7 +196,7 @@ export function SeatingPage({ event }: { event: Event }) {
                       mayExport ? { label: t('exportFile'), icon: 'download', onSelect: () => setExportTable(o.table.id) } : null,
                       { label: t('seatEarlier'), icon: 'chevron-up', disabled: !manage || occ[0]?.table.id === o.table.id, onSelect: () => reorderTo(o.table.id, occ[occ.indexOf(o) - 1]!.table.id) },
                       { label: t('seatLater'), icon: 'chevron-down', disabled: !manage || occ[occ.length - 1]?.table.id === o.table.id, onSelect: () => reorderTo(o.table.id, occ[occ.indexOf(o) + 1]!.table.id) },
-                      { label: t('seatEdit'), icon: 'edit', disabled: !manage, onSelect: () => setEditing(o) },
+                      { label: t('seatEdit'), icon: 'edit', disabled: !manage, onSelect: () => edit(o) },
                       { label: t('seatDelete'), icon: 'trash', danger: true, disabled: !manage, onSelect: () => setDeleting(o) },
                     ]} />}
                   </header>
@@ -220,7 +228,7 @@ export function SeatingPage({ event }: { event: Event }) {
       {moving && !override && !assigning && <SeatDock party={moving} tables={occ} hover={dockHover} onPick={(t) => tryAssign(moving, t)} onCancel={() => setMoving(null)} onList={() => setAssigning(moving)} />}
       {lift.ghost}
       {assigning && !override && <AssignDialog party={assigning} tables={occ} onClose={() => { setAssigning(null); setMoving(null); }} onPick={(t) => tryAssign(assigning, t)} />}
-      {editing && <TableDialog event={event} table={editing === 'new' ? null : editing} existing={occ} onClose={() => setEditing(null)} />}
+      {editing && <TableDialog event={event} table={editing === 'new' ? null : editing} suggested={capHint ?? undefined} existing={occ} onClose={() => setEditing(null)} />}
       <ConfirmDialog open={!!deleting} tone="danger" title={t('seatDeleteTitle', { table: deleting?.table.name ?? '' })} confirmLabel={t('seatDelete')} loading={remove.pending}
         body={deleting?.parties.length ? t('seatDeleteMoves', { n: n(deleting.parties.length, 'invitation') }) : t('seatDeleteEmpty')}
         onCancel={() => setDeleting(null)} onConfirm={() => deleting && void remove.run(deleting.table.id)} />
@@ -255,11 +263,12 @@ function AssignDialog({ party, tables, onClose, onPick }: { party: InvitationPar
   );
 }
 
-function TableDialog({ event, table, existing, onClose }: { event: Event; table: TableOccupancy | null; existing: TableOccupancy[]; onClose: () => void }) {
+function TableDialog({ event, table, suggested, existing, onClose }: { event: Event; table: TableOccupancy | null; suggested?: number; existing: TableOccupancy[]; onClose: () => void }) {
   const toast = useToast();
   const { t, n } = useCopy();
-  const [name, setName] = useState(table?.table.name ?? nextTableName(existing.map((o) => o.table)));
-  const [capacity, setCapacity] = useState(table?.table.capacity ?? 10);
+  // a new table's default name follows the voice («ترابيزة 9» in Egyptian); existing names are data and stay as typed
+  const [name, setName] = useState(table?.table.name ?? nextTableName(existing.map((o) => o.table), t('seatDefaultName')));
+  const [capacity, setCapacity] = useState(Math.min(60, Math.max(suggested ?? 0, table?.table.capacity ?? 10)));
   const [tried, setTried] = useState(false);
   const errs = validateTable({ name, capacity });
   const save = useMutation(async (s): Promise<unknown> => (table ? s.seating.updateTable(table.table.id, { name, capacity }) : s.seating.createTables(event.id, [{ name, capacity }])), {

@@ -1,6 +1,8 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import type { InvitationParty, Table } from '../../src/domain/types';
+import type { EventActivity, InvitationParty, Table } from '../../src/domain/types';
+import { nextTableName } from '../../src/domain/seating';
+import { arrivalTotals } from '../../src/domain/checkin';
 import { applyInput, defaultTableCapacity, groupOf, groupOrder, moveOptions, newTableNames, planAutoSeating, type AutoSeatPlan } from '../../src/domain/auto-seating';
 import { seatsFor } from '../../src/domain/parties';
 
@@ -236,4 +238,19 @@ test('undo is refused when seating changed after applying, and the caterer canno
   assert.equal((await s.seating.listTables(ev.id)).length, 3, 'nothing was undone');
   prototype.update({ role: 'caterer' });
   await assert.rejects(s.seating.applyAutoSeating(ev.id, applyInput(planAutoSeating(ts, await s.parties.list(ev.id)), ts)), (e: unknown) => (e as { code?: string }).code === 'forbidden');
+});
+
+test('default table names follow the voice only when created; arrivals count walk-ins and let-in exceptions', () => {
+  assert.equal(nextTableName(tables(10, 10)), 'طاولة 3');
+  assert.equal(nextTableName(tables(10, 10), 'ترابيزة {n}'), 'ترابيزة 3');
+  assert.deepEqual(newTableNames(tables(10, 10), 2, 'ترابيزة {n}'), ['ترابيزة 3', 'ترابيزة 4']);
+  const p = (rsvpStatus: 'confirmed' | 'declined', checkedInCount: number) => ({ rsvpStatus, checkedInCount }) as InvitationParty;
+  const walkIn = { kind: 'check_in_walk_in', data: { count: 2 } } as unknown as EventActivity;
+  assert.deepEqual(arrivalTotals([p('confirmed', 3), p('declined', 1)], [walkIn]), { people: 6, special: 3 });
+});
+
+test('the activity log counts the invitations the suggestion seats, as the sheet and the toast do', () => {
+  const ts = tables(10, 10);
+  const plan = { placement: { a: ts[0]!.id, b: ts[0]!.id, c: ts[1]!.id }, kept: ['c'], moves: [], tables: [] } as unknown as AutoSeatPlan;
+  assert.equal(applyInput(plan, ts).seated, 2, 'placed parties that were not kept, including any that stay where they were');
 });

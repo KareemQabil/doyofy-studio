@@ -70,7 +70,7 @@ export function GuestExperienceSettings({ event, foodOnly = false }: { event: Ev
         <div className="gxs-editor">
           {/* ------------------------------------------------ meals */}
           {foodAccess && <section className="gxs-part" aria-labelledby="gxs-meals">
-            <h3 id="gxs-meals" className="gxs-h"><span className="gxs-num">١</span>{t('xsMeals')}</h3>
+            <h3 id="gxs-meals" className="gxs-h"><span className="gxs-num">1</span>{t('xsMeals')}</h3>
             <Switch label={t('xsAskMeal')} hint={t('xsAskMealHint')} checked={d.meals.enabled}
               onChange={(v) => setMeals(v && live.length === 0 ? { enabled: true, options: [...d.meals.options, { id: makeId('meal'), label: t('xsMeat') }, { id: makeId('meal'), label: t('xsFish') }] } : { enabled: v })} />
             {d.meals.enabled && (
@@ -105,13 +105,13 @@ export function GuestExperienceSettings({ event, foodOnly = false }: { event: Ev
 
           {/* ------------------------------------------------ dietary */}
           {foodAccess && <section className="gxs-part" aria-labelledby="gxs-diet">
-            <h3 id="gxs-diet" className="gxs-h"><span className="gxs-num">٢</span>{t('xsDiet')}</h3>
+            <h3 id="gxs-diet" className="gxs-h"><span className="gxs-num">2</span>{t('xsDiet')}</h3>
             <Switch label={t('xsAskDiet')} hint={t('xsAskDietHint')} checked={d.dietary.enabled} onChange={(v) => setD((x) => ({ ...x, dietary: { enabled: v } }))} />
           </section>}
 
           {/* ------------------------------------------------ wishlist */}
           {!foodOnly && <section className="gxs-part" aria-labelledby="gxs-gifts">
-            <h3 id="gxs-gifts" className="gxs-h"><span className="gxs-num">{foodAccess ? '٣' : '١'}</span>{t('xsWishlist')}</h3>
+            <h3 id="gxs-gifts" className="gxs-h"><span className="gxs-num">{foodAccess ? '3' : '1'}</span>{t('xsWishlist')}</h3>
             <Switch label={t('xsShowWishlist')} hint={t('xsShowWishlistHint')} checked={d.gifts.enabled}
               onChange={(v) => { setGifts({ enabled: v }); if (v && !d.gifts.items.some((g) => !g.archived)) addItem(); }} />
             {d.gifts.enabled && (
