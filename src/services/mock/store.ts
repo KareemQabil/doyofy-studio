@@ -6,7 +6,7 @@
  * Only services/mock/* may touch this. Screens never call storage (spec §4).
  */
 import type { CheckInRecord, Event, EventActivity, InvitationDesign, InvitationParty, RSVPResponse, Table } from '../../domain/types';
-import { AppError } from '../errors';
+import { AppError, copyError } from '../errors';
 import { resolveDesign } from '../../domain/invitation';
 
 export interface DbShape {
@@ -108,7 +108,7 @@ export class MockStore {
   async request<T>(fn: () => T, kind: 'read' | 'write' = 'read'): Promise<T> {
     const ms = this.settings.latencyMs * (kind === 'write' ? 1.4 : 1) * (0.7 + Math.random() * 0.6);
     if (ms > 0) await new Promise((r) => setTimeout(r, ms));
-    if (this.settings.offline) throw new AppError('network', 'لا يوجد اتصال الآن. لم يتم حفظ أي تغيير — أعد المحاولة بعد عودة الاتصال.');
+    if (this.settings.offline) throw copyError('network', 'erOffline');
     return fn();
   }
 

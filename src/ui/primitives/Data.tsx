@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { Tone } from '../../domain/types';
 import { initialOf } from '../../domain/format';
 import { Icon, type IconName } from '../icons';
+import { useCopy } from '../copy';
 
 export function Panel({ title, subtitle, actions, children, padded = true, as: As = 'section', id, className = '' }: { title?: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode; padded?: boolean; as?: 'section' | 'div' | 'article'; id?: string; className?: string }) {
   const hid = useId();
@@ -46,8 +47,9 @@ export function FilterChips<T extends string>({ label, value, options, onChange 
 
 export function ProgressBar({ value, max, label, tone = 'primary' }: { value: number; max: number; label?: string; tone?: 'primary' | 'success' | 'warning' | 'danger' }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+  const { t } = useCopy();
   return (
-    <div className={`progress progress-${tone}`} role="progressbar" aria-valuemin={0} aria-valuemax={Math.max(1,max)} aria-valuenow={Math.max(0,Math.min(value,Math.max(1,max)))} aria-valuetext={`${value} من ${max}`} aria-label={label}>
+    <div className={`progress progress-${tone}`} role="progressbar" aria-valuemin={0} aria-valuemax={Math.max(1,max)} aria-valuenow={Math.max(0,Math.min(value,Math.max(1,max)))} aria-valuetext={t('uiOf', { n: value, count: max })} aria-label={label}>
       <span className="progress-fill" style={{ width: `${pct}%` }} />
     </div>
   );

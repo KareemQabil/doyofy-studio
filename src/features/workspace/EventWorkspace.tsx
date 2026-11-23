@@ -15,7 +15,7 @@ import { useNow, useServices } from '../../app/data';
 import { canViewFood } from '../../domain/roles';
 import { paths } from '../../app/paths';
 import { useEvent, useParties } from '../shared/queries';
-import { isAppError } from '../../services/errors';
+import { errorMessage, isAppError } from '../../services/errors';
 import { NotFound } from './NotFound';
 import { OccasionGlyph } from '../../ui/icons';
 import { AccountMenu } from '../account/AccountMenu';
@@ -35,7 +35,7 @@ export function EventWorkspace({ eventId, section, children }: { eventId: string
   const now = useNow();
   const { t, dialect } = useCopy();
 
-  if (ev.error && isAppError(ev.error) && ev.error.code === 'not_found') return <NotFound message={ev.error.message} />;
+  if (ev.error && isAppError(ev.error) && ev.error.code === 'not_found') return <NotFound message={errorMessage(ev.error)} />;
 
   const e = ev.data;
   const phase = e ? eventPhase(e, now) : 'upcoming';

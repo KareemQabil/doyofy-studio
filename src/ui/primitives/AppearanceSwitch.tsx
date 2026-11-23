@@ -1,21 +1,26 @@
 /** Platform appearance: light · dark · follow the device. Saved with the organizer's settings; never touches the invitation. */
 import { usePrototype } from '../../app/data';
 import { APPEARANCE_LABEL, useAppearance, type Appearance } from '../../app/review';
+import { useCopy } from '../copy';
+import type { CopyKey } from '../../domain/copy';
 import { Segmented } from './Segmented';
 import { Icon } from '../icons';
 import { flushSync } from 'react-dom';
 import type { MouseEvent } from 'react';
 
 const ICON = { light: 'sun', dark: 'moon', system: 'device' } as const;
+const LABEL_KEY: Record<Appearance, CopyKey> = { light: 'uiThemeLight', dark: 'uiThemeDark', system: 'uiThemeSystem' };
 
 export function AppearanceSwitch({ className = '' }: { className?: string }) {
   const proto = usePrototype();
   const { appearance } = useAppearance();
+  const { t } = useCopy();
   return (
     <div className={`appearance-switch ${className}`}>
-      <p className="appearance-label" id="appearance-label">مظهر المنصة</p>
-      <Segmented size="sm" label="مظهر المنصة" value={appearance} onChange={(v: Appearance) => proto.update({ appearance: v })}
-        options={(Object.keys(APPEARANCE_LABEL) as Appearance[]).map((v) => ({ value: v, label: APPEARANCE_LABEL[v], icon: ICON[v] }))} />
+      <p className="appearance-label" id="appearance-label">{t('uiAppearance')}</p>
+      {/* md: each choice is a full 44px touch target (the small size measured 34px on phones) */}
+      <Segmented label={t('uiAppearance')} value={appearance} onChange={(v: Appearance) => proto.update({ appearance: v })}
+        options={(Object.keys(APPEARANCE_LABEL) as Appearance[]).map((v) => ({ value: v, label: t(LABEL_KEY[v]), icon: ICON[v] }))} />
     </div>
   );
 }
@@ -25,8 +30,9 @@ export function AppearanceSwitch({ className = '' }: { className?: string }) {
 export function AppearanceToggle({ className = '' }: { className?: string }) {
   const proto = usePrototype();
   const { resolved } = useAppearance();
+  const { t } = useCopy();
   const next: Appearance = resolved === 'dark' ? 'light' : 'dark';
-  const label = next === 'dark' ? 'المظهر الداكن' : 'المظهر الفاتح';
+  const label = t(next === 'dark' ? 'uiToDark' : 'uiToLight');
   const toggle = (e: MouseEvent<HTMLButtonElement>) => {
     const root = document.documentElement;
     const apply = () => flushSync(() => { root.dataset.appearance = next; root.style.colorScheme = next; proto.update({ appearance: next }); });

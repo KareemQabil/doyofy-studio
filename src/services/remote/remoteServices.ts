@@ -14,7 +14,7 @@ import type {
   CheckInContext, GuestRsvpInput, GuestView, Services, ShareHow,
 } from '../contracts';
 import type { CreateEventInput, InvitationDesign, InvitationDesignContent, PartyInput, User } from '../../domain/types';
-import { AppError } from '../errors';
+import { AppError, copyError } from '../errors';
 import { makeCode, makeSlug, normaliseCode } from '../../domain/ids';
 import { suggestTitle, todayFor, validateEssentials } from '../../domain/event';
 import { defaultDesign } from '../../domain/invitation';
@@ -43,20 +43,20 @@ function cleanPartyInput(input: Partial<PartyInput>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (input.primaryGuestName !== undefined) {
     const name = input.primaryGuestName.replace(/\s+/g, ' ').trim();
-    if (!name) throw new AppError('validation', 'اكتب اسم الضيف أو العائلة.', 'primaryGuestName');
+    if (!name) throw copyError('validation', 'erNameRequired', { field: 'primaryGuestName' });
     out.primary_guest_name = name;
   }
   if (input.phone !== undefined) {
     if (!input.phone || !input.phone.trim()) out.phone = null;
     else {
       const r = normalisePhone(input.phone);
-      if (!r.ok) throw new AppError('validation', 'رقم الجوال غير صحيح. مثال: 0551234567 أو ‎+966551234567', 'phone');
+      if (!r.ok) throw copyError('validation', 'erBadPhone', { field: 'phone' });
       out.phone = r.e164;
     }
   }
   if (input.maxPartySize !== undefined) {
     if (!Number.isInteger(input.maxPartySize) || input.maxPartySize < 1 || input.maxPartySize > 20) {
-      throw new AppError('validation', 'العدد المسموح بين 1 و20.', 'maxPartySize');
+      throw copyError('validation', 'erPartySize', { field: 'maxPartySize' });
     }
     out.max_party_size = input.maxPartySize;
   }
@@ -179,7 +179,7 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
       get: async (id) => toParty(await db.selectOne<PartyRow>('parties', [['select', '*'], ['id', eq(requireId(id, 'party_not_found'))]])),
       create: async (eventId, input) => {
         const clean = cleanPartyInput(input);
-        if (!clean.primary_guest_name) throw new AppError('validation', 'اكتب اسم الضيف أو العائلة.', 'primaryGuestName');
+        if (!clean.primary_guest_name) throw copyError('validation', 'erNameRequired', { field: 'primaryGuestName' });
         const [r] = await db.insert<PartyRow>('parties', { event_id: requireId(eventId, 'event_not_found'), ...clean });
         return changed(toParty(r!));
       },

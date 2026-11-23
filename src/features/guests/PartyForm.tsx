@@ -30,7 +30,7 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
   const dupe = phoneRes?.ok ? existing.find((p) => p.phone === phoneRes.e164 && p.id !== initial?.id) : undefined;
   const sides = useMemo(() => [...new Set(existing.map((p) => p.side).filter(Boolean))] as string[], [existing]);
   const nameErr = tried && !name.trim() ? t('pfNameRequired') : null;
-  const phoneErr = phoneRes && !phoneRes.ok ? t('pfBadPhone') : isAppError(error) && error.field === 'phone' ? error.message : null;
+  const phoneErr = phoneRes && !phoneRes.ok ? t('pfBadPhone') : isAppError(error) && error.field === 'phone' ? errorMessage(error) : null;
 
   // Capacity counts allowed people (companions included); editing frees this party's current allowance first.
   const limit = eventId ? guestLimit(eventId) : 0;

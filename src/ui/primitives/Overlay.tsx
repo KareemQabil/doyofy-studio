@@ -6,11 +6,13 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { Button, IconButton } from './Button';
 import { usePointerGesture } from '../hooks/usePointerGesture';
 import { shouldDismiss } from '../../domain/gestures';
+import { useCopy } from '../copy';
 
 export function Dialog({ open, onClose, title, description, children, footer, variant = 'modal', size = 'md', dismissible = true, labelledBy, className = '', gestureDismiss = variant === 'drawer' }: {
   open: boolean; onClose: () => void; title: ReactNode; description?: ReactNode; children?: ReactNode; footer?: ReactNode;
   variant?: 'modal' | 'drawer'; size?: 'sm' | 'md' | 'lg' | 'xl'; dismissible?: boolean; labelledBy?: string; className?: string; gestureDismiss?: boolean;
 }) {
+  const { t } = useCopy();
   const ref = useRef<HTMLDialogElement>(null);
   const id = useId();
   const panel = useRef<HTMLDivElement>(null);
@@ -53,13 +55,13 @@ export function Dialog({ open, onClose, title, description, children, footer, va
     >
       {open && (
         <div ref={panel} className="dialog-panel">
-          {gestureDismiss && <button type="button" className="sheet-grip" data-gesture-surface aria-label="إغلاق اللوحة" disabled={!dismissible} {...gesture} onClick={onClose}><span/></button>}
+          {gestureDismiss && <button type="button" className="sheet-grip" data-gesture-surface aria-label={t('uiCloseSheet')} disabled={!dismissible} {...gesture} onClick={onClose}><span/></button>}
           <header className="dialog-head">
             <div className="grow">
               <h2 id={`${id}-t`} className="dialog-title">{title}</h2>
               {description && <p id={`${id}-d`} className="dialog-desc">{description}</p>}
             </div>
-            {dismissible && <IconButton icon="close" label="إغلاق" onClick={onClose} className="dialog-close" />}
+            {dismissible && <IconButton icon="close" label={t('uiClose')} onClick={onClose} className="dialog-close" />}
           </header>
           <div className="dialog-body">{children}</div>
           {footer && <footer className="dialog-foot">{footer}</footer>}
@@ -69,15 +71,16 @@ export function Dialog({ open, onClose, title, description, children, footer, va
   );
 }
 
-export function ConfirmDialog({ open, title, body, confirmLabel, cancelLabel = 'تراجع', tone = 'primary', onConfirm, onCancel, loading }: {
+export function ConfirmDialog({ open, title, body, confirmLabel, cancelLabel, tone = 'primary', onConfirm, onCancel, loading }: {
   open: boolean; title: ReactNode; body?: ReactNode; confirmLabel: string; cancelLabel?: string; tone?: 'primary' | 'danger'; onConfirm: () => void; onCancel: () => void; loading?: boolean;
 }) {
+  const { t } = useCopy();
   return (
     <Dialog open={open} onClose={onCancel} title={title} size="sm" dismissible={!loading}
       footer={<>
         <Button variant={tone === 'danger' ? 'danger' : 'primary'} onClick={onConfirm} loading={loading} data-autofocus={tone === 'danger' ? undefined : true}>{confirmLabel}</Button>
         {/* destructive: start on the safe choice so a stray Enter never deletes */}
-        <Button variant="ghost" onClick={onCancel} disabled={loading} data-autofocus={tone === 'danger' ? true : undefined}>{cancelLabel}</Button>
+        <Button variant="ghost" onClick={onCancel} disabled={loading} data-autofocus={tone === 'danger' ? true : undefined}>{cancelLabel ?? t('uiBack')}</Button>
       </>}>
       {body && <div className="muted">{body}</div>}
     </Dialog>

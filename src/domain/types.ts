@@ -271,7 +271,7 @@ export interface CheckInRecord {
 export type ActivityKind =
   | 'event_created' | 'event_updated'
   | 'invitation_saved' | 'invitation_published'
-  | 'party_added' | 'parties_imported' | 'party_updated' | 'party_removed'
+  | 'party_added' | 'parties_imported' | 'party_updated' | 'party_removed' | 'parties_transferred'
   | 'invitation_shared' | 'invitation_opened' | 'invitation_failed' | 'reminder_sent'
   | 'rsvp_confirmed' | 'rsvp_declined' | 'rsvp_edited' | 'rsvp_unmatched' | 'rsvp_matched'
   | 'table_created' | 'party_seated' | 'party_moved' | 'party_unseated' | 'seating_auto_applied' | 'seating_auto_undone'

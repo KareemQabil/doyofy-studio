@@ -241,6 +241,9 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
   const guestPreview = () => void flushThen(() => navigate(`${paths.preview(event.id)}?from=design&section=${section}`, { force: !evDirty }));
   const changeTemplate = () => void flushThen(() => navigate(paths.templates(event.id), { force: !evDirty }));
   const close = () => void flushThen(() => navigate(paths.invitation(event.id), { force: !evDirty }));
+  // the account's sound library, with a way straight back to this tab («ارجع للتصميم»)
+  const accountPath = paths.account({ section: 'audio', back: paths.design(event.id, 'motion') });
+  const toAccount = { href: accountPath, go: () => void flushThen(() => navigate(accountPath, { force: !evDirty })) };
 
   const publishBtn = ps !== 'published' && !mayPublish
     // a team member sees where publishing lives and who does it, in the button's place (domain/roles)
@@ -334,7 +337,7 @@ function Editor({ event, saved }: { event: Event; saved: InvitationDesign | null
             {loc.search.get('first') === '1' && section === 'content' && <div className="ed-simple-intro"><Icon name="check-circle" size="sm" /><p><strong>{t('edReadyTitle')}</strong> {t('edReadyText')}</p></div>}
             {section === 'content' && <ContentSection event={event} content={content} update={update} />}
             {section === 'design' && <DesignSection event={shown} content={content} invitation={invitation} update={update} onChangeTemplate={changeTemplate} />}
-            {section === 'motion' && <MotionSection content={content} invitation={invitation} update={update} sound={sound} onSound={setSound} />}
+            {section === 'motion' && <MotionSection content={content} invitation={invitation} update={update} sound={sound} onSound={setSound} toAccount={toAccount} />}
             {section === 'event' && <EventSection event={event} draft={evDraft} onDraft={(d) => { setEvDraft(d); setEventErrors({}); }} validationErrors={eventErrors} />}
           </div>
         </aside>

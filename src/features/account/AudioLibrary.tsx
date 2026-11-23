@@ -9,7 +9,7 @@ import {
   loadAudioTrackBlob, readAudioLibrary, saveAudioLibrary, updateAudioTrack, validateAudioFile, type AudioIssue, type AudioTrack,
 } from '../../domain/audio-library';
 import type { CopyKey } from '../../domain/copy';
-import { Banner, Button, Field, Input, Panel } from '../../ui';
+import { Banner, Button, Field, Input, LinkButton, Panel } from '../../ui';
 import { useCopy } from '../../ui/copy';
 import { useAudioLibrary, useTrackUrl } from './audio-state';
 import { AudioTrim } from './AudioTrim';
@@ -30,8 +30,20 @@ function TrackSample({ track }: { track: AudioTrack }) {
   return url ? <audio controls preload="metadata" src={url} aria-label={t('audioPreviewOf').replace('{name}', track.name)} /> : null;
 }
 
-export function AudioLibrary() {
+/**
+ * `focus`: arrived from the editor (/app/account?section=audio) — scroll here and put focus on «ارفع موسيقى».
+ * `back`: the editor tab to return to; «ارجع للتصميم» sits at the top and again under the saved notice.
+ */
+export function AudioLibrary({ focus = false, back }: { focus?: boolean; back?: string | null }) {
   const { t } = useCopy();
+  useEffect(() => {
+    if (!focus) return;
+    const panel = document.getElementById('audio');
+    if (!panel) return;
+    const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    panel.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+    (panel.querySelector<HTMLElement>('[data-audio-upload]:not(:disabled)') ?? panel.querySelector<HTMLElement>('h2'))?.focus({ preventScroll: true });
+  }, [focus]);
   const library = useAudioLibrary();
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<CopyKey | ''>(''), [notice, setNotice] = useState(''), [busy, setBusy] = useState(''), [name, setName] = useState('');
@@ -92,24 +104,28 @@ export function AudioLibrary() {
     </div>
   </div>;
 
-  return <Panel title={t('audioTitle')}>
+  const backLink = back ? <LinkButton to={back} variant="secondary" size="sm" icon="back">{t('audioBackToDesign')}</LinkButton> : null;
+  return <Panel title={t('audioTitle')} id="audio" className="audio-library-panel">
+    {backLink && <div className="audio-back row wrap gap-3">{backLink}<span className="field-hint">{t('audioBackHint')}</span></div>}
     <p className="muted">{t('audioIntro')}</p>
     <p className="field-hint">{t('audioLimits')}</p>
     <p className="audio-device-note" data-audio-device-note>{t('audioDeviceOnly')}</p>
     <div className="audio-library-upload stack gap-3">
       <Field label={t('audioTrackName')} optional><Input value={name} maxLength={80} placeholder={t('audioTrackNamePh')} onChange={e => setName(e.target.value)} /></Field>
       <input ref={input} className="sr-only" type="file" tabIndex={-1} aria-label={t('audioUploadLabel')} accept={[...AUDIO_MIME, '.mp3', '.m4a', '.wav', '.ogg', '.webm', '.aac'].join(',')} onChange={e => void pickFile(e.target.files?.[0])} />
-      {!(draft && !draft.trackId) && <div><Button variant="secondary" icon="upload" loading={busy === 'read'} disabled={full || !!busy} onClick={() => input.current?.click()}>{t('audioUpload')}</Button></div>}
+      {!(draft && !draft.trackId) && <div><Button data-audio-upload variant="secondary" icon="upload" loading={busy === 'read'} disabled={full || !!busy} onClick={() => input.current?.click()}>{t('audioUpload')}</Button></div>}
       {busy === 'read' && <p role="status" className="field-hint">{t('audioReading')}</p>}
       {full && <p className="field-hint">{t('audioErrFull')}</p>}
     </div>
     {draft && !draft.trackId && trim(draft)}
     {error && <Banner tone="danger" compact>{t(error)}</Banner>}
     {notice && <p role="status" className="field-hint">{notice}</p>}
+    {notice && backLink && <div>{backLink}</div>}
     {library.tracks.length > 0 && <ul className="audio-library-list">{library.tracks.map(track => <li key={track.id} data-track-kind={track.kind}>
       <div className="audio-track-head">
         <strong>{track.name}</strong>
         <span className="audio-track-kind">{track.kind === 'voice' ? t('audioKindVoice') : t('audioKindMusic')}</span>
+        {track.durationSec > 0 && <span className="audio-length num">{formatClock(track.durationSec)}</span>}
         {library.defaultTrackId === track.id && <span className="field-hint">{t('audioIsDefault')}</span>}
         {track.kind === 'music' && track.startSec > 0 && <span className="field-hint">{t('audioStartAt').replace('{time}', formatClock(track.startSec))}</span>}
       </div>

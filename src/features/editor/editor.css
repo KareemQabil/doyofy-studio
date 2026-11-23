@@ -32,6 +32,9 @@
 .ed-sec-head { display: flex; align-items: flex-start; gap: var(--s-3); }
 .ed-sec-title { font-size: var(--fs-md); }
 .ed-sec-hint { font-size: var(--fs-sm); color: var(--c-text-3); line-height: 1.7; }
+/* the way to the account's sounds: a full 44px touch target, not an 18px text link */
+.ed-account-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding-block: 4px; font-weight: 600; color: var(--c-primary-text); text-underline-offset: 3px; }
+.ed-audio-empty { margin-top: -4px; }
 /* the English line did not follow an Arabic edit: say so beside the field, with «edit» / «remove» */
 .ed-en-stale { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; padding: 8px 10px; border-radius: var(--r-md); background: var(--c-info-soft); color: var(--c-text); font-size: var(--fs-sm); line-height: 1.6; }
 .ed-en-stale > .icon { flex: none; color: var(--c-info); }

@@ -25,6 +25,8 @@ export const paths = {
   settings: (id: string, focus?: string) => `${ev(id)}/settings${q({ focus })}`,
   summary: (id: string) => `${ev(id)}/summary`,
   gate: (id: string) => `/check-in/${encodeURIComponent(id)}`,
+  /** the account; `section: 'audio'` opens the sound library, `back` is the editor to return to (see safeDesignReturn) */
+  account: (opts: { section?: 'audio'; back?: string } = {}) => `/app/account${q(opts)}`,
   guestLink: (slug: string, code?: string) => `/i/${encodeURIComponent(slug)}${code ? `/${code}` : ''}`,
 };
 

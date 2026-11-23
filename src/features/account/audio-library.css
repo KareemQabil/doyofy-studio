@@ -1,4 +1,10 @@
 .audio-library-upload{margin-block:var(--s-4)}
+/* arrived from the editor: the panel lands below the sticky header, and the way back leads it */
+.audio-library-panel{scroll-margin-top:88px}
+.audio-back{align-items:center;margin-block-end:var(--s-3)}
+.audio-length{font-size:var(--fs-sm);color:var(--c-text-2)}
+.audio-with-length{display:flex;align-items:center;gap:var(--s-3);min-width:0}
+.audio-with-length audio{flex:1;min-width:0}
 .audio-library-list{list-style:none;margin:var(--s-4) 0;padding:0;display:grid;gap:var(--s-4)}
 .audio-library-list>li{border:1px solid var(--c-hairline);border-radius:var(--r-md);padding:var(--s-3);display:grid;gap:var(--s-2);min-width:0}
 .audio-library-list strong{overflow-wrap:anywhere}

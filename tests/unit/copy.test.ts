@@ -13,7 +13,9 @@ const DIALECTS = ['ar-EG', 'ar-SA'] as const;
 /** the screens a guest or a first-time organizer sees first: every key is spelled in every voice */
 const HIGH_VISIBILITY = ['home', 'create', 'guests', 'seating', 'guest', 'engine',
   // r4-copy2: the remaining screens, the domain-built lines, and the groups upgraded from `partly`
-  'import', 'experienceSettings', 'auth', 'time', 'activity', 'overview', 'eventPages', 'food', 'shared', 'gate', 'settings', 'billing', 'replies'] as const;
+  'import', 'experienceSettings', 'auth', 'time', 'activity', 'overview', 'eventPages', 'food', 'shared', 'gate', 'settings', 'billing', 'replies',
+  // fix2-organizer: the shared UI primitives and the service-layer messages
+  'ui', 'errors'] as const;
 
 test('copy: every key has a modern value, keys are unique across groups, dialects only use known keys', () => {
   const seen = new Map<string, string>();
@@ -97,8 +99,8 @@ test('copy: domain-built lines take the voice and stay pure (time, activity, imp
   assert.equal(countdownLabel('2026-12-01', '2026-11-22', 'ar-SA'), 'بعد 9 أيام');
   assert.equal(countdownLabel('2026-11-24', '2026-11-22', 'ar-EG'), 'بعد يومين');
   const a = (kind: EventActivity['kind'], data: EventActivity['data']) => ({ id: 'a', eventId: 'e', kind, data, at: now.toISOString(), actor: 'organizer' }) as EventActivity;
-  assert.equal(activityText(a('rsvp_confirmed', { name: 'سارة', count: 2 })), 'سارة أكد الحضور — شخصان');
-  assert.equal(activityText(a('rsvp_confirmed', { name: 'سارة', count: 2 }), 'ar-EG'), 'سارة أكد إنه جاي — شخصين');
+  assert.equal(activityText(a('rsvp_confirmed', { name: 'سارة', count: 2 })), 'تأكيد حضور سارة — شخصان');
+  assert.equal(activityText(a('rsvp_confirmed', { name: 'سارة', count: 2 }), 'ar-EG'), 'سارة أكدوا إنهم جايين — شخصين');
   assert.equal(activityText(a('parties_imported', { count: 15, skipped: 2 }), 'ar-SA'), 'انضاف 15 ضيف من ملف (مع تخطي صفين)');
   assert.equal(activityText(a('table_created', { name: 'طاولة 4', capacity: 10 }), 'ar-EG'), 'طاولة 4 اتضافت (10 كراسي)');
   assert.deepEqual(mappingProblems(['ignore'], 'ar-EG'), ['حدد العمود اللي فيه أسامي الضيوف.']);

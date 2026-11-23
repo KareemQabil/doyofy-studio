@@ -20,7 +20,7 @@ export const CREATE = voiced({
 }, {
   wzWhat: 'مناسبتك إيه؟', wzSearchHint: 'اكتب اسم مناسبتك واختارها.', wzBrowseFine: 'قلّب الكروت بالأسهم، ودوس على مناسبتك.', wzBrowseTouch: 'اسحب الكروت، ودوس على مناسبتك.',
   wzSearchPlaceholder: 'مثال: تخرّج، سبوع، فطار', wzSearchLabel: 'دوّر على مناسبتك', wzNoMatch: 'ملقيناش «{q}». اختار «مناسبة تانية» واكتب اسمها في آخر خطوة.', wzOther: 'مناسبة تانية',
-  wzBackToCards: 'ارجع للكروت', wzSearchByName: 'مش لاقي مناسبتك؟ دوّر بالاسم', wzDeckHintFine: 'قلّب الكروت بالأسهم', wzDeckHintTouch: 'اسحب الكروت عشان تقلّب', wzDeckActivate: 'دوس عشان تكمّل',
+  wzBackToCards: 'ارجع للكروت', wzSearchByName: 'مش لاقي مناسبتك؟ دوّر بالاسم', wzDeckHintFine: 'قلّب الكروت بالأسهم', wzDeckHintTouch: 'اسحب الكروت عشان تتصفّح', wzDeckActivate: 'دوس عشان تكمّل',
   wzPicked: 'اخترت:', wzPickType: 'اختار نوع المناسبة', wzResumed: 'رجّعنالك اللي كنت كاتبه.', wzStartOver: 'ابدأ من الأول',
   wzSentToYou: 'التصميم اللي اتبعتلك', wzYourChoice: 'اختيارك', wzCurrentDesign: 'التصميم الحالي',
   wzEssentials: '{type}: البيانات الأساسية', wzNotCreated: 'المناسبة متعملتش', wzCouple: 'العريس والعروسة', wzHost: 'صاحب المناسبة', wzName: 'الاسم', wzSecondName: 'الاسم التاني',

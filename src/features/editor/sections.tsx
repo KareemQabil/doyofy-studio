@@ -34,9 +34,10 @@ export function ContentSection({ event, content, update }: { event: Event; conte
   const info = eventTypeInfo(event.type);
   const dn = content.displayNames;
   const [en, setEn] = useState(!!(dn.aEn || dn.bEn));
-  // the English line is separate text: once the Arabic changes, say so where it is typed (it never silently goes stale)
+  // the English line is separate text: once the Arabic changes, say so where it is typed (it never silently goes stale) —
+  // also while the English field is open, until the English itself is edited
   const [arEdited, setArEdited] = useState(false);
-  const enStale = arEdited && !en && !!content.message.en.trim();
+  const enStale = arEdited && !!content.message.en.trim();
   const setName = (k: keyof typeof dn, v: string) => update({ displayNames: { ...dn, [k]: v.trim() ? v : undefined } });
   const prog = content.program;
   const setProg = (i: number, k: 'time' | 'ar' | 'en', v: string) => update({ program: prog.map((p, j) => (j === i ? { ...p, [k]: v } : p)) });
@@ -51,8 +52,8 @@ export function ContentSection({ event, content, update }: { event: Event; conte
         </div>
         {en && (
           <div className={couple ? 'grid-2' : 'stack'}>
-            <Field label={t('esEnglish')} optional><Input ltr value={dn.aEn ?? ''} placeholder={event.names.aEn || 'Sara'} onChange={(e) => setName('aEn', e.target.value)} /></Field>
-            {couple && <Field label={t('esEnglish')} optional><Input ltr value={dn.bEn ?? ''} placeholder={event.names.bEn || 'Ahmed'} onChange={(e) => setName('bEn', e.target.value)} /></Field>}
+            <Field label={t('esEnglish')} optional><Input ltr value={dn.aEn ?? ''} placeholder={event.names.aEn || undefined} onChange={(e) => setName('aEn', e.target.value)} /></Field>
+            {couple && <Field label={t('esEnglish')} optional><Input ltr value={dn.bEn ?? ''} placeholder={event.names.bEn || undefined} onChange={(e) => setName('bEn', e.target.value)} /></Field>}
           </div>
         )}
       </section>
@@ -61,8 +62,8 @@ export function ContentSection({ event, content, update }: { event: Event; conte
         <SecHead title={t('esMessage')} />
         <Field label={t('esArabic')}><Textarea rows={3} value={content.message.ar} onChange={(e) => { setArEdited(true); update({ message: { ...content.message, ar: e.target.value } }); }} /></Field>
         {enStale && <p className="ed-en-stale" role="status"><Icon name="info" size="sm" /><span>{t('esEnStale')} <bdi dir="ltr">«{content.message.en.length > 48 ? `${content.message.en.slice(0, 48)}…` : content.message.en}»</bdi></span>
-          <span className="ed-en-stale-actions"><button type="button" className="link-btn" onClick={() => setEn(true)}>{t('esEditIt')}</button><button type="button" className="link-btn" onClick={() => update({ message: { ...content.message, en: '' } })}>{t('esDeleteIt')}</button></span></p>}
-        {en && <Field label={t('esEnglish')} optional><Textarea rows={3} dir="ltr" value={content.message.en} onChange={(e) => update({ message: { ...content.message, en: e.target.value } })} /></Field>}
+          <span className="ed-en-stale-actions">{!en && <button type="button" className="link-btn" onClick={() => setEn(true)}>{t('esEditIt')}</button>}<button type="button" className="link-btn" onClick={() => update({ message: { ...content.message, en: '' } })}>{t('esDeleteIt')}</button></span></p>}
+        {en && <Field label={t('esEnglish')} optional><Textarea rows={3} dir="ltr" value={content.message.en} onChange={(e) => { setArEdited(false); update({ message: { ...content.message, en: e.target.value } }); }} /></Field>}
         <button type="button" className="link-btn" aria-expanded={en} onClick={() => setEn((v) => !v)}>{t(en ? 'esHideEnglish' : 'esShowEnglish')}</button>
       </section>
 
@@ -145,7 +146,12 @@ function Option({ on, title, text, onClick, art, disabled }: { on: boolean; titl
   );
 }
 
-export function MotionSection({ content, invitation, update, sound, onSound }: { content: InvitationDesignContent; invitation: unknown; update: Update; sound: boolean; onSound: (v: boolean) => void }) {
+/** the way to the account's sound library: `href` for the link, `go` saves the draft first and leaves */
+export interface AccountLink { href: string; go: () => void }
+const AccountAnchor = ({ to, children }: { to?: AccountLink; children: ReactNode }) =>
+  <Link to={to?.href ?? '/app/account'} className="ed-account-link" onClick={(e) => { if (to) { e.preventDefault(); to.go(); } }}>{children}</Link>;
+
+export function MotionSection({ content, invitation, update, sound, onSound, toAccount }: { content: InvitationDesignContent; invitation: unknown; update: Update; sound: boolean; onSound: (v: boolean) => void; toAccount?: AccountLink }) {
   const x = content.experience;
   const { t } = useCopy();
   const setX = (patch: Partial<InvitationDesignContent['experience']>) => update({ experience: { ...x, ...patch, dimension: '2d' } });
@@ -158,7 +164,7 @@ export function MotionSection({ content, invitation, update, sound, onSound }: {
           <Option on={x.motion === 'static'} title={t('ivStatic')} text={t('esStaticD')} onClick={() => setX({ motion: 'static' })} />
         </div>
       </section>
-      <SoundGroup content={content} update={update} sound={sound} onSound={onSound} />
+      <SoundGroup content={content} update={update} sound={sound} onSound={onSound} toAccount={toAccount} />
     </div>
   );
 }
@@ -168,7 +174,7 @@ export function MotionSection({ content, invitation, update, sound, onSound }: {
  * `default` (nothing chosen yet) shows as the account default: its track when there is one, built-in otherwise.
  * The device-only line is organizer UI; guests elsewhere just hear the built-in sound.
  */
-function SoundGroup({ content, update, sound, onSound }: { content: InvitationDesignContent; update: Update; sound: boolean; onSound: (v: boolean) => void }) {
+function SoundGroup({ content, update, sound, onSound, toAccount }: { content: InvitationDesignContent; update: Update; sound: boolean; onSound: (v: boolean) => void; toAccount?: AccountLink }) {
   const { t } = useCopy();
   const library = useAudioLibrary();
   const audio: AudioSelection = content.audio ?? { mode: 'default' };
@@ -194,6 +200,8 @@ function SoundGroup({ content, update, sound, onSound }: { content: InvitationDe
         <Option on={shown === 'builtin'} title={t('audioChoiceBuiltin')} text={t('audioChoiceBuiltinD')} onClick={() => choose('builtin')} />
         <Option on={shown === 'library'} disabled={!music.length && !trackMissing} title={t('audioChoiceMine')} text={music.length ? t('audioChoiceMineD') : t('audioChoiceMineEmpty')} onClick={() => choose('library')} />
       </div>
+      {/* an empty library is not a dead end: the upload lives in the account, which links straight back here */}
+      {!music.length && !trackMissing && <p className="ed-sec-hint ed-audio-empty"><AccountAnchor to={toAccount}><Icon name="upload" size="sm" />{t('audioUploadInAccount')}</AccountAnchor></p>}
       {shown === 'library' && (music.length > 0 || trackMissing) && <Field label={t('audioPickTrack')}><Select data-audio-track value={trackId ?? ''} onChange={e => pickTrack(e.target.value)}>
         {music.map(tr => <option key={tr.id} value={tr.id}>{tr.name}</option>)}
         {trackMissing && <option value={trackId}>{t('audioTrackMissing')}</option>}
@@ -204,7 +212,7 @@ function SoundGroup({ content, update, sound, onSound }: { content: InvitationDe
         {voiceMissing && <option value={audio.voiceId}>{t('audioVoiceMissing')}</option>}
       </Select></Field>}
       {uploaded && <p className="ed-sec-hint" data-audio-device-note>{t('audioDeviceOnly')}</p>}
-      <p className="ed-sec-hint"><Link to="/app/account">{voices.length ? t('audioManage') : t('audioRecordInAccount')}</Link></p>
+      <p className="ed-sec-hint"><AccountAnchor to={toAccount}>{voices.length ? t('audioManage') : t('audioRecordInAccount')}</AccountAnchor></p>
       <Switch label={t('audioPreviewSound')} hint={t('audioPreviewSoundHint')} checked={sound} onChange={onSound} />
     </section>
   );

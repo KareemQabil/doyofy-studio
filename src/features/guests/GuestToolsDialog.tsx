@@ -9,6 +9,12 @@ import { errorMessage } from '../../services/errors';
 import { useCopy } from '../../ui/copy';
 
 /**
+ * The file says what it holds: «noura-faisal-guests-tables-sections.csv». ASCII on purpose: some systems drop a
+ * non-Latin download name and save a bare «download» file instead.
+ */
+const FILE_SCOPE: Partial<Record<GuestExportScope, string>> = { visible: 'shown', selected: 'selected', pick: 'tables-sections', all: 'all' };
+
+/**
  * Export (organizer review): one «طاولات وأقسام» scope lets tables AND sections go in one file (a guest is in when their
  * table or section is ticked); rows come sorted by table then name with a totals line; a toast confirms the download.
  */
@@ -27,7 +33,7 @@ export function ExportGuestsDialog({ event, parties, tables, visibleIds, selecte
   const toggleValue = (set: Set<string>, value: string) => { const next = new Set(set); if (next.has(value)) next.delete(value); else next.add(value); return next; };
   const download = () => {
     const url = URL.createObjectURL(new Blob([guestsCsv(chosen, tables, phones)], { type: 'text/csv;charset=utf-8' }));
-    const a = document.createElement('a'); a.href = url; a.download = `guests-${event.slug}-${scope}.csv`; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = `${event.slug}-guests-${FILE_SCOPE[scope] ?? 'all'}.csv`; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000); onClose();
     toast({ tone: 'success', text: t('exDownloaded', { n: n(chosen.length, 'invitation', true), phones: phones ? t('exWithPhones') : '' }) });
   };
@@ -38,8 +44,8 @@ export function ExportGuestsDialog({ event, parties, tables, visibleIds, selecte
       <option value="pick">{t('exPick')}</option><option value="all">{t('exAll', { n: parties.length })}</option>
     </Select></Field>
     {scope === 'pick' && <p className="faint t-sm">{t('exPickHint')}</p>}
-    {scope === 'pick' && tables.length > 0 && <fieldset className="guest-export-scope"><legend>{t('exTables', { n: tableIds.size })}</legend><div className="stack gap-2">{[...tables.map((table) => ({ id: table.id, name: table.name })), { id: 'none', name: t('exNoTable') }].map((table) => <Checkbox key={table.id} label={table.name} checked={tableIds.has(table.id)} onChange={() => setTableIds(toggleValue(tableIds, table.id))} />)}</div></fieldset>}
-    {scope === 'pick' && <fieldset className="guest-export-scope"><legend>{t('exSections', { n: groupNames.size })}</legend><div className="stack gap-2">{groups.map((g) => <Checkbox key={g} label={g || t('exNoSection')} checked={groupNames.has(g)} onChange={() => setGroupNames(toggleValue(groupNames, g))} />)}</div></fieldset>}
+    {scope === 'pick' && tables.length > 0 && <fieldset className="guest-export-scope"><legend>{t('exTables', { n: tableIds.size })}</legend><div className="guest-export-scope-list stack gap-2">{[...tables.map((table) => ({ id: table.id, name: table.name })), { id: 'none', name: t('exNoTable') }].map((table) => <Checkbox key={table.id} label={table.name} checked={tableIds.has(table.id)} onChange={() => setTableIds(toggleValue(tableIds, table.id))} />)}</div></fieldset>}
+    {scope === 'pick' && <fieldset className="guest-export-scope"><legend>{t('exSections', { n: groupNames.size })}</legend><div className="guest-export-scope-list stack gap-2">{groups.map((g) => <Checkbox key={g} label={g || t('exNoSection')} checked={groupNames.has(g)} onChange={() => setGroupNames(toggleValue(groupNames, g))} />)}</div></fieldset>}
     <Checkbox checked={phones} onChange={setPhones} label={t('exPhones')} hint={t('exPhonesHint')} />
     <p role="status" className="muted t-sm">{chosen.length ? t('exReady', { n: n(chosen.length, 'invitation', true) })
       : t(scope === 'pick' && !tableIds.size && !groupNames.size ? 'exPickOne' : 'exNone')}</p>
@@ -57,7 +63,7 @@ export function TransferGuestsDialog({ event, parties, onClose, onDone }: {
   const [confirm, setConfirm] = useState(false);
   const destination = events.data?.find((e) => e.id === target);
   const transfer = useMutation((s) => s.parties.transfer({ ids: parties.map((p) => p.id), targetEventId: target, mode }), {
-    onSuccess: (made) => { toast({ tone: 'success', text: t(mode === 'move' ? 'trMoved' : 'trCopied', { n: n(made.length, 'invitation'), to: destination?.title || t('trTheEvent') }) }); onDone(); onClose(); },
+    onSuccess: (made) => { toast({ tone: 'success', text: t(mode === 'move' ? 'trMoved' : 'trCopied', { n: n(made.length, 'invitation', true), to: destination?.title || t('trTheEvent') }) }); onDone(); onClose(); },
     onError: () => setConfirm(false),
   });
   const eligible = (events.data || []).filter((e) => e.id !== event.id && !e.archivedAt);

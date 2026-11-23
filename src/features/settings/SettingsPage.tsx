@@ -57,7 +57,7 @@ export function SettingsPage({ event }: { event: Event }) {
   });
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((x) => ({ ...x, [k]: v }));
   const couple = isCoupleEvent(f.type);
-  const err = (field: string) => (isAppError(save.error) && save.error.field === field ? save.error.message : null);
+  const err = (field: string) => (isAppError(save.error) && save.error.field === field ? errorMessage(save.error) : null);
   const ps = publishState(design.data);
   const today = localDateOf(services.clock.now(), f.timeZone);
 

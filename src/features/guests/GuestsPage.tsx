@@ -18,7 +18,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Event, InvitationParty, PublishState, Table } from '../../domain/types';
 import { PARTY_FILTERS, countParties, duplicatePhoneIds, invitationStatus, matchesFilter, partyNeedsAttention, searchParties, type PartyFilter } from '../../domain/parties';
 import { publishState } from '../../domain/invitation';
-import { formatPhone } from '../../domain/format';
+import { formatPhone, relativeTime } from '../../domain/format';
 import { Avatar, Banner, Button, EmptyState, ErrorState, Icon, LinkButton, Menu, PageHeader, SearchInput, PageLoader, type IconName } from '../../ui';
 import { useMutation, useNow, useServices } from '../../app/data';
 import { Link, useLocation, useNavigate, useRouter } from '../../app/router';
@@ -34,7 +34,7 @@ import { PartyDrawer } from './PartyDrawer';
 import { PartyFormDialog } from './PartyForm';
 import { ShareQueue } from './ShareQueue';
 import { inviteMessage, reminderMessage, whatsappUrl } from './share';
-import { arrivalOpen, guestNextAction, isUnsent, type GuestNextAction } from '../../domain/guest-tools';
+import { arrivalOpen, canRemind, guestNextAction, isUnsent, remindHold, type GuestNextAction } from '../../domain/guest-tools';
 import { normalisePhone } from '../../domain/phone';
 import { can, canManageGuests, canViewFood } from '../../domain/roles';
 import { ExportGuestsDialog, TransferGuestsDialog } from './GuestToolsDialog';
@@ -122,10 +122,12 @@ export function GuestsPage({ event }: { event: Event }) {
   const shareUrl = (p: InvitationParty) => published && p.phone && normalisePhone(p.phone).ok ? whatsappUrl(p.phone, inviteMessage(event, p, guestLink(p), dialect)) : undefined;
   const remindUrl = (p: InvitationParty) => published && p.phone && normalisePhone(p.phone).ok ? whatsappUrl(p.phone, reminderMessage(event, p, guestLink(p), dialect)) : undefined;
   const unsent = useMemo(() => all.filter(isUnsent).sort((a, b) => a.primaryGuestName.localeCompare(b.primaryGuestName, 'ar')), [all]);
+  // «أرسل لمن لم تصلهم الدعوة» follows the list on screen: with a filter or a search it counts only the guests shown
+  const unsentShown = useMemo(() => { if (filter === 'all' && !q.trim()) return unsent; const shown = new Set(visible.map((p) => p.id)); return unsent.filter((p) => shown.has(p.id)); }, [unsent, visible, filter, q]);
   const arrivalTime = arrivalOpen(event, now);
   const selectUnsent = () => { haptic('tick'); setSelectMode(true); setSelected(new Set(unsent.map((p) => p.id))); };
-  // a reminder is for invitations already sent that still wait for a reply
-  const selRemindable = sel.filter((id) => { const p = all.find((x) => x.id === id); return !!p && p.rsvpStatus === 'pending' && (p.delivery.status === 'shared' || p.delivery.status === 'opened'); });
+  // a reminder is for invitations already sent that still wait for a reply — and not sent or reminded in the last 48 h
+  const selRemindable = sel.filter((id) => { const p = all.find((x) => x.id === id); return !!p && canRemind(p, now); });
 
   // «أكمل المشاركة» on the overview lands here with ?share=unsent: open the share sheet for those guests at once
   const shareParam = loc.search.get('share');
@@ -151,7 +153,7 @@ export function GuestsPage({ event }: { event: Event }) {
   const chips = PARTY_FILTERS.filter((f) => f.id === 'all' || counts[f.id] > 0 || filter === f.id);
   const groups = grouped ? groupByTable(visible, tableList, t('glNoTable')) : null;
   const rowProps = (p: InvitationParty, i: number) => ({
-    p, publish: ps, table: tableName(p.tableId), seatingEnabled: tableList.length > 0, arrivalTime, attention: partyNeedsAttention(p, dup), checked: selected.has(p.id), selecting, foodAccess, manage,
+    p, publish: ps, table: tableName(p.tableId), seatingEnabled: tableList.length > 0, arrivalTime, now, attention: partyNeedsAttention(p, dup), checked: selected.has(p.id), selecting, foodAccess, manage,
     hint: hintRow && i === 0, onToggle: () => toggle(p.id), onSelectStart: () => { setSelectMode(true); setSelected((s) => new Set(s).add(p.id)); },
     onOpen: () => setParam('party', p.id), shareUrl: shareUrl(p), remindUrl: remindUrl(p), onShare: (kind: 'share' | 'remind') => setSharePrompt({ id: p.id, kind }), event,
     busy: unseat.pending && unseating === p.id,
@@ -177,7 +179,8 @@ export function GuestsPage({ event }: { event: Event }) {
       <header className="g2-head">
         <div className="g2-head-text">
           <h1 className="page-title">{t('guests')}</h1>
-          <p className="page-sub">{c.parties ? `${n(c.parties, 'invitation')} · ${c.confirmedPeople ? t('glConfirmedPeople', { people: n(c.confirmedPeople, 'person') }) : t('glNoConfirmations')}` : t('glEmptySub')}</p>
+          {/* each part keeps together, so a narrow phone breaks between them («151 دعوة ·» / «لا تأكيدات بعد»), never inside */}
+          <p className="page-sub">{c.parties ? <><span className="g2-sub-part">{n(c.parties, 'invitation')} ·</span> <span className="g2-sub-part">{c.confirmedPeople ? t('glConfirmedPeople', { people: n(c.confirmedPeople, 'person') }) : t('glNoConfirmations')}</span></> : t('glEmptySub')}</p>
         </div>
         {/* an empty list offers the same actions in its empty state — no second «add» up here */}
         {all.length > 0 && <div className="g2-head-actions">
@@ -222,9 +225,9 @@ export function GuestsPage({ event }: { event: Event }) {
 
           {/* the job that is left, as the clear next step: share with everyone not yet invited (one sheet, one guest at a time).
               To review them first: «تحديد» → «لم تصلهم» in the selection bar. */}
-          {!food && manage && published && !selecting && unsent.length > 0 && <div className="g2-unsent">
-            <Button variant="primary" icon="send" className="g2-unsent-go" onClick={() => { haptic('tick'); setQueue({ ids: unsent.map((p) => p.id), mode: 'invite' }); }}>
-              {t('shareUnsent')}<b className="num g2-unsent-count">{unsent.length}</b>
+          {!food && manage && published && !selecting && unsentShown.length > 0 && <div className="g2-unsent">
+            <Button variant="primary" icon="send" className="g2-unsent-go" onClick={() => { haptic('tick'); setQueue({ ids: unsentShown.map((p) => p.id), mode: 'invite' }); }}>
+              {t('shareUnsent')}<b className="num g2-unsent-count">{unsentShown.length}</b>
             </Button>
           </div>}
 
@@ -307,7 +310,7 @@ function groupByTable(list: InvitationParty[], tables: Table[], noTable: string)
 }
 
 /** WhatsApp-like ticks for the invitation link — they describe the link, never a WhatsApp read receipt */
-function DeliveryTicks({ p, publish }: { p: InvitationParty; publish: PublishState }) {
+function DeliveryTicks({ p, publish, when }: { p: InvitationParty; publish: PublishState; when?: string }) {
   const { t } = useCopy();
   const s = invitationStatus(p, publish);
   const key: CopyKey = s === 'draft' ? 'invDraft' : s === 'ready' ? 'invReady' : s === 'shared' ? (p.delivery.source === 'manual' ? 'invManual' : 'invShared') : s === 'opened' ? 'invOpened' : 'invFailed';
@@ -316,23 +319,27 @@ function DeliveryTicks({ p, publish }: { p: InvitationParty; publish: PublishSta
   return (
     <span className={`g2-ticks is-${s}`} title={s === 'opened' ? t('glOpenedTitle') : undefined}>
       <svg viewBox="0 0 18 12" aria-hidden="true">{s === 'failed' ? <path d="M4 3l6 6M10 3l-6 6" /> : <><path d="M1.5 6.5l3 3 6-7" />{(s === 'shared' || s === 'opened') && <path d="M7.5 9.5l.5.3 6-7.3" />}</>}</svg>
-      {label}
+      {label}{when ? ` ${when}` : ''}
     </span>
   );
 }
 
-const ACTION_ICON: Record<Exclude<GuestNextAction, 'details'>, IconName> = { publish: 'send', phone: 'plus', share: 'chat', remind: 'bell', seat: 'table', unseat: 'minus', arrival: 'check' };
+const ACTION_ICON: Record<Exclude<GuestNextAction, 'details' | 'wait'>, IconName> = { publish: 'send', phone: 'plus', share: 'chat', remind: 'bell', seat: 'table', unseat: 'minus', arrival: 'check' };
 
 /**
  * A compact card (≈6–7 per phone screen): the whole card opens the guest, ONE primary action per guest (never a
  * second button for the same job), and the guest's state shows as a coloured edge plus its text label.
  */
-function GuestCard({ p, publish, table, grouped = false, seatingEnabled, arrivalTime, attention, checked, selecting, hint, onToggle, onSelectStart, onOpen, shareUrl, remindUrl, onShare, event, foodAccess, manage, busy, onNext }: {
-  p: InvitationParty; publish: PublishState; table?: string; grouped?: boolean; seatingEnabled: boolean; arrivalTime: boolean; attention: string[]; checked: boolean; selecting: boolean; hint: boolean; event: Event;
+function GuestCard({ p, publish, table, grouped = false, seatingEnabled, arrivalTime, now, attention, checked, selecting, hint, onToggle, onSelectStart, onOpen, shareUrl, remindUrl, onShare, event, foodAccess, manage, busy, onNext }: {
+  p: InvitationParty; publish: PublishState; table?: string; grouped?: boolean; seatingEnabled: boolean; arrivalTime: boolean; now: Date; attention: string[]; checked: boolean; selecting: boolean; hint: boolean; event: Event;
   onToggle: () => void; onSelectStart: () => void; onOpen: () => void; shareUrl?: string; remindUrl?: string; onShare: (kind: 'share' | 'remind') => void; foodAccess: boolean; manage: boolean; busy: boolean; onNext: (action: GuestNextAction) => void;
 }) {
-  const { t } = useCopy();
-  const next = guestNextAction(p, publish, seatingEnabled, arrivalTime);
+  const { t, dialect } = useCopy();
+  const next = guestNextAction(p, publish, seatingEnabled, arrivalTime, now);
+  // «wait»: just invited or reminded — say when («أُرسلت قبل ساعة» on the ticks, or «ذُكّرت قبل…») instead of «ذكّر بالرد»
+  const held = next === 'wait' ? remindHold(p, now) : null;
+  const heldWhen = held ? relativeTime(held.at, now, dialect) : undefined;
+  const ticksWhen = held?.kind === 'sent' && p.delivery.status === 'shared' ? heldWhen : undefined;
   const share = () => { if (!shareUrl) return; window.open(shareUrl, '_blank', 'noopener'); onShare('share'); };
   const swipe = useSwipeReveal({ start: true, end: true, tray: 92, onCommit: (side) => { if (side === 'start') { if (shareUrl) share(); else onOpen(); } else onToggle(); } });
   const press = useLongPress(onSelectStart, { enabled: !selecting });
@@ -348,10 +355,12 @@ function GuestCard({ p, publish, table, grouped = false, seatingEnabled, arrival
   const state = arrived ? 'arrived' : unsentState ? 'unsent' : p.rsvpStatus;
   const stateLabel = t(arrived ? ARRIVAL_KEY[p.checkInStatus] : unsentState ? 'stUnsent' : RSVP_KEY[p.rsvpStatus]);
   const stateCount = arrived ? p.checkedInCount : p.rsvpStatus === 'confirmed' ? p.confirmedPartySize : undefined;
-  const label = next === 'details' ? '' : { publish: t('publishFirst'), phone: t('addPhone'), share: t('shareWhatsapp'), remind: t('remindReply'), seat: t('assignTable'), unseat: t('removeFromTable'), arrival: t('recordArrival') }[next];
+  const label = next === 'details' || next === 'wait' ? '' : { publish: t('publishFirst'), phone: t('addPhone'), share: t('shareWhatsapp'), remind: t('remindReply'), seat: t('assignTable'), unseat: t('removeFromTable'), arrival: t('recordArrival') }[next];
   // share and remind are plain links to WhatsApp (no popup blocker); the «did you send?» prompt follows
   const href = next === 'share' ? shareUrl : next === 'remind' ? remindUrl : undefined;
-  const action = !manage || next === 'details' ? null : href
+  const action = !manage || next === 'details' ? null : next === 'wait'
+    ? (ticksWhen ? null : <span className="g2-held">{t(held!.kind === 'reminded' ? 'rpHeldReminded' : 'rpHeldSent', { when: heldWhen! })}</span>)
+    : href
     ? <a className="btn btn-primary btn-sm g2-act" href={href} target="_blank" rel="noopener noreferrer" data-gesture-surface="" onClick={() => onShare(next === 'remind' ? 'remind' : 'share')} aria-label={`${label} — ${name}`}><Icon name={ACTION_ICON[next]} size="sm" />{label}</a>
     : <Button size="sm" variant="primary" className="g2-act" icon={ACTION_ICON[next]} loading={busy} data-gesture-surface="" onClick={() => onNext(next)} aria-label={`${label} — ${name}`}>{label}</Button>;
   return (
@@ -380,7 +389,8 @@ function GuestCard({ p, publish, table, grouped = false, seatingEnabled, arrival
         </span>
         <span className="g2-foot-line">
           {action}
-          <DeliveryTicks p={p} publish={publish} />
+          {/* no number yet: «جاهزة للمشاركة» beside «أضف رقمًا» would contradict the action */}
+          {next !== 'phone' && <DeliveryTicks p={p} publish={publish} when={ticksWhen} />}
         </span>
         {foodAccess && <FoodLine event={event} p={p} />}
       </div>

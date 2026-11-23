@@ -230,6 +230,8 @@ html.has-dialog { overflow: hidden; }
 .chip.is-on { background: var(--c-text); border-color: var(--c-text); color: var(--c-text-inverse); }
 .chip-count { min-width: 22px; padding: 0 6px; border-radius: var(--r-pill); background: var(--c-surface-sunken); color: var(--c-text-2); font-size: var(--fs-xs); text-align: center; }
 .chip.is-on .chip-count { background: color-mix(in srgb, var(--c-text-inverse) 22%, transparent); color: var(--c-text-inverse); }
+/* touch: every filter chip is a full 44px target (import review, replies) */
+@media (pointer: coarse) { .chip { min-height: 44px; } }
 
 .progress { height: 6px; border-radius: var(--r-pill); background: var(--c-surface-sunken); overflow: hidden; }
 .progress-fill { display: block; height: 100%; border-radius: inherit; background: var(--c-primary); transition: width var(--dur-slow) var(--ease); }

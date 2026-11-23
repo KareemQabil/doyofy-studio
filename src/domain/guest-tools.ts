@@ -2,7 +2,7 @@ import type { Event, InvitationParty, PublishState, Table } from './types';
 import { csvCell } from './guest-experience';
 import { eventPhase } from './event';
 import { normalisePhone } from './phone';
-import { formatPhone } from './format';
+import { formatPhone, plural, P } from './format';
 import { invitationStatus, RSVP_STATUS, CHECKIN_STATUS, normaliseForSearch } from './parties';
 
 /** `pick`: tables AND sections in one export — a guest is in when their table OR their section is ticked */
@@ -47,8 +47,8 @@ export function guestsCsv(parties: readonly InvitationParty[], tables: readonly 
     (p.companionNames ?? []).filter(Boolean).join('، '), RSVP_STATUS[p.rsvpStatus].label, p.confirmedPartySize ?? '',
     tables.find((t) => t.id === p.tableId)?.name || '', CHECKIN_STATUS[p.checkInStatus].label, p.checkedInCount]);
   const sum = (f: (p: InvitationParty) => number) => parties.reduce((n, p) => n + f(p), 0);
-  const totals = [`الإجمالي: ${parties.length} دعوة`, ...(includePhones ? [''] : []), '', sum((p) => p.maxPartySize), '',
-    `أكدوا: ${parties.filter((p) => p.rsvpStatus === 'confirmed').length} دعوة`, sum((p) => p.rsvpStatus === 'confirmed' ? p.confirmedPartySize ?? 0 : 0), '', '', sum((p) => p.checkedInCount)];
+  const totals = [`الإجمالي: ${plural(parties.length, P.invitation)}`, ...(includePhones ? [''] : []), '', sum((p) => p.maxPartySize), '',
+    `أكدوا: ${plural(parties.filter((p) => p.rsvpStatus === 'confirmed').length, P.invitation)}`, sum((p) => p.rsvpStatus === 'confirmed' ? p.confirmedPartySize ?? 0 : 0), '', '', sum((p) => p.checkedInCount)];
   return '﻿' + [...[head, ...rows].map((r) => r.map(cell).join(',')), '', totals.map(cell).join(',')].join('\r\n');
 }
 
@@ -59,17 +59,35 @@ export const isUnsent = (p: InvitationParty) => p.delivery.status === 'not_share
 export const arrivalOpen = (event: Event, now: Date) => ['event_day', 'completed'].includes(eventPhase(event, now));
 
 /**
- * One primary action per guest, aware of state and time. «details» adds nothing to the card: the name opens them.
- * «unseat»: the guest declined but still holds a table.
+ * A reply reminder waits this long after the invitation was sent or last reminded: a family that just got the
+ * invitation (or a reminder) is not counted, queued or nudged again until then.
  */
-export type GuestNextAction = 'publish' | 'phone' | 'share' | 'remind' | 'seat' | 'unseat' | 'arrival' | 'details';
-export function guestNextAction(p: InvitationParty, publish: PublishState, seatingEnabled: boolean, arrivalTime = false): GuestNextAction {
+export const REMIND_HOLD_HOURS = 48;
+/** the organizer's latest contact while the hold runs («أُرسلت/ذُكّرت قبل…»), or null when a reminder may go now */
+export function remindHold(p: InvitationParty, now: Date): { kind: 'sent' | 'reminded'; at: string } | null {
+  const sent = p.delivery.at ? Date.parse(p.delivery.at) : NaN, reminded = p.delivery.reminderAt ? Date.parse(p.delivery.reminderAt) : NaN;
+  const last = Math.max(Number.isFinite(sent) ? sent : -Infinity, Number.isFinite(reminded) ? reminded : -Infinity);
+  if (!Number.isFinite(last) || now.getTime() - last >= REMIND_HOLD_HOURS * 3600_000) return null;
+  return reminded === last ? { kind: 'reminded', at: p.delivery.reminderAt! } : { kind: 'sent', at: p.delivery.at! };
+}
+/** still waiting for a reply after the invitation reached them, and not contacted within the hold */
+export const canRemind = (p: InvitationParty, now: Date): boolean =>
+  p.rsvpStatus === 'pending' && (p.delivery.status === 'shared' || p.delivery.status === 'opened') && !remindHold(p, now);
+
+/**
+ * One primary action per guest, aware of state and time. «details» adds nothing to the card: the name opens them.
+ * «unseat»: the guest declined but still holds a table. «wait»: a reminder would be due but the guest was just
+ * invited or reminded (see remindHold) — the card says when instead of offering the reminder again.
+ */
+export type GuestNextAction = 'publish' | 'phone' | 'share' | 'remind' | 'wait' | 'seat' | 'unseat' | 'arrival' | 'details';
+export function guestNextAction(p: InvitationParty, publish: PublishState, seatingEnabled: boolean, arrivalTime = false, now?: Date): GuestNextAction {
   if (p.checkInStatus === 'checked_in') return 'details';
   if (p.rsvpStatus === 'declined') return p.tableId ? 'unseat' : 'details';
   if (p.rsvpStatus === 'confirmed') return seatingEnabled && !p.tableId ? 'seat' : arrivalTime ? 'arrival' : 'details';
   if (publish === 'none' || publish === 'draft') return 'publish';
   if (!normalisePhone(p.phone).ok) return 'phone';
-  return ['shared', 'opened'].includes(invitationStatus(p, publish)) ? 'remind' : 'share';
+  if (!['shared', 'opened'].includes(invitationStatus(p, publish))) return 'share';
+  return now && remindHold(p, now) ? 'wait' : 'remind';
 }
 
 export function duplicateDestinationNames(incoming: readonly InvitationParty[], target: readonly InvitationParty[]): string[] {

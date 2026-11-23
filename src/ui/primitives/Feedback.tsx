@@ -5,6 +5,8 @@ import type { Tone } from '../../domain/types';
 import { Icon, type IconName } from '../icons';
 import { JourneyArtwork, type JourneyArtKind } from './JourneyArtwork';
 import { Button } from './Button';
+import { useCopy } from '../copy';
+import { errorMessage, isAppError } from '../../services/errors';
 
 export function Badge({ tone = 'neutral', children, icon, dot, title }: { tone?: Tone; children: ReactNode; icon?: IconName; dot?: boolean; title?: string }) {
   return (
@@ -55,21 +57,24 @@ export function EmptyState({ icon = 'sparkle', title, children, action, compact,
   );
 }
 
-export function ErrorState({ error, onRetry, title = 'تعذر تحميل البيانات' }: { error: unknown; onRetry?: () => void; title?: string }) {
-  const msg = error instanceof Error ? error.message : 'حدث خطأ غير متوقع.';
+export function ErrorState({ error, onRetry, title }: { error: unknown; onRetry?: () => void; title?: string }) {
+  const { t, dialect } = useCopy();
+  // service errors read back in the organizer's voice; anything else keeps its own words
+  const msg = isAppError(error) ? errorMessage(error, dialect) : error instanceof Error ? error.message : t('uiUnexpected');
   return (
     <div className="empty empty-error" role="alert">
       <JourneyArtwork kind="offline" />
-      <h2 className="empty-title">{title}</h2>
+      <h2 className="empty-title">{title ?? t('uiLoadError')}</h2>
       <div className="empty-body">{msg}</div>
-      {onRetry && <div className="empty-action"><Button icon="refresh" onClick={onRetry}>أعد المحاولة</Button></div>}
+      {onRetry && <div className="empty-action"><Button icon="refresh" onClick={onRetry}>{t('uiRetry')}</Button></div>}
     </div>
   );
 }
 
 export function Skeleton({ lines = 3, block }: { lines?: number; block?: boolean }) {
+  const { t } = useCopy();
   return (
-    <div className="skeleton" aria-busy="true" aria-label="جارٍ التحميل">
+    <div className="skeleton" aria-busy="true" aria-label={t('uiLoading')}>
       {block && <div className="skel skel-block" />}
       {Array.from({ length: lines }, (_, i) => <div key={i} className="skel skel-line" style={{ width: `${92 - ((i * 17) % 40)}%` }} />)}
     </div>
@@ -77,8 +82,9 @@ export function Skeleton({ lines = 3, block }: { lines?: number; block?: boolean
 }
 
 /** a standalone loading mark (the brand Lottie); buttons keep their own small inline spinner */
-export function Spinner({ label = 'جارٍ التحميل', size = 56 }: { label?: string; size?: number }) {
-  return <span className="spinner-lottie" role="status" aria-label={label}><Lottie name="loader" size={size} /></span>;
+export function Spinner({ label, size = 56 }: { label?: string; size?: number }) {
+  const { t } = useCopy();
+  return <span className="spinner-lottie" role="status" aria-label={label ?? t('uiLoading')}><Lottie name="loader" size={size} /></span>;
 }
 
 // ------------------------------------------------------------------ toasts

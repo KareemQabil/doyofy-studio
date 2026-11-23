@@ -1,11 +1,13 @@
 /** Form primitives: every control has a real <label>, hint and error wired with aria-describedby. */
 import { cloneElement, forwardRef, isValidElement, useId, type InputHTMLAttributes, type ReactElement, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { Icon, type IconName } from '../icons';
+import { useCopy } from '../copy';
 
 export function Field({ label, hint, error, required, optional, children, className = '' }: {
   label: ReactNode; hint?: ReactNode; error?: string | null; required?: boolean; optional?: boolean; children: ReactElement<Record<string, unknown>>; className?: string;
 }) {
   const id = useId();
+  const { t } = useCopy();
   const hintId = hint && !error ? `${id}-hint` : undefined;
   const errId = error ? `${id}-err` : undefined;
   const control = isValidElement(children)
@@ -22,7 +24,7 @@ export function Field({ label, hint, error, required, optional, children, classN
       <label className="field-label" htmlFor={controlId}>
         {label}
         {required && <span className="field-req" aria-hidden="true"> *</span>}
-        {optional && <span className="field-opt"> (اختياري)</span>}
+        {optional && <span className="field-opt"> {t('uiOptional')}</span>}
       </label>
       {control}
       {hint && !error && <p id={hintId} className="field-hint">{hint}</p>}
@@ -98,24 +100,26 @@ export function ChoiceGroup<T extends string>({ label, value, options, onChange,
 /** `format` writes the shown value (e.g. an invitation's ١٢٣ on a guest page); the value itself stays a number */
 export function Stepper({ label, value, min = 0, max = 99, onChange, suffix, format }: { label: string; value: number; min?: number; max?: number; onChange: (v: number) => void; suffix?: (n: number) => ReactNode; format?: (n: number) => ReactNode }) {
   const id = useId();
+  const { t } = useCopy();
   return (
     <div className="stepper" role="group" aria-labelledby={id}>
       <span id={id} className="field-label">{label}</span>
       <div className="stepper-row">
-        <button type="button" className="btn btn-secondary btn-lg btn-icon" aria-label={`زيادة ${label}`} disabled={value >= max} onClick={() => onChange(Math.min(max, value + 1))}><Icon name="plus" /></button>
+        <button type="button" className="btn btn-secondary btn-lg btn-icon" aria-label={t('uiIncrease', { label })} disabled={value >= max} onClick={() => onChange(Math.min(max, value + 1))}><Icon name="plus" /></button>
         <output className="stepper-value num" aria-live="polite">{format ? format(value) : value}{suffix && <span className="stepper-suffix">{suffix(value)}</span>}</output>
-        <button type="button" className="btn btn-secondary btn-lg btn-icon" aria-label={`إنقاص ${label}`} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))}><Icon name="minus" /></button>
+        <button type="button" className="btn btn-secondary btn-lg btn-icon" aria-label={t('uiDecrease', { label })} disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))}><Icon name="minus" /></button>
       </div>
     </div>
   );
 }
 
-export function SearchInput({ value, onChange, placeholder = 'ابحث بالاسم أو الجوال', label = 'بحث', autoFocus, inputMode, size }: { value: string; onChange: (v: string) => void; placeholder?: string; label?: string; autoFocus?: boolean; inputMode?: 'search' | 'text'; size?: 'lg' }) {
+export function SearchInput({ value, onChange, placeholder, label, autoFocus, inputMode, size }: { value: string; onChange: (v: string) => void; placeholder?: string; label?: string; autoFocus?: boolean; inputMode?: 'search' | 'text'; size?: 'lg' }) {
+  const { t } = useCopy();
   return (
     <div className={`search${size === 'lg' ? ' search-lg' : ''}`} role="search">
       <Icon name="search" size="sm" className="search-icon" />
-      <input type="search" className="input search-input" value={value} placeholder={placeholder} aria-label={label} autoFocus={autoFocus} inputMode={inputMode} onChange={(e) => onChange(e.target.value)} />
-      {value && <button type="button" className="search-clear" aria-label="مسح البحث" onClick={() => onChange('')}><Icon name="close" size="sm" /></button>}
+      <input type="search" className="input search-input" value={value} placeholder={placeholder ?? t('uiSearchPh')} aria-label={label ?? t('uiSearch')} autoFocus={autoFocus} inputMode={inputMode} onChange={(e) => onChange(e.target.value)} />
+      {value && <button type="button" className="search-clear" aria-label={t('uiClearSearch')} onClick={() => onChange('')}><Icon name="close" size="sm" /></button>}
     </div>
   );
 }

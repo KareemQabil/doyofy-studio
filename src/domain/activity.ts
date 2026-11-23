@@ -20,6 +20,12 @@ export function activityText(a: EventActivity, dialect: Dialect = 'ar'): string 
     case 'parties_imported': return t(c.acImported, { guests: many(d.count, 'guest'), skipped: n(d.skipped) ? t(c.acImportSkipped, { rows: many(d.skipped, 'row') }) : '' });
     case 'party_updated': return t(c.acPartyUpdated, { name: s(d.name) });
     case 'party_removed': return t(c.acRemoved, { name: s(d.name) });
+    // moved/copied between events: never «deleted» — the line names the other event
+    case 'parties_transferred': {
+      const event = s(d.event), invitations = many(d.count, 'invitation', false);
+      if (d.direction === 'in') return t(d.mode === 'move' ? c.acTransferredIn : c.acCopiedIn, { invitations, event });
+      return d.mode === 'move' ? t(c.acTransferredOut, { name: s(d.name), event }) : t(c.acCopiedOut, { invitations, event });
+    }
     case 'invitation_shared': return n(d.count) > 1 ? t(c.acSharedMany, { invitations: many(d.count, 'invitation'), how }) : t(c.acSharedOne, { name: s(d.name), how: d.how === 'manual' ? c.acManual : how });
     case 'invitation_opened': return t(c.acOpened, { name: s(d.name) });
     case 'invitation_failed': return n(d.count) > 1 ? t(c.acFailedMany, { invitations: many(d.count, 'invitation') }) : t(c.acFailedOne, { name: s(d.name) });

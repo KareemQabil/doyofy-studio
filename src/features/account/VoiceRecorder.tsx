@@ -92,7 +92,8 @@ export function VoiceRecorder({ disabled, onSaved }: { disabled?: boolean; onSav
       <Button variant="primary" onClick={stop}>{t('audioRecordStop')}</Button>
     </div>}
     {phase === 'review' && take && <div className="stack gap-3">
-      <audio controls src={take.url} aria-label={t('audioPreviewOf').replace('{name}', t('audioVoiceDefaultName'))} />
+      {/* a fresh recording often reports no length to the player (0:00), so its measured length is written beside it */}
+      <div className="audio-with-length"><audio controls src={take.url} aria-label={t('audioPreviewOf').replace('{name}', t('audioVoiceDefaultName'))} /><span className="audio-length num">{formatClock(take.seconds)}</span></div>
       <Field label={t('audioTrackName')} optional><Input value={name} maxLength={80} placeholder={t('audioVoiceDefaultName')} onChange={e => setName(e.target.value)} /></Field>
       <div className="row wrap gap-2">
         <Button variant="primary" loading={saving} onClick={() => void save()}>{t('audioSaveVoice')}</Button>

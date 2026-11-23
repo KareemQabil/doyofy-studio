@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, Redirect, useLocation, useNavigate } from '../../app/router';
 import { usePrototype, useServices } from '../../app/data';
-import { safeAccountReturn } from '../../domain/account';
+import { safeAccountReturn, safeDesignReturn } from '../../domain/account';
 import { DIALECTS, type Dialect } from '../../domain/copy';
 import type { Role } from '../../domain/types';
 import { useCopy } from '../../ui/copy';
@@ -36,15 +36,16 @@ export { WelcomePage } from './Welcome';
 
 export function LoginPage({ signup = false }: { signup?: boolean }) {
   const navigate = useNavigate(), loc = useLocation(); const a = useDemoAccount(); const proto = usePrototype(); const { t } = useCopy();
-  const [name, setName] = useState(a.name || ''), [email, setEmail] = useState(a.email || ''), [error, setError] = useState('');
-  const submit = (e: React.FormEvent) => { e.preventDefault(); if (!name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError(t('auBadInput')); return; }
+  const [name, setName] = useState(a.name || ''), [email, setEmail] = useState(a.email || ''), [errors, setErrors] = useState<{ name?: string; email?: string }>({});
+  // each field says what is wrong with it (never one combined line under the name)
+  const submit = (e: React.FormEvent) => { e.preventDefault(); const bad = { name: name.trim() ? undefined : t('auNeedName'), email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ? undefined : t('auBadEmail') }; if (bad.name || bad.email) { setErrors(bad); return; }
     saveDemoAccount({ status: 'demo', name: name.trim(), email: email.trim() });
     // a brand-new account (sign-up with nowhere to return to) starts empty and lands in its first event; a sign-up that
     // returns to something on this device (?next=…) keeps it. The demo events stay one tap away on the welcome page.
     const next = safeAccountReturn(loc.search.get('next'));
     if (signup && next === '/app/events') { proto.reset('empty'); navigate(paths.newEvent, { replace: true, force: true }); }
     else navigate(next, { replace: true }); };
-  return <AuthLayout art={signup ? 'collection' : 'folds'} other={signup ? { to: '/app/login', label: t('login') } : { to: '/app/signup', label: t('auNewAccount') }} title={signup ? t('auSignupTitle') : t('auLoginTitle')} line={signup ? t('auSignupLine') : t('auLoginLine')}><form className="auth-form" onSubmit={submit}><Field label={t('auYourName')} required error={error && !name.trim() ? error : undefined}><Input autoComplete="name" value={name} maxLength={70} onChange={e => { setName(e.target.value); setError(''); }} placeholder={t('auNamePh')} /></Field><Field label={t('email')} required error={error && !!name.trim() ? error : undefined}><Input type="email" ltr autoComplete="email" inputMode="email" value={email} maxLength={160} onChange={e => { setEmail(e.target.value); setError(''); }} placeholder="you@example.com" /></Field><Button type="submit" variant="primary" size="lg" block iconEnd="forward">{signup ? t('auStartDemo') : t('auDemoLogin')}</Button><p className="auth-demo-note"><Icon name="info" size="sm" />{t('auDemoNote')}</p></form><p className="auth-switch">{signup ? t('auHaveAccount') : t('auFirstTime')} <Link to={`${signup ? '/app/login' : '/app/signup'}?next=${encodeURIComponent(safeAccountReturn(loc.search.get('next')))}`}>{signup ? t('login') : t('auStartHere')}</Link></p></AuthLayout>;
+  return <AuthLayout art={signup ? 'collection' : 'folds'} other={signup ? { to: '/app/login', label: t('login') } : { to: '/app/signup', label: t('auNewAccount') }} title={signup ? t('auSignupTitle') : t('auLoginTitle')} line={signup ? t('auSignupLine') : t('auLoginLine')}><form className="auth-form" noValidate onSubmit={submit}><Field label={t('auYourName')} required error={errors.name}><Input autoComplete="name" value={name} maxLength={70} onChange={e => { setName(e.target.value); setErrors(x => ({ ...x, name: undefined })); }} placeholder={t('auNamePh')} /></Field><Field label={t('email')} required error={errors.email}><Input type="email" ltr autoComplete="email" inputMode="email" value={email} maxLength={160} onChange={e => { setEmail(e.target.value); setErrors(x => ({ ...x, email: undefined })); }} placeholder="you@example.com" /></Field><Button type="submit" variant="primary" size="lg" block iconEnd="forward">{signup ? t('auStartDemo') : t('auDemoLogin')}</Button><p className="auth-demo-note"><Icon name="info" size="sm" />{t('auDemoNote')}</p></form><p className="auth-switch">{signup ? t('auHaveAccount') : t('auFirstTime')} <Link to={`${signup ? '/app/login' : '/app/signup'}?next=${encodeURIComponent(safeAccountReturn(loc.search.get('next')))}`}>{signup ? t('login') : t('auStartHere')}</Link></p></AuthLayout>;
 }
 
 export function LogoutPage() {
@@ -54,7 +55,7 @@ export function LogoutPage() {
 }
 
 export function AccountPage() {
-  const a = useDemoAccount(), services = useServices(), proto = usePrototype(), user = services.session.currentUser();
+  const a = useDemoAccount(), services = useServices(), proto = usePrototype(), user = services.session.currentUser(), loc = useLocation();
   const { t, dialect, setDialect } = useCopy();
   const [name, setName] = useState(a.name || user.name), [email, setEmail] = useState(a.email || '');
   const [saved, setSaved] = useState(false), [nameError, setNameError] = useState('');
@@ -77,7 +78,7 @@ export function AccountPage() {
               <div className="row wrap gap-3"><Button type="submit" variant="primary">{t('saveProfile')}</Button>{saved && <span role="status" className="account-saved">{t('profileSaved')}</span>}</div>
             </form>
           </Panel>
-          <AudioLibrary />
+          <AudioLibrary focus={loc.search.get('section') === 'audio'} back={safeDesignReturn(loc.search.get('back'))} />
         </div>
         <div className="stack gap-5">
           <Panel title={t('languageStyle')}>

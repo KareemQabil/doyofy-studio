@@ -17,7 +17,7 @@ import { validateTable } from '../../domain/seating';
 import { NEW_TABLE_PREFIX } from '../../domain/auto-seating';
 import { checkAnswers, cleanAnswers, experienceOf, safeExternalUrl, validatePolicy } from '../../domain/guest-experience';
 import type { GuestExperience, RsvpInput } from '../../domain/types';
-import { AppError } from '../errors';
+import { AppError, copyError } from '../errors';
 import { duplicateDestinationNames } from '../../domain/guest-tools';
 import { assertGuestCapacity } from '../../domain/billing';
 import { findEvent, findParty, log as baseLog, touch, type Ctx } from './helpers';
@@ -38,18 +38,18 @@ function cleanPartyInput(input: Partial<PartyInput>): Partial<PartyInput> {
   const out: Partial<PartyInput> = { ...input };
   if (input.primaryGuestName != null) {
     out.primaryGuestName = input.primaryGuestName.replace(/\s+/g, ' ').trim();
-    if (!out.primaryGuestName) throw new AppError('validation', 'اكتب اسم الضيف أو العائلة.', 'primaryGuestName');
+    if (!out.primaryGuestName) throw copyError('validation', 'erNameRequired', { field: 'primaryGuestName' });
   }
   if (input.phone != null) {
     if (!input.phone.trim()) out.phone = undefined;
     else {
       const r = normalisePhone(input.phone);
-      if (!r.ok) throw new AppError('validation', 'رقم الجوال غير صحيح. مثال: 0551234567 أو ‎+966551234567', 'phone');
+      if (!r.ok) throw copyError('validation', 'erBadPhone', { field: 'phone' });
       out.phone = r.e164;
     }
   }
   if (input.maxPartySize != null && (!Number.isInteger(input.maxPartySize) || input.maxPartySize < 1 || input.maxPartySize > 20)) {
-    throw new AppError('validation', 'العدد المسموح بين 1 و20.', 'maxPartySize');
+    throw copyError('validation', 'erPartySize', { field: 'maxPartySize' });
   }
   if (input.companionNames) out.companionNames = input.companionNames.map((s) => s.trim()).filter(Boolean);
   return out;
@@ -99,7 +99,7 @@ export function mockEvents({ store, now }: Ctx): EventRepository {
     updateExperience: (id, draft, expectedRevision) => store.request(() => store.write((db) => {
       const ev = findEvent(db, id);
       const cur = experienceOf(ev);
-      if (cur.revision !== expectedRevision) throw new AppError('conflict', 'عُدّلت هذه الإعدادات من نافذة أخرى. حمّلنا آخر نسخة — راجعها ثم احفظ.');
+      if (cur.revision !== expectedRevision) throw copyError('conflict', 'erSettingsConflict');
       const problem = validatePolicy(draft);
       if (problem) throw new AppError('validation', problem.message, problem.field);
       // an answered option is archived, never removed: its id keeps meaning what the guest chose
@@ -195,7 +195,7 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
     create: (eventId, input) => store.request(() => {
       guard(store, 'guests.add');
       const clean = cleanPartyInput(input) as PartyInput;
-      if (!clean.primaryGuestName) throw new AppError('validation', 'اكتب اسم الضيف أو العائلة.', 'primaryGuestName');
+      if (!clean.primaryGuestName) throw copyError('validation', 'erNameRequired', { field: 'primaryGuestName' });
       return store.write((db) => {
         findEvent(db, eventId);
         assertGuestCapacity(eventId, db.parties.filter((p) => p.eventId === eventId), clean.maxPartySize);
@@ -249,16 +249,16 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
     }), 'write'),
     transfer: ({ ids, targetEventId, mode }) => store.request(() => store.write((db) => {
       guard(store, 'guests.transfer');
-      if (!ids.length || new Set(ids).size !== ids.length) throw new AppError('validation', 'اختر ضيوفًا مختلفين أولًا.');
+      if (!ids.length || new Set(ids).size !== ids.length) throw copyError('validation', 'erPickDistinct');
       const target = findEvent(db, targetEventId);
-      if (target.archivedAt) throw new AppError('validation', 'اختر مناسبة نشطة لاستقبال الضيوف.');
+      if (target.archivedAt) throw copyError('validation', 'erPickActive');
       const source = ids.map((id) => findParty(db, id));
       const sourceEventId = source[0]!.eventId;
-      if (sourceEventId === targetEventId || source.some((p) => p.eventId !== sourceEventId)) throw new AppError('validation', 'اختر ضيوفًا من مناسبة واحدة ومناسبة وجهة مختلفة.');
-      if (mode === 'move' && source.some((p) => p.checkedInCount > 0)) throw new AppError('validation', 'لا يمكن نقل ضيف سُجّل وصوله. يمكنك نسخ بياناته للمناسبة الجديدة.');
+      if (sourceEventId === targetEventId || source.some((p) => p.eventId !== sourceEventId)) throw copyError('validation', 'erOneSource');
+      if (mode === 'move' && source.some((p) => p.checkedInCount > 0)) throw copyError('validation', 'erMoveArrived');
       const existing = db.parties.filter((p) => p.eventId === targetEventId);
       const duplicates = duplicateDestinationNames(source, existing);
-      if (duplicates.length) throw new AppError('conflict', `موجودون بالفعل أو مكررون ضمن التحديد: ${duplicates.slice(0, 3).join('، ')}. لم يُنقل أي ضيف.`);
+      if (duplicates.length) throw copyError('conflict', 'erTransferDupes', { vars: { names: duplicates.slice(0, 3).join('، ') } });
       assertGuestCapacity(targetEventId, existing, source.reduce((n, p) => n + p.maxPartySize, 0));
       const made = source.map((p) => {
         const fresh = newParty(db, targetEventId, { primaryGuestName: p.primaryGuestName, phone: p.phone,
@@ -272,8 +272,11 @@ export function mockParties({ store, now }: Ctx): PartyRepository {
         db.responses = db.responses.filter((r) => !r.partyId || !removed.has(r.partyId));
         db.checkIns = db.checkIns.filter((r) => !removed.has(r.partyId));
       }
-      log(db, now(), targetEventId, 'parties_imported', { count: made.length, skipped: 0, source: mode === 'move' ? 'نقل من مناسبة' : 'نسخ من مناسبة' });
-      if (mode === 'move') for (const p of source) log(db, now(), sourceEventId, 'party_removed', { name: p.primaryGuestName });
+      // each side names the other event: «نُقلت دعوة … إلى «خطوبة ريم وخالد»» here, «انتقلت 3 دعوات من …» there
+      const from = findEvent(db, sourceEventId).title;
+      log(db, now(), targetEventId, 'parties_transferred', { direction: 'in', mode, count: made.length, event: from });
+      if (mode === 'move') for (const p of source) log(db, now(), sourceEventId, 'parties_transferred', { direction: 'out', mode, count: 1, name: p.primaryGuestName, event: target.title });
+      else log(db, now(), sourceEventId, 'parties_transferred', { direction: 'out', mode, count: source.length, event: target.title });
       return clone(made);
     }), 'write'),
     markShared: (ids, how) => store.request(() => store.write((db) => {
@@ -354,9 +357,9 @@ export function mockRsvp({ store, now }: Ctx): RsvpRepository {
     matchResponse: (responseId, partyId) => store.request(() => store.write((db) => {
       guard(store, 'guests.edit');
       const r = db.responses.find((x) => x.id === responseId);
-      if (!r) throw new AppError('not_found', 'لم نجد هذا الرد.');
+      if (!r) throw copyError('not_found', 'erReplyNotFound');
       const p = findParty(db, partyId);
-      if (r.attending && r.count > p.maxPartySize) throw new AppError('validation', `الرد لـ${r.count} أشخاص، والدعوة تسمح بـ${p.maxPartySize}. عدّل العدد المسموح أولًا.`);
+      if (r.attending && r.count > p.maxPartySize) throw copyError('validation', 'erReplyOver', { vars: { count: r.count, max: p.maxPartySize } });
       const t = now();
       Object.assign(p, applyRsvp(p, { attending: r.attending, count: r.count, note: r.note, companionNames: r.companionNames }, t.toISOString()));
       // the answers move with the reply (D10): the response is resolved, so they are counted once, on the party
@@ -367,7 +370,7 @@ export function mockRsvp({ store, now }: Ctx): RsvpRepository {
     addPartyFromResponse: (responseId) => store.request(() => store.write((db) => {
       guard(store, 'guests.add');
       const r = db.responses.find((x) => x.id === responseId);
-      if (!r) throw new AppError('not_found', 'لم نجد هذا الرد.');
+      if (!r) throw copyError('not_found', 'erReplyNotFound');
       const t = now();
       assertGuestCapacity(r.eventId, db.parties.filter((p) => p.eventId === r.eventId), Math.max(1, r.count));
       const taken = new Set(db.parties.filter((p) => p.eventId === r.eventId).map((p) => p.code));
@@ -412,7 +415,7 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
     updateTable: (id, patch) => store.request(() => store.write((db) => {
       guard(store, 'seating');
       const t = db.tables.find((x) => x.id === id);
-      if (!t) throw new AppError('not_found', 'لم نجد هذه الطاولة.');
+      if (!t) throw copyError('not_found', 'erTableNotFound');
       const next = { name: patch.name ?? t.name, capacity: patch.capacity ?? t.capacity };
       const e = Object.values(validateTable(next))[0];
       if (e) throw new AppError('validation', e);
@@ -424,7 +427,7 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       findEvent(db, eventId);
       const tables = db.tables.filter((t) => t.eventId === eventId);
       if (ids.length !== tables.length || new Set(ids).size !== ids.length || ids.some((id) => !tables.some((t) => t.id === id))) {
-        throw new AppError('conflict', 'تغيّرت قائمة الطاولات. أعد المحاولة من آخر ترتيب.');
+        throw copyError('conflict', 'erTablesChanged');
       }
       ids.forEach((id, order) => { tables.find((t) => t.id === id)!.order = order + 1; });
       return clone(tables.sort((a, b) => a.order - b.order));
@@ -441,9 +444,9 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       const p = findParty(db, partyId);
       const from = db.tables.find((t) => t.id === p.tableId);
       const to = tableId ? db.tables.find((t) => t.id === tableId) : undefined;
-      if (tableId && !to) throw new AppError('not_found', 'لم نجد هذه الطاولة.');
-      if (to && to.eventId !== p.eventId) throw new AppError('validation', 'اختر طاولة من المناسبة نفسها.');
-      if (to && p.rsvpStatus !== 'confirmed') throw new AppError('validation', 'يمكن توزيع الدعوات المؤكدة فقط.');
+      if (tableId && !to) throw copyError('not_found', 'erTableNotFound');
+      if (to && to.eventId !== p.eventId) throw copyError('validation', 'erSameEventTable');
+      if (to && p.rsvpStatus !== 'confirmed') throw copyError('validation', 'erSeatConfirmedOnly');
       if (to) p.tableId = to.id; else delete p.tableId;
       touch(p, now());
       if (to && from && from.id !== to.id) log(db, now(), p.eventId, 'party_moved', { name: p.primaryGuestName, table: to.name }, undefined, p.id);
@@ -457,23 +460,23 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       findEvent(db, eventId);
       const tables = db.tables.filter((t) => t.eventId === eventId);
       const snapshot = new Map(plan.tables.map((t) => [t.id, t.capacity]));
-      if (snapshot.size !== tables.length || tables.some((t) => snapshot.get(t.id) !== t.capacity)) throw new AppError('conflict', 'تغيّرت الطاولات منذ عرض الاقتراح. راجع الاقتراح من جديد.');
+      if (snapshot.size !== tables.length || tables.some((t) => snapshot.get(t.id) !== t.capacity)) throw copyError('conflict', 'erPlanTables');
       for (const t of plan.newTables) { const e = Object.values(validateTable(t))[0]; if (e) throw new AppError('validation', e); }
-      if (new Set(plan.moves.map((m) => m.partyId)).size !== plan.moves.length) throw new AppError('validation', 'الاقتراح يكرر دعوة أكثر من مرة.');
+      if (new Set(plan.moves.map((m) => m.partyId)).size !== plan.moves.length) throw copyError('validation', 'erPlanDup');
       let order = Math.max(0, ...tables.map((t) => t.order));
       const made = plan.newTables.map((t) => ({ id: makeId('tbl'), eventId, name: t.name.trim(), capacity: t.capacity, order: ++order }));
       const resolve = (id: string | null) => {
         if (id == null) return null;
         if (id.startsWith(NEW_TABLE_PREFIX)) { const t = made[Number(id.slice(NEW_TABLE_PREFIX.length))]; if (t) return t; }
         const t = tables.find((x) => x.id === id);
-        if (!t) throw new AppError('conflict', 'تغيّرت الطاولات منذ عرض الاقتراح. راجع الاقتراح من جديد.');
+        if (!t) throw copyError('conflict', 'erPlanTables');
         return t;
       };
       const steps = plan.moves.map((m) => {
         const p = db.parties.find((x) => x.id === m.partyId && x.eventId === eventId);
-        if (!p || (p.tableId ?? null) !== m.from) throw new AppError('conflict', 'تغيّر توزيع بعض الضيوف منذ عرض الاقتراح. راجع الاقتراح من جديد.');
+        if (!p || (p.tableId ?? null) !== m.from) throw copyError('conflict', 'erPlanSeating');
         const to = resolve(m.to);
-        if (to && (p.rsvpStatus !== 'confirmed' || seatsFor(p) !== m.seats)) throw new AppError('conflict', 'تغيّرت ردود بعض الضيوف منذ عرض الاقتراح. راجع الاقتراح من جديد.');
+        if (to && (p.rsvpStatus !== 'confirmed' || seatsFor(p) !== m.seats)) throw copyError('conflict', 'erPlanReplies');
         return { p, to };
       });
       const all = [...tables, ...made];
@@ -483,7 +486,7 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
       for (const t of all) {
         if (!receiving.has(t.id)) continue;
         const used = db.parties.filter((p) => after.get(p.id) === t.id).reduce((n, p) => n + seatsFor(p), 0);
-        if (used > t.capacity) throw new AppError('conflict', `${t.name} ستتجاوز السعة بهذا الاقتراح. راجع الاقتراح من جديد.`);
+        if (used > t.capacity) throw copyError('conflict', 'erPlanOver', { vars: { table: t.name } });
       }
       // valid: write
       db.tables.push(...made);
@@ -500,7 +503,7 @@ export function mockSeating({ store, now }: Ctx): SeatingRepository {
     undoAutoSeating: (eventId, undo) => store.request(() => store.write((db) => {
       guard(store, 'seating');
       findEvent(db, eventId);
-      const stale = () => new AppError('conflict', 'تغيّر التوزيع بعد اعتماده، فلم نتراجع حتى لا نلغي تعديلاتك.');
+      const stale = () => copyError('conflict', 'erUndoStale');
       const steps = undo.moves.map((m) => {
         const p = db.parties.find((x) => x.id === m.partyId && x.eventId === eventId);
         if (!p || (p.tableId ?? null) !== m.from) throw stale();
@@ -526,7 +529,7 @@ export function mockCheckIn({ store, now }: Ctx): CheckInRepository {
     findByCode: (eventId, code) => store.request(() => clone(store.read().parties.find((p) => p.eventId === eventId && p.code === normaliseCode(code)) ?? null)),
     checkIn: (partyId, count, ctx) => store.request(() => store.write((db) => {
       guard(store, 'checkin');
-      if (!Number.isInteger(count) || count < 1) throw new AppError('validation', 'اختر عدد القادمين الآن.');
+      if (!Number.isInteger(count) || count < 1) throw copyError('validation', 'erPickCount');
       const p = findParty(db, partyId);
       const t = now();
       const record = { id: makeId('chk'), eventId: p.eventId, partyId, count, method: ctx.method, at: t.toISOString(), by: ctx.by, exceptions: ctx.exceptions, staffNote: ctx.staffNote };
@@ -544,7 +547,7 @@ export function mockCheckIn({ store, now }: Ctx): CheckInRepository {
     undo: (recordId) => store.request(() => store.write((db) => {
       guard(store, 'checkin');
       const r = db.checkIns.find((x) => x.id === recordId);
-      if (!r || r.undone) throw new AppError('conflict', 'تم التراجع عن هذا التسجيل من قبل.');
+      if (!r || r.undone) throw copyError('conflict', 'erAlreadyUndone');
       const p = findParty(db, r.partyId);
       r.undone = true;
       p.checkedInCount = Math.max(0, p.checkedInCount - r.count);
@@ -557,8 +560,8 @@ export function mockCheckIn({ store, now }: Ctx): CheckInRepository {
       guard(store, 'checkin');
       findEvent(db, eventId);
       const name = input.name.replace(/\s+/g, ' ').trim();
-      if (!name) throw new AppError('validation', 'اكتب اسم الضيف كما قاله.', 'name');
-      if (!Number.isInteger(input.count) || input.count < 1 || input.count > 20) throw new AppError('validation', 'العدد بين 1 و20.', 'count');
+      if (!name) throw copyError('validation', 'erWalkInName', { field: 'name' });
+      if (!Number.isInteger(input.count) || input.count < 1 || input.count > 20) throw copyError('validation', 'erCount20', { field: 'count' });
       log(db, now(), eventId, 'check_in_walk_in', { name, count: input.count, note: input.note?.trim() || undefined }, 'gate');
     }), 'write'),
   };

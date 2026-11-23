@@ -9,6 +9,8 @@ import type { Event, InvitationParty, RSVPResponse } from '../../domain/types';
 import { INVITATION_STATUS, countParties, invitationStatus, normaliseForSearch, searchParties } from '../../domain/parties';
 import { publishState } from '../../domain/invitation';
 import { relativeTime } from '../../domain/format';
+import { canRemind, remindHold, REMIND_HOLD_HOURS } from '../../domain/guest-tools';
+import { INVITATION_KEY } from '../../domain/copy/guests';
 import { useCopy } from '../../ui/copy';
 import type { CopyKey } from '../../domain/copy';
 import { normalisePhone } from '../../domain/phone';
@@ -58,8 +60,10 @@ export function RsvpPage({ event }: { event: Event }) {
     { id: 'unsent', title: t('rpUnsent'), hint: t('rpUnsentHint'), items: pending.filter((p) => p.delivery.status === 'not_shared' || p.delivery.status === 'failed') },
   ];
   const published = ps === 'published' || ps === 'changed';
-  // already invited and still silent; guests without a number get the copy option at the end of the queue
-  const remindable = published ? pending.filter((p) => p.delivery.status === 'opened' || p.delivery.status === 'shared').map((p) => p.id) : [];
+  // already invited and still silent; guests without a number get the copy option at the end of the queue.
+  // A family invited or reminded in the last 48 h waits (remindHold): not counted, not queued, no per-row button.
+  const remindable = published ? pending.filter((p) => canRemind(p, now)).map((p) => p.id) : [];
+  const held = published ? pending.filter((p) => (p.delivery.status === 'opened' || p.delivery.status === 'shared') && remindHold(p, now)).length : 0;
   const remindUrl = (p: InvitationParty) => published && normalisePhone(p.phone).ok ? whatsappUrl(p.phone, reminderMessage(event, p, guestLink(p), dialect)) : undefined;
   const replied = c.parties - c.pendingParties;
 
@@ -97,28 +101,31 @@ export function RsvpPage({ event }: { event: Event }) {
               <div className="stack gap-5">
                 {remindable.length > 0 && (
                   <Banner tone="info" title={t('rpCanRemind', { n: n(remindable.length, 'invitation') })} action={<Button size="sm" icon="bell" onClick={() => setReminding(remindable)}>{t('rpRemindThem')}</Button>}>
-                    {t('rpRemindHow')}
+                    {t('rpRemindHow')}{held > 0 && <> {t('rpHeldCount', { n: n(held, 'invitation'), hours: REMIND_HOLD_HOURS })}</>}
                   </Banner>
                 )}
+                {remindable.length === 0 && held > 0 && <p className="muted t-sm">{t('rpHeldCount', { n: n(held, 'invitation'), hours: REMIND_HOLD_HOURS })}</p>}
                 {groups.filter((g) => g.items.length).map((g) => (
                   <Panel key={g.id} title={`${g.title} (${g.items.length})`} subtitle={g.hint} padded={false}>
                     <ul className="plain-list">
                       {g.items.map((p) => {
                         const inv = invitationStatus(p, ps);
+                        const hold = remindHold(p, now);
                         return (
                           <li key={p.id} className="plain-row">
                             <Avatar name={p.primaryGuestName} tone="warning" />
                             <span className="grow">
                               <Link to={paths.guests(event.id, { party: p.id })} className="row-title">{p.primaryGuestName}</Link>
                               <span className="row-sub">
-                                <Badge tone={INVITATION_STATUS[inv].tone}>{INVITATION_STATUS[inv].label}</Badge>
+                                <Badge tone={INVITATION_STATUS[inv].tone}>{t(INVITATION_KEY[inv])}</Badge>
                                 <span>{t('rpAllowed', { people: people(p.maxPartySize) })}</span>
                                 {p.delivery.openedAt && <span>{t('rpOpenedAt', { when: relativeTime(p.delivery.openedAt, now, dialect) })}</span>}
                                 {p.delivery.reminderAt && <span>{t('rpRemindedAt', { when: relativeTime(p.delivery.reminderAt, now, dialect) })}</span>}
+                                {hold?.kind === 'sent' && g.id !== 'unsent' && <span>{t('rpHeldSent', { when: relativeTime(hold.at, now, dialect) })}</span>}
                               </span>
                             </span>
                             <span className="row gap-2 row-actions">
-                              {published && g.id !== 'unsent' && <Button size="sm" variant="ghost" icon="bell" onClick={() => setReminding([p.id])} aria-label={t('rpRemindName', { name: p.primaryGuestName })}>{t('rpRemind')}</Button>}
+                              {published && g.id !== 'unsent' && !hold && <Button size="sm" variant="ghost" icon="bell" onClick={() => setReminding([p.id])} aria-label={t('rpRemindName', { name: p.primaryGuestName })}>{t('rpRemind')}</Button>}
                               <Button size="sm" onClick={() => setRecording(p)}>{t('rpRecord')}</Button>
                             </span>
                           </li>

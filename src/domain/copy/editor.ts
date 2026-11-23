@@ -23,6 +23,8 @@ export const EDITOR = partly({
   edFullKicker: 'التجربة كاملة', edDeskKicker: 'على ترابيزة التصميم', edFullCaption: 'شوف الدعوة زي ما هتتفتح لضيوفك', edDeskCaption: 'دعوتك بكل تفاصيلها',
   edModeEdit: 'تعديل', edModePreview: 'معاينة', edGuestsReady: 'دعوتك جاهزة للضيوف.', edGuestsReadyText: 'كمّل من «روح للضيوف» فوق: زوّد قايمتك وابعت لينك كل دعوة.',
   edYourInvitation: 'دعوتك', edChangesAsYouType: 'بتتغيّر وإنت بتكتب', edReplayCard: 'شغّل حركة الكارت', edExpand: 'كبّر الكارت', edReplay: 'شغّلها تاني',
+  edSoundOn: 'شغّل الصوت',
+  edSoundOff: 'اقفل الصوت',
 }, {
   edContent: 'المحتوى', edDesign: 'التصميم', edPageCard: 'البطاقة',
   edLeaveEvent: 'تعديلات تفاصيل المناسبة ما انحفظت. تبي تطلع بدون حفظ؟', edLeave: 'آخر تعديلاتك على الدعوة ما انحفظت للحين. تبي تطلع؟',
@@ -31,4 +33,6 @@ export const EDITOR = partly({
   edJustPublished: 'نشرنا دعوتك', edNotPublished: 'ما نشرنا الدعوة', edReadyTitle: 'دعوتك جاهزة للتعديل.', edReadyText: 'راجع التفاصيل، وبعدها عاينها وانشرها.',
   edFullKicker: 'التجربة كاملة', edFullCaption: 'شوف الدعوة مثل ما تنفتح لضيوفك', edGuestsReady: 'دعوتك جاهزة للضيوف.', edGuestsReadyText: 'كمّل من «روح للضيوف» فوق: أضف قائمتك وأرسل رابط كل دعوة.',
   edChangesAsYouType: 'تتغيّر وأنت تكتب', edReplay: 'شغّلها مرة ثانية',
+  edSoundOn: 'شغّل الصوت',
+  edSoundOff: 'سكّر الصوت',
 });

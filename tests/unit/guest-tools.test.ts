@@ -1,7 +1,8 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import type { InvitationParty } from '../../src/domain/types';
-import { arrivalOpen, duplicateDestinationNames, guestNextAction, guestsCsv, isUnsent, phoneCell, scopedGuests } from '../../src/domain/guest-tools';
+import { arrivalOpen, canRemind, duplicateDestinationNames, guestNextAction, guestsCsv, isUnsent, phoneCell, remindHold, scopedGuests } from '../../src/domain/guest-tools';
+import { activityText } from '../../src/domain/activity';
 import { canViewFood } from '../../src/domain/roles';
 
 beforeEach(() => {
@@ -28,9 +29,9 @@ test('guest export: tables and sections in one file, sorted by table then name, 
   assert.deepEqual(lines.slice(1, 6).map((l) => l.split(',')[0]), ['بدر', 'أحمد', 'ياسر', 'خالد', 'سعد']);
   assert.equal(lines[6], '');
   const totals = lines[7]!.split(',');
-  assert.equal(totals[0], 'الإجمالي: 5 دعوة');
+  assert.equal(totals[0], 'الإجمالي: 5 دعوات');
   assert.equal(totals[2], '12', 'allowed seats summed');
-  assert.equal(totals[4], 'أكدوا: 3 دعوة');
+  assert.equal(totals[4], 'أكدوا: 3 دعوات');
   assert.equal(totals[5], '6', 'confirmed people summed');
   assert.equal(totals[8], '1', 'arrived summed');
 });
@@ -89,6 +90,31 @@ test('next guest action follows reply/delivery/seating state and the event clock
   assert.deepEqual(duplicateDestinationNames([party({ primaryGuestName: 'ادم' })], [party()]), ['ادم']);
 });
 
+test('reply reminders wait 48 h after the invitation was sent or the family was last reminded', () => {
+  const now = new Date('2026-11-22T12:00:00Z');
+  const ago = (h: number) => new Date(now.getTime() - h * 3600_000).toISOString();
+  const sentLongAgo = party({ phone: '0551234567', delivery: { status: 'shared', source: 'manual', at: ago(24 * 10) } });
+  assert.equal(remindHold(sentLongAgo, now), null);
+  assert.equal(canRemind(sentLongAgo, now), true);
+  assert.equal(guestNextAction(sentLongAgo, 'published', false, false, now), 'remind');
+  // just sent: no reminder yet, the card says when it was sent
+  const justSent = party({ phone: '0551234567', delivery: { status: 'shared', source: 'manual', at: ago(1) } });
+  assert.deepEqual(remindHold(justSent, now), { kind: 'sent', at: ago(1) });
+  assert.equal(canRemind(justSent, now), false);
+  assert.equal(guestNextAction(justSent, 'published', false, false, now), 'wait');
+  assert.equal(guestNextAction(justSent, 'published', false), 'remind', 'without a clock the action stays as before');
+  // reminded an hour ago: held, and the latest contact is the reminder
+  const reminded = party({ phone: '0551234567', delivery: { status: 'opened', source: 'platform', at: ago(24 * 10), openedAt: ago(24 * 9), reminderAt: ago(1) } });
+  assert.deepEqual(remindHold(reminded, now), { kind: 'reminded', at: ago(1) });
+  assert.equal(canRemind(reminded, now), false);
+  assert.equal(guestNextAction(reminded, 'published', false, false, now), 'wait');
+  // after the hold the family can be reminded again; replied or unsent invitations never can
+  const later = new Date(now.getTime() + 48 * 3600_000);
+  assert.equal(canRemind(reminded, later), true);
+  assert.equal(canRemind(party({ delivery: { status: 'not_shared' } }), now), false);
+  assert.equal(canRemind(party({ rsvpStatus: 'confirmed', delivery: { status: 'opened', at: ago(24 * 10) } }), now), false);
+});
+
 async function fixtures() {
   const { createServices } = await import('../../src/services/index');
   const { services: s, prototype } = createServices(); prototype.update({ latencyMs: 0 });
@@ -108,6 +134,8 @@ test('event copy creates a fresh invitation and duplicate rejection is atomic', 
   const [copy] = await s.parties.transfer({ ids: [p.id], targetEventId: target.id, mode: 'copy' });
   assert.notEqual(copy!.id, p.id); assert.equal(copy!.rsvpStatus, 'pending'); assert.equal(copy!.delivery.status, 'not_shared'); assert.equal(copy!.tableId, undefined);
   assert.equal((await s.parties.get(p.id)).rsvpStatus, 'confirmed');
+  assert.ok((await s.activity.list(source.id)).some((a) => activityText(a) === `نُسخت دعوة واحدة إلى «${target.title}»`));
+  assert.ok((await s.activity.list(target.id)).some((a) => activityText(a, 'ar-EG') === `دعوة واحدة اتنسخت من «${source.title}»`));
   const second = await s.parties.create(source.id, { primaryGuestName: 'ضيف ثان', maxPartySize: 1 });
   await assert.rejects(s.parties.transfer({ ids: [second.id, p.id], targetEventId: target.id, mode: 'move' }), /موجودون بالفعل/);
   assert.equal((await s.parties.list(target.id)).length, 1); assert.equal((await s.parties.list(source.id)).length, 2);
@@ -121,6 +149,13 @@ test('event move cleans source response history, rejects checked-in moves and qu
   assert.equal((await s.parties.list(source.id)).length, 0); assert.equal((await s.rsvp.listResponses(source.id)).length, 0);
   const arrived = await s.parties.create(source.id, { primaryGuestName: 'وصل', maxPartySize: 1 });
   await s.checkIn.checkIn(arrived.id, 1, { method: 'search', by: 'test', exceptions: [] });
+  // the activity log says where they went (never «deleted»), and the destination says where they came from
+  const lines = async (id: string, d: 'ar' | 'ar-EG' | 'ar-SA' = 'ar') => (await s.activity.list(id)).map((a) => activityText(a, d));
+  assert.ok((await lines(source.id)).includes(`نُقلت دعوة نقل آمن إلى «${target.title}»`));
+  assert.ok((await lines(source.id, 'ar-EG')).includes(`دعوة نقل آمن اتنقلت لـ«${target.title}»`));
+  assert.ok((await lines(source.id, 'ar-SA')).includes(`انتقلت دعوة نقل آمن إلى «${target.title}»`));
+  assert.ok(!(await lines(source.id)).some((l) => /حذف|حُذف/.test(l)), 'a moved guest is never logged as deleted');
+  assert.ok((await lines(target.id)).includes(`انتقلت دعوة واحدة من «${source.title}»`));
   await assert.rejects(s.parties.transfer({ ids: [arrived.id], targetEventId: target.id, mode: 'move' }), /سُجّل وصوله/);
   await s.parties.importMany(target.id, Array.from({ length: 4 }, (_, i) => ({ primaryGuestName: `عائلة ${i}`, maxPartySize: 20 })), { skipped: 0, source: 'test' });
   await s.parties.create(target.id, { primaryGuestName: 'عائلة أخيرة', maxPartySize: 19 });

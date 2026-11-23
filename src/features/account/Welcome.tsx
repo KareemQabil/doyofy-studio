@@ -223,9 +223,9 @@ export function WelcomePage() {
         <section className="wl-section wl-steps" aria-labelledby="wl-steps">
           <h2 id="wl-steps">{t('wlStepsTitle')}</h2>
           <ol>
-            <li><Seal size={54} tone="red" mark="١" /><strong>{t('wlStep1')}</strong><p>{t('wlStep1Hint')}</p></li>
-            <li><Seal size={54} tone="gold" mark="٢" /><strong>{t('wlStep2')}</strong><p>{t('wlStep2Hint')}</p></li>
-            <li><Seal size={54} tone="charcoal" mark="٣" /><strong>{t('wlStep3')}</strong><p>{t('wlStep3Hint')}</p></li>
+            <li><Seal size={54} tone="red" mark="1" /><strong>{t('wlStep1')}</strong><p>{t('wlStep1Hint')}</p></li>
+            <li><Seal size={54} tone="gold" mark="2" /><strong>{t('wlStep2')}</strong><p>{t('wlStep2Hint')}</p></li>
+            <li><Seal size={54} tone="charcoal" mark="3" /><strong>{t('wlStep3')}</strong><p>{t('wlStep3Hint')}</p></li>
           </ol>
         </section>
         <section className="wl-closing" aria-label={t('homeStartRegion')}>
