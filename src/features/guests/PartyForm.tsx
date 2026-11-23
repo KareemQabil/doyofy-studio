@@ -1,19 +1,27 @@
-/** Add / edit guest (quick dialog): name, phone, allowed size; companions, side and note are optional. */
-import { useMemo, useState, type FormEvent } from 'react';
+/**
+ * Add / edit guest (quick dialog). Only the name is required: the phone is optional (add it later to send on WhatsApp),
+ * the allowance starts at the event's default and shows as one chip («الدعوة لشخصين · غيّر»), and the companions,
+ * side and note stay folded under «+ …».
+ * Adding is a run, not one-and-done: after each guest the sheet stays open with «تمت إضافة X · أضف آخر», the name
+ * field is cleared and focused (Enter adds the next), and the sheet closes only on «تم».
+ */
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { InvitationParty, PartyInput } from '../../domain/types';
 import { normalisePhone } from '../../domain/phone';
 import { formatPhone } from '../../domain/format';
 import { useCopy } from '../../ui/copy';
 import { allocatedGuests, capacityLevel, guestLimit } from '../../domain/billing';
 import { useCapacityVersion } from '../billing/CapacityMeter';
-import { Banner, Button, Dialog, Field, Input, Stepper, Textarea } from '../../ui';
+import { Banner, Button, Dialog, Field, Icon, Input, Stepper, Textarea } from '../../ui';
 import { errorMessage, isAppError } from '../../services/errors';
 
-export function PartyFormDialog({ open, onClose, initial, existing, defaultSize, onSubmit, pending, error, title, eventId }: {
+export function PartyFormDialog({ open, onClose, initial, existing, defaultSize, onSubmit, pending, error, title, eventId, added }: {
   open: boolean; onClose: () => void; initial?: InvitationParty | null; existing: readonly InvitationParty[]; defaultSize: number;
   onSubmit: (input: PartyInput) => void; pending: boolean; error: unknown; title: string;
   /** shows the event's remaining guest capacity before the limit is reached */
   eventId?: string;
+  /** adding a run of guests: the last one added (the form resets for the next whenever `n` grows) */
+  added?: { name: string; n: number } | null;
 }) {
   useCapacityVersion();
   const { t, n } = useCopy();
@@ -24,7 +32,16 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
   const [side, setSide] = useState(initial?.side ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [more, setMore] = useState(!!(initial?.companionNames?.length || initial?.side || initial?.notes));
+  // the allowance is already set (the event's default): a chip until the organizer wants another number
+  const [sizeOpen, setSizeOpen] = useState(!!initial && initial.maxPartySize !== defaultSize);
   const [tried, setTried] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
+  // a guest was just added: clear the per-guest fields (the side stays — a run is often one family's side) and type the next
+  useEffect(() => {
+    if (!added?.n) return;
+    setName(''); setPhone(''); setSize(defaultSize); setCompanions(''); setNotes(''); setSizeOpen(false); setTried(false);
+    nameRef.current?.focus();
+  }, [added?.n]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const phoneRes = phone.trim() ? normalisePhone(phone) : null;
   const dupe = phoneRes?.ok ? existing.find((p) => p.phone === phoneRes.e164 && p.id !== initial?.id) : undefined;
@@ -54,18 +71,29 @@ export function PartyFormDialog({ open, onClose, initial, existing, defaultSize,
 
   return (
     <Dialog open={open} onClose={onClose} title={title} size="md"
-      footer={<><Button variant="primary" type="submit" form="party-form" loading={pending}>{t(initial ? 'pfSaveEdits' : 'pfAdd')}</Button><Button variant="ghost" onClick={onClose}>{t('cancel')}</Button></>}>
+      footer={<><Button variant="primary" type="submit" form="party-form" loading={pending}>{t(initial ? 'pfSaveEdits' : 'pfAdd')}</Button><Button variant="ghost" onClick={onClose}>{t(added?.n ? 'done' : 'cancel')}</Button></>}>
       <form id="party-form" className="stack gap-4" onSubmit={submit} noValidate>
+        {/* polite and inline: the run continues in the same sheet (no toast stack behind it) */}
+        <p className="pf-added" role="status" hidden={!added?.n}>{added?.n ? <><Icon name="check" size="sm" />{t('glAddedMore', { name: added.name })}</> : null}</p>
         {error && !(isAppError(error) && error.field) ? <Banner tone="danger" reveal={error}>{errorMessage(error)}</Banner> : null}
         <Field label={t('pfName')} required error={nameErr} hint={t('pfNameHint')}>
-          <Input value={name} onChange={(e) => setName(e.target.value)} data-autofocus autoComplete="off" />
+          <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} data-autofocus autoComplete="off" />
         </Field>
         <Field label={t('pfPhone')} optional error={phoneErr} hint={phoneRes?.ok ? <>{t('pfWillSave')} <bdi dir="ltr" className="num">{formatPhone(phoneRes.e164)}</bdi></> :t('pfPhoneHint')}>
           <Input ltr type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="05xxxxxxxx" autoComplete="off" />
         </Field>
         {dupe && <Banner tone="warning" compact title={t('pfDupeTitle')}>{t('pfDupeText', { name: dupe.primaryGuestName })}</Banner>}
-        <Stepper label={t('pfAllowed')} value={size} min={1} max={20} onChange={setSize} suffix={(k) => t(k === 1 ? 'pfOne' : k === 2 ? 'pfTwo' : 'pfMany')} />
-        <p className="field-hint">{t('pfAllowedHint')}</p>
+        {!sizeOpen ? (
+          <button type="button" className="pf-chip"
+            onClick={() => { setSizeOpen(true); requestAnimationFrame(() => document.querySelector<HTMLElement>('#party-form .stepper-row button:not(:disabled)')?.focus()); }}>
+            <Icon name="users" size="sm" /><span className="sr-only">{t('pfAllowed')}: </span><span>{t('pfAllowedChip', { size: n(size, 'person', true) })}</span>
+          </button>
+        ) : (
+          <>
+            <Stepper label={t('pfAllowed')} value={size} min={1} max={20} onChange={setSize} suffix={(k) => t(k === 1 ? 'pfOne' : k === 2 ? 'pfTwo' : 'pfMany')} />
+            <p className="field-hint">{t('pfAllowedHint')}</p>
+          </>
+        )}
         {capacityNote}
         {!more ? (
           <button type="button" className="link-btn" onClick={() => setMore(true)}>{t('pfMore')}</button>

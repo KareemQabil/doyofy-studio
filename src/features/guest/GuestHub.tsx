@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { GuestApi, GuestGeneralReply, GuestView } from '../../services/contracts';
 import { countdownLabel, daysBetween, dateSeparator, invitationNumbers, localDateOf, type InvitationNumbers } from '../../domain/format';
 import { faceDigits } from '../../domain/templates';
-import { eventStart, eventEnd, isCoupleEvent } from '../../domain/event';
+import { eventStart, eventEnd, hasVenue, isCoupleEvent, mapLink, placeLine } from '../../domain/event';
 import { resolvedNames } from '../../domain/invitation';
 import { validateRsvp, RSVP_ERROR_TEXT } from '../../domain/parties';
 import { Banner, Button, ChoiceGroup, Field, Icon, Input, Stepper } from '../../ui';
@@ -29,9 +29,8 @@ type Submission = { ok: true; name?: string } | { ok: false; error: string } | n
 
 function calendarUrl(v: GuestView): string {
   const st = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(v.event.title)}&dates=${st(eventStart(v.event))}/${st(eventEnd(v.event))}&location=${encodeURIComponent(`${v.event.venue.name}، ${v.event.venue.city}`)}`;
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(v.event.title)}&dates=${st(eventStart(v.event))}/${st(eventEnd(v.event))}${hasVenue(v.event.venue) ? `&location=${encodeURIComponent(placeLine(v.event.venue))}` : ''}`;
 }
-const mapUrl = (v: GuestView) => v.event.venue.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${v.event.venue.nameEn || v.event.venue.name} ${v.event.venue.cityEn || v.event.venue.city}`)}`;
 
 export function GuestHub({ view, code, submission, onView, onReplay, guestApi, demo = false }: { view: GuestView; code: string | null; submission: Submission; onView: (v: GuestView) => void; onReplay: () => void; guestApi?: GuestApi; demo?: boolean }) {
   const now = useNow(60000);
@@ -62,6 +61,7 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
   const generalName = generalReply?.name ?? (submission?.ok ? submission.name : undefined);
   const generalDone = !p && (!!submission?.ok || !!generalReply);
   const formOpen = view.canEdit && (p ? editing : (!generalDone || editingGeneral));
+  const directions = mapLink(view.event.venue);
 
   // after a reply, whichever path: the top of the page and its result, never somewhere mid-way down
   useEffect(() => {
@@ -162,17 +162,18 @@ export function GuestHub({ view, code, submission, onView, onReplay, guestApi, d
         {p?.rsvpStatus === 'declined' && !editing && view.experience && showsAfterDecline(view.experience) && <Wishlist x={view.experience} mode="decline" />}
 
         {/* ---------------- details */}
+        {/* the place is optional: without one there is no place line and no directions button, and the heading says only «الموعد» */}
         <section className="hub-card" aria-labelledby="hub-where">
-          <h2 id="hub-where" className="hub-h">{t('ghWhenWhere')}</h2>
+          <h2 id="hub-where" className="hub-h">{t(hasVenue(view.event.venue) ? 'ghWhenWhere' : 'ghWhenOnly')}</h2>
           <ul className="hub-facts">
             <li><Icon name="calendar" size="sm" /><span>{N.date(view.event.date)}<br /><span className="faint">{N.time(view.event.time)}</span></span></li>
-            <li><Icon name="pin" size="sm" /><span>{view.event.venue.name}<br /><span className="faint">{view.event.venue.city}</span></span></li>
+            {hasVenue(view.event.venue) && <li><Icon name="pin" size="sm" /><span>{view.event.venue.name || view.event.venue.city}{view.event.venue.name && view.event.venue.city ? <><br /><span className="faint">{view.event.venue.city}</span></> : null}</span></li>}
           </ul>
-          <div className="row wrap gap-2">
+          {(directions || view.phase === 'before') && <div className="row wrap gap-2">
             {/* one gold primary per screen: while a reply form is open, sending it is the primary, the way there is not */}
-            <a className={`btn ${formOpen ? 'btn-secondary' : 'btn-primary'} btn-md`} href={mapUrl(view)} target="_blank" rel="noopener noreferrer"><Icon name="pin" size="sm" />{t('ghDirections')}</a>
-            {view.phase === 'before' && <a className="btn btn-secondary btn-md" href={calendarUrl(view)} target="_blank" rel="noopener noreferrer"><Icon name="calendar" size="sm" />{t('ghCalendar')}</a>}
-          </div>
+            {directions && <a className={`btn ${formOpen ? 'btn-secondary' : 'btn-primary'} btn-md`} href={directions} target="_blank" rel="noopener noreferrer"><Icon name="pin" size="sm" />{t('ghDirections')}</a>}
+            {view.phase === 'before' && <a className={`btn ${directions || formOpen ? 'btn-secondary' : 'btn-primary'} btn-md`} href={calendarUrl(view)} target="_blank" rel="noopener noreferrer"><Icon name="calendar" size="sm" />{t('ghCalendar')}</a>}
+          </div>}
         </section>
 
         {view.design.program.length > 0 && (

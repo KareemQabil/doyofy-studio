@@ -3,7 +3,8 @@ import { copyFor, fill, type Dialect } from '../domain/copy';
 import { ERRORS } from '../domain/copy/ui';
 import { currentDialect } from '../data/copy-preference.js';
 
-export type ErrorCode = 'not_found' | 'validation' | 'conflict' | 'network' | 'not_published' | 'storage' | 'forbidden';
+/** (there is no «not published» code: an invitation link works as soon as its event exists) */
+export type ErrorCode = 'not_found' | 'validation' | 'conflict' | 'network' | 'storage' | 'forbidden';
 export type ErrorKey = keyof typeof ERRORS.modern;
 type Vars = Readonly<Record<string, string | number>>;
 

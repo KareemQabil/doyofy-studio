@@ -9,7 +9,7 @@ import { SeatingPage } from '../../src/features/seating/SeatingPage';
 import { GuestsPage } from '../../src/features/guests/GuestsPage';
 import { EventWorkspace } from '../../src/features/workspace/EventWorkspace';
 import { SettingsPage } from '../../src/features/settings/SettingsPage';
-import { InvitationSummary } from '../../src/features/invitation/InvitationSummary';
+import { GeneralLinkCard } from '../../src/features/shared/GeneralLinkCard';
 import { GateMode } from '../../src/features/check-in/GateMode';
 import { CreateEvent } from '../../src/features/events/CreateEvent';
 import { SignatureShell } from '../../src/features/signature/SignatureShell';
@@ -65,7 +65,7 @@ export async function run() {
     history.replaceState(null, '', `/app/events/${fresh.id}/settings`);
     await render(wrap(<EventWorkspace key={fresh.id} eventId={fresh.id} section="settings">{() => <span data-general-settings>general settings</span>}</EventWorkspace>)); await settle();
     await act(async () => { document.querySelector<HTMLButtonElement>('[aria-labelledby="gxs-meals"] [role="switch"]')!.click(); });
-    const saveMenu = [...document.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent === 'حفظ ونشر للضيوف');
+    const saveMenu = [...document.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent === 'احفظ التغييرات');
     assert.ok(saveMenu && !saveMenu.disabled, 'fresh menu can be saved');
     await act(async () => { saveMenu.click(); }); await settle();
     const saved = await made.services.events.get(fresh.id);
@@ -141,18 +141,22 @@ export async function run() {
     assert.ok(!items().some((i) => i.textContent?.includes('نقل')), 'no transfer between events');
     assert.ok(items().some((i) => /تذكير|ذكّر/.test(i.textContent ?? '')), 'reminders stay');
   });
-  await check('coordinator sees publish disabled with the reason; seating keeps auto-seat and order, export explained', async () => {
+  await check('coordinator can switch and copy the general link (no publish step); seating keeps auto-seat and order, export explained', async () => {
     await act(async () => made.prototype.update({ role: 'organizer' }));
-    const fresh = await made.services.events.create({ type: 'birthday', names: { a: 'مسودة المنسق' }, date: '2027-06-20', time: '20:00', venue: { name: 'قاعة', city: 'الرياض' } });
+    const fresh = await made.services.events.create({ type: 'birthday', names: { a: 'دعوة المنسق' }, date: '2027-06-20', time: '20:00', venue: { name: 'قاعة', city: 'الرياض' } });
     const wedding = await made.services.invitations.get('evt_wedding');
     await made.services.invitations.saveDraft(fresh.id, wedding!.draft);
     await act(async () => made.prototype.update({ role: 'coordinator' }));
-    history.replaceState(null, '', `/app/events/${fresh.id}/invitation`);
-    await render(wrap(<InvitationSummary event={fresh} />)); await settle();
-    const publish = [...document.querySelectorAll('button')].find((b) => b.textContent === 'انشر الدعوة')!;
-    assert.ok(publish.disabled, 'publish is disabled');
-    assert.match(publish.closest('.owner-only')?.textContent ?? '', /متاح لصاحب المناسبة/);
-    await assert.rejects(made.services.invitations.publish(fresh.id), /صاحب المناسبة/, 'the service refuses too');
+    history.replaceState(null, '', `/app/events/${fresh.id}/guests`);
+    await render(wrap(<GeneralLinkCard event={fresh} />)); await settle();
+    assert.doesNotMatch(document.body.textContent ?? '', /نشر|منشور|مسودة/, 'no publish words');
+    const sw = document.querySelector<HTMLButtonElement>('.general-link [role="switch"]')!;
+    assert.equal(sw.disabled, false, 'the team shares invitations');
+    await act(async () => sw.click()); await settle();
+    const now = await made.services.events.get(fresh.id);
+    assert.equal(now.settings.allowGeneralLink, !fresh.settings.allowGeneralLink, 'the switch changes the event');
+    await render(wrap(<GeneralLinkCard event={{ ...now, settings: { ...now.settings, allowGeneralLink: true } }} />)); await settle();
+    assert.ok((document.querySelector<HTMLInputElement>('.general-link input.copy-input')?.value ?? '').includes(`/i/`), 'the link to copy');
 
     const event = await made.services.events.get('evt_wedding');
     history.replaceState(null, '', '/app/events/evt_wedding/seating');

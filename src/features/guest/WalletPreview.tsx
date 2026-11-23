@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import type { GuestView } from '../../services/contracts';
 import { invitationNumbers } from '../../domain/format';
+import { hasVenue, placeLine } from '../../domain/event';
 import { faceDigits } from '../../domain/templates';
 import { Button, Dialog, LogoMark } from '../../ui';
 import { useCopy } from '../../ui/copy';
@@ -59,7 +60,7 @@ export function WalletPreview({ view, value, demo = false }: { view: GuestView; 
         <dl className="wpass-fields">
           <div><dt>{t('gwDate')}</dt><dd>{N.date(ev.date)}</dd></div>
           <div><dt>{t('gwTime')}</dt><dd>{N.time(ev.time)}</dd></div>
-          <div className="is-wide"><dt>{t('gwPlace')}</dt><dd>{ev.venue.name}، {ev.venue.city}</dd></div>
+          {hasVenue(ev.venue) && <div className="is-wide"><dt>{t('gwPlace')}</dt><dd>{placeLine(ev.venue)}</dd></div>}
           <div><dt>{t('gwGuest')}</dt><dd><bdi>{p.name}</bdi></dd></div>
           <div><dt>{t('gwCount')}</dt><dd>{N.text(n(p.confirmedPartySize ?? 1, 'person'))}</dd></div>
           {p.tableName && <div className="is-wide"><dt>{t('gwTable')}</dt><dd>{p.tableName}</dd></div>}

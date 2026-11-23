@@ -38,6 +38,31 @@ test('every occasion starts on its Designer Kit face and offers at least two fac
   assert.deepEqual(new Set(CardRegistry.list().map((c: { id: string }) => c.id)), new Set(COLLECTION.map((d) => d.id)), 'only the family is registered');
 });
 
+test('every face reads cleanly without a venue or city (names + date are enough to create an event)', () => {
+  const bare = (type: EventType, couple: boolean): Event => ({ ...event(type, 'جود', couple ? 'عمر' : undefined), venue: { name: '', city: '' } });
+  const cityOnly = (type: EventType, couple: boolean): Event => ({ ...event(type, 'جود', couple ? 'عمر' : undefined), venue: { name: '', city: 'جدة' } });
+  for (const d of COLLECTION) {
+    const type = d.type as EventType;
+    const couple = EVENT_TYPES.find((t) => t.id === type)!.couple;
+    const html = render(d.id, bare(type, couple)).replace(/<style>[\s\S]*?<\/style>/g, '');
+    // no empty place rows, no «المدينة» cell without a city, no orphan separators
+    assert.ok(!/<div class="kc-(place|city|venue)">\s*<\/div>/.test(html), `${d.id}: empty place line`);
+    assert.ok(!/<small>\s*<\/small>/.test(html), `${d.id}: empty city line`);
+    assert.ok(!html.includes('المدينة'), `${d.id}: city cell without a city`);
+    assert.ok(!html.includes('kc-ic') || !/kc-ic[^>]*>(?:(?!<\/svg>)[\s\S])*<\/svg><span>\s*<\/span>/.test(html), `${d.id}: icon without text`);
+    const text = html.replace(/<[^>]*>/g, '|').replace(/\|+/g, '|');
+    assert.ok(!/(^|\|)\s*[،·]\s*(\||$)/.test(text) && !/[،·]\s*\|\s*(\||$)/.test(text) && !/[،·]\s*$/.test(text.replace(/\|/g, '').trim()), `${d.id}: dangling separator`);
+    assert.ok(!/،\s*<\/(span|div)>/.test(html) && !/<(span|div)[^>]*>\s*،/.test(html), `${d.id}: «، » beside nothing`);
+    // a city alone still shows, once
+    const one = render(d.id, cityOnly(type, couple));
+    assert.ok(one.includes('جدة'), `${d.id}: city alone`);
+  }
+  // the derived links: no «, » location and no map search without a place
+  const derived = deriveContent(toInvitationData(bare('wedding', true), defaultDesign(bare('wedding', true))));
+  assert.equal(derived.mapHref, null);
+  assert.equal(new URL(derived.calHref).searchParams.get('location'), null);
+});
+
 test('collection faces keep every word live, escaped, and true to the event', () => {
   for (const d of COLLECTION) {
     const type = d.type as EventType;
@@ -92,7 +117,8 @@ test('each face declares its number system and the invitation, its pages and the
   assert.deepEqual(used, new Set(['arab', 'latn']), 'both systems are in use');
   const ev = event('wedding', 'نورة', 'فيصل');
   for (const [cardId, digits] of [['kit-rose-garden', 'arab'], ['ty-blue', 'latn']] as const) {
-    const inv = toInvitationData(ev, { ...defaultDesign(ev), cardId });
+    // the programme starts empty: one written here, so its times are checked too
+    const inv = toInvitationData(ev, { ...defaultDesign(ev), cardId, program: [{ time: '21:00', ar: 'العشاء', en: '' }] });
     assert.equal(inv.display.digits, digits, `${cardId}: carried by the invitation data`);
     const { c, program } = deriveContent(inv);
     const own = digits === 'arab' ? ARABIC : LATIN, other = digits === 'arab' ? LATIN : ARABIC;

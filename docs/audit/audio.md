@@ -24,6 +24,8 @@ The account originally had profile, appearance and a demo session only (`Account
 
 ## Prototype boundary
 
+> **Update (p2-backend):** with the Vercel backend switched on (docs/BACKEND.md), uploads are also sent to Vercel Blob and what guests receive carries the public URL plus the start point and fade, so music and the voice welcome play on guests' devices; the device-only line then disappears. With the backend off, the boundary below still applies.
+
 Uploaded bytes stay in the current browser. Shared links carry a track reference and name, **not audio bytes**. The account and editor state this clearly. A hosted audio file store, account ownership rules, deletion handling, and a public signed/controlled media URL must be connected before uploaded audio can play on other guests' devices. No remote upload or cross-device soundtrack transfer is claimed.
 
 ## Validation

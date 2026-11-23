@@ -1,29 +1,29 @@
 /**
  * Creation wizard, step 3: the chosen invitation takes shape while the organizer types — the real design,
- * rendered with the live names/date/venue. Desktop: a large card beside the form. Phones: a compact live card
- * pinned above the fields, so it stays visible while typing. Missing fields show honest placeholders;
- * nothing here is saved until «جهّز دعوتي». No decorative photography: the card is the subject.
+ * rendered with the live names/date (and the place, if added). Desktop: a large card beside the form. Phones: a compact
+ * live card pinned above the fields, so it stays visible while typing. Missing names/date show honest placeholders; the
+ * optional place is simply absent until added, exactly as guests will see it. Nothing here is saved until «جهّز دعوتي».
  */
 import type { Event, EventType } from '../../domain/types';
-import { eventTypeInfo, isCoupleEvent } from '../../domain/event';
+import { DEFAULT_EVENT_TIME, eventTypeInfo, isCoupleEvent } from '../../domain/event';
 import { defaultDesign } from '../../domain/invitation';
 import { applyPreset, type TemplatePreset } from '../../domain/templates';
 import { CardThumb } from '../invitation/CardThumb';
 import { useTilt } from './useTilt';
 import { useCopy } from '../../ui/copy';
 
-export type DraftFields = { type: EventType; a: string; b: string; aEn: string; bEn: string; title: string; date: string; time: string; venue: string; city: string; timeZone: string };
+export type DraftFields = { type: EventType; a: string; b: string; title: string; date: string; time: string; venue: string; city: string; timeZone: string };
 
-/** the event as the organizer has typed it so far, with labelled placeholders for what is still empty */
+/** the event as the organizer has typed it so far, with labelled placeholders for the names and date still empty */
 export function draftPreviewEvent(f: DraftFields, today: string): Event {
   const info = eventTypeInfo(f.type);
   const couple = isCoupleEvent(f.type);
   const fallbackDate = (() => { const d = new Date(`${today}T12:00:00`); d.setDate(d.getDate() + 30); return d.toISOString().slice(0, 10); })();
   return {
     id: 'draft-preview', ownerId: 'draft', slug: 'draft', type: f.type, title: f.title || info.label,
-    names: { a: f.a.trim() || info.nameLabel.replace(/^اسم\s*/, ''), b: couple ? (f.b.trim() || (info.nameLabelB ?? '').replace(/^اسم\s*/, '')) : undefined, aEn: f.aEn || undefined, bEn: couple ? f.bEn || undefined : undefined },
-    date: f.date || fallbackDate, time: f.time || '20:00', timeZone: f.timeZone, durationHours: 4,
-    venue: { name: f.venue.trim() || 'المكان', city: f.city.trim() || 'المدينة' },
+    names: { a: f.a.trim() || info.nameLabel.replace(/^اسم\s*/, ''), b: couple ? (f.b.trim() || (info.nameLabelB ?? '').replace(/^اسم\s*/, '')) : undefined },
+    date: f.date || fallbackDate, time: f.time || DEFAULT_EVENT_TIME, timeZone: f.timeZone, durationHours: 4,
+    venue: { name: f.venue.trim(), city: f.city.trim() },
     settings: { defaultPartySize: 2, revealTableToGuests: false, allowGeneralLink: false }, createdAt: '', updatedAt: '',
   };
 }

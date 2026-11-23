@@ -3,7 +3,7 @@
  * The design never stores event data (date, time, venue): `toInvitationData` merges the Event in at
  * render time, so editing the invitation can't silently change the event (spec §10).
  */
-import type { Event, InvitationDesign, InvitationDesignContent, PublishState } from './types';
+import type { Event, InvitationDesign, InvitationDesignContent } from './types';
 import { eventTypeInfo, isCoupleEvent } from './event';
 import { OCCASION_LABELS_EN, OCCASION_STARTERS } from './occasion-starters';
 import { CARD_NAMES, faceDigits, presetById } from './templates';
@@ -24,38 +24,40 @@ export function resolveDesign<T extends Pick<InvitationDesignContent, 'cardId' |
   return { ...c, cardId: preset.cardId, sceneId: preset.sceneId };
 }
 
-/** A new invitation starts in its occasion's visual language, with editable relevant copy. */
+/**
+ * A new invitation starts in its occasion's own (featured) design with one editable Arabic line. The English line
+ * and the programme start empty: guests see only what the organizer wrote (an empty programme has no page).
+ */
 export function defaultDesign(ev: Event): InvitationDesignContent {
   const starter = OCCASION_STARTERS[ev.type];
   const preset = presetById(starter.presetId)!;
-  const [hours, minutes] = ev.time.split(':').map(Number);
-  const start = Number.isFinite(hours) && Number.isFinite(minutes) ? hours! * 60 + minutes! : 19 * 60;
-  const timeAfter = (after: number) => {
-    const total = (start + after) % (24 * 60);
-    return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
-  };
   return {
     experience: { ...preset.experience },
     cardId: preset.cardId,
     sceneId: preset.sceneId,
     displayNames: {},
-    message: { ...starter.message },
-    program: starter.program.map(({ after, ar, en }) => ({ time: timeAfter(after), ar, en })),
+    message: { ar: starter.message, en: '' },
+    program: [],
   };
 }
 
-export function publishState(d: InvitationDesign | null | undefined): PublishState {
-  if (!d) return 'none';
-  if (!d.published) return 'draft';
-  return JSON.stringify(d.published) === JSON.stringify(d.draft) ? 'published' : 'changed';
+/**
+ * Whether the organizer gave this invitation any English (names, place, the message or a programme line). Without
+ * it the invitation is Arabic only: the engine prints no Latin names, dates or labels and its own words are Arabic.
+ */
+export function hasEnglish(ev: Pick<Event, 'names' | 'venue'>, c: Pick<InvitationDesignContent, 'displayNames' | 'message' | 'program'>): boolean {
+  const any = (...v: Array<string | undefined>) => v.some((x) => !!x?.trim());
+  return any(ev.names.aEn, ev.names.bEn, ev.venue.nameEn, ev.venue.cityEn, c.displayNames.aEn, c.displayNames.bEn, c.message.en) || c.program.some((p) => any(p.en));
 }
 
-export const PUBLISH_LABEL: Record<PublishState, { label: string; tone: 'neutral' | 'info' | 'success' | 'warning' }> = {
-  none: { label: 'لم تُصمم بعد', tone: 'neutral' },
-  draft: { label: 'مسودة — غير منشورة', tone: 'warning' },
-  published: { label: 'منشورة', tone: 'success' },
-  changed: { label: 'منشورة · تعديلات غير منشورة', tone: 'info' },
-};
+/**
+ * The design guests get: the latest saved one, always. The invitation has no publish step — a fresh event's
+ * links already work with its occasion's default design, and an older stored «published» snapshot is ignored.
+ */
+export function liveDesign(d: Pick<InvitationDesign, 'draft'> | null | undefined, ev: Event): InvitationDesignContent {
+  return d?.draft ?? defaultDesign(ev);
+}
+
 
 export interface ResolvedNames { a: string; b: string; aEn: string; bEn: string; fromEvent: boolean }
 
@@ -88,7 +90,8 @@ export function toInvitationData(ev: InvitationEvent, c: InvitationDesignContent
   return {
     id: `${ev.slug}`,
     audio: resolveAudioSelection(c.audio),
-    locale: { primary: 'ar', secondary: 'en' },
+    // no English written → Arabic only (data/derive.js reads `secondary: null`)
+    locale: { primary: 'ar', secondary: hasEnglish(ev, c) ? 'en' : null },
     couple: {
       a: { ar: n.a, en: n.aEn, monogram: first(n.a), initial: first(n.aEn).toUpperCase() },
       b: { ar: couple ? n.b : '', en: couple ? n.bEn : '', monogram: couple ? first(n.b) : '', initial: couple ? first(n.bEn).toUpperCase() : '' },

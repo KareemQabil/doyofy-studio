@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { actorLabel, can, canManageGuests, canViewFood, FORBIDDEN_TEXT, OWNER_ONLY_NOTE, type Permission } from '../../src/domain/roles';
 import type { Role } from '../../src/domain/types';
 
-const ALL: Permission[] = ['guests.add', 'guests.edit', 'guests.share', 'guests.remind', 'guests.delete', 'guests.transfer', 'guests.export', 'seating', 'checkin', 'food', 'billing', 'invitation.publish', 'event.archive'];
+const ALL: Permission[] = ['guests.add', 'guests.edit', 'guests.share', 'guests.remind', 'guests.delete', 'guests.transfer', 'guests.export', 'seating', 'checkin', 'food', 'billing', 'event.archive'];
 const allowed = (role: Role) => ALL.filter((a) => can(role, a)).sort();
 
 before(() => {
@@ -16,7 +16,7 @@ test('roles: owner does everything but the caterer food view, coordinator runs t
   assert.deepEqual(allowed('organizer'), ALL.filter((a) => a !== 'food').sort());
   assert.deepEqual(allowed('coordinator'), ['checkin', 'guests.add', 'guests.edit', 'guests.remind', 'guests.share', 'seating']);
   assert.deepEqual(allowed('caterer'), ['food']);
-  for (const a of ['guests.delete', 'guests.transfer', 'guests.export', 'billing', 'invitation.publish', 'event.archive'] as const) {
+  for (const a of ['guests.delete', 'guests.transfer', 'guests.export', 'billing', 'event.archive'] as const) {
     assert.equal(can('coordinator', a), false, a);
     assert.match(FORBIDDEN_TEXT[a], /صاحب المناسبة/, a);
   }
@@ -48,7 +48,6 @@ test('services: a coordinator adds, edits, shares, seats and checks in; owner-on
 
   await assert.rejects(s.parties.remove(p.id), forbidden);
   await assert.rejects(s.parties.transfer({ ids: [p.id], targetEventId: 'evt_katb', mode: 'copy' }), forbidden);
-  await assert.rejects(s.invitations.publish('evt_wedding'), forbidden);
   await assert.rejects(s.events.archive('evt_wedding'), forbidden);
   assert.equal((await s.parties.get(p.id)).primaryGuestName, 'عائلة المنسق', 'refused delete wrote nothing');
   assert.equal((await s.events.get('evt_wedding')).archivedAt, undefined);

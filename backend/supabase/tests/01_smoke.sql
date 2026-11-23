@@ -190,4 +190,13 @@ select t.ok((select array_agg(distinct kind) @> array['event_created','party_add
   'event_archived','event_updated']::text[] from public.event_activity where event_id = :'event_id'), 'activity kinds recorded');
 select t.ok((select count(*) = 0 from public.event_activity where kind = 'party_updated' and event_id = :'event_id'), 'server-side RSVP/check-in updates do not log party_updated');
 
+-- ---------------------------------------------------------------- names + date are enough (0002: the place is optional)
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
+insert into public.events (type, title, names, date, time, venue, slug)
+values ('birthday', 'عيد ميلاد جود', '{"a":"جود"}', (now() + interval '30 days')::date, '20:00', '{"name":"","city":""}', 'jood-bday')
+returning id as bare_event_id \gset
+select t.ok((select venue->>'name' = '' from public.events where id = :'bare_event_id'), 'an event without a venue or city is accepted');
+reset role;
+
 \echo 'SMOKE TEST PASSED'

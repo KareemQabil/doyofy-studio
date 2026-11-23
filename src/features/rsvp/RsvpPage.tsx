@@ -7,7 +7,6 @@
 import { useMemo, useState } from 'react';
 import type { Event, InvitationParty, RSVPResponse } from '../../domain/types';
 import { INVITATION_STATUS, countParties, invitationStatus, normaliseForSearch, searchParties } from '../../domain/parties';
-import { publishState } from '../../domain/invitation';
 import { relativeTime } from '../../domain/format';
 import { canRemind, remindHold, REMIND_HOLD_HOURS } from '../../domain/guest-tools';
 import { INVITATION_KEY } from '../../domain/copy/guests';
@@ -21,7 +20,7 @@ import { Link, useLocation, useNavigate } from '../../app/router';
 import { paths } from '../../app/paths';
 import { useToast } from '../../ui/primitives/Feedback';
 import { errorMessage } from '../../services/errors';
-import { useDesign, useParties, useResponses } from '../shared/queries';
+import { useParties, useResponses } from '../shared/queries';
 import { RecordRsvpDialog } from './RecordRsvpDialog';
 import { ShareQueue } from '../guests/ShareQueue';
 import { reminderMessage, whatsappUrl } from '../guests/share';
@@ -34,7 +33,6 @@ const CHANNEL: Record<RSVPResponse['channel'], CopyKey> = { guest_link: 'rpFromL
 export function RsvpPage({ event }: { event: Event }) {
   const parties = useParties(event.id);
   const responses = useResponses(event.id);
-  const design = useDesign(event.id);
   const loc = useLocation();
   const navigate = useNavigate();
   const now = useNow();
@@ -52,19 +50,17 @@ export function RsvpPage({ event }: { event: Event }) {
   const unmatched = (responses.data ?? []).filter((r) => !r.partyId && !r.resolution);
   const tab = (loc.search.get('tab') as Tab | null) ?? (all.length === 0 && unmatched.length ? 'unmatched' : 'pending');
   const c = countParties(all);
-  const ps = publishState(design.data);
   const pending = all.filter((p) => p.rsvpStatus === 'pending');
   const groups: Array<{ id: string; title: string; hint: string; items: InvitationParty[] }> = [
     { id: 'opened', title: t('rpOpened'), hint: t('rpOpenedHint'), items: pending.filter((p) => p.delivery.status === 'opened') },
     { id: 'shared', title: t('rpShared'), hint: t('rpSharedHint'), items: pending.filter((p) => p.delivery.status === 'shared') },
     { id: 'unsent', title: t('rpUnsent'), hint: t('rpUnsentHint'), items: pending.filter((p) => p.delivery.status === 'not_shared' || p.delivery.status === 'failed') },
   ];
-  const published = ps === 'published' || ps === 'changed';
   // already invited and still silent; guests without a number get the copy option at the end of the queue.
   // A family invited or reminded in the last 48 h waits (remindHold): not counted, not queued, no per-row button.
-  const remindable = published ? pending.filter((p) => canRemind(p, now)).map((p) => p.id) : [];
-  const held = published ? pending.filter((p) => (p.delivery.status === 'opened' || p.delivery.status === 'shared') && remindHold(p, now)).length : 0;
-  const remindUrl = (p: InvitationParty) => published && normalisePhone(p.phone).ok ? whatsappUrl(p.phone, reminderMessage(event, p, guestLink(p), dialect)) : undefined;
+  const remindable = pending.filter((p) => canRemind(p, now)).map((p) => p.id);
+  const held = pending.filter((p) => (p.delivery.status === 'opened' || p.delivery.status === 'shared') && remindHold(p, now)).length;
+  const remindUrl = (p: InvitationParty) => normalisePhone(p.phone).ok ? whatsappUrl(p.phone, reminderMessage(event, p, guestLink(p), dialect)) : undefined;
   const replied = c.parties - c.pendingParties;
 
   if (parties.error || responses.error) return <ErrorState error={parties.error || responses.error} onRetry={() => { parties.refetch(); responses.refetch(); }} />;
@@ -109,7 +105,7 @@ export function RsvpPage({ event }: { event: Event }) {
                   <Panel key={g.id} title={`${g.title} (${g.items.length})`} subtitle={g.hint} padded={false}>
                     <ul className="plain-list">
                       {g.items.map((p) => {
-                        const inv = invitationStatus(p, ps);
+                        const inv = invitationStatus(p);
                         const hold = remindHold(p, now);
                         return (
                           <li key={p.id} className="plain-row">
@@ -125,7 +121,7 @@ export function RsvpPage({ event }: { event: Event }) {
                               </span>
                             </span>
                             <span className="row gap-2 row-actions">
-                              {published && g.id !== 'unsent' && !hold && <Button size="sm" variant="ghost" icon="bell" onClick={() => setReminding([p.id])} aria-label={t('rpRemindName', { name: p.primaryGuestName })}>{t('rpRemind')}</Button>}
+                              {g.id !== 'unsent' && !hold && <Button size="sm" variant="ghost" icon="bell" onClick={() => setReminding([p.id])} aria-label={t('rpRemindName', { name: p.primaryGuestName })}>{t('rpRemind')}</Button>}
                               <Button size="sm" onClick={() => setRecording(p)}>{t('rpRecord')}</Button>
                             </span>
                           </li>

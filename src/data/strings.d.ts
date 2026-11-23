@@ -10,4 +10,5 @@ export interface EngineStrings {
 export declare const STRINGS: EngineStrings;
 export declare const LIVE_STRINGS: EngineStrings;
 export declare function setStringsVoice(dialect: Dialect | null | undefined): void;
-export declare function currentStrings(dialect?: Dialect): EngineStrings;
+export declare function setStringsEnglish(on: boolean): void;
+export declare function currentStrings(dialect?: Dialect, withEnglish?: boolean): EngineStrings;

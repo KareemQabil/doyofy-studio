@@ -117,11 +117,14 @@ test('[mocked] events.get: non-uuid id → not_found without a request; PGRST116
   assert.equal(calls[0]!.headers.Accept, 'application/vnd.pgrst.object+json');
 });
 
-test('[mocked] events.create retries with a new slug on a unique violation (slugs are global)', async () => {
-  const { s, calls } = setup([json(409, { code: '23505', message: 'duplicate key value violates unique constraint "events_slug_key"' }), json(201, [eventRow])]);
+test('[mocked] events.create retries with a new slug on a unique violation (slugs are global), then saves the default design', async () => {
+  const live = { ...designRow(1), published: design, published_at: '2026-10-10T08:00:00Z', published_version: 1 };
+  const { s, calls } = setup([json(409, { code: '23505', message: 'duplicate key value violates unique constraint "events_slug_key"' }), json(201, [eventRow]), json(200, designRow(1)), json(200, live)]);
   const date = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
   await s.events.create({ type: 'wedding', names: { a: 'سارة', b: 'أحمد', aEn: 'Sara', bEn: 'Ahmed' }, date, time: '20:00', venue: { name: 'قاعة', city: 'الرياض' } });
-  assert.equal(calls.length, 2);
+  // always live: the new event's guest links work at once, with the occasion's default design
+  assert.deepEqual(calls.slice(2).map((c) => c.url.replace(URL_BASE, '').split('?')[0]), ['/rest/v1/rpc/save_invitation_draft', '/rest/v1/rpc/publish_invitation']);
+  assert.equal(calls.length, 4);
   assert.equal((calls[0]!.body as { slug: string }).slug, 'sara-ahmed');
   assert.match((calls[1]!.body as { slug: string }).slug, /^sara-ahmed-[a-z0-9]{4}$/);
   assert.equal(calls[1]!.headers.Prefer, 'return=representation');
@@ -137,14 +140,15 @@ test('[mocked] guest.open: RPC with anon key only (never the organizer token) an
   assert.equal(v.maxGuests, 2);
 });
 
-test('[mocked] guest envelopes map to AppError: unpublished, unknown code, general link disabled, throttled', async () => {
+test('[mocked] guest envelopes map to AppError: legacy «not published», unknown code, general link disabled, throttled', async () => {
   const { s } = setup([
     json(200, { ok: false, code: 'not_published', reason: 'not_published', status: 404 }),
     json(200, { ok: false, code: 'not_found', reason: 'unknown_code', status: 404 }),
     json(200, { ok: false, code: 'not_found', reason: 'personal_only', status: 404 }),
     json(200, { ok: false, code: 'rate_limited', reason: 'too_many_wrong_codes', status: 429 }),
   ]);
-  await rejectsWith(s.guest.open('sara-ahmed', 'X'), 'not_published', /غير متاحة بعد/);
+  // the app has no «not published» state: an older server's answer reads as a calm «not available yet»
+  await rejectsWith(s.guest.open('sara-ahmed', 'X'), 'not_found', /غير متاحة بعد/);
   await rejectsWith(s.guest.open('sara-ahmed', 'X'), 'not_found', /رابط الدعوة غير صحيح/);
   await rejectsWith(s.guest.open('sara-ahmed'), 'not_found', /هذه الدعوة شخصية/);
   await rejectsWith(s.guest.open('sara-ahmed', 'X'), 'conflict', /محاولات كثيرة/);
@@ -209,25 +213,18 @@ test('[mocked] undo → undo_check_in RPC; second undo maps to conflict "already
   await rejectsWith(s.checkIn.undo(RECORD_ID), 'conflict', /تم التراجع عن هذا التسجيل من قبل/);
 });
 
-test('[mocked] invitations: saveDraft sends the last seen revision; stale revision → conflict', async () => {
-  const { s, calls } = setup([json(200, [designRow(3)]), json(200, designRow(4)), json(200, designRow(5)), pgErr(409, 'draft_revision_conflict', 'conflict')]);
+test('[mocked] invitations: saveDraft sends the last seen revision and refreshes the guests\' copy; stale revision → conflict', async () => {
+  const live = (rev: number) => ({ ...designRow(rev), published: design, published_at: '2026-10-10T10:00:00Z', published_version: rev });
+  const { s, calls } = setup([json(200, [designRow(3)]), json(200, designRow(4)), json(200, live(4)), json(200, designRow(5)), json(200, live(5)), pgErr(409, 'draft_revision_conflict', 'conflict')]);
   assert.equal((await s.invitations.get(EVENT_ID))?.draft.cardId, 'lace');
   await s.invitations.saveDraft(EVENT_ID, design);
   assert.equal((calls[1]!.body as { p_base_revision: number }).p_base_revision, 3);
+  // always live: the save is followed by the snapshot the 0001 schema serves to guests, at the new revision
+  assert.equal(calls[2]!.url.replace(URL_BASE, '').split('?')[0], '/rest/v1/rpc/publish_invitation');
+  assert.equal((calls[2]!.body as { p_expected_revision: number }).p_expected_revision, 4);
   await s.invitations.saveDraft(EVENT_ID, design);
-  assert.equal((calls[2]!.body as { p_base_revision: number }).p_base_revision, 4);
+  assert.equal((calls[3]!.body as { p_base_revision: number }).p_base_revision, 4);
   await rejectsWith(s.invitations.saveDraft(EVENT_ID, design), 'conflict', /من جهاز آخر/);
-});
-
-test('[mocked] invitations.publish with no design yet saves the occasion default, then publishes (mock parity)', async () => {
-  const published = { ...designRow(1), published: design, published_at: '2026-10-10T10:00:00Z', published_version: 1 };
-  const { s, calls } = setup([pgErr(409, 'nothing_to_publish', 'conflict'), json(200, eventRow), json(200, designRow(1)), json(200, published)]);
-  const d = await s.invitations.publish(EVENT_ID);
-  assert.deepEqual(calls.map((c) => c.url.replace(URL_BASE, '').split('?')[0]), [
-    '/rest/v1/rpc/publish_invitation', '/rest/v1/events', '/rest/v1/rpc/save_invitation_draft', '/rest/v1/rpc/publish_invitation',
-  ]);
-  assert.equal((calls[3]!.body as { p_expected_revision: number }).p_expected_revision, 1);
-  assert.ok(d.published);
 });
 
 test('[mocked] parties: list mapping, constraint errors → field-level validation, messaging refused without a request', async () => {

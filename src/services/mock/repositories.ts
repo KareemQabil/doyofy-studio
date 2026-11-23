@@ -8,9 +8,9 @@ import type {
 } from '../contracts';
 import type { Event, InvitationParty, PartyInput } from '../../domain/types';
 import { makeCode, makeId, makeSlug, normaliseCode } from '../../domain/ids';
-import { defaultDesign, publishState } from '../../domain/invitation';
+import { defaultDesign, liveDesign } from '../../domain/invitation';
 import { applyRsvp, seatsFor, validateRsvp, RSVP_ERROR_TEXT } from '../../domain/parties';
-import { eventPhase, eventStart, suggestTitle, validateEssentials, todayFor } from '../../domain/event';
+import { cleanVenue, DEFAULT_EVENT_TIME, eventPhase, eventStart, suggestTitle, validateEssentials, todayFor } from '../../domain/event';
 import { normalisePhone } from '../../domain/phone';
 import { expectedArrivals, statusAfter, EXCEPTION_TEXT } from '../../domain/checkin';
 import { validateTable } from '../../domain/seating';
@@ -73,8 +73,8 @@ export function mockEvents({ store, now }: Ctx): EventRepository {
           id: makeId('evt'), ownerId: 'usr_owner', type: input.type,
           title: input.title?.trim() || suggestTitle(input.type, input.names),
           names: { a: input.names.a.trim(), b: input.names.b?.trim() || undefined, aEn: input.names.aEn?.trim() || undefined, bEn: input.names.bEn?.trim() || undefined },
-          date: input.date, time: input.time, timeZone, durationHours: 5,
-          venue: { ...input.venue, name: input.venue.name.trim(), city: input.venue.city.trim() },
+          date: input.date, time: input.time || DEFAULT_EVENT_TIME, timeZone, durationHours: 5,
+          venue: cleanVenue(input.venue),
           slug: makeSlug([input.names.aEn, input.names.bEn], new Set(db.events.map((e) => e.slug))),
           settings: { defaultPartySize: 2, revealTableToGuests: false, allowGeneralLink: false },
           createdAt: t.toISOString(), updatedAt: t.toISOString(),
@@ -160,17 +160,6 @@ export function mockInvitations({ store, now }: Ctx): InvitationRepository {
       let d = db.designs.find((x) => x.eventId === eventId);
       if (!d) { d = { id: makeId('dsg'), eventId, draft: content, draftSavedAt: t }; db.designs.push(d); }
       else { d.draft = content; d.draftSavedAt = t; }
-      return clone(d);
-    }), 'write'),
-    publish: (eventId) => store.request(() => store.write((db) => {
-      guard(store, 'invitation.publish');
-      const ev = findEvent(db, eventId);
-      const t = now();
-      let d = db.designs.find((x) => x.eventId === eventId);
-      if (!d) { d = { id: makeId('dsg'), eventId, draft: defaultDesign(ev), draftSavedAt: t.toISOString() }; db.designs.push(d); }
-      const first = !d.published;
-      d.published = clone(d.draft); d.publishedAt = t.toISOString();
-      log(db, t, eventId, 'invitation_published', { first });
       return clone(d);
     }), 'write'),
   };
@@ -588,8 +577,8 @@ export function mockGuest({ store, now }: Ctx): GuestApi {
     const db = store.read();
     const ev = db.events.find((e) => e.slug === slug && !e.archivedAt);
     if (!ev) throw new AppError('not_found', 'هذه الدعوة غير موجودة. تأكد من الرابط مع صاحب الدعوة.');
-    const design = db.designs.find((d) => d.eventId === ev.id);
-    if (!design?.published) throw new AppError('not_published', 'الدعوة غير متاحة بعد. سيشاركها صاحب المناسبة قريبًا.');
+    // always live: the latest saved design, or the occasion's default before the first save — never «not published»
+    const design = liveDesign(db.designs.find((d) => d.eventId === ev.id), ev);
     let party: InvitationParty | undefined;
     if (code) {
       party = db.parties.find((p) => p.eventId === ev.id && p.code === normaliseCode(code));
@@ -610,7 +599,7 @@ export function mockGuest({ store, now }: Ctx): GuestApi {
     const table = party?.tableId && ev.settings.revealTableToGuests ? db.tables.find((t) => t.id === party!.tableId)?.name : undefined;
     return clone({
       event: { id: ev.id, slug: ev.slug, type: ev.type, title: ev.title, names: ev.names, date: ev.date, time: ev.time, timeZone: ev.timeZone, durationHours: ev.durationHours, venue: ev.venue },
-      design: publishState(design) === 'none' ? design.draft : design.published,
+      design,
       party: party ? { code: party.code, name: party.primaryGuestName, maxPartySize: party.maxPartySize, rsvpStatus: party.rsvpStatus, confirmedPartySize: party.confirmedPartySize, companionNames: party.companionNames, guestNote: party.guestNote, meals: party.meals, dietary: party.dietary, tableName: table, checkedInCount: party.checkedInCount } : null,
       canEdit: phase === 'upcoming' || phase === 'final_week' || (phase === 'event_day' && now() < eventStart(ev)),
       phase: phase === 'completed' || phase === 'archived' ? 'after' : phase === 'event_day' ? 'event_day' : 'before',

@@ -72,28 +72,27 @@ try {
     return `hero ${Math.round(hero.width)}px; editor ${Math.round(card.width)}px; expand dialog opens`;
   });
 
-  await scenario('02-vertical-template-feed', { width: 390, height: 844 }, async page => {
+  await scenario('02-shape-tab', { width: 390, height: 844 }, async page => {
+    // the old gallery link lands on the editor's «الشكل»: one grid of designs, one sideways row of backgrounds
     await go(page, '/app/events/evt_wedding/invitation/templates');
-    const feed = page.locator('.template-feed-scroll'); await feed.waitFor();
-    await page.waitForFunction(() => document.querySelector('.tf-rail')?.getBoundingClientRect().bottom <= innerHeight && document.querySelector('.focus-foot')?.getBoundingClientRect().bottom <= innerHeight);
-    const poster = await page.locator('.template-feed-slide.is-active .card-thumb').boundingBox();
-    assert.ok(poster?.width >= 260, `template poster too small: ${poster?.width}`);
-    assert.ok(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), 'the feed is the only scroller (no nested page scroll)');
-    await feed.focus(); await page.keyboard.press('Home');
-    await page.waitForFunction(() => document.querySelector('.template-feed-slide')?.classList.contains('is-active'));
-    const before = await page.evaluate(async () => JSON.stringify(await window.__doyofy.services.invitations.get('evt_wedding')));
-    const first = await page.locator('.tf-slide.is-active .tf-info h3').innerText();
-    await feed.focus(); await page.keyboard.press('ArrowDown');
-    await page.waitForFunction(title => { const heading = document.querySelector('.tf-slide.is-active .tf-info h3'); return !!heading && heading.textContent !== title; }, first);
-    const second = await page.locator('.tf-slide.is-active .tf-info h3').innerText();
-    const style = await feed.evaluate(el => ({ overflow: getComputedStyle(el).overflowY, snap: getComputedStyle(el).scrollSnapType }));
-    assert.ok(['auto', 'scroll'].includes(style.overflow) && style.snap.includes('y'), `not a native vertical snap feed: ${JSON.stringify(style)}`);
-    // Native scroll back to the first snap point must update navigation without saving a design.
-    await feed.evaluate(el => { el.scrollTop = 0; });
-    await page.waitForFunction(title => document.querySelector('.tf-slide.is-active .tf-info h3')?.textContent === title, first);
-    const after = await page.evaluate(async () => JSON.stringify(await window.__doyofy.services.invitations.get('evt_wedding')));
-    assert.equal(after, before, 'browsing auto-applied a template');
-    return `keyboard ${first} → ${second}; native scroll returns; saved design unchanged`;
+    await page.waitForURL(/invitation\/design\?section=design/);
+    const grid = page.locator('.ed-cards'); await grid.waitFor();
+    assert.equal(await page.locator('.ed-cards').count(), 1, 'one grid of designs');
+    assert.equal(await page.getByText('غيّر التصميم', { exact: true }).count(), 0, 'no detour to a gallery');
+    const before = await page.evaluate(async () => JSON.stringify((await window.__doyofy.services.invitations.get('evt_wedding')).draft.message));
+    const few = await grid.locator('[role=radio]').count();
+    await page.locator('.ed-more').click();
+    const all = await grid.locator('[role=radio]').count();
+    assert.ok(all > few, `«المزيد» shows every design: ${few} → ${all}`);
+    const row = page.locator('.ed-scene-row');
+    const scroll = await row.evaluate(el => ({ overflow: getComputedStyle(el).overflowX, wider: el.scrollWidth > el.clientWidth }));
+    assert.ok(['auto', 'scroll'].includes(scroll.overflow) && scroll.wider, `backgrounds are one sideways row: ${JSON.stringify(scroll)}`);
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'no page-wide horizontal scroll');
+    await grid.locator('[role=radio][aria-checked=false]').first().click();
+    await page.locator('.save-state.is-saved').waitFor();
+    const after = await page.evaluate(async () => JSON.stringify((await window.__doyofy.services.invitations.get('evt_wedding')).draft.message));
+    assert.equal(after, before, 'a design never changes the texts');
+    return `designs ${few} → ${all}; ${await row.locator('[role=radio]').count()} backgrounds in one row; texts kept`;
   });
 
   await scenario('03-account-audio-dialect', { width: 1440, height: 1000 }, async page => {
@@ -166,8 +165,11 @@ try {
   });
 
   await scenario('03b-voice-welcome', { width: 1440, height: 1000 }, async page => {
-    // Chromium's fake microphone (launch flags) answers the permission prompt and feeds a tone
-    await go(page, '/app/account');
+    // recorded inside the editor's «الصوت» (a sheet over it, nothing leaves the editor); Chromium's fake microphone
+    // (launch flags) answers the permission prompt and feeds a tone
+    await go(page, '/app/events/evt_wedding/invitation/design?section=motion');
+    const editorUrl = page.url();
+    await page.locator('[data-audio-sheet="voice"]').click();
     await page.getByRole('button', { name: 'ابدأ التسجيل', exact: true }).click();
     await page.locator('[data-recording] [role=timer]').waitFor();
     await page.waitForFunction(() => /0:0[2-9]/.test(document.querySelector('[data-recording] [role=timer]')?.textContent || ''), null, { timeout: 6000 });
@@ -176,13 +178,18 @@ try {
     await page.waitForFunction(() => JSON.parse(localStorage.getItem('doyofy:audio-library:v2') || '{"tracks":[]}').tracks.some(t => t.kind === 'voice'));
     const voice = await page.evaluate(() => JSON.parse(localStorage.getItem('doyofy:audio-library:v2')).tracks.find(t => t.kind === 'voice'));
     assert.ok(voice.durationSec >= 2 && voice.durationSec <= 60, `recorded ${voice.durationSec}s`);
-    await go(page, '/app/events/evt_wedding/invitation/design?section=motion');
-    await page.getByRole('switch', { name: 'رسالة ترحيب صوتية', exact: true }).click();
+    assert.equal(page.url(), editorUrl, 'still in the editor');
+    // the new recording is switched on at once
     await page.waitForFunction(id => JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}').designs?.find(d => d.eventId === 'evt_wedding')?.draft.audio?.voiceId === id, voice.id);
-    await page.getByRole('group', { name: 'عرض الاستوديو' }).getByRole('button', { name: 'معاينة' }).click();
-    // the organizer preview carries the voice: its replay/stop control appears once the bytes are found on this device
-    await page.waitForFunction(() => { const b = document.querySelector('.live-preview [data-act="voice"]'); return !!b && !b.hidden; }, null, { timeout: 6000 });
-    return `voice welcome recorded (${voice.durationSec.toFixed(1)} s, ${voice.mime}) and reached the preview engine`;
+    assert.equal(await page.getByRole('switch', { name: 'رسالة ترحيب صوتية', exact: true }).getAttribute('aria-checked'), 'true');
+    await page.locator('.save-state.is-saved').waitFor();
+    // one surface: the editor has no preview mode — «معاينة كضيف» saves and opens the guest preview, which carries the voice
+    await page.locator('.ed-bar').getByRole('button', { name: 'معاينة كضيف', exact: true }).click();
+    await page.waitForURL(/invitation\/preview/);
+    await page.getByRole('button', { name: 'افتحوا الدعوة', exact: true }).click();
+    // its replay/stop control appears once the bytes are found on this device
+    await page.waitForFunction(() => { const b = document.querySelector('.preview-host [data-act="voice"]'); return !!b && !b.hidden; }, null, { timeout: 8000 });
+    return `voice welcome recorded (${voice.durationSec.toFixed(1)} s, ${voice.mime}) and reached the guest preview engine`;
   });
 
   await scenario('04-table-order', { width: 1440, height: 1000 }, async page => {
@@ -238,7 +245,10 @@ try {
     await page.getByText('أصبح حدّ مناسبتك 250 شخصًا').waitFor();
     await page.getByText('تمت إضافة شخصين', { exact: false }).waitFor(); // the default invitation allows 2
     await page.waitForFunction(id => JSON.parse(localStorage.getItem('doyofy:db:v1') || '{}').parties?.filter(p => p.eventId === id).length === 6, id);
-    await page.getByRole('button', { name: 'تم', exact: true }).click();
+    await page.locator('dialog.capacity-dialog').getByRole('button', { name: 'تم', exact: true }).click();
+    // the add sheet stays open for the next guest and says who was added (polish 3); «تم» closes it
+    await page.locator('dialog[open] .pf-added').filter({ hasText: 'ضيف بعد الترقية' }).waitFor();
+    await page.locator('dialog[open]').getByRole('button', { name: 'تم', exact: true }).click();
     const added = await page.evaluate(async id => (await window.__doyofy.services.parties.list(id)).filter(p => p.primaryGuestName === 'ضيف بعد الترقية').length, id);
     assert.equal(added, 1); await page.reload({ waitUntil: 'domcontentloaded' });
     assert.equal(await page.evaluate(async id => (await window.__doyofy.services.parties.list(id)).length, id), 6);

@@ -56,7 +56,7 @@ export const studioMarkup = () => { const T = currentStrings(); return `
   </div>
 
   <div class="st-hint"><div class="st-hint-inner" style="display: flex; gap: 8px; align-items: baseline; padding: 8px 16px; border-radius: 20px; background: rgba(15,8,9,.58); color: #F4EAE0; backdrop-filter: blur(6px)">
-    <span class="ar" style="font-size: 14px">${T.tapToOpen.ar}</span><span dir="ltr" style="font-size: 12px; font-style: italic">${T.tapToOpen.en}</span>
+    <span class="ar" style="font-size: 14px">${T.tapToOpen.ar}</span>${T.tapToOpen.en ? `<span dir="ltr" style="font-size: 12px; font-style: italic">${T.tapToOpen.en}</span>` : ''}
   </div></div>
 
   <section class="st-sheet" aria-label="${T.sheet}" tabindex="-1">
@@ -108,7 +108,7 @@ export const studioMarkup = () => { const T = currentStrings(); return `
     <span class="st-dl st-e4 done-who" dir="ltr" style="font-size: 12.5px; letter-spacing: 0.3em; color: #E3C58C; margin-top: 18px; max-width: 320px"></span>
     <button type="button" class="st-cta st-dl st-e5" data-act="replay" style="margin-top: 32px; border-color: rgba(227,197,140,.6); color: #F4EAE0; background: transparent">
       ${ICON.replay.replace('width="19" height="19"', 'width="16" height="16"')}
-      <span class="ar" style="font-size: 15px">${T.watchAgain.ar}</span><span dir="ltr" style="font-size: 14px; font-style: italic">${T.watchAgain.en}</span>
+      <span class="ar" style="font-size: 15px">${T.watchAgain.ar}</span>${T.watchAgain.en ? `<span dir="ltr" style="font-size: 14px; font-style: italic">${T.watchAgain.en}</span>` : ''}
     </button>
   </div>
 

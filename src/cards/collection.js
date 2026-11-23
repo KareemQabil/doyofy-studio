@@ -58,16 +58,20 @@ const head = (c) => `<div class="kc-head">${c.arB ? `<div class="kc-greet">${e(c
 /** centred classic lines */
 /** the weekday and its date: joined by «، » on faces that write ١٢٣ (a middle dot beside ١ reads as ١٠, data/derive.js dateSep) */
 const sep = (c) => e(c.sep ?? ' · ');
-const lines = (c) => `<div class="kc-lines"><div class="kc-date">${e(c.dayAr)}${sep(c)}${e(c.dateAr)}</div><div class="kc-time">${e(c.timeAr)}</div><div class="kc-place">${e(c.venueAr)}</div><div class="kc-city">${e(c.cityAr)}</div></div>`;
-/** three-icon row (date | time | city) with the venue on its own line */
-const info = (c) => `<div class="kc-info"><div class="kc-row"><div class="kc-cell">${icon('calendar')}<span>${e(c.dayAr)}</span><b>${e(c.dateAr)}</b></div><div class="kc-cell">${icon('clock')}<span>الساعة</span><b>${e(c.timeAr)}</b></div><div class="kc-cell">${icon('pin')}<span>المدينة</span><b>${e(c.cityAr)}</b></div></div><div class="kc-venue">${e(c.venueAr)}</div></div>`;
+// The place is optional (an event needs only names + date): every block below writes the venue/city only when
+// they exist — no empty line, no orphan «، » or « · », no «المدينة» cell without a city.
+const place = (c) => [c.venueAr, c.cityAr].map((x) => String(x ?? '').trim()).filter(Boolean).map(e).join('، ');
+const lines = (c) => `<div class="kc-lines"><div class="kc-date">${e(c.dayAr)}${sep(c)}${e(c.dateAr)}</div><div class="kc-time">${e(c.timeAr)}</div>${c.venueAr ? `<div class="kc-place">${e(c.venueAr)}</div>` : ''}${c.cityAr ? `<div class="kc-city">${e(c.cityAr)}</div>` : ''}</div>`;
+/** three-icon row (date | time | city) with the venue on its own line; two cells when there is no city */
+const info = (c) => `<div class="kc-info"><div class="kc-row"><div class="kc-cell">${icon('calendar')}<span>${e(c.dayAr)}</span><b>${e(c.dateAr)}</b></div><div class="kc-cell">${icon('clock')}<span>الساعة</span><b>${e(c.timeAr)}</b></div>${c.cityAr ? `<div class="kc-cell">${icon('pin')}<span>المدينة</span><b>${e(c.cityAr)}</b></div>` : ''}</div>${c.venueAr ? `<div class="kc-venue">${e(c.venueAr)}</div>` : ''}</div>`;
 /** large day numeral between the weekday and the month */
-const bigDay = (c) => `<div class="kc-day"><span class="kc-day-side">${e(c.dayAr)}</span><b lang="${c.numLang}" dir="ltr"${c.digits === 'arab' ? ' class="kc-num-ar"' : ''}>${e(c.dayNum)}</b><span class="kc-day-side">${e(c.monthAr)} ${e(c.yearAr)}</span></div><div class="kc-when"><span>${e(c.timeAr)}</span>${sep(c)}<span>${e(c.venueAr)}</span>، <span>${e(c.cityAr)}</span></div>`;
+const bigDay = (c) => `<div class="kc-day"><span class="kc-day-side">${e(c.dayAr)}</span><b lang="${c.numLang}" dir="ltr"${c.digits === 'arab' ? ' class="kc-num-ar"' : ''}>${e(c.dayNum)}</b><span class="kc-day-side">${e(c.monthAr)} ${e(c.yearAr)}</span></div><div class="kc-when"><span>${e(c.timeAr)}</span>${place(c) ? `${sep(c)}<span>${place(c)}</span>` : ''}</div>`;
 /** right-aligned stack with icons */
-const stack = (c) => `<div class="kc-stack"><div>${icon('calendar')}<span>${e(c.dayAr)}${sep(c)}${e(c.dateAr)}</span></div><div>${icon('clock')}<span>${e(c.timeAr)}</span></div><div>${icon('pin')}<span>${e(c.venueAr)}<small>${e(c.cityAr)}</small></span></div></div>`;
+const stack = (c) => `<div class="kc-stack"><div>${icon('calendar')}<span>${e(c.dayAr)}${sep(c)}${e(c.dateAr)}</span></div><div>${icon('clock')}<span>${e(c.timeAr)}</span></div>${place(c) ? `<div>${icon('pin')}<span>${e(c.venueAr || c.cityAr)}${c.venueAr && c.cityAr ? `<small>${e(c.cityAr)}</small>` : ''}</span></div>` : ''}</div>`;
 /** one compact line under the names: weekday، date، time, then venue، city */
-const when = (c) => `<div class="kc-lines"><div class="kc-date">${e(c.dayAr)}${sep(c)}${e(c.dateAr)}${sep(c)}${e(c.timeAr)}</div><div class="kc-place">${e(c.venueAr)}، ${e(c.cityAr)}</div></div>`;
-const latin = (c) => `<div class="kc-latin" lang="en" dir="ltr">${e(c.eventLabelEnU)}</div>`;
+const when = (c) => `<div class="kc-lines"><div class="kc-date">${e(c.dayAr)}${sep(c)}${e(c.dateAr)}${sep(c)}${e(c.timeAr)}</div>${place(c) ? `<div class="kc-place">${place(c)}</div>` : ''}</div>`;
+/** the occasion's English label: only on an invitation the organizer gave English (data/derive.js labelEnU) */
+const latin = (c) => (c.labelEnU ? `<div class="kc-latin" lang="en" dir="ltr">${e(c.labelEnU)}</div>` : '');
 
 const KC_STYLE = `<style>
 .kc .oc-inner{gap:6px}
@@ -88,7 +92,7 @@ const KC_STYLE = `<style>
 .kc .kc-cell{font-family:'IBM Plex Sans Arabic',Tahoma,sans-serif;line-height:1.65}
 .kc .kc-cell b{line-height:1.65}
 .kc-info{flex:none;display:grid;gap:6px}
-.kc-row{display:grid;grid-template-columns:1fr 1fr 1fr;border-block:1px solid var(--oc-line);padding:7px 0}
+.kc-row{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border-block:1px solid var(--oc-line);padding:7px 0}
 .kc-cell{display:grid;justify-items:center;align-content:start;gap:1px;padding:0 4px;font-size:10px;line-height:1.4;color:var(--oc-muted);overflow-wrap:anywhere;min-width:0}
 .kc-cell+.kc-cell{border-inline-start:1px solid var(--oc-line)}
 .kc-cell b{font-weight:500;font-size:11px;color:var(--oc-ink)}
@@ -414,7 +418,7 @@ const DESIGNS = [
   {
     id: 'ty-vertical', digits: 'latn', fit: [70, 182, 0.4], cls: 'tv', name: 'عنوان عمودي', type: 'conference', style: 'modern', swatch: '#4B2A8C', tone: 'light', scenes: ['marble', 'sea', 'palace'],
     theme: { paper: '#FFFFFF', ink: '#2A1F45', muted: '#564C6E', accent: '#7A5AC8', aText: '#4B2A8C', env: '#2A1F45', fAr: RX },
-    back: (c) => `<div class="kc-vlabel" aria-hidden="true">${e(c.eventLabelEnU)}</div><div class="kc-vrule"></div>`,
+    back: (c) => `${c.labelEnU ? `<div class="kc-vlabel" aria-hidden="true">${e(c.labelEnU)}</div>` : ''}<div class="kc-vrule"></div>`,
     body: (c, n) => `${head(c)}${n}${stack(c)}`,
   },
   {

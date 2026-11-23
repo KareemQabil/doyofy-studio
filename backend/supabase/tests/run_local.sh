@@ -4,7 +4,7 @@
 #   bash backend/supabase/tests/run_local.sh
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-MIGRATION="$HERE/../migrations/0001_doyofy_init.sql"
+MIGRATIONS=("$HERE"/../migrations/*.sql)
 PGBIN="${PGBIN:-$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -1)}"
 [ -x "$PGBIN/initdb" ] || PGBIN="$(dirname "$(command -v initdb)")"
 WORK="$(mktemp -d)"
@@ -16,7 +16,7 @@ trap cleanup EXIT
 "${RUN[@]}" "$PGBIN/pg_ctl" -D "$WORK/data" -o "-k $WORK -c listen_addresses=''" -l "$WORK/log" -w start >/dev/null
 PSQL=("${RUN[@]}" "$PGBIN/psql" -h "$WORK" -U postgres -d postgres -v ON_ERROR_STOP=1 -q)
 "${PSQL[@]}" -f "$HERE/00_supabase_stubs.sql"
-"${PSQL[@]}" -f "$MIGRATION"
+for m in "${MIGRATIONS[@]}"; do "${PSQL[@]}" -f "$m"; done
 "${PSQL[@]}" -f "$HERE/01_smoke.sql" 2>&1 | grep -E "ok:|ok \(|PASSED|ERROR|FAILED" || { echo "smoke test failed"; exit 1; }
 
 # Concurrency: session A holds the party lock for 2 s; B replays A's idempotency key (must wait, then

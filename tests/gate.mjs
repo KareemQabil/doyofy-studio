@@ -27,10 +27,11 @@ const VIEWPORTS = {
 };
 const ROUTES = [
   '/app/welcome', '/app/events', '/app/events/new', '/app/events/new?view=list',
-  '/app/events/evt_engagement/invitation/templates?first=1', '/app/events/evt_wedding/invitation/templates',
+  // the invitation is its editor (the old /invitation summary and /invitation/templates gallery redirect into it)
   '/app/events/evt_wedding/invitation/design', '/app/events/evt_wedding/invitation/design?section=design',
+  '/app/events/evt_wedding/invitation/design?section=motion', '/app/events/evt_engagement/invitation/design?section=design',
   '/app/events/evt_wedding/invitation/design?section=event',
-  '/app/events/evt_wedding/overview', '/app/events/evt_wedding/invitation',
+  '/app/events/evt_wedding/overview',
   '/app/events/evt_wedding/guests', '/app/events/evt_wedding/guests?view=food', '/app/events/evt_wedding/guests/import',
   '/app/events/evt_wedding/rsvp', '/app/events/evt_wedding/seating',
   '/app/events/evt_wedding/check-in', '/app/events/evt_wedding/settings', '/app/events/evt_katb/summary', '/app/events/evt_wedding/more',

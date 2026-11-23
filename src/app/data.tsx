@@ -68,6 +68,8 @@ function useCtx(): Ctx {
   return c;
 }
 export const useServices = () => useCtx().services;
+/** for leaf components that also render on their own (tests, previews): null outside a ServicesProvider */
+export const useOptionalServices = (): Services | null => useContext(ServicesContext)?.services ?? null;
 export const usePrototype = () => useCtx().prototype;
 
 export interface QueryResult<T> {

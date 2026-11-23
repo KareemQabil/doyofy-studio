@@ -26,7 +26,8 @@ export type EventType =
   | 'other';
 
 export interface Venue {
-  name: string;        // Arabic display name
+  /** Arabic display name — may be '' (the place is optional; screens use hasVenue/placeLine from domain/event) */
+  name: string;
   city: string;
   nameEn?: string;
   cityEn?: string;
@@ -74,7 +75,8 @@ export interface Event extends EventDetails {
   updatedAt: ISODateTime;
 }
 
-export type CreateEventInput = Pick<EventDetails, 'type' | 'names' | 'date' | 'time' | 'venue'> & { title?: string; timeZone?: string };
+/** only the names and the date are needed: the time defaults to 20:00, the place can be added later (blank strings) */
+export type CreateEventInput = Pick<EventDetails, 'type' | 'names' | 'date'> & { time?: LocalTime; venue?: Partial<Venue>; title?: string; timeZone?: string };
 export type UpdateEventInput = Partial<EventDetails> & { settings?: Partial<EventSettings> };
 
 // ------------------------------------------------------------------ guest experience (meals, dietary, wishlist)
@@ -121,7 +123,9 @@ export interface ProgramItem { time: LocalTime; ar: string; en: string }
 /** Everything about the invitation that is NOT event data. Event data (date, venue…) is merged in at render time. */
 export interface InvitationDesignContent {
   /** sound choice (none / built-in / my music) + optional voice welcome; see domain/audio-library.ts */
-  audio?: { mode: 'default' | 'builtin' | 'library' | 'off'; trackId?: string; trackName?: string; voiceId?: string; voiceName?: string };
+  audio?: { mode: 'default' | 'builtin' | 'library' | 'off'; trackId?: string; trackName?: string; voiceId?: string; voiceName?: string;
+    /** only in what guests receive from the backend (see AudioSelection) */
+    trackUrl?: string; trackStart?: number; trackFade?: number; voiceUrl?: string };
   experience: { dimension: Dimension; motion: Motion };
   cardId: string;
   sceneId: string;
@@ -134,20 +138,21 @@ export interface InvitationDesignContent {
 export interface InvitationDesign {
   id: string;
   eventId: string;
+  /** the latest saved design — what the organizer sees is what guests get (the invitation is always live).
+   *  The field keeps its stored name so older saved data loads unchanged. */
   draft: InvitationDesignContent;
   draftSavedAt: ISODateTime;
-  /** snapshot guests see; absent until first publish */
+  /** legacy: a "published" snapshot from before the invitation was always live. Still loaded, never read. */
   published?: InvitationDesignContent;
   publishedAt?: ISODateTime;
 }
 
-export type PublishState = 'none' | 'draft' | 'published' | 'changed';
 
 // ------------------------------------------------------------------ guests
-/** platform delivery state as stored; `draft`/`ready` are derived from the invitation's publish state */
+/** platform delivery state as stored; a `not_shared` invitation is shown as `ready` (its link works from the start) */
 export type DeliveryStatus = 'not_shared' | 'shared' | 'opened' | 'failed';
 /** spec §12/§13 states as shown to the organizer */
-export type InvitationStatus = 'draft' | 'ready' | 'shared' | 'opened' | 'failed';
+export type InvitationStatus = 'ready' | 'shared' | 'opened' | 'failed';
 /** who knows the state: the platform saw it, the organizer marked it, or the prototype simulated it */
 export type StateSource = 'platform' | 'manual' | 'simulated';
 

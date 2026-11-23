@@ -26,9 +26,12 @@
     "assets:shipped:check": "node tools/check-shipped-assets.mjs",
     "gate": "node tools/build.mjs && node tests/gate.mjs",
     "gate:shots": "node tools/build.mjs && node tests/gate.mjs --shots",
-    "journey": "node tools/build.mjs && node tests/signature-journey.mjs"
+    "journey": "node tools/build.mjs && node tests/signature-journey.mjs",
+    "dev:api": "node tools/build.mjs && node tools/dev-api.mjs",
+    "test:backend": "node tools/build.mjs && node tests/backend-e2e.mjs"
   },
   "dependencies": {
+    "@vercel/blob": "2.8.2",
     "gsap": "3.13.0",
     "lottie-web": "5.13.0",
     "react": "^19.2.0",

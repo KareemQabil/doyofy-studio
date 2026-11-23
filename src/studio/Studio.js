@@ -15,7 +15,7 @@ import { StateMachine } from '../engine/StateMachine.js';
 import { AudioEngine } from '../engine/AudioEngine.js';
 import { detectQuality } from '../engine/Quality.js';
 import { deriveContent, countdown, localDigits, dateSep } from '../data/derive.js';
-import { LIVE_STRINGS as T, currentStrings, setStringsVoice } from '../data/strings.js';
+import { LIVE_STRINGS as T, currentStrings, setStringsEnglish, setStringsVoice } from '../data/strings.js';
 import { PAGE_ORDER } from '../pages/index.js';
 import { SCENE_AMBIENCE } from '../audio/index.js';
 import { LocalRSVPAdapter } from '../engine/rsvp.js';
@@ -44,7 +44,8 @@ export class Studio {
    *   card, scene ids; start = intro|card|pages|rsvp|done
    *   experience  { dimension: '2d', motion: 'animated' | 'static' } — the organizer's motion choice (dimension is legacy).
    *               3d = best renderer per scene (Three.js where a scene has one), 2d = canonical illustrated renderers;
-   *               static = no intro, no idle motion, frozen WebGL frame, fades instead of travel.
+   *               static = no intro, no idle motion, frozen WebGL frame, fades instead of travel — and it opens
+   *               straight on the invitation's pages (no card to tap open first), for every guest.
    *   embedded    render inside a sized container (wizard preview) instead of the full viewport
    *   showSwitcher  the authoring card/scene chooser (off for guests and inside the wizard)
    *   muted       start with sound off (wizard preview)
@@ -75,8 +76,12 @@ export class Studio {
     this.cardId = CardRegistry.has(params.get('card')) ? params.get('card') : card;
     this.invitation = invitation;
     this.data = this._derive(invitation); // after cardId: the face sets the invitation's digits
+    // the engine's own words are bilingual only when the organizer wrote English (data/derive.js `english`)
+    setStringsEnglish(this.data.english);
     this.sceneId = SceneRegistry.has(params.get('scene')) ? params.get('scene') : scene;
     this.startAt = params.get('start') || start;
+    // «ثابتة»: the guest lands on the invitation itself — no card to tap open, no «المسوا البطاقة» hint
+    if (this.quality.static && (this.startAt === 'intro' || this.startAt === 'card')) this.startAt = 'pages';
     this.reveal = RevealRegistry.get('depth-arrival');
     this.finale = FinaleRegistry.get('envelope');
     this.audio = new AudioEngine({ base: assetBase });
@@ -88,6 +93,14 @@ export class Studio {
     this.debug = { sceneRenderer: null, sceneErrors: [], states: [] };
     this._build();
   }
+
+  /** the pages this invitation has: «البرنامج» only when the organizer wrote one, «المكان» only when there is a place
+   *  (both are optional) */
+  _pages() {
+    const { c, mapHref, program } = this.data;
+    return PAGE_ORDER.filter((id) => (id !== 'venue' || !!(c.venueAr || c.cityAr || mapHref)) && (id !== 'program' || program.length > 0));
+  }
+  _last() { return this._pages().length - 1; }
 
   _derive(invitation) {
     const d = deriveContent(invitation, { digits: CardRegistry.has(this.cardId) ? CardRegistry.get(this.cardId).digits : undefined });
@@ -157,7 +170,7 @@ export class Studio {
 
   // ---------------------------------------------------------------- run (per play-through)
   _run(startAt) {
-    this.page = startAt === 'rsvp' ? 4 : 0;
+    this.page = startAt === 'rsvp' ? this._last() : 0;
     const g = this.guest;
     this.rsvp = {
       name: g?.name ?? '', locked: !!g?.nameLocked, attending: g?.attending ?? null,
@@ -181,10 +194,11 @@ export class Studio {
   _renderCredit() {
     const c = this.data.c, couple = !!c.arB;
     const ar = couple ? `${e(c.arA)} و${e(c.arB)}` : e(c.arA);
-    const en = couple ? [c.enAU, c.enBU].filter(Boolean).map(e).join(' &amp; ') : e(c.enAU);
+    // no Latin line that only echoes the Arabic names (English names are optional)
+    const en = [c.enA !== c.arA && c.enAU, couple && c.enB !== c.arB && c.enBU].filter(Boolean).map(e).join(' &amp; ');
     this.el.credit.innerHTML = `<span class="fx-foil" style="font-family: ${this.theme.fAr}; font-size: ${couple ? 58 : Math.min(58, Math.max(30, Math.round(420 / Math.max(1, [...c.arA].length))))}px; line-height: 1.45; text-align: center">${ar}</span>
       ${en ? `<span dir="ltr" style="font-size: 12px; letter-spacing: 0.42em; color: #E3C58C; margin-top: 4px">${en}</span>` : ''}
-      <span dir="ltr" style="font-size: 11px; letter-spacing: 0.34em; color: rgba(243,217,160,.7); margin-top: 18px">${couple ? T.honour : T.honourSingle}</span>`;
+      ${(couple ? T.honour : T.honourSingle) ? `<span dir="ltr" style="font-size: 11px; letter-spacing: 0.34em; color: rgba(243,217,160,.7); margin-top: 18px">${couple ? T.honour : T.honourSingle}</span>` : ''}`;
   }
 
   _onState(state, from, via) {
@@ -285,7 +299,7 @@ export class Studio {
     const s = this.el.st.style;
     for (const [k, v] of Object.entries({ paper: t.paper, ink: t.ink, muted: t.muted, accent: t.accent, atext: t.aText, env: t.env, far: t.fAr, envmid: mix(t.env, -0.12), envdark: mix(t.env, -0.4), envlight: mix(t.env, 0.14) })) s.setProperty('--' + k, v);
     this.el.mono.textContent = c.arB ? `${c.monoA} · ${c.monoB}` : `${c.monoA}`;
-    const mLatin = c.arB ? [c.enA, c.enB].filter(Boolean).map(e).join(' &amp; ') : e(c.enA);
+    const mLatin = [c.enA !== c.arA && c.enA, c.arB && c.enB !== c.arB && c.enB].filter(Boolean).map(e).join(' &amp; ');
     this.host.querySelector('.st-mcard').innerHTML = `<span style="font-family: ${t.fAr}; font-size: 28px; line-height: 1.35; text-align: center">${c.arB ? `${e(c.arA)} و${e(c.arB)}` : e(c.arA)}</span>
       ${mLatin ? `<span dir="ltr" style="font-size: 14px; font-style: italic; color: ${t.muted}">${mLatin}</span>` : ''}
       <span dir="ltr" style="font-size: 10px; letter-spacing: 0.3em; color: ${t.aText}; margin-top: 6px">${e(c.dateNum)}</span>`;
@@ -360,14 +374,16 @@ export class Studio {
 
   // ---------------------------------------------------------------- pages
   _renderPage(leaving, instant = false) {
-    const id = PAGE_ORDER[this.page];
+    const pages = this._pages();
+    this.page = Math.min(this.page, pages.length - 1);   // a live edit can remove the place (and its page)
+    const id = pages[this.page];
     const v = { t: this.theme, c: this.data.c, copy: this.data.copy, program: this.data.program, calHref: this.data.calHref, mapHref: this.data.mapHref, rsvp: this.rsvp };
     this.el.page.innerHTML = PageRegistry.get(id).render(v);
     this.el.page.classList.toggle('instant', instant);
     this.el.page.dataset.page = id;
-    this.el.dots.innerHTML = PAGE_ORDER.map((p, i) => `<button type="button" class="st-dotbtn ${i === this.page ? 'on' : ''}" data-go="${i}" aria-label="${T.page(T.pageLabels[i])}" aria-current="${i === this.page ? 'page' : 'false'}"><span class="st-dot"></span></button>`).join('');
+    this.el.dots.innerHTML = pages.map((p, i) => `<button type="button" class="st-dotbtn ${i === this.page ? 'on' : ''}" data-go="${i}" aria-label="${T.page(T.pageLabels[PAGE_ORDER.indexOf(p)])}" aria-current="${i === this.page ? 'page' : 'false'}"><span class="st-dot"></span></button>`).join('');
     this.host.querySelector('[data-act="prev"]').disabled = this.page === 0;
-    this.host.querySelector('[data-act="next"]').disabled = this.page === 4;
+    this.host.querySelector('[data-act="next"]').disabled = this.page === pages.length - 1;
     if (id === 'date') this._tickCountdown();
     if (id === 'rsvp') this._syncRsvp();
   }
@@ -379,14 +395,14 @@ export class Studio {
     };
     paint();
     clearInterval(this.clock);
-    this.clock = setInterval(() => { if (this.sm.state === 'pages' && PAGE_ORDER[this.page] === 'date') paint(); else clearInterval(this.clock); }, 1000);
+    this.clock = setInterval(() => { if (this.sm.state === 'pages' && this._pages()[this.page] === 'date') paint(); else clearInterval(this.clock); }, 1000);
   }
 
   /** `from`: the control that asked (a page dot, prev or next). Keyboard focus never falls back to the page body:
    *  prev/next keep it while they can still act; a dot, or a button that has just been disabled at either end,
    *  hands it to the sheet, so the next Tab reaches the new page's content (the reply form) before anything else. */
   go(n, from = null) {
-    if (this.sm.state !== 'pages' || n < 0 || n > 4 || n === this.page || this.leaving) return;
+    if (this.sm.state !== 'pages' || n < 0 || n > this._last() || n === this.page || this.leaving) return;
     this._focusAfter = from && from === document.activeElement ? from : null;
     this.audio.emit('page');
     this.leaving = true;
@@ -398,7 +414,7 @@ export class Studio {
       delete this.el.page.dataset.exit;
       this._renderPage();
       // the page's name is the one thing announced (the live line), so turning a page never re-reads a whole page
-      const said = this.host.querySelector('.st-page-said'); if (said) said.textContent = T.pageLabels[n];
+      const said = this.host.querySelector('.st-page-said'); if (said) said.textContent = T.pageLabels[PAGE_ORDER.indexOf(this._pages()[n])];
       const from = this._focusAfter; this._focusAfter = null;
       if (from && (from.dataset.go || from.disabled || !from.isConnected)) this.el.sheet.focus({ preventScroll: true });
     }, this.sm.timing.pageLeave);
@@ -469,7 +485,7 @@ export class Studio {
     // (the English line would only repeat it); a real one keeps the English thank-you under the Arabic
     const demo = !!r.receipt?.demo;
     q('.done-en').textContent = demo ? '' : th.en;
-    q('.done-en').hidden = demo;
+    q('.done-en').hidden = demo || !th.en;
     q('.done-demo').hidden = !demo;
     q('.done-demo').textContent = demo ? S.demoOnly : '';
     // what focus lands on (st-done-said): the thanks, and for a demo the honest line with it
@@ -499,7 +515,8 @@ export class Studio {
     const host = this.host;
 
     // first meaningful gesture unlocks audio (never audible before)
-    const unlock = () => { if (this.audio.unlock()) { this.audio.setAmbience(SCENE_AMBIENCE[this.sceneId] || null); if (this.sm.state === 'pages') this.audio.startMusic(); } };
+    // an invitation that opened straight on its pages («ثابتة») gets its voice welcome with the first touch instead
+    const unlock = () => { if (this.audio.unlock()) { this.audio.setAmbience(SCENE_AMBIENCE[this.sceneId] || null); if (this.sm.state === 'pages') { this.audio.startMusic(); if (!this.audio.voicePlayed) void this.audio.playVoice(); } } };
     on(host, 'pointerdown', unlock, { capture: true });
     on(host, 'keydown', unlock, { capture: true });
 
@@ -558,7 +575,7 @@ export class Studio {
       if (!d.axis) { if (Math.hypot(dx, dy) < 8) return; d.axis = Math.abs(dy) >= Math.abs(dx) ? 'y' : 'x'; this.el.page.classList.add('dragging'); }
       const v = d.axis === 'y' ? dy : dx;
       const dir = d.axis === 'y' ? (v < 0 ? 1 : -1) : (v > 0 ? 1 : -1);
-      const t = (this.page + dir < 0 || this.page + dir > 4) ? v * 0.16 : v * 0.6;
+      const t = (this.page + dir < 0 || this.page + dir > this._last()) ? v * 0.16 : v * 0.6;
       this.el.page.style.transform = d.axis === 'y' ? `translateY(${t.toFixed(1)}px)` : `translateX(${t.toFixed(1)}px)`;
       this.el.page.style.opacity = String(1 - Math.min(0.55, Math.abs(t) / 300));
     });
@@ -574,7 +591,7 @@ export class Studio {
       const fast = Math.abs(v) > 24 && Math.abs(v) / Math.max(1, performance.now() - down.t) > 0.5;
       const dir = axis === 'y' ? (v < 0 ? 1 : -1) : (v > 0 ? 1 : -1);
       const n = this.page + dir;
-      if ((Math.abs(v) > 50 || fast) && n >= 0 && n <= 4) { this.el.page.dataset.exit = `${axis}${v < 0 ? '-' : '+'}`; settle(); this.go(n); return; }
+      if ((Math.abs(v) > 50 || fast) && n >= 0 && n <= this._last()) { this.el.page.dataset.exit = `${axis}${v < 0 ? '-' : '+'}`; settle(); this.go(n); return; }
       settle();
     });
     on(sheet, 'pointercancel', (ev) => { if (this._down?.id === ev.pointerId) { this._down = null; settle(); } });

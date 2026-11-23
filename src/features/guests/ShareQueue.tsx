@@ -3,7 +3,11 @@
  *   · WhatsApp/SMS open one composer at a time; the organizer confirms «أرسلت» — opening a composer never counts as sent.
  *   · confirming can open the next guest's message in the same tap («أرسلتها، افتح التالي»), so 10 guests ≈ 11 taps
  *   · progress n/N is visible and resumable (sessionStorage) — «أوقف مؤقتًا وأكمل لاحقًا»
- *   · guests without a valid number get a way out at the end: copy their links together, or add a number
+ *   · guests without a valid number get a way out at the end: one tap copies their links AND records them as sent
+ *     (the button says so; if the clipboard fails, the links show to copy by hand and nothing is recorded until
+ *     «أرسلتها»), or add a number
+ *   · one short line explains the queue — no stack of disclaimers
+ *   · the general link (one link without a name, for groups) can be switched on and copied here, under the channels
  *   · mode «remind»: the same queue with the reply-reminder text; a guest counts as reminded only after «أرسلتها»
  *     (there is no simulated reminder anywhere — opening WhatsApp proves nothing)
  */
@@ -18,6 +22,7 @@ import { errorMessage } from '../../services/errors';
 import { haptic } from '../../ui/motion/motion';
 import { useCopy } from '../../ui/copy';
 import { copyText } from '../shared/CopyField';
+import { GeneralLinkCard } from '../shared/GeneralLinkCard';
 import { inviteMessage, reminderMessage, smsUrl, whatsappUrl } from './share';
 
 type Channel = 'whatsapp' | 'sms';
@@ -47,6 +52,7 @@ export function ShareQueue({ event, parties, urlFor, linkFor, onClose, onAddPhon
   const [message, setMessage] = useState('');
   const [manualCopy, setManualCopy] = useState<string | null>(null);
   const [noPhoneCopied, setNoPhoneCopied] = useState(false);
+  const [noPhoneDone, setNoPhoneDone] = useState(false);
   const done = index >= ready.length;
   const current = ready[index];
   const following = ready[index + 1];
@@ -60,9 +66,18 @@ export function ShareQueue({ event, parties, urlFor, linkFor, onClose, onAddPhon
   const mark = useMutation(async (s, id: string, chained: boolean) => { await record(s, [id]); return { id, chained }; }, {
     onSuccess: ({ id, chained }) => { haptic('success'); setSent(v => [...v, id]); setOpened(chained); setIndex(i => i + 1); },
   });
-  const markNoPhone = useMutation((s, list: string[]) => record(s, list), {
-    onSuccess: () => { haptic('success'); setNoPhoneCopied(false); setMessage(t(remind ? 'sqRecordedReminders' : 'sqRecordedShared', { n: n(noPhone.length, 'invitation') })); },
+  const markNoPhone = useMutation(async (s, list: string[], copied: boolean) => { await record(s, list); return copied; }, {
+    onSuccess: (copied) => {
+      haptic('success'); setNoPhoneCopied(false); setNoPhoneDone(true); setManualCopy(null);
+      const k = n(noPhone.length, 'invitation');
+      setMessage(copied ? t(remind ? 'sqCopiedMarkedRemind' : 'sqCopiedMarked', { n: k }) : t(remind ? 'sqRecordedReminders' : 'sqRecordedShared', { n: k }));
+    },
   });
+  // «انسخ روابطها وسجّلها مُرسلة»: the copy and the record are one action; a failed copy records nothing
+  const copyAndMark = async () => {
+    if (await copyLinks(noPhone, '')) void markNoPhone.run(noPhone.map(p => p.id), true);
+    else setNoPhoneCopied(true);
+  };
   const skip = () => { if (!current) return; setSkipped(v => [...v, current.id]); setOpened(false); setIndex(i => i + 1); };
   const textFor = (p: InvitationParty) => {
     if (!linkFor) { try { return new URL(urlFor(p) ?? '').searchParams.get('text') ?? ''; } catch { return ''; } }
@@ -88,10 +103,11 @@ export function ShareQueue({ event, parties, urlFor, linkFor, onClose, onAddPhon
   const withoutPhone = noPhone.length > 0 && <section className="sq-missing" aria-labelledby="sq-missing-h">
     <h3 id="sq-missing-h"><Icon name="info" size="sm" />{t('sqWithoutPhone', { n: n(noPhone.length, 'invitation') })}</h3>
     <p className="faint t-sm">{t('sqWithoutPhoneHint')}</p>
-    <div className="row gap-2 wrap">
-      <Button icon="copy" onClick={async () => setNoPhoneCopied(await copyLinks(noPhone, t(remind ? 'sqCopiedNoPhoneReminders' : 'sqCopiedNoPhoneLinks', { n: n(noPhone.length, 'invitation') })))}>{t('copyTheirLinks')}</Button>
-      {noPhoneCopied && <Button variant="ghost" icon="check" loading={markNoPhone.pending} onClick={() => void markNoPhone.run(noPhone.map(p => p.id))}>{t(remind ? 'sqSentRecordReminder' : 'sqSentRecordShared')}</Button>}
-    </div>
+    {!noPhoneDone && <div className="row gap-2 wrap">
+      {!noPhoneCopied ? <Button variant={ready.length ? 'secondary' : 'primary'} icon="copy" loading={markNoPhone.pending} onClick={() => void copyAndMark()}>{t(remind ? 'sqCopyAndMarkRemind' : 'sqCopyAndMark')}</Button>
+        // the clipboard refused: the links are shown to copy by hand, and they are recorded only on «أرسلتها»
+        : <Button variant="primary" icon="check" loading={markNoPhone.pending} onClick={() => void markNoPhone.run(noPhone.map(p => p.id), false)}>{t(remind ? 'sqSentRecordReminder' : 'sqSentRecordShared')}</Button>}
+    </div>}
     {markNoPhone.error ? <p className="text-danger t-sm" role="alert">{errorMessage(markNoPhone.error)}</p> : null}
     {onAddPhone && <ul className="sq-missing-list">{noPhone.map(p => <li key={p.id}><span>{p.primaryGuestName}</span><Button size="sm" variant="ghost" icon="plus" onClick={() => onAddPhone(p.id)} aria-label={`${t('addPhone')} — ${p.primaryGuestName}`}>{t('addPhone')}</Button></li>)}</ul>}
   </section>;
@@ -101,24 +117,25 @@ export function ShareQueue({ event, parties, urlFor, linkFor, onClose, onAddPhon
       : channel ? t(done ? 'sqShareDone' : channel === 'sms' ? 'sqShareSms' : 'sqShareWhatsapp') : t('shareOptions')}
     description={channel ? undefined : t(remind ? 'sqWaiting' : 'sqSelected', { n: n(parties.length, 'invitation') })}>
     {!channel ? <div className="stack gap-4">
-      <p className="muted">{t(remind ? 'sqRemindIntro' : 'sqShareIntro')}</p>
+      {ready.length > 0 && <p className="muted t-sm">{t('sqOneLine')}{noPhone.length > 0 ? t('sqNoPhoneLine', { n: n(noPhone.length, 'invitation') }) : ''}</p>}
       <div className="action-grid">
-        <Button variant="primary" icon="chat" disabled={!ready.length} onClick={() => setChannel('whatsapp')}>{t('sendWhatsapp')} · {ready.length}</Button>
-        <Button icon="phone" disabled={!ready.length} onClick={() => setChannel('sms')}>{t('sendSms')} · {ready.length}</Button>
+        {/* nobody with a number: no dead «واتساب · 0» buttons — the links below are the way */}
+        {ready.length > 0 && <><Button variant="primary" icon="chat" onClick={() => setChannel('whatsapp')}>{t('sendWhatsapp')} · {ready.length}</Button>
+        <Button icon="phone" onClick={() => setChannel('sms')}>{t('sendSms')} · {ready.length}</Button></>}
         {/* with nobody reachable by number, the «without a number» box below already offers the copy — no second button */}
         {ready.length > 0 && <Button icon="copy" onClick={() => void copyLinks(parties, t(remind ? 'sqCopiedReminders' : 'sqCopiedLinks'))}>{t(remind ? 'sqCopyReminders' : 'sqCopyLinks')}</Button>}
         {typeof navigator.share === 'function' && <Button icon="share" onClick={() => void nativeShare()}>{t('pdDeviceShare')}</Button>}
       </div>
-      {noPhone.length > 0 && (ready.length ? <p className="sq-note"><Icon name="info" size="sm" />{t('sqNoPhoneNote', { n: n(noPhone.length, 'invitation') })}</p> : withoutPhone)}
+      {noPhone.length > 0 && !ready.length && withoutPhone}
+      {/* one link without a name, for groups: its switch and the link to copy (it used to sit on the invitation page) */}
+      {!remind && <GeneralLinkCard event={event} />}
       {resumed && index > 0 && index < ready.length && <p className="faint t-sm">{t('sqResume', { i: index, n: ready.length })}</p>}
-      <p className="faint t-sm">{t('sqHowItWorks')}</p>
       {status}
     </div> : <>
       <ProgressBar value={Math.min(index, ready.length)} max={Math.max(1, ready.length)} tone="success" label={t('sqProgress')} />
       {done || !current ? <div className="sq-done">
         <span className="sq-done-seal" aria-hidden="true"><Icon name="check" /></span>
         <p>{t(remind ? 'sqReminded' : 'sqMarked', { n: n(sent.length, 'invitation') })}{skipped.length ? t('sqSkipped', { n: skipped.length }) : ''}.</p>
-        <p className="faint t-sm">{t('sqHonest')}</p>
         {withoutPhone}
         {status}
         <Button variant="primary" block onClick={() => { save(event.id, mode, null); onClose(true); }}>{t('done')}</Button>

@@ -17,7 +17,7 @@ export function MorePage({ event }: { event: Event }) {
   const c = parties.data ? countParties(parties.data) : null;
   const items: Array<{ to: string; icon: IconName; label: string; hint: string }> = [
     { to: paths.seating(event.id), icon: 'table', label: t('wsTables'), hint: t('moreTablesHint') },
-    { to: paths.rsvp(event.id), icon: 'envelope', label: t('moreReplies'), hint: c ? `${c.pendingParties} ${t('pendingReply')} · ${t('moreConfirmed', { people: n(c.confirmedPeople, 'person') })}` : t('moreRepliesHint') },
+    { to: paths.rsvp(event.id), icon: 'envelope', label: t('moreReplies'), hint: c ? `${c.awaitingReply} ${t('pendingReply')} · ${t('moreConfirmed', { people: n(c.confirmedPeople, 'person') })}` : t('moreRepliesHint') },
     { to: paths.checkin(event.id), icon: 'door', label: t('wsCheckin'), hint: t(phase === 'event_day' ? 'moreCheckinToday' : 'moreCheckinHint') },
     { to: paths.gate(event.id), icon: 'scan', label: t('moreGate'), hint: t('moreGateHint') },
     { to: paths.settings(event.id), icon: 'settings', label: t('wsSettings'), hint: t('moreSettingsHint') },

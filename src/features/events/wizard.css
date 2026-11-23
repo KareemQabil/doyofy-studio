@@ -10,7 +10,7 @@
 .wz-steps li { display: flex; align-items: center; flex: 1; min-width: 0; color: var(--c-text-3); }
 .wz-steps li + li::before { content: ''; flex: 1; height: 1px; margin-inline-end: 6px; background: var(--c-hairline-strong); max-width: 48px; }
 .wz-steps li.is-done + li::before { background: var(--c-text-2); }
-.wz-steps :is(button, span[aria-label]) { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; border: 0; background: none; color: inherit; font: 500 13px/1.2 var(--font-display); white-space: nowrap; cursor: default; }
+.wz-steps :is(button, li > span) { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; border: 0; background: none; color: inherit; font: 500 13px/1.2 var(--font-display); white-space: nowrap; cursor: default; }
 .wz-steps button { cursor: pointer; color: var(--c-text-2); border-radius: var(--r-pill); }
 .wz-steps button:hover .wz-step-label { text-decoration: underline; text-underline-offset: 4px; }
 .wz-step-n { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid currentColor; font-size: 12px; }
@@ -115,6 +115,14 @@
 .wz-tz { color: var(--c-text-2); font-size: 13px; }
 /* «تغيير» is a real target (44px tall, with room around the word), not a 23px inline link */
 .wz-tz-change { display: inline-flex; align-items: center; min-block-size: 44px; min-inline-size: 44px; padding-inline: 8px; justify-content: center; }
+/* less data: the time (already 8:00 مساءً) and the optional place are one-tap chips, not fields to fill */
+.wz-group > .field { max-width: 420px; }
+.wz-chip { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--c-hairline-strong); border-radius: 999px; background: var(--c-surface); color: var(--c-text); font: 500 14.5px/1.3 var(--font-body); cursor: pointer; transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out); }
+.wz-chip .icon { color: var(--c-text-2); flex: none; }
+.wz-chip:hover { background: var(--c-surface-subtle); }
+.wz-chip:focus-visible { outline: 3px solid var(--c-focus); outline-offset: 2px; }
+.wz-chip-add { border-style: dashed; color: var(--c-text-2); }
+.wz-place .field-hint { margin: 0; }
 .wz-aside { position: sticky; top: 76px; }
 .wz-preview { display: grid; justify-items: center; gap: 12px; padding: 22px 18px; border-radius: var(--r-lg); background: var(--c-surface-subtle); text-align: center; }
 .wz-preview-card { transform: perspective(900px) rotateY(var(--ry, 0deg)) rotateX(var(--rx, 0deg)); transition: transform 500ms var(--ease-out); }
@@ -150,7 +158,7 @@
   :root[data-theme] .wz-deck { --wz-chrome: 404px; }
   .wz-steps ol { gap: 2px; padding: 0 8px; }
   .wz-steps li + li::before { margin-inline-end: 4px; }
-  .wz-steps :is(button, span[aria-label]) { font-size: 12.5px; gap: 5px; }
+  .wz-steps :is(button, li > span) { font-size: 12.5px; gap: 5px; }
   .wz-pair { grid-template-columns: minmax(0, 1fr); }
   .wz-head h2 { font-size: 26px; }
   .wz-head p { font-size: 13.5px; }

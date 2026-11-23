@@ -1,9 +1,6 @@
 /* The editor panel and controls in Signature's palette, typography and exact logo (layout: editor-studio.css). */
 :root[data-theme='signature'] .ed { --bar-h: 76px; background: var(--c-canvas); }
-.ed-brand-cluster { display: flex; align-items: center; gap: 16px; }
-.ed-brand { min-height: 44px; display: grid; place-items: center; border: 0; padding: 0; background: none; color: var(--c-logo); cursor: pointer; }
 :root[data-theme='signature'] .ed-bar { padding-inline: 28px; gap: 20px; border-bottom-color: var(--brand-beige); }
-:root[data-theme='signature'] .ed-brand-cluster { border-inline-end: 1px solid var(--c-hairline); padding-inline-end: 20px; }
 :root[data-theme='signature'] .ed-close { width: 44px; height: 44px; border: 1px solid var(--c-hairline-strong); }
 :root[data-theme='signature'] .ed-h { font-family: var(--font-display); font-size: 17px; }
 :root[data-theme='signature'] .ed-sub { margin-top: 3px; }
@@ -45,48 +42,29 @@
 :root[data-theme='signature'] .ed-option.is-on { border-color: var(--brand-charcoal); background: var(--brand-ivory); box-shadow: inset 0 0 0 1px var(--brand-charcoal); }
 /* dark: ivory under light text read 1:1 — the selected card takes the dark selected surface and a light ring instead */
 :root[data-appearance='dark'][data-theme='signature'] .ed-option.is-on { border-color: var(--c-selected); background: var(--c-selected-soft); box-shadow: inset 0 0 0 1px var(--c-selected); }
-:root[data-theme='signature'] .ed-save-row { margin: 0 -20px -40px; padding: 20px 20px 24px; bottom: -40px; }
 /* Workbench and preview share the same light platform shell. */
 :root[data-theme='signature'] .ed-stage { background: var(--c-canvas); min-width: 0; padding: 28px 32px; gap: 22px; }
-.ed-stage-heading { display: flex; align-items: center; justify-content: space-between; width: min(100%, 850px); gap: 16px; }
-.ed-stage-kicker { font-size: 11px; color: var(--c-text-3); margin-bottom: 5px; }
-:root[data-theme='signature'] .ed-stage .ed-stage-caption { display: block; padding: 0; background: none; border: 0; font: 700 22px/1.4 var(--font-display); text-align: start; color: var(--c-text); }
-.ed-stage-heading .seg { flex: none; }
-:root[data-theme='signature'] .ed-stage .ed-stage-tools :is(.btn-ghost,.btn-quiet) { color: var(--c-text); }
-:root[data-theme='signature'] .ed.is-preview .ed-screen { border-radius: 14px; box-shadow: 0 0 0 6px var(--brand-charcoal), 0 0 0 7px var(--brand-gold), var(--shadow-art); }
-:root[data-theme='signature'] .ed.is-preview .ed-screen-wrap { height: min(calc(100dvh - var(--bar-h) - 175px), 700px); }
 @media (min-width: 960px) and (max-width: 1199px) {
-  :root[data-theme='signature'] .ed-pub { display: none; }
   :root[data-theme='signature'] .ed-bar { gap: 12px; padding-inline: 16px; }
   :root[data-theme='signature'] .ed-stage { padding-inline: 22px; }
-  .ed-stage-heading { flex-wrap: wrap; }
 }
 @media (hover: hover) and (pointer: fine) {
   :root[data-theme='signature'] .ed-tabs .seg-btn:hover:not([data-on='true']) { background: var(--c-surface-hover); }
   :root[data-theme='signature'] .ed-pick:hover .card-thumb { transform: translateY(-3px) rotate(-2deg); }
-  :root[data-theme='signature'] .ed-brand:hover { color: var(--c-text); }
 }
 @media (max-width: 959px) {
   :root[data-theme='signature'] .ed { --bar-h: 64px; }
   :root[data-theme='signature'] .ed-bar { padding-inline: 10px; gap: 10px; }
-  :root[data-theme='signature'] .ed-brand-cluster { padding-inline-end: 8px; gap: 8px; }
-  .ed-brand .logo { height: 22px; width: auto; }
   :root[data-theme='signature'] .ed-h { font-size: 13px; }
   :root[data-theme='signature'] .ed-sub { max-width: 110px; font-size: 10px; }
-  :root[data-theme='signature'] .ed-status { gap: 8px; }
   :root[data-theme='signature'] .ed-stage { padding: 12px; gap: 6px; }
-  .ed-stage-heading { display: none; }
   :root[data-theme='signature'] .ed-tabs { padding-top: 0; flex: none; }
   :root[data-theme='signature'] .ed-tabs .seg-btn { min-height: 48px; gap: 2px; padding-block: 6px; font-size: 11px; }
   :root[data-theme='signature'] .ed-panel-body { padding: 14px 14px 28px; }
   :root[data-theme='signature'] .ed-group { padding: 16px; }
   :root[data-theme='signature'] .ed-group + .ed-group { padding-top: 16px; }
-  :root[data-theme='signature'] .ed-save-row { margin: 0 -14px -28px; bottom: -28px; padding: 14px 14px 24px; }
-  :root[data-theme='signature'] .ed.is-preview .ed-screen-wrap { height: 100%; }
-  :root[data-theme='signature'] .ed.is-preview .ed-screen { box-shadow: none; }
 }
 @media (max-width: 390px) {
-  .ed-brand { display: none; }
   :root[data-theme='signature'] .ed-close { width: 40px; height: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
