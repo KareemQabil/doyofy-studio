@@ -6,7 +6,7 @@
  * Verified only against a mocked fetch (tests/unit/remote.test.ts) and the SQL against a local
  * Postgres with Supabase stand-ins — never against a live Supabase project.
  *
- * Server-authoritative operations (RSVP, publish, check-in/undo, matching, import) go through the
+ * Server-authoritative operations (RSVP, design saves, check-in/undo, matching, import) go through the
  * SECURITY DEFINER RPCs in backend/supabase/migrations/0001_doyofy_init.sql; simple organizer CRUD
  * goes through PostgREST tables guarded by RLS + column grants.
  */
@@ -115,7 +115,10 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
           const slug = attempt === 0 ? base : `${base}-${makeCode(new Set(), Math.random, 4).toLowerCase()}`.slice(0, 48);
           try {
             const [created] = await db.insert<EventRow>('events', { ...row, slug });
-            return changed(toEvent(created!));
+            const ev = toEvent(created!);
+            // always live: the guest links work from the start, with the occasion's default design
+            await services.invitations.saveDraft(ev.id, defaultDesign(ev));
+            return changed(ev);
           } catch (e) {
             if (reasonOf(e) !== 'conflict') throw e;   // 23505 unique violation (slug)
           }
@@ -147,29 +150,25 @@ export function createRemoteServices(config: RemoteConfig): RemoteServices {
       },
     },
 
-    // ---------------------------------------------------------------- invitation design (draft / published)
+    // ---------------------------------------------------------------- invitation design (always live)
+    // The 0001 schema still serves guests a «published» snapshot. Until the backend reads the saved design directly,
+    // every save refreshes that snapshot in the same breath, so guests always get the latest saved design.
     invitations: {
       get: async (eventId) => {
         const r = await db.maybeOne<DesignRow>('invitation_designs', [['select', '*'], ['event_id', eq(requireId(eventId, 'event_not_found'))]]);
         return r ? rememberDesign(r) : null;
       },
       saveDraft: async (eventId, content: InvitationDesignContent) => {
-        const r = await db.rpc<DesignRow>('save_invitation_draft', {
+        rememberDesign(await db.rpc<DesignRow>('save_invitation_draft', {
           p_event_id: requireId(eventId, 'event_not_found'), p_content: content, p_base_revision: revisions.get(eventId) ?? null,
-        });
-        return changed(rememberDesign(r));
+        }));
+        return changed(rememberDesign(await db.rpc<DesignRow>('publish_invitation', { p_event_id: eventId, p_expected_revision: revisions.get(eventId) ?? null })));
       },
+      /** @deprecated nothing to publish any more: saves the occasion's default design when none is saved yet */
       publish: async (eventId) => {
-        requireId(eventId, 'event_not_found');
-        try {
-          return changed(rememberDesign(await db.rpc<DesignRow>('publish_invitation', { p_event_id: eventId, p_expected_revision: revisions.get(eventId) ?? null })));
-        } catch (e) {
-          // mock parity: publishing before any save publishes the occasion's default design
-          if (reasonOf(e) !== 'nothing_to_publish') throw e;
-          const ev = await services.events.get(eventId);
-          await services.invitations.saveDraft(eventId, defaultDesign(ev));
-          return changed(rememberDesign(await db.rpc<DesignRow>('publish_invitation', { p_event_id: eventId, p_expected_revision: revisions.get(eventId) ?? null })));
-        }
+        const saved = await services.invitations.get(eventId);
+        if (saved) return saved;
+        return services.invitations.saveDraft(eventId, defaultDesign(await services.events.get(eventId)));
       },
     },
 

@@ -3,7 +3,7 @@
  *   1. the occasion (the tactile occasion deck, with search as a fallback)
  *   2. the design: a full-screen vertical feed of the designs suited to that occasion (one per screen)
  *   3. the details: essentials only (names · date · time · venue/city), with the chosen invitation taking shape live
- *   → the invitation opens in the editor for fine edits and publishing.
+ *   → the invitation opens in the editor for fine edits; it is live from the start (no publish step).
  * The step indicator stays at the top of every step. The unfinished draft (fields, step and chosen design) is saved
  * per local account and resumed. A shared catalogue link (?type=…&template=…&preview=1) opens step 2 on that design.
  */
@@ -94,7 +94,7 @@ const ArabicDateTime = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInpu
   </span>;
 });
 
-/** only the owner creates events (domain/roles «event.create»): a coordinator arriving here from a link gets the reason, not a form they could never publish */
+/** only the owner creates events (domain/roles «event.create»): a coordinator arriving here from a link gets the reason, not a form they could never submit */
 export function CreateEvent() {
   const role = useRole();
   const { t } = useCopy();

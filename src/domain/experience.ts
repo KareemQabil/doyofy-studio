@@ -1,5 +1,5 @@
 /** Presentation decisions derived from domain state; never persisted as a second source of truth. */
-import type { Event, InvitationParty, PublishState } from './types';
+import type { Event, InvitationParty } from './types';
 import { eventPhase, eventTypeInfo } from './event';
 import { countParties } from './parties';
 import type { AttentionItem, OverviewInput } from './overview';
@@ -13,11 +13,11 @@ export const JOURNEY = [
   { id: 'remember', labelKey: 'jrRemember' },
 ] as const;
 
-export function journeyStage(event: Event, publish: PublishState, parties: readonly InvitationParty[], now: Date): JourneyStage {
+export function journeyStage(event: Event, parties: readonly InvitationParty[], now: Date): JourneyStage {
   const phase = eventPhase(event, now);
   if (phase === 'completed' || phase === 'archived') return 'remember';
   if (phase === 'event_day') return 'welcome';
-  if (publish === 'none' || publish === 'draft' || !parties.length) return 'prepare';
+  if (!parties.length) return 'prepare';
   const c = countParties(parties);
   if (phase === 'final_week' || (c.pendingParties === 0 && c.notShared + c.failed === 0)) return 'arrange';
   return 'invite';
@@ -50,7 +50,7 @@ export function rankAttention(items: AttentionItem[], i: OverviewInput): Attenti
   if (phase === 'completed' || phase === 'archived') return items.filter(x => x.id === 'checkin_exceptions');
   const late = phase === 'event_day' || phase === 'final_week';
   const priorities = late
-    ? ['checkin_exceptions', 'over_allowed', 'over_capacity', 'unassigned', 'declined_assigned', 'unmatched', 'unpublished', 'failed', 'not_published', 'duplicates', 'missing_phone', 'pending']
-    : ['not_published', 'unpublished', 'failed', 'over_allowed', 'unmatched', 'duplicates', 'missing_phone', 'over_capacity', 'declined_assigned', 'unassigned', 'pending'];
+    ? ['checkin_exceptions', 'over_allowed', 'over_capacity', 'unassigned', 'declined_assigned', 'unmatched', 'failed', 'duplicates', 'missing_phone', 'pending']
+    : ['failed', 'over_allowed', 'unmatched', 'duplicates', 'missing_phone', 'over_capacity', 'declined_assigned', 'unassigned', 'pending'];
   return [...items].sort((a, b) => priorities.indexOf(a.id) - priorities.indexOf(b.id));
 }

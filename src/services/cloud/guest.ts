@@ -54,9 +54,9 @@ export function withRemoteFallback(local: GuestApi, remote: GuestApi = remoteGue
       if (viaRemote.has(slug)) return remote.open(slug, code);
       try { return await local.open(slug, code); }
       catch (e) {
-        if (!(isAppError(e) && (e.code === 'not_found' || e.code === 'not_published')) || !(await isOn())) throw e;
+        if (!(isAppError(e) && e.code === 'not_found') || !(await isOn())) throw e;
         let view: GuestView;
-        // the backend does not know it either: this device's own answer (e.g. «not shared yet») says more
+        // the backend does not know it either: this device's own answer says more
         try { view = await remote.open(slug, code); } catch (r) { throw isAppError(r) && r.code === 'not_found' ? e : r; }
         viaRemote.add(slug);
         return view;

@@ -26,10 +26,16 @@ export interface EventRepository {
   restore(id: string): Promise<Event>;
 }
 
+/**
+ * The invitation is always live: guests get the latest saved design (no publish step). Before the first save a
+ * guest link already works with the occasion's default design (domain/invitation liveDesign).
+ */
 export interface InvitationRepository {
-  /** null = no design yet */
+  /** null = no design saved yet */
   get(eventId: string): Promise<InvitationDesign | null>;
+  /** saves the design; guests see it from the next time they open their link */
   saveDraft(eventId: string, content: InvitationDesignContent): Promise<InvitationDesign>;
+  /** @deprecated there is nothing to publish: makes sure a design is saved and returns it. Removed once no caller remains. */
   publish(eventId: string): Promise<InvitationDesign>;
 }
 
@@ -115,6 +121,7 @@ export interface GuestParty {
 }
 export interface GuestView {
   event: Pick<Event, 'id' | 'slug' | 'type' | 'title' | 'names' | 'date' | 'time' | 'timeZone' | 'durationHours' | 'venue'>;
+  /** the latest saved design (or the occasion's default before the first save) */
   design: InvitationDesignContent;
   party: GuestParty | null;
   canEdit: boolean;            // replies can change until the event starts

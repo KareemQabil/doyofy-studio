@@ -11,6 +11,7 @@ import type { InvitationDesignContent, RSVPResponse } from '../../domain/types';
 import type { RemoteReply } from '../cloud/api';
 import type { Dialect } from '../../domain/copy';
 import { portableView } from '../../domain/portable-invite';
+import { liveDesign } from '../../domain/invitation';
 import { eventEnd, eventStart } from '../../domain/event';
 import { applyRsvp } from '../../domain/parties';
 import { checkAnswers, cleanAnswers, experienceOf } from '../../domain/guest-experience';
@@ -31,13 +32,12 @@ export interface PublicSnapshot {
 
 const clamp = (n: unknown, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(Number(n) || 0)));
 
-/** null = nothing guests could open yet (no design) */
+/** null = no such event */
 export function eventSnapshot(db: Readonly<DbShape>, eventId: string, opts: { slug: string; dialect: Dialect; audio?: (a: PublicSnapshot['design']['audio']) => PublicSnapshot['design']['audio'] }): PublicSnapshot | null {
   const ev = db.events.find((e) => e.id === eventId);
-  const design = db.designs.find((d) => d.eventId === eventId);
-  // the invitation is always live: guests get the latest saved design
-  const content = design?.draft ?? design?.published;
-  if (!ev || !content) return null;
+  if (!ev) return null;
+  // the invitation is always live: guests get the latest saved design (the occasion's default before the first save)
+  const content = liveDesign(db.designs.find((d) => d.eventId === eventId), ev);
   const base = portableView({ ...ev, slug: opts.slug }, content, undefined, opts.dialect);
   const tables = new Map(db.tables.filter((t) => t.eventId === ev.id).map((t) => [t.id, t.name]));
   const guests = db.parties.filter((p) => p.eventId === ev.id).map((p) => {

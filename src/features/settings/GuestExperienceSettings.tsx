@@ -133,7 +133,7 @@ export function GuestExperienceSettings({ event, foodOnly = false }: { event: Ev
             {dirty ? <span className="t-sm">{t('xsUnsaved')}</span> : <span className="t-sm faint">{t('xsSavedState')}{revision ? t('xsVersion', { n: revision }) : ''}</span>}
             <div className="row gap-2">
               {dirty && <Button variant="ghost" onClick={() => setD(base)}>{t('setDiscard')}</Button>}
-              <Button variant="primary" disabled={!dirty || !!problem} loading={save.pending} onClick={() => void save.run()}>{t('xsSavePublish')}</Button>
+              <Button variant="primary" disabled={!dirty || !!problem} loading={save.pending} onClick={() => void save.run()}>{t('xsSaveChanges')}</Button>
             </div>
           </div>
         </div>

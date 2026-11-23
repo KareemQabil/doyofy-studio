@@ -65,21 +65,21 @@ test('guest export respects selection/table/group scopes and prevents spreadshee
 
 test('next guest action follows reply/delivery/seating state and the event clock; food is caterer-only', () => {
   const phone = '+966555123456';
-  assert.equal(guestNextAction(party(), 'draft', true), 'publish');
-  assert.equal(guestNextAction(party(), 'published', true), 'phone');
-  assert.equal(guestNextAction(party({ phone: '12' }), 'published', true), 'phone', 'an invalid number cannot be shared');
-  assert.equal(guestNextAction(party({ phone }), 'published', true), 'share');
-  assert.equal(guestNextAction(party({ phone, delivery: { status: 'shared' } }), 'published', true), 'remind');
-  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed' }), 'published', true), 'seat');
+  // always live: there is no «publish first» step — a guest without a number needs one, then the invitation is sent
+  assert.equal(guestNextAction(party(), true), 'phone');
+  assert.equal(guestNextAction(party({ phone: '12' }), true), 'phone', 'an invalid number cannot be shared');
+  assert.equal(guestNextAction(party({ phone }), true), 'share');
+  assert.equal(guestNextAction(party({ phone, delivery: { status: 'shared' } }), true), 'remind');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed' }), true), 'seat');
   // before the event day a confirmed, seated guest needs nothing extra; arrival opens on the day
-  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed', tableId: 't1' }), 'published', true), 'details');
-  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed', tableId: 't1' }), 'published', true, true), 'arrival');
-  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed' }), 'published', false), 'details');
-  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed' }), 'published', false, true), 'arrival');
-  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed', checkInStatus: 'checked_in', checkedInCount: 2, tableId: 't1' }), 'published', true, true), 'details');
-  assert.equal(guestNextAction(party({ rsvpStatus: 'declined' }), 'published', true), 'details');
-  assert.equal(guestNextAction(party({ rsvpStatus: 'declined', tableId: 't1' }), 'published', true), 'unseat');
-  assert.equal(guestNextAction(party({ rsvpStatus: 'declined', tableId: 't1' }), 'published', true, true), 'unseat');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed', tableId: 't1' }), true), 'details');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed', tableId: 't1' }), true, true), 'arrival');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed' }), false), 'details');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed' }), false, true), 'arrival');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'confirmed', checkInStatus: 'checked_in', checkedInCount: 2, tableId: 't1' }), true, true), 'details');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'declined' }), true), 'details');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'declined', tableId: 't1' }), true), 'unseat');
+  assert.equal(guestNextAction(party({ rsvpStatus: 'declined', tableId: 't1' }), true, true), 'unseat');
   assert.equal(isUnsent(party()), true); assert.equal(isUnsent(party({ delivery: { status: 'failed' } })), true); assert.equal(isUnsent(party({ delivery: { status: 'shared' } })), false);
   const ev = { date: '2026-12-01', time: '20:00', timeZone: 'Asia/Riyadh', durationHours: 5 } as Parameters<typeof arrivalOpen>[0];
   assert.equal(arrivalOpen(ev, new Date('2026-11-22T12:00:00Z')), false, 'nine days before: no arrival yet');
@@ -96,18 +96,18 @@ test('reply reminders wait 48 h after the invitation was sent or the family was 
   const sentLongAgo = party({ phone: '0551234567', delivery: { status: 'shared', source: 'manual', at: ago(24 * 10) } });
   assert.equal(remindHold(sentLongAgo, now), null);
   assert.equal(canRemind(sentLongAgo, now), true);
-  assert.equal(guestNextAction(sentLongAgo, 'published', false, false, now), 'remind');
+  assert.equal(guestNextAction(sentLongAgo, false, false, now), 'remind');
   // just sent: no reminder yet, the card says when it was sent
   const justSent = party({ phone: '0551234567', delivery: { status: 'shared', source: 'manual', at: ago(1) } });
   assert.deepEqual(remindHold(justSent, now), { kind: 'sent', at: ago(1) });
   assert.equal(canRemind(justSent, now), false);
-  assert.equal(guestNextAction(justSent, 'published', false, false, now), 'wait');
-  assert.equal(guestNextAction(justSent, 'published', false), 'remind', 'without a clock the action stays as before');
+  assert.equal(guestNextAction(justSent, false, false, now), 'wait');
+  assert.equal(guestNextAction(justSent, false), 'remind', 'without a clock the action stays as before');
   // reminded an hour ago: held, and the latest contact is the reminder
   const reminded = party({ phone: '0551234567', delivery: { status: 'opened', source: 'platform', at: ago(24 * 10), openedAt: ago(24 * 9), reminderAt: ago(1) } });
   assert.deepEqual(remindHold(reminded, now), { kind: 'reminded', at: ago(1) });
   assert.equal(canRemind(reminded, now), false);
-  assert.equal(guestNextAction(reminded, 'published', false, false, now), 'wait');
+  assert.equal(guestNextAction(reminded, false, false, now), 'wait');
   // after the hold the family can be reminded again; replied or unsent invitations never can
   const later = new Date(now.getTime() + 48 * 3600_000);
   assert.equal(canRemind(reminded, later), true);
